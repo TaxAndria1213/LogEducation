@@ -1,3 +1,4 @@
+import { FiBarChart2 } from "react-icons/fi";
 import CalendarDashboard from "../../pages/dashboard/CalendarDashboard";
 import Dashboard from "../../pages/dashboard/PreviewDashboard";
 import type { menu } from "../../types/types";
@@ -5,6 +6,7 @@ import type { menu } from "../../types/types";
 export const dashboard: menu = {
     key: "dashboard",
     name: "Tableau de bord",
+    icon: <FiBarChart2 />,
     submodules: [
       {
         key: "overview",

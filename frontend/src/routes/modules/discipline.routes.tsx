@@ -1,8 +1,10 @@
+import { FiFlag } from "react-icons/fi";
 import type { menu } from "../../types/types";
 
 export const discipline: menu = {
   key: "discipline",
   name: "Discipline",
+  icon: <FiFlag />,
   submodules: [
     {
       key: "incidents",

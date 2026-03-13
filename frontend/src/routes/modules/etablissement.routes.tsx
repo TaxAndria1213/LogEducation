@@ -1,13 +1,16 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import AnneeScolaireIndex from "../../pages/etablissement/anneeScolaire/AnneeScolaireIndex";
 import PeriodeIndex from "../../pages/etablissement/periodes/PeriodeIndex";
 import ProfileEtablissementIndex from "../../pages/etablissement/profileEtablissement/ProfileEtablissementIndex";
 import SalleIndex from "../../pages/etablissement/salles/SalleIndex";
 import SitesIndex from "../../pages/etablissement/sites/SitesIndex";
 import type { menu } from "../../types/types";
+import { faBuilding } from "@fortawesome/free-solid-svg-icons";
 
 export const etablissement: menu = {
   key: "etablissement",
   name: "Etablissement",
+  icon: <FontAwesomeIcon icon={faBuilding} />,
   submodules: [
     {
       key: "profile_etablissement",

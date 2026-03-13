@@ -1,3 +1,4 @@
+import { FiLock } from "react-icons/fi";
 import RolesIndex from "../../pages/compte_securite/roles/RoleIndex";
 import UtilisateursIndex from "../../pages/compte_securite/utilisateurs/UtilisateursIndex";
 import type { menu } from "../../types/types";
@@ -5,6 +6,7 @@ import type { menu } from "../../types/types";
 export const comptes_securite: menu = {
     key: "comptes_securite",
     name: "Comptes & sécurité",
+    icon: <FiLock />,
     submodules: [
       {
         key: "utilisateurs",

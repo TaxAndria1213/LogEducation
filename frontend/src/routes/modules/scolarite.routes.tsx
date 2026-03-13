@@ -1,3 +1,4 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ClasseIndex from "../../pages/scolarite/classes/ClasseIndex";
 import EleveIndex from "../../pages/scolarite/eleve/EleveIndex";
 import IdentifiantEleveIndex from "../../pages/scolarite/identifiant_eleve/IdEleveIndex";
@@ -5,10 +6,12 @@ import InscriptionsIndex from "../../pages/scolarite/inscriptions/InscriptionInd
 import NiveauIndex from "../../pages/scolarite/niveaux/NiveauIndex";
 import ParentTuteurIndex from "../../pages/scolarite/parents_tuteurs/ParentTuteurIndex";
 import type { menu } from "../../types/types";
+import { faGraduationCap } from "@fortawesome/free-solid-svg-icons";
 
 export const scolarite: menu = {
     key: "scolarite",
     name: "Scolarité",
+    icon: <FontAwesomeIcon icon={faGraduationCap} />,
     submodules: [
       {
         key: "eleves",

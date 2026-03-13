@@ -13,7 +13,7 @@ export const authService = {
       email,
       mot_de_passe_hash: password
     }
-    const { data } = await systemApi.post<LoginResponse>("/api/user/login", user);
+    const { data } = await systemApi.post<LoginResponse>("/api/auth/login", user);
     localStorage.setItem("token", "Bearer " + data.data.result.accessToken);
     localStorage.setItem("user", JSON.stringify(data.data.user));
     return data.data;

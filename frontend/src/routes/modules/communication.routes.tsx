@@ -1,8 +1,10 @@
+import { FiMail } from "react-icons/fi";
 import type { menu } from "../../types/types";
 
 export const communication: menu = {
     key: "communication",
     name: "Communication",
+    icon: <FiMail />,
     submodules: [
       {
         key: "annonces",

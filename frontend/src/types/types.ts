@@ -4,7 +4,7 @@ export type menu = {
   key: string;
   name: string;
   path?: string;
-  icon?: string;
+  icon?: React.ReactNode;
   elements?: React.ReactNode;
   submodules?: menu[];
 };

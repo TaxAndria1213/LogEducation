@@ -30,3 +30,31 @@ export async function getAllPaginated(query: ParsedQs, model: PrismaService) {
 
     return result;
 }
+
+/**
+ * Génère un mot de passe aléatoire de 12 caractères
+ * Contient des lettres majuscules, minuscules, chiffres et caractères spéciaux
+ */
+export function generateRandomPassword(length: number = 12): string {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+    const allChars = uppercase + lowercase + numbers + symbols;
+    let password = '';
+
+    // S'assurer qu'il y a au moins un caractère de chaque type
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += symbols[Math.floor(Math.random() * symbols.length)];
+
+    // Compléter le reste du mot de passe
+    for (let i = 4; i < length; i++) {
+        password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+
+    // Mélanger les caractères pour plus de sécurité
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+}

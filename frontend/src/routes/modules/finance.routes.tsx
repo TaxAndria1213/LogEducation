@@ -1,8 +1,10 @@
+import { FiDollarSign } from "react-icons/fi";
 import type { menu } from "../../types/types";
 
 export const finance: menu = {
   key: "finance",
   name: "Finance",
+  icon: <FiDollarSign />,
   submodules: [
     {
       key: "catalogue_frais",

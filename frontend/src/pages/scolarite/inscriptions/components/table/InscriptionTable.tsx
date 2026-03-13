@@ -6,32 +6,51 @@ import {
 } from "../../../../../shared/table/DataTable";
 import type { Inscription } from "../../../../../types/models";
 import InscriptionService from "../../../../../services/inscription.service";
-// import { useAuth } from "../../../../../auth/AuthContext";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
-// import { useInfo } from "../../../../../hooks/useInfo";
+import { useAuth } from "../../../../../auth/AuthContext";
 
 export default function InscriptionList() {
-  // const { info } = useInfo();
-  // const { etablissement_id } = useAuth();
+  const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new InscriptionService(), []);
 
   const columns: ColumnDef<Inscription>[] = [
     {
-      key: "nom",
-      header: "Nom",
-      accessor: "nom",
+      key: "code_eleve",
+      header: "Code élève",
+      render: (row: any) => row.eleve?.code_eleve ?? "—",
+      sortable: false,
+      sortKey: "eleve.code_eleve",
+    },
+    {
+      key: "classe",
+      header: "Classe",
+      render: (row: any) => row.classe?.nom ?? "—",
+      sortable: false,
+      sortKey: "classe.nom",
+    },
+    {
+      key: "annee",
+      header: "Année scolaire",
+      render: (row: any) => row.annee?.nom ?? "—",
+      sortable: false,
+      sortKey: "annee.nom",
+    },
+    {
+      key: "statut",
+      header: "Statut",
+      accessor: "statut",
       sortable: true,
-      sortKey: "nom",
+      sortKey: "statut",
     },
     {
       key: "created_at",
-      header: "Créé le",
-      accessor: "created_at",
+      header: "Inscrit le",
+      accessor: "date_inscription",
       sortable: true,
-      sortKey: "created_at",
+      sortKey: "date_inscription",
       render: (row) => {
-        const date = formatDateWithLocalTimezone(row.created_at.toString());
+        const date = formatDateWithLocalTimezone(row.date_inscription.toString());
         return date.date;
       },
     },
@@ -71,15 +90,21 @@ export default function InscriptionList() {
       initialQuery={{
         page: 1,
         take: 10,
-        // Exemple: includes relationnelles
-        // includeAll: true,
-        // includes: ["etablissement"],
-        // where: { etablissement_id },
+        includeSpec: {
+          eleve: true,
+          classe: true,
+          annee: true,
+        },
+        where: { annee: { etablissement_id } },
       }}
       showSearch
       onSearchBuildWhere={(text) => ({
-        OR: [{ nom: { contains: text } }],
-        // etablissement_id,
+        OR: [
+          { eleve: { code_eleve: { contains: text } } },
+          { classe: { nom: { contains: text } } },
+          { annee: { nom: { contains: text } } },
+        ],
+        annee: { etablissement_id },
       })}
     />
   );

@@ -1,8 +1,11 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { menu } from "../../types/types";
+import { faChalkboardTeacher } from "@fortawesome/free-solid-svg-icons";
 
 export const pedagogie: menu = {
     key: "pedagogie",
     name: "Pédagogie",
+    icon: <FontAwesomeIcon icon={faChalkboardTeacher} />,
     submodules: [
       {
         key: "matieres",

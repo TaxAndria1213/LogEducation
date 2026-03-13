@@ -5,6 +5,7 @@ import RolesApp from "../modules/roles/application/roles.app";
 import RoleUserApp from "../modules/roles_user/application/roles_user.app";
 import SiteApp from "../modules/site/application/site.app";
 import ProfileApp from "../modules/profile/application/profile.app";
+import AuthApp from "../modules/auth/application/auth.app";
 import { tenantMiddleware } from "../../middleware/tenant";
 import SalleApp from "../modules/salle/application/salle.app";
 import AnneeScolaireApp from "../modules/annee_scolaire/application/anneeScolaire.app";
@@ -23,6 +24,7 @@ export class ApiRoutes {
 
   //utilisateur
   private user: UserApp;
+  private auth: AuthApp;
   private roles: RolesApp;
   private rolesUser: RoleUserApp;
   private profile: ProfileApp;
@@ -48,6 +50,7 @@ export class ApiRoutes {
     this.app = app;
     this.router = Router();
     this.user = new UserApp(app);
+    this.auth = new AuthApp(app);
     this.roles = new RolesApp(app);
     this.rolesUser = new RoleUserApp(app);
     this.profile = new ProfileApp(app);
@@ -70,6 +73,7 @@ export class ApiRoutes {
     this.router.use(tenantMiddleware); // Appliquer le middleware tenant à toutes les routes suivantes
     
     //Utilisateur
+    this.router.use('/auth', this.auth.routes());
     this.router.use('/roles', this.roles.routes());
     this.router.use('/user', this.user.routes());
     this.router.use('/roles_user', this.rolesUser.routes());

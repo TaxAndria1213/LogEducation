@@ -1,86 +1,287 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { FiMenu } from "react-icons/fi";
 import { useAuth } from "../../hooks/useAuth";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { modules } from "../../routes/modules";
 import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import Header from "./Header";
+import { styles } from "../../styles/styles";
 
 export default function AppLayout() {
   const { user } = useAuth();
   console.log("🚀 ~ AppLayout ~ user:", user);
 
   const [openModule, setOpenModule] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [search, setSearch] = useState("");
 
   const toggleModule = (name: string) =>
     setOpenModule(openModule === name ? null : name);
 
+  const filteredModules = useMemo(
+    () =>
+      modules.filter((m) =>
+        m.name.toLowerCase().includes(search.trim().toLowerCase()),
+      ),
+    [search],
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
-      {/* Sidebar FIXÉE */}
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 p-4 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-6 text-gray-700">Modules</h2>
-        <nav className="space-y-2">
-          {modules.map((mod) => (
-            <div key={mod.name}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-gray-800">
+      {/* Sidebar */}
+      <aside
+        className={`fixed left-0 top-0 h-screen transition-all duration-300 border-r shadow-lg ${
+          collapsed ? "w-[72px] px-3" : "w-72 px-4"
+        } py-5 overflow-y-auto`}
+        style={{
+          backgroundColor: styles.color.sidebar.background,
+          borderColor: styles.color.sidebar.border,
+          color: styles.color.sidebar.text,
+        }}
+      >
+        <div className="flex items-center justify-between gap-2 mb-6">
+          <div className="flex items-center gap-3">
+            <div
+              className="cursor-pointer grid h-10 w-10 place-items-center rounded-2xl text-lg font-bold uppercase tracking-widest"
+              style={{
+                backgroundColor: styles.color.sidebar.hover,
+                color: styles.color.sidebar.active,
+              }}
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              {collapsed ? <FiMenu /> : user?.etablissement?.nom.slice(0, 2)}
+            </div>
+            {!collapsed && (
+              <div>
+                <div
+                  className="text-sm"
+                  style={{ color: styles.color.sidebar.text }}
+                >
+                  {user?.etablissement?.nom || "Etablissement"}
+                </div>
+                <div
+                  className="text-xs"
+                  style={{ color: styles.color.sidebar.textSecondary }}
+                >
+                  Navigation
+                </div>
+              </div>
+            )}
+          </div>
+          <label className="inline-flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!collapsed}
+              onChange={(e) => setCollapsed(!e.target.checked)}
+              className="peer sr-only"
+            />
+            <div
+              className="relative h-6 w-11 rounded-full transition"
+              style={{
+                backgroundColor: collapsed
+                  ? styles.color.sidebar.hover
+                  : styles.color.primary,
+              }}
+            >
               <div
-                onClick={() => toggleModule(mod.name)}
-                className="flex items-center justify-between px-2 py-2 rounded-md cursor-pointer hover:bg-gray-100"
+                className="absolute left-1 top-1 h-4 w-4 rounded-full transition peer-checked:translate-x-5"
+                style={{ backgroundColor: styles.color.sidebar.background }}
+              />
+            </div>
+            <span
+              className="text-[11px] uppercase tracking-[0.12em]"
+              style={{ color: styles.color.sidebar.textSecondary }}
+            >
+              {collapsed ? "Ouvrir" : "Fermer"}
+            </span>
+          </label>
+        </div>
+
+        {!collapsed && (
+          <div className="mb-4">
+            <div
+              className="text-[11px] uppercase tracking-[0.15em] mb-2"
+              style={{ color: styles.color.sidebar.textSecondary }}
+            >
+              Recherche
+            </div>
+            <div className="relative">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl px-3 py-2 text-sm outline-none border"
+                style={{
+                  backgroundColor: styles.color.sidebar.background,
+                  color: styles.color.sidebar.text,
+                  borderColor: styles.color.sidebar.border,
+                }}
+                placeholder="Filtrer les modules..."
+              />
+            </div>
+          </div>
+        )}
+
+        <nav className="space-y-2">
+          {filteredModules.map((mod) => {
+            const hasChildren = !!mod.submodules;
+            const active = openModule === mod.name;
+            const Row = ({ children }: { children: React.ReactNode }) => (
+              <div
+                className="flex items-center gap-3 rounded-xl px-3 py-2 transition cursor-pointer"
+                style={{
+                  color: styles.color.sidebar.text,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    styles.color.sidebar.hover;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+                onClick={() => (hasChildren ? toggleModule(mod.name) : null)}
               >
-                {!mod.submodules ? (
+                {children}
+              </div>
+            );
+
+            return (
+              <div key={mod.name}>
+                {hasChildren ? (
+                  <Row>
+                    <div
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold uppercase"
+                      style={{
+                        backgroundColor: collapsed ? "transparent" : styles.color.sidebar.hover,
+                        color: styles.color.sidebar.active,
+                      }}
+                      onClick={() => {toggleModule(mod.name)
+                        setCollapsed(false)
+                      }}
+                    >
+                      {mod.icon ?? mod.name.slice(0, 2)}
+                    </div>
+                    {!collapsed && (
+                      <div
+                        className="flex-1 text-sm font-semibold"
+                        style={{ color: styles.color.sidebar.text }}
+                      >
+                        {mod.name}
+                      </div>
+                    )}
+                    {hasChildren && !collapsed && (
+                      <span
+                        className="text-xs"
+                        style={{ color: styles.color.sidebar.textSecondary }}
+                      >
+                        {active ? <FiChevronDown /> : <FiChevronRight />}
+                      </span>
+                    )}
+                  </Row>
+                ) : (
                   <NavLink
                     to={mod.path as string}
-                    className={({ isActive }) =>
-                      `flex-1 block text-sm font-medium ${
-                        isActive
-                          ? "text-blue-600 font-semibold"
-                          : "text-gray-700"
-                      }`
-                    }
+                    className={`block rounded-xl`}
+                    style={({ isActive }) => ({
+                      backgroundColor: isActive
+                        ? styles.color.sidebar.active
+                        : "transparent",
+                      border: isActive
+                        ? `1px solid ${styles.color.sidebar.active}`
+                        : "none",
+                    })}
                   >
-                    {mod.name}
-                  </NavLink>
-                ) : (
-                  <span className="flex-1 block text-sm font-medium text-gray-700">
-                    {mod.name}
-                  </span>
-                )}
-                {mod.submodules && (
-                  <span className="text-gray-500 text-xs">
-                    {openModule === mod.name ? (
-                      <FiChevronDown />
-                    ) : (
-                      <FiChevronRight />
+                    {({ isActive }) => (
+                      <div
+                        className="flex items-center gap-3 px-3 py-2 transition"
+                        style={{
+                          color: isActive
+                            ? styles.color.sidebar.activeText
+                            : styles.color.sidebar.text,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.backgroundColor =
+                              styles.color.sidebar.hover;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }
+                        }}
+                      >
+                        <div
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold uppercase"
+                          style={{
+                            backgroundColor: isActive
+                              ? styles.color.sidebar.activeText
+                              : styles.color.sidebar.hover,
+                            color: isActive
+                              ? styles.color.sidebar.active
+                              : styles.color.sidebar.active,
+                          }}
+                        >
+                          {(mod.icon as string) ?? mod.name.slice(0, 2)}
+                        </div>
+                        {!collapsed && (
+                          <div className="flex-1 text-sm font-semibold">
+                            {mod.name}
+                          </div>
+                        )}
+                      </div>
                     )}
-                  </span>
+                  </NavLink>
+                )}
+
+                {hasChildren && active && !collapsed && (
+                  <div
+                    className="ml-4 mt-1 space-y-1 pl-3"
+                    style={{ borderLeftColor: styles.color.sidebar.border }}
+                  >
+                    {mod.submodules!.map((sub) => (
+                      <NavLink
+                        key={sub.path}
+                        to={sub.path as string}
+                        className={`flex items-center justify-between rounded-lg px-2 py-1.5 text-sm transition`}
+                        style={({ isActive }) => ({
+                          backgroundColor: isActive
+                            ? styles.color.sidebar.active
+                            : "transparent",
+                          color: isActive
+                            ? styles.color.sidebar.activeText
+                            : styles.color.sidebar.text,
+                          border: isActive
+                            ? `1px solid ${styles.color.sidebar.active}`
+                            : "none",
+                        })}
+                      >
+                        {({ isActive }) => (
+                          <span
+                            onMouseLeave={(e) => {
+                              if (!isActive) {
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
+                              }
+                            }}
+                          >
+                            {sub.name}
+                          </span>
+                        )}
+                      </NavLink>
+                    ))}
+                  </div>
                 )}
               </div>
-
-              {mod.submodules && openModule === mod.name && (
-                <div className="ml-4 mt-1 space-y-1">
-                  {mod.submodules.map((sub) => (
-                    <NavLink
-                      key={sub.path}
-                      to={sub.path as string}
-                      className={({ isActive }) =>
-                        `block px-2 py-1 rounded-md text-sm ${
-                          isActive
-                            ? "text-blue-600 bg-blue-50 font-semibold"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`
-                      }
-                    >
-                      {sub.name}
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </nav>
       </aside>
 
       {/* Contenu principal (avec marge gauche = largeur sidebar) */}
-      <div className="ml-64 flex flex-col h-screen overflow-hidden">
+      <div
+        className={`${collapsed ? "ml-[72px]" : "ml-72"} flex flex-col h-screen overflow-hidden transition-all duration-300`}
+      >
         {/* Header collant */}
         <Header />
 

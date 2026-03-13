@@ -18,11 +18,23 @@ export default function IdentifiantEleveList() {
 
   const columns: ColumnDef<IdentifiantEleve>[] = [
     {
-      key: "nom",
-      header: "Nom",
-      accessor: "nom",
+      key: "type",
+      header: "Type",
+      accessor: "type",
       sortable: true,
-      sortKey: "nom",
+      sortKey: "type",
+    },
+    {
+      key: "valeur",
+      header: "Valeur",
+      accessor: "valeur",
+      sortable: true,
+      sortKey: "valeur",
+    },
+    {
+      key: "eleve",
+      header: "Élève",
+      render: (row: any) => row.eleve?.code_eleve ?? row.eleve_id,
     },
     {
       key: "created_at",
@@ -71,14 +83,15 @@ export default function IdentifiantEleveList() {
       initialQuery={{
         page: 1,
         take: 10,
-        // Exemple: includes relationnelles
-        // includeAll: true,
-        // includes: ["etablissement"],
-        // where: { etablissement_id },
+        includeSpec: { eleve: true },
       }}
       showSearch
       onSearchBuildWhere={(text) => ({
-        OR: [{ nom: { contains: text } }],
+        OR: [
+          { type: { contains: text } },
+          { valeur: { contains: text } },
+          { eleve: { code_eleve: { contains: text } } },
+        ],
         // etablissement_id,
       })}
     />

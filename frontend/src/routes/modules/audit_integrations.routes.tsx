@@ -1,8 +1,10 @@
+import { FiPlusCircle } from "react-icons/fi";
 import type { menu } from "../../types/types";
 
 export const audit_integrations: menu = {
   key: "audit_integrations",
   name: "Audit & intégrations",
+  icon: <FiPlusCircle />,
   submodules: [
     {
       key: "journal_audit",

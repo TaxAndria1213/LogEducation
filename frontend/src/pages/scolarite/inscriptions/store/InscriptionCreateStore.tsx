@@ -8,10 +8,8 @@ import type { AnneeScolaire, Classe } from "../../../../types/models";
 import type { InscriptionScolarite } from "../../../../types/form";
 import ClasseService from "../../../../services/classe.service";
 
-export type InscriptionCreateInput = Omit<
-  Inscription,
-  "id" | "created_at" | "updated_at"
->;
+export type InscriptionCreateInput = Partial<
+  Inscription>;
 
 type State = {
   loading: boolean;
@@ -22,8 +20,10 @@ type State = {
   // option pour la scolarité
   scolariteInitialData: Partial<InscriptionScolarite> | null;
   classeOptions: { value: string; label: string }[];
+  anneeScolaireId: string | null;
 
   onCreate: (inscription: InscriptionCreateInput) => Promise<any>;
+  onCreateFull: (payload: any) => Promise<any>;
   setLoading: (loading: boolean) => void;
   setInscription: (inscription: InscriptionCreateInput) => void;
   getInscriptionOptions: (etablissement_id: string) => Promise<void>;
@@ -37,6 +37,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
   initialData: null,
   scolariteInitialData: null,
   classeOptions: [],
+  anneeScolaireId: null,
 
   setLoading: (loading: boolean) => set({ loading }),
 
@@ -53,6 +54,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
       await inscriptionService.getStudentRegisteredNumberThisYear(
         anneeScolaire.id,
       );
+    set({ anneeScolaireId: anneeScolaire.id });
 
     //// mise en forme des données de code
     if (anneeScolaire) {
@@ -71,7 +73,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
     const classeService = new ClasseService();
     const classes = await classeService.getAll({
       take: 1000,
-      where: JSON.stringify({ etablissement_id: etablissement_id }),
+      where: JSON.stringify({ etablissement_id: etablissement_id, annee_scolaire_id: anneeScolaire.id }),
     })
 
     if (classes?.status.success) {
@@ -113,4 +115,17 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
 
   setInscription: (inscription: InscriptionCreateInput) =>
     set({ inscription: inscription }),
+
+  onCreateFull: async (payload: any): Promise<any> => {
+    try {
+      const result = await get().service.createFull(payload);
+      if (result?.status?.success) {
+        return result;
+      }
+      throw new Error();
+    } catch (error) {
+      console.log("🚀 ~ error:", error);
+      return { status: { success: false } };
+    }
+  },
 }));

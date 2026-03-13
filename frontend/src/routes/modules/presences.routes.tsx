@@ -1,8 +1,11 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { menu } from "../../types/types";
+import { faCalendarCheck } from "@fortawesome/free-solid-svg-icons";
 
 export const presences: menu = {
   key: "presences",
   name: "Présences",
+  icon: <FontAwesomeIcon icon={faCalendarCheck} />,
   submodules: [
     {
       key: "sessions_appel",

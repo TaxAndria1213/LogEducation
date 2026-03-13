@@ -12,6 +12,7 @@ import { useAuth } from "../../../auth/AuthContext";
 import InscriptionList from "./components/table/InscriptionTable";
 import InscriptionForm from "./components/form/InscriptionForm";
 import InscriptionDashboard from "./components/dashboard/InscriptionDashboard";
+import ReinscriptionForm from "./components/reinscription/ReinscriptionForm";
 
 function InscriptionsIndex() {
   const { user, roles } = useAuth();
@@ -92,12 +93,18 @@ function InscriptionsIndex() {
               setRenderedComponent("add");
               setRenderState(3);
             }}
-            onReinscription={() => setRenderedComponent("add")}
+            onReinscription={() => {
+              setRenderedComponent("reinscription");
+              setRenderState(3);
+            }}
           />
         );
 
       case "list":
         return <InscriptionList />;
+
+      case "reinscription":
+        return <ReinscriptionForm />;
 
       case "add":
         return <InscriptionForm />;

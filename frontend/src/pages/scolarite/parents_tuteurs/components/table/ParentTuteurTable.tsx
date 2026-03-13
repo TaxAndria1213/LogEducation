@@ -18,11 +18,21 @@ export default function ParentTuteurList() {
 
   const columns: ColumnDef<ParentTuteur>[] = [
     {
-      key: "nom",
-      header: "Nom",
-      accessor: "nom",
+      key: "nom_complet",
+      header: "Nom complet",
+      accessor: "nom_complet",
       sortable: true,
-      sortKey: "nom",
+      sortKey: "nom_complet",
+    },
+    {
+      key: "telephone",
+      header: "Téléphone",
+      accessor: "telephone",
+    },
+    {
+      key: "email",
+      header: "Email",
+      accessor: "email",
     },
     {
       key: "created_at",
@@ -78,7 +88,11 @@ export default function ParentTuteurList() {
       }}
       showSearch
       onSearchBuildWhere={(text) => ({
-        OR: [{ nom: { contains: text } }],
+        OR: [
+          { nom_complet: { contains: text } },
+          { email: { contains: text } },
+          { telephone: { contains: text } },
+        ],
         etablissement_id,
       })}
     />

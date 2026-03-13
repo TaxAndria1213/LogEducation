@@ -9,11 +9,14 @@ import {
 } from "../../../../../components/Form/multistep/MultiStepFormWizard";
 import { useAuth } from "../../../../../auth/AuthContext";
 import { useInscriptionCreateStore } from "../../store/InscriptionCreateStore";
+import { useInfo } from "../../../../../hooks/useInfo";
+import type { StatutInscription } from "../../../../../types/models";
 
 type WizardData = {
   eleve?: any;
   scolarite?: any;
-  tuteur?: any;
+  tuteur1?: any;
+  tuteur2?: any;
   services?: any;
   finance?: any;
   echeancier?: any;
@@ -21,7 +24,12 @@ type WizardData = {
 
 export default function InscriptionForm() {
   const {etablissement_id} = useAuth();
+  const { info } = useInfo();
+
   const getEtablissementOptions = useInscriptionCreateStore((state) => state.getInscriptionOptions)
+  const anneeScolaireId = useInscriptionCreateStore((state) => state.anneeScolaireId)
+  const onCreateInscriptionFull = useInscriptionCreateStore((state) => state.onCreateFull);
+  const setLoading = useInscriptionCreateStore((state) => state.setLoading);
 
   useEffect(() => {
     if(etablissement_id) {
@@ -500,7 +508,55 @@ export default function InscriptionForm() {
   );
 
   const handleFinish = async (finalData: WizardData) => {
-    console.log("✅ DONNÉES FINALES INSCRIPTION ÉLÈVE :", finalData);
+    try {
+      setLoading(true);
+
+      if (!etablissement_id) {
+        info("Établissement introuvable, veuillez vous reconnecter.", "error");
+        return;
+      }
+
+      if (!anneeScolaireId) {
+        info("Année scolaire non chargée. Rechargez la page.", "error");
+        return;
+      }
+
+      const scolarite = finalData.scolarite ?? {};
+      if (!scolarite.classe_id) {
+        info("Merci de sélectionner une classe.", "warning");
+        return;
+      }
+
+      const payload = {
+        etablissement_id,
+        annee_scolaire_id: anneeScolaireId,
+        eleve: finalData.eleve ?? {},
+        scolarite: {
+          ...scolarite,
+          statut_inscription: (scolarite.statut_inscription ?? "INSCRIT") as StatutInscription,
+        },
+        tuteurs: [finalData.tuteur1, finalData.tuteur2]
+          .filter(Boolean)
+          .filter((t: any) => t && (t.nom || t.prenom))
+          .map((t: any) => ({
+            ...t,
+            est_principal: t.est_principal === "true" || t.est_principal === true,
+            autorise_recuperation: t.autorise_recuperation === "true" || t.autorise_recuperation === true,
+          })),
+      };
+
+      const result = await onCreateInscriptionFull(payload);
+      if (!result?.status?.success) {
+        throw new Error("Création de l'inscription impossible");
+      }
+
+      info("Élève inscrit avec succès.", "success");
+    } catch (error) {
+      console.error("🚨 handleFinish inscription:", error);
+      info("Impossible de finaliser l'inscription.", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

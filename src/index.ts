@@ -2,6 +2,8 @@ import express, { Application, Request, Response } from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { ApiRoutes } from "./app/api/routes";
 import mysql from "mysql2/promise";
 import { JwtService } from "./app/service/jwtService";
@@ -30,17 +32,37 @@ class Server {
     const jwt = new JwtService(secret);
     const authGuard = new AuthGuard(jwt);
 
+    // Security middlewares
+    this.app.use(helmet()); // Security headers
+
+    // Rate limiting
+    const limiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 1000, // limit each IP to 100 requests per windowMs
+      message: "Too many requests from this IP, please try again later.",
+    });
+    this.app.use(limiter);
+
     if (process.env.NODE_ENV === "development") {
       this.app.use(morgan("dev"));
     }
-    this.app.use(cors());
+
+    // CORS configuration - restrict to specific origins
+    const corsOptions = {
+      origin: process.env.FRONTEND_URL || "http://localhost:5173", // Default to Vite dev server
+      credentials: true,
+    };
+    this.app.use(cors(corsOptions));
+
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+
     this.app.use(
       "/api",
       (req, res, next) => {
-        // Skip authGuard for /api/user/create
-        if ((req.path === "/user/create" && req.method === "POST") || (req.path === "/user/login" && req.method === "POST")) {
+        // Skip authGuard for /api/user/create and /api/auth/login
+        if ((req.path === "/user/create" && req.method === "POST") ||
+            (req.path === "/auth/login" && req.method === "POST")) {
           return next();
         }
         Promise.resolve(authGuard.handle(req, res, next)).catch(next);
@@ -49,17 +71,17 @@ class Server {
       new SystemApiRoutes(this.app).routes()
     );
 
-    // this.app.use(
-    //   "/api",
-    //   (req, res, next) => {
-    //     // Skip authGuard for /api/user/create
-    //     if ((req.path === "/user/create" && req.method === "POST") || (req.path === "/user/login" && req.method === "POST")) {
-    //       return next();
-    //     }
-    //     Promise.resolve(authGuard.handle(req, res, next)).catch(next);
-    //   },
-    //   new SystemApiRoutes(this.app).routes()
-    // );
+    // Global error handler
+    this.app.use((err: Error & { statusCode?: number }, req: Request, res: Response) => {
+      console.error("Error:", err);
+      const statusCode = err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      res.status(statusCode).json({
+        success: false,
+        message,
+        ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+      });
+    });
   }
 
   public static getInstance(port?: number): Server {

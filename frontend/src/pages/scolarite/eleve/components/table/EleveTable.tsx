@@ -18,22 +18,45 @@ export default function EleveList() {
 
   const columns: ColumnDef<Eleve>[] = [
     {
+      key: "code_eleve",
+      header: "Code élève",
+      render: (row) => row.code_eleve ?? "—",
+      sortable: true,
+      sortKey: "code_eleve",
+    },
+    
+    {
       key: "nom",
       header: "Nom",
       accessor: "nom",
       sortable: true,
       sortKey: "nom",
+      render: (row) => row.utilisateur?.profil?.nom ?? "—", 
     },
     {
-      key: "created_at",
-      header: "Créé le",
-      accessor: "created_at",
+      key: "prenom",
+      header: "Prénom",
+      accessor: "prenom",
       sortable: true,
-      sortKey: "created_at",
-      render: (row) => {
-        const date = formatDateWithLocalTimezone(row.created_at.toString());
-        return date.date;
-      },
+      sortKey: "prenom",
+      render: (row) => row.utilisateur?.profil?.prenom ?? "—", 
+    },
+    {
+      key: "date_entree",
+      header: "Date d'entrée",
+      render: (row) =>
+        row.date_entree
+          ? formatDateWithLocalTimezone(row.date_entree.toString()).date
+          : "—",
+      sortable: true,
+      sortKey: "date_entree",
+    },
+    {
+      key: "statut",
+      header: "Statut",
+      accessor: "statut",
+      sortable: true,
+      sortKey: "statut",
     },
   ];
 
@@ -42,7 +65,7 @@ export default function EleveList() {
       label: "Voir",
       variant: "secondary",
       onClick: (row) => {
-        console.log("voir", row.id);
+        console.log("voir", row);
       },
     },
     {
@@ -72,13 +95,19 @@ export default function EleveList() {
         page: 1,
         take: 10,
         // Exemple: includes relationnelles
-        // includeAll: true,
-        // includes: ["etablissement"],
+        includeSpec: {
+          utilisateur: {
+            include: { profil: true },
+          }
+        },
         where: { etablissement_id },
       }}
       showSearch
       onSearchBuildWhere={(text) => ({
-        OR: [{ nom: { contains: text } }],
+        OR: [
+          { code_eleve: { contains: text } },
+          { statut: { contains: text } },
+        ],
         etablissement_id,
       })}
     />

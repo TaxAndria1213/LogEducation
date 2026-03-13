@@ -9,7 +9,7 @@ type State = {
   setRenderedComponent: (value: string) => void;
 };
 
-const allowedViews = ["add", "list", "dashboard"] as const;
+const allowedViews = ["add", "list", "dashboard", "reinscription"] as const;
 
 export const useInscriptionStore = create<State>((set) => {
   return {
