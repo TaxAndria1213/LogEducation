@@ -1,0 +1,20 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator types {
+  provider = "prisma-generator-typescript-interfaces"
+  output   = "../generated/prisma-models.ts"
+}
+
+generator zod {
+  provider = "zod-prisma-types"
+  output   = "../generated/zod"
+}
+

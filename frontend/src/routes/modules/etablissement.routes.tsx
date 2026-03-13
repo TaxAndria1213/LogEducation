@@ -1,0 +1,48 @@
+import AnneeScolaireIndex from "../../pages/etablissement/anneeScolaire/AnneeScolaireIndex";
+import PeriodeIndex from "../../pages/etablissement/periodes/PeriodeIndex";
+import ProfileEtablissementIndex from "../../pages/etablissement/profileEtablissement/ProfileEtablissementIndex";
+import SalleIndex from "../../pages/etablissement/salles/SalleIndex";
+import SitesIndex from "../../pages/etablissement/sites/SitesIndex";
+import type { menu } from "../../types/types";
+
+export const etablissement: menu = {
+  key: "etablissement",
+  name: "Etablissement",
+  submodules: [
+    {
+      key: "profile_etablissement",
+      name: "Profil de l'établissement",
+      path: "/etablissement/profile",
+      elements: <ProfileEtablissementIndex />,
+    },
+    {
+      key: "sites",
+      name: "Sites",
+      path: "/etablissement/sites",
+      elements: <SitesIndex />,
+    },
+    {
+      key: "salles",
+      name: "Salles",
+      path: "/etablissement/salles",
+      elements: <SalleIndex />,
+    },
+    {
+      key: "annee_scolaire",
+      name: "Année scolaire",
+      path: "/etablissement/annee_scolaire",
+      elements: <AnneeScolaireIndex />,
+    },
+    {
+      key: "periodes",
+      name: "Périodes",
+      path: "/etablissement/periodes",
+      elements: <PeriodeIndex />,
+    },
+    {
+      key: "referentiels",
+      name: "Référentiels",
+      path: "/etablissement/referentiels",
+    },
+  ],
+};

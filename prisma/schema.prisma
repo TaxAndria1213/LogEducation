@@ -1,0 +1,1423 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator types {
+  provider = "prisma-generator-typescript-interfaces"
+  output   = "../generated/prisma-models.ts"
+}
+
+generator zod {
+  provider = "zod-prisma-types"
+  output   = "../generated/zod"
+}
+
+/**
+ * =========================
+ * ENUMS (simples)
+ * =========================
+ */
+enum StatutCompte {
+  ACTIF
+  INACTIF
+  SUSPENDU
+}
+
+enum StatutInscription {
+  INSCRIT
+  TRANSFERE
+  SORTI
+}
+
+enum StatutPresence {
+  PRESENT
+  ABSENT
+  RETARD
+  EXCUSE
+}
+
+enum StatutFacture {
+  BROUILLON
+  EMISE
+  PARTIELLE
+  PAYEE
+  ANNULEE
+  EN_RETARD
+}
+
+enum TypeCanal {
+  EMAIL
+  SMS
+  APP
+}
+
+enum TypeEvaluation {
+  DEVOIR
+  EXAMEN
+  ORAL
+  AUTRE
+}
+
+/**
+ * =========================
+ * 1) NOYAU
+ * =========================
+ */
+model Etablissement {
+  id              String  @id @default(uuid())
+  nom             String
+  code            String? @unique
+  fuseau_horaire  String? // ex: Indian/Antananarivo
+  parametres_json Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  sites                    Site[]
+  annees                   AnneeScolaire[]
+  etablissementReferenciel EtablissementReferenciel[]
+  utilisateurs             Utilisateur[]
+  roles                    Role[]
+  permissions              Permission[]
+  eleves                   Eleve[]
+  personnel                Personnel[]
+  departements             Departement[]
+  matieres                 Matiere[]
+  canaux                   CanalCommunication[]
+  catalogueFrais           CatalogueFrais[]
+  remises                  Remise[]
+  fichiers                 Fichier[]
+  journauxAudit            JournalAudit[]
+  webhooks                 Webhook[]
+  jetons                   JetonIntegration[]
+  ParentTuteur             ParentTuteur[]
+  NiveauScolaire           NiveauScolaire[]
+  Classe                   Classe[]
+  Programme                Programme[]
+  Cours                    Cours[]
+  RegleNote                RegleNote[]
+  EvenementCalendrier      EvenementCalendrier[]
+  Annonce                  Annonce[]
+  Message                  Message[]
+  Facture                  Facture[]
+
+  @@map("etablissements")
+}
+
+model Site {
+  id               String  @id @default(uuid())
+  etablissement_id String
+  nom              String
+  adresse          String?
+  telephone        String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement         @relation(fields: [etablissement_id], references: [id])
+  salles        Salle[]
+  classes       Classe[]
+  evenements    EvenementCalendrier[]
+
+  @@index([etablissement_id])
+  @@map("sites")
+}
+
+model AnneeScolaire {
+  id               String   @id @default(uuid())
+  etablissement_id String
+  nom              String // ex: 2025-2026
+  date_debut       DateTime
+  date_fin         DateTime
+  est_active       Boolean  @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement        Etablissement         @relation(fields: [etablissement_id], references: [id])
+  periodes             Periode[]
+  classes              Classe[]
+  inscriptions         Inscription[]
+  programmes           Programme[]
+  cours                Cours[]
+  factures             Facture[]
+  plansPaiement        PlanPaiementEleve[]
+  abonnementsTransport AbonnementTransport[]
+  abonnementsCantine   AbonnementCantine[]
+
+  @@index([etablissement_id])
+  @@map("annees_scolaires")
+}
+
+model Periode {
+  id                String   @id @default(uuid())
+  annee_scolaire_id String
+  nom               String // Trimestre 1, Semestre 2...
+  date_debut        DateTime
+  date_fin          DateTime
+  ordre             Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  annee       AnneeScolaire @relation(fields: [annee_scolaire_id], references: [id])
+  evaluations Evaluation[]
+  bulletins   Bulletin[]
+
+  @@index([annee_scolaire_id])
+  @@map("periodes")
+}
+
+model Salle {
+  id       String  @id @default(uuid())
+  site_id  String
+  nom      String
+  capacite Int?
+  type     String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  site          Site            @relation(fields: [site_id], references: [id])
+  emploiDuTemps EmploiDuTemps[]
+
+  @@index([site_id])
+  @@map("salles")
+}
+
+model Referenciel {
+  id    String @id @default(uuid())
+  titre String
+  code  String
+
+  etablissementReferenciel EtablissementReferenciel[]
+
+  @@map("referenciel")
+}
+
+model EtablissementReferenciel {
+  id               String        @id @default(uuid())
+  referenciel_id   String
+  etablissement_id String
+  valeur           String
+  etablissement    Etablissement @relation(fields: [etablissement_id], references: [id])
+  Referenciel      Referenciel?  @relation(fields: [referencielId], references: [id])
+  referencielId    String?
+
+  @@index([etablissement_id])
+  @@map("etablissement_referenciel")
+}
+
+/**
+ * =========================
+ * 2) COMPTES & DROITS
+ * =========================
+ */
+model Utilisateur {
+  id                String       @id @default(uuid())
+  etablissement_id  String?
+  email             String?
+  telephone         String?
+  mot_de_passe_hash String?
+  statut            StatutCompte @default(ACTIF)
+  dernier_login     DateTime?
+  scope_json        Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement       Etablissement?        @relation(fields: [etablissement_id], references: [id])
+  profil              Profil?
+  roles               UtilisateurRole[]
+  messagesEnvoyes     Message[]             @relation("messages_envoyes")
+  notifications       Notification[]
+  fichiers            Fichier[]             @relation("fichiers_proprietaire")
+  journauxAudit       JournalAudit[]
+  Eleve               Eleve[]
+  ParentTuteur        ParentTuteur[]
+  Personnel           Personnel[]
+  MessageDestinataire MessageDestinataire[]
+
+  @@unique([etablissement_id, email])
+  @@index([etablissement_id])
+  @@map("utilisateurs")
+}
+
+model Profil {
+  id                   String    @id @default(uuid())
+  utilisateur_id       String    @unique
+  prenom               String
+  nom                  String
+  date_naissance       DateTime?
+  genre                String?
+  photo_url            String?
+  adresse              String?
+  contact_urgence_json Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  utilisateur Utilisateur @relation(fields: [utilisateur_id], references: [id])
+
+  @@map("profils")
+}
+
+model Role {
+  id               String  @id @default(uuid())
+  etablissement_id String?
+  nom              String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  scope_json Json?
+
+  etablissement Etablissement?    @relation(fields: [etablissement_id], references: [id])
+  permissions   RolePermission[]
+  utilisateurs  UtilisateurRole[]
+
+  @@index([etablissement_id])
+  @@map("roles")
+}
+
+model Permission {
+  id               String  @id @default(uuid())
+  etablissement_id String?
+  code             String
+  description      String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement?   @relation(fields: [etablissement_id], references: [id])
+  roles         RolePermission[]
+
+  @@unique([etablissement_id, code])
+  @@index([etablissement_id])
+  @@map("permissions")
+}
+
+model RolePermission {
+  role_id       String
+  permission_id String
+
+  role       Role       @relation(fields: [role_id], references: [id])
+  permission Permission @relation(fields: [permission_id], references: [id])
+
+  @@id([role_id, permission_id])
+  @@map("roles_permissions")
+}
+
+model UtilisateurRole {
+  utilisateur_id String
+  role_id        String
+  scope_json     Json?
+
+  utilisateur Utilisateur @relation(fields: [utilisateur_id], references: [id])
+  role        Role        @relation(fields: [role_id], references: [id])
+
+  @@id([utilisateur_id, role_id])
+  @@map("utilisateurs_roles")
+}
+
+/**
+ * =========================
+ * 3) SCOLARITÉ
+ * =========================
+ */
+model Eleve {
+  id               String    @id @default(uuid())
+  etablissement_id String
+  code_eleve       String?
+  utilisateur_id   String?
+  statut           String? // simple
+  date_entree      DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement        Etablissement           @relation(fields: [etablissement_id], references: [id])
+  utilisateur          Utilisateur?            @relation(fields: [utilisateur_id], references: [id])
+  liensParents         EleveParentTuteur[]
+  inscriptions         Inscription[]
+  identifiants         IdentifiantEleve[]
+  notes                Note[]
+  presences            PresenceEleve[]
+  justificatifs        JustificatifAbsence[]
+  incidents            IncidentDisciplinaire[]
+  recompenses          Recompense[]
+  bulletins            Bulletin[]
+  factures             Facture[]
+  plansPaiement        PlanPaiementEleve[]
+  abonnementsTransport AbonnementTransport[]
+  abonnementsCantine   AbonnementCantine[]
+  emprunts             Emprunt[]
+
+  @@unique([etablissement_id, code_eleve])
+  @@index([etablissement_id])
+  @@map("eleves")
+}
+
+model ParentTuteur {
+  id               String  @id @default(uuid())
+  etablissement_id String
+  utilisateur_id   String?
+  nom_complet      String
+  telephone        String?
+  email            String?
+  adresse          String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement       @relation(fields: [etablissement_id], references: [id])
+  utilisateur   Utilisateur?        @relation(fields: [utilisateur_id], references: [id])
+  eleves        EleveParentTuteur[]
+
+  @@index([etablissement_id])
+  @@map("parents_tuteurs")
+}
+
+model EleveParentTuteur {
+  eleve_id              String
+  parent_tuteur_id      String
+  relation              String? // père/mère/tuteur
+  est_principal         Boolean @default(false)
+  autorise_recuperation Boolean @default(true)
+
+  eleve         Eleve        @relation(fields: [eleve_id], references: [id])
+  parent_tuteur ParentTuteur @relation(fields: [parent_tuteur_id], references: [id])
+
+  @@id([eleve_id, parent_tuteur_id])
+  @@map("eleves_parents_tuteurs")
+}
+
+model NiveauScolaire {
+  id               String @id @default(uuid())
+  etablissement_id String
+  nom              String
+  ordre            Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+  classes       Classe[]
+  programmes    Programme[]
+
+  @@index([etablissement_id])
+  @@map("niveaux_scolaires")
+}
+
+model Classe {
+  id                      String  @id @default(uuid())
+  etablissement_id        String
+  annee_scolaire_id       String
+  niveau_scolaire_id      String
+  site_id                 String?
+  nom                     String // ex: 3A
+  enseignant_principal_id String? // référence vers Enseignant
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement        Etablissement  @relation(fields: [etablissement_id], references: [id])
+  annee                AnneeScolaire  @relation(fields: [annee_scolaire_id], references: [id])
+  niveau               NiveauScolaire @relation(fields: [niveau_scolaire_id], references: [id])
+  site                 Site?          @relation(fields: [site_id], references: [id])
+  enseignant_principal Enseignant?    @relation("classe_principal", fields: [enseignant_principal_id], references: [id])
+
+  inscriptions  Inscription[]
+  cours         Cours[]
+  sessionsAppel SessionAppel[]
+  bulletins     Bulletin[]
+  emploiDuTemps EmploiDuTemps[]
+
+  @@unique([annee_scolaire_id, nom, site_id])
+  @@index([etablissement_id])
+  @@index([annee_scolaire_id])
+  @@map("classes")
+}
+
+model Inscription {
+  id                String            @id @default(uuid())
+  eleve_id          String
+  classe_id         String
+  annee_scolaire_id String
+  date_inscription  DateTime          @default(now())
+  statut            StatutInscription @default(INSCRIT)
+  date_sortie       DateTime?
+  raison_sortie     String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve  Eleve         @relation(fields: [eleve_id], references: [id])
+  classe Classe        @relation(fields: [classe_id], references: [id])
+  annee  AnneeScolaire @relation(fields: [annee_scolaire_id], references: [id])
+
+  @@unique([eleve_id, annee_scolaire_id])
+  @@index([eleve_id])
+  @@index([annee_scolaire_id])
+  @@map("inscriptions")
+}
+
+model IdentifiantEleve {
+  id         String    @id @default(uuid())
+  eleve_id   String
+  type       String // CIN, acte...
+  valeur     String
+  delivre_le DateTime?
+  expire_le  DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve Eleve @relation(fields: [eleve_id], references: [id])
+
+  @@index([eleve_id])
+  @@map("identifiants_eleves")
+}
+
+/**
+ * =========================
+ * 4) PERSONNEL
+ * =========================
+ */
+model Personnel {
+  id               String    @id @default(uuid())
+  etablissement_id String
+  code_personnel   String?
+  utilisateur_id   String?
+  date_embauche    DateTime?
+  statut           String?
+  poste            String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement      @relation(fields: [etablissement_id], references: [id])
+  utilisateur   Utilisateur?       @relation(fields: [utilisateur_id], references: [id])
+  enseignant    Enseignant?
+  presences     PresencePersonnel?
+  Emprunt       Emprunt[]
+
+  @@index([etablissement_id])
+  @@map("personnel")
+}
+
+model Enseignant {
+  id                       String  @id @default(uuid())
+  personnel_id             String  @unique
+  departement_principal_id String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  personnel   Personnel    @relation(fields: [personnel_id], references: [id])
+  departement Departement? @relation(fields: [departement_principal_id], references: [id])
+
+  cours              Cours[]
+  evaluationsCreees  Evaluation[]    @relation("evaluations_createur")
+  sessionsAppel      SessionAppel[]
+  emploiDuTemps      EmploiDuTemps[]
+  classesPrincipales Classe[]        @relation("classe_principal")
+
+  @@map("enseignants")
+}
+
+model Departement {
+  id               String @id @default(uuid())
+  etablissement_id String
+  nom              String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+  matieres      Matiere[]
+  enseignants   Enseignant[]
+
+  @@index([etablissement_id])
+  @@map("departements")
+}
+
+/**
+ * =========================
+ * 5) PÉDAGOGIE
+ * =========================
+ */
+model Matiere {
+  id               String  @id @default(uuid())
+  etablissement_id String
+  code             String?
+  nom              String
+  departement_id   String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement   Etablissement      @relation(fields: [etablissement_id], references: [id])
+  departement     Departement?       @relation(fields: [departement_id], references: [id])
+  cours           Cours[]
+  lignesProgramme ProgrammeMatiere[]
+  lignesBulletin  BulletinLigne[]
+  EmploiDuTemps   EmploiDuTemps[]
+
+  @@index([etablissement_id])
+  @@map("matieres")
+}
+
+model Programme {
+  id                 String @id @default(uuid())
+  etablissement_id   String
+  annee_scolaire_id  String
+  niveau_scolaire_id String
+  nom                String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement  @relation(fields: [etablissement_id], references: [id])
+  annee         AnneeScolaire  @relation(fields: [annee_scolaire_id], references: [id])
+  niveau        NiveauScolaire @relation(fields: [niveau_scolaire_id], references: [id])
+
+  matieres ProgrammeMatiere[]
+
+  @@index([annee_scolaire_id])
+  @@map("programmes")
+}
+
+model ProgrammeMatiere {
+  id             String @id @default(uuid())
+  programme_id   String
+  matiere_id     String
+  heures_semaine Int?
+  coefficient    Float?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  programme Programme @relation(fields: [programme_id], references: [id])
+  matiere   Matiere   @relation(fields: [matiere_id], references: [id])
+
+  @@index([programme_id])
+  @@map("programmes_matieres")
+}
+
+model Cours {
+  id                   String @id @default(uuid())
+  etablissement_id     String
+  annee_scolaire_id    String
+  classe_id            String
+  matiere_id           String
+  enseignant_id        String
+  coefficient_override Float?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+  annee         AnneeScolaire @relation(fields: [annee_scolaire_id], references: [id])
+  classe        Classe        @relation(fields: [classe_id], references: [id])
+  matiere       Matiere       @relation(fields: [matiere_id], references: [id])
+  enseignant    Enseignant    @relation(fields: [enseignant_id], references: [id])
+
+  evaluations   Evaluation[]
+  emploiDuTemps EmploiDuTemps[]
+
+  @@unique([classe_id, matiere_id, annee_scolaire_id])
+  @@map("cours")
+}
+
+model TypeEvaluationRef {
+  id               String @id @default(uuid())
+  etablissement_id String
+  nom              String
+  poids_defaut     Float?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  evaluations Evaluation[]
+
+  @@index([etablissement_id])
+  @@map("types_evaluations")
+}
+
+model Evaluation {
+  id                     String         @id @default(uuid())
+  cours_id               String
+  periode_id             String
+  type_evaluation_id     String?
+  type                   TypeEvaluation @default(AUTRE)
+  titre                  String
+  date                   DateTime
+  note_max               Float          @default(20)
+  poids                  Float? // coefficient/poids
+  est_publiee            Boolean        @default(false)
+  cree_par_enseignant_id String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  cours    Cours              @relation(fields: [cours_id], references: [id])
+  periode  Periode            @relation(fields: [periode_id], references: [id])
+  typeRef  TypeEvaluationRef? @relation(fields: [type_evaluation_id], references: [id])
+  createur Enseignant?        @relation("evaluations_createur", fields: [cree_par_enseignant_id], references: [id])
+
+  notes Note[]
+
+  @@index([cours_id])
+  @@index([periode_id])
+  @@map("evaluations")
+}
+
+model Note {
+  id            String    @id @default(uuid())
+  evaluation_id String
+  eleve_id      String
+  score         Float
+  commentaire   String?
+  note_le       DateTime?
+  note_par      String? // id utilisateur/enseignant, simplifié
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  evaluation Evaluation @relation(fields: [evaluation_id], references: [id])
+  eleve      Eleve      @relation(fields: [eleve_id], references: [id])
+
+  @@unique([evaluation_id, eleve_id])
+  @@map("notes")
+}
+
+model RegleNote {
+  id               String  @id @default(uuid())
+  etablissement_id String
+  scope            String? // tenant/class/matiere...
+  regle_json       Json
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+
+  @@index([etablissement_id])
+  @@map("regles_notes")
+}
+
+model Bulletin {
+  id         String    @id @default(uuid())
+  eleve_id   String
+  periode_id String
+  classe_id  String
+  publie_le  DateTime?
+  statut     String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve   Eleve           @relation(fields: [eleve_id], references: [id])
+  periode Periode         @relation(fields: [periode_id], references: [id])
+  classe  Classe          @relation(fields: [classe_id], references: [id])
+  lignes  BulletinLigne[]
+
+  @@index([eleve_id])
+  @@index([periode_id])
+  @@map("bulletins")
+}
+
+model BulletinLigne {
+  id                     String  @id @default(uuid())
+  bulletin_id            String
+  matiere_id             String
+  moyenne                Float?
+  rang                   Int?
+  commentaire_enseignant String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  bulletin Bulletin @relation(fields: [bulletin_id], references: [id])
+  matiere  Matiere  @relation(fields: [matiere_id], references: [id])
+
+  @@index([bulletin_id])
+  @@map("bulletins_lignes")
+}
+
+/**
+ * =========================
+ * 6) TEMPS & PLANNING
+ * =========================
+ */
+model CreneauHoraire {
+  id               String @id @default(uuid())
+  etablissement_id String
+  nom              String
+  heure_debut      String // "08:00"
+  heure_fin        String // "09:00"
+  ordre            Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  emploiDuTemps EmploiDuTemps[]
+  sessionsAppel SessionAppel[]
+
+  @@index([etablissement_id])
+  @@map("creneaux_horaires")
+}
+
+model EmploiDuTemps {
+  id                 String    @id @default(uuid())
+  classe_id          String
+  cours_id           String?
+  matiere_id         String?
+  enseignant_id      String?
+  salle_id           String?
+  jour_semaine       Int // 1-7
+  creneau_horaire_id String
+  effectif_du        DateTime?
+  effectif_au        DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  classe     Classe         @relation(fields: [classe_id], references: [id])
+  cours      Cours?         @relation(fields: [cours_id], references: [id])
+  matiere    Matiere?       @relation(fields: [matiere_id], references: [id])
+  enseignant Enseignant?    @relation(fields: [enseignant_id], references: [id])
+  salle      Salle?         @relation(fields: [salle_id], references: [id])
+  creneau    CreneauHoraire @relation(fields: [creneau_horaire_id], references: [id])
+
+  @@index([classe_id])
+  @@map("emploi_du_temps")
+}
+
+model EvenementCalendrier {
+  id               String   @id @default(uuid())
+  etablissement_id String
+  site_id          String?
+  titre            String
+  debut            DateTime
+  fin              DateTime
+  type             String?
+  description      String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+  site          Site?         @relation(fields: [site_id], references: [id])
+
+  @@index([etablissement_id])
+  @@map("evenements_calendrier")
+}
+
+/**
+ * =========================
+ * 7) PRÉSENCES
+ * =========================
+ */
+model SessionAppel {
+  id                     String    @id @default(uuid())
+  classe_id              String
+  date                   DateTime
+  creneau_horaire_id     String
+  pris_par_enseignant_id String?
+  pris_le                DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  classe  Classe         @relation(fields: [classe_id], references: [id])
+  creneau CreneauHoraire @relation(fields: [creneau_horaire_id], references: [id])
+  prisPar Enseignant?    @relation(fields: [pris_par_enseignant_id], references: [id])
+
+  presences PresenceEleve[]
+
+  @@index([classe_id])
+  @@map("sessions_appel")
+}
+
+model PresenceEleve {
+  id               String         @id @default(uuid())
+  session_appel_id String
+  eleve_id         String
+  statut           StatutPresence
+  minutes_retard   Int?
+  note             String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  session SessionAppel @relation(fields: [session_appel_id], references: [id])
+  eleve   Eleve        @relation(fields: [eleve_id], references: [id])
+
+  @@unique([session_appel_id, eleve_id])
+  @@map("presences_eleves")
+}
+
+model MotifAbsence {
+  id                    String  @id @default(uuid())
+  etablissement_id      String
+  nom                   String
+  est_excuse_par_defaut Boolean @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  justificatifs JustificatifAbsence[]
+
+  @@index([etablissement_id])
+  @@map("motifs_absence")
+}
+
+model JustificatifAbsence {
+  id               String    @id @default(uuid())
+  eleve_id         String
+  date_debut       DateTime
+  date_fin         DateTime
+  motif_absence_id String?
+  document_url     String?
+  approuve_par     String? // id utilisateur
+  approuve_le      DateTime?
+  statut           String? // EN_ATTENTE / APPROUVE / REFUSE
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve Eleve         @relation(fields: [eleve_id], references: [id])
+  motif MotifAbsence? @relation(fields: [motif_absence_id], references: [id])
+
+  @@index([eleve_id])
+  @@map("justificatifs_absence")
+}
+
+model PresencePersonnel {
+  id           String    @id @default(uuid())
+  personnel_id String    @unique
+  date         DateTime?
+  statut       String?
+  note         String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  personnel Personnel @relation(fields: [personnel_id], references: [id])
+
+  @@map("presences_personnel")
+}
+
+/**
+ * =========================
+ * 8) DISCIPLINE
+ * =========================
+ */
+model IncidentDisciplinaire {
+  id          String   @id @default(uuid())
+  eleve_id    String
+  date        DateTime
+  signale_par String? // id utilisateur
+  description String
+  gravite     Int?
+  statut      String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve     Eleve                   @relation(fields: [eleve_id], references: [id])
+  sanctions SanctionDisciplinaire[]
+
+  @@index([eleve_id])
+  @@map("incidents_disciplinaires")
+}
+
+model SanctionDisciplinaire {
+  id          String    @id @default(uuid())
+  incident_id String
+  type_action String // avertissement, retenue...
+  debut       DateTime?
+  fin         DateTime?
+  notes       String?
+  decide_par  String? // id utilisateur
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  incident IncidentDisciplinaire @relation(fields: [incident_id], references: [id])
+
+  @@index([incident_id])
+  @@map("sanctions_disciplinaires")
+}
+
+model Recompense {
+  id        String   @id @default(uuid())
+  eleve_id  String
+  date      DateTime
+  points    Int?     @default(0)
+  raison    String?
+  donne_par String? // id utilisateur
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve Eleve @relation(fields: [eleve_id], references: [id])
+
+  @@index([eleve_id])
+  @@map("recompenses")
+}
+
+/**
+ * =========================
+ * 9) COMMUNICATION
+ * =========================
+ */
+model CanalCommunication {
+  id               String    @id @default(uuid())
+  etablissement_id String
+  type             TypeCanal
+  nom              String
+  config_json      Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+
+  @@index([etablissement_id])
+  @@map("canaux_communication")
+}
+
+model Annonce {
+  id               String    @id @default(uuid())
+  etablissement_id String
+  titre            String
+  contenu          String
+  publie_le        DateTime?
+  cree_par         String? // id utilisateur
+  cible_json       Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+
+  @@index([etablissement_id])
+  @@map("annonces")
+}
+
+model Message {
+  id                        String    @id @default(uuid())
+  etablissement_id          String
+  expediteur_utilisateur_id String
+  objet                     String?
+  corps                     String
+  envoye_le                 DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement         @relation(fields: [etablissement_id], references: [id])
+  expediteur    Utilisateur           @relation("messages_envoyes", fields: [expediteur_utilisateur_id], references: [id])
+  destinataires MessageDestinataire[]
+
+  @@index([etablissement_id])
+  @@map("messages")
+}
+
+model MessageDestinataire {
+  message_id     String
+  utilisateur_id String
+  statut         String? // sent/read
+  lu_le          DateTime?
+
+  message     Message     @relation(fields: [message_id], references: [id])
+  utilisateur Utilisateur @relation(fields: [utilisateur_id], references: [id])
+
+  @@id([message_id, utilisateur_id])
+  @@map("messages_destinataires")
+}
+
+model Notification {
+  id             String    @id @default(uuid())
+  utilisateur_id String
+  type           String
+  payload_json   Json?
+  lu_le          DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  utilisateur Utilisateur @relation(fields: [utilisateur_id], references: [id])
+
+  @@index([utilisateur_id])
+  @@map("notifications")
+}
+
+/**
+ * =========================
+ * 10) FINANCE
+ * =========================
+ */
+model CatalogueFrais {
+  id               String  @id @default(uuid())
+  etablissement_id String
+  nom              String
+  description      String?
+  montant          Decimal @db.Decimal(12, 2)
+  devise           String  @default("MGA")
+  est_recurrent    Boolean @default(false)
+  periodicite      String? // monthly/term/year
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement  @relation(fields: [etablissement_id], references: [id])
+  lignesFacture FactureLigne[]
+
+  @@index([etablissement_id])
+  @@map("catalogue_frais")
+}
+
+model PlanPaiementEleve {
+  id                String @id @default(uuid())
+  eleve_id          String
+  annee_scolaire_id String
+  plan_json         Json
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve Eleve         @relation(fields: [eleve_id], references: [id])
+  annee AnneeScolaire @relation(fields: [annee_scolaire_id], references: [id])
+
+  @@index([eleve_id])
+  @@map("plans_paiement_eleves")
+}
+
+model Facture {
+  id                String        @id @default(uuid())
+  etablissement_id  String
+  eleve_id          String
+  annee_scolaire_id String
+  numero_facture    String
+  date_emission     DateTime      @default(now())
+  date_echeance     DateTime?
+  statut            StatutFacture @default(EMISE)
+  total_montant     Decimal       @db.Decimal(12, 2)
+  devise            String        @default("MGA")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement  @relation(fields: [etablissement_id], references: [id])
+  eleve         Eleve          @relation(fields: [eleve_id], references: [id])
+  annee         AnneeScolaire  @relation(fields: [annee_scolaire_id], references: [id])
+  lignes        FactureLigne[]
+  paiements     Paiement[]
+
+  @@unique([etablissement_id, numero_facture])
+  @@index([etablissement_id])
+  @@map("factures")
+}
+
+model FactureLigne {
+  id                 String  @id @default(uuid())
+  facture_id         String
+  catalogue_frais_id String?
+  libelle            String
+  quantite           Int     @default(1)
+  prix_unitaire      Decimal @db.Decimal(12, 2)
+  montant            Decimal @db.Decimal(12, 2)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  facture Facture         @relation(fields: [facture_id], references: [id])
+  frais   CatalogueFrais? @relation(fields: [catalogue_frais_id], references: [id])
+
+  @@index([facture_id])
+  @@map("factures_lignes")
+}
+
+model Paiement {
+  id         String   @id @default(uuid())
+  facture_id String
+  paye_le    DateTime @default(now())
+  montant    Decimal  @db.Decimal(12, 2)
+  methode    String? // cash/bank/mobile
+  reference  String?
+  recu_par   String? // id utilisateur
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  facture Facture @relation(fields: [facture_id], references: [id])
+
+  @@index([facture_id])
+  @@map("paiements")
+}
+
+model Remise {
+  id               String @id @default(uuid())
+  etablissement_id String
+  nom              String
+  type             String // percent/fixed
+  valeur           Float
+  regles_json      Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+
+  @@index([etablissement_id])
+  @@map("remises")
+}
+
+/**
+ * =========================
+ * 11) BIBLIOTHÈQUE
+ * =========================
+ */
+model RessourceBibliotheque {
+  id               String  @id @default(uuid())
+  etablissement_id String
+  type             String // livre/materiel
+  titre            String
+  code             String?
+  auteur           String?
+  editeur          String?
+  annee            Int?
+  stock            Int?    @default(1)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  emprunts Emprunt[]
+
+  @@index([etablissement_id])
+  @@map("ressources_bibliotheque")
+}
+
+model Emprunt {
+  id                        String    @id @default(uuid())
+  ressource_bibliotheque_id String
+  eleve_id                  String?
+  personnel_id              String?
+  emprunte_le               DateTime  @default(now())
+  du_le                     DateTime?
+  retourne_le               DateTime?
+  statut                    String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  ressource RessourceBibliotheque @relation(fields: [ressource_bibliotheque_id], references: [id])
+  eleve     Eleve?                @relation(fields: [eleve_id], references: [id])
+  personnel Personnel?            @relation(fields: [personnel_id], references: [id])
+
+  @@index([ressource_bibliotheque_id])
+  @@map("emprunts")
+}
+
+/**
+ * =========================
+ * 12) TRANSPORT / CANTINE
+ * =========================
+ */
+model LigneTransport {
+  id                  String @id @default(uuid())
+  etablissement_id    String
+  nom                 String
+  infos_vehicule_json Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  arrets      ArretTransport[]
+  abonnements AbonnementTransport[]
+
+  @@index([etablissement_id])
+  @@map("lignes_transport")
+}
+
+model ArretTransport {
+  id                 String @id @default(uuid())
+  ligne_transport_id String
+  nom                String
+  geo_json           Json?
+  ordre              Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  ligne               LigneTransport        @relation(fields: [ligne_transport_id], references: [id])
+  AbonnementTransport AbonnementTransport[]
+
+  @@index([ligne_transport_id])
+  @@map("arrets_transport")
+}
+
+model AbonnementTransport {
+  id                 String  @id @default(uuid())
+  eleve_id           String
+  annee_scolaire_id  String
+  ligne_transport_id String
+  arret_transport_id String?
+  statut             String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve Eleve           @relation(fields: [eleve_id], references: [id])
+  annee AnneeScolaire   @relation(fields: [annee_scolaire_id], references: [id])
+  ligne LigneTransport  @relation(fields: [ligne_transport_id], references: [id])
+  arret ArretTransport? @relation(fields: [arret_transport_id], references: [id])
+
+  @@index([eleve_id])
+  @@map("abonnements_transport")
+}
+
+model FormuleCantine {
+  id               String  @id @default(uuid())
+  etablissement_id String
+  nom              String
+  prix             Decimal @db.Decimal(12, 2)
+  periodicite      String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  abonnements AbonnementCantine[]
+
+  @@index([etablissement_id])
+  @@map("formules_cantine")
+}
+
+model AbonnementCantine {
+  id                 String  @id @default(uuid())
+  eleve_id           String
+  annee_scolaire_id  String
+  formule_cantine_id String
+  statut             String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve   Eleve          @relation(fields: [eleve_id], references: [id])
+  annee   AnneeScolaire  @relation(fields: [annee_scolaire_id], references: [id])
+  formule FormuleCantine @relation(fields: [formule_cantine_id], references: [id])
+
+  @@index([eleve_id])
+  @@map("abonnements_cantine")
+}
+
+/**
+ * =========================
+ * 13) DOCUMENTS
+ * =========================
+ */
+model Fichier {
+  id                          String   @id @default(uuid())
+  etablissement_id            String
+  proprietaire_utilisateur_id String?
+  fournisseur_stockage        String?
+  chemin                      String
+  type_mime                   String?
+  taille                      Int?
+  checksum                    String?
+  televerse_le                DateTime @default(now())
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+  proprietaire  Utilisateur?  @relation("fichiers_proprietaire", fields: [proprietaire_utilisateur_id], references: [id])
+  liens         LienFichier[]
+
+  @@index([etablissement_id])
+  @@map("fichiers")
+}
+
+model LienFichier {
+  id          String  @id @default(uuid())
+  fichier_id  String
+  type_entite String // eleves, factures, incidents...
+  id_entite   String
+  tag         String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  fichier Fichier @relation(fields: [fichier_id], references: [id])
+
+  @@index([fichier_id])
+  @@map("liens_fichiers")
+}
+
+/**
+ * =========================
+ * 14) AUDIT & INTÉGRATIONS
+ * =========================
+ */
+model JournalAudit {
+  id                    String   @id @default(uuid())
+  etablissement_id      String
+  acteur_utilisateur_id String?
+  action                String
+  type_entite           String?
+  id_entite             String?
+  avant_json            Json?
+  apres_json            Json?
+  ip                    String?
+  date_action           DateTime @default(now())
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+  acteur        Utilisateur?  @relation(fields: [acteur_utilisateur_id], references: [id])
+
+  @@index([etablissement_id])
+  @@map("journaux_audit")
+}
+
+model Webhook {
+  id               String  @id @default(uuid())
+  etablissement_id String
+  url              String
+  evenements_json  Json?
+  secret           String?
+  est_actif        Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+
+  @@index([etablissement_id])
+  @@map("webhooks")
+}
+
+model JetonIntegration {
+  id               String    @id @default(uuid())
+  etablissement_id String
+  fournisseur      String
+  token_json       Json
+  expire_le        DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+
+  @@index([etablissement_id])
+  @@map("jetons_integrations")
+}
