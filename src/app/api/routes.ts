@@ -17,6 +17,9 @@ import NiveauApp from "../modules/niveau/application/niveau.app";
 import ParentTuteurApp from "../modules/parent_tuteur/application/parent_tuteur.app";
 import IdentifiantEleveApp from "../modules/identifiant_eleve/application/identifiant_eleve.app";
 import EleveApp from "../modules/eleve/application/eleve.app";
+import PersonnelApp from "../modules/personnel/application/personnel.app";
+import EnseignantApp from "../modules/enseignant/application/enseignant.app";
+import DepartementApp from "../modules/departement/application/departement.app";
 
 export class ApiRoutes {
   public app: Application;
@@ -44,6 +47,9 @@ export class ApiRoutes {
   private parentTuteur: ParentTuteurApp;
   private identifiantEleve: IdentifiantEleveApp;
   private eleve: EleveApp;
+  private personnel: PersonnelApp;
+  private enseignant: EnseignantApp;
+  private departement: DepartementApp;
 
 
   constructor(app: Application) {
@@ -66,6 +72,9 @@ export class ApiRoutes {
     this.parentTuteur = new ParentTuteurApp(app);
     this.identifiantEleve = new IdentifiantEleveApp(app);
     this.eleve = new EleveApp(app);
+    this.personnel = new PersonnelApp(app);
+    this.enseignant = new EnseignantApp(app);
+    this.departement = new DepartementApp(app);
     this.routes();
   }
 
@@ -94,6 +103,11 @@ export class ApiRoutes {
     this.router.use('/parent-tuteur', this.parentTuteur.routes());
     this.router.use('/identifiantEleve', this.identifiantEleve.routes());
     this.router.use('/eleve', this.eleve.routes());
+
+    //personnel
+    this.router.use('/personnel', this.personnel.routes());
+    this.router.use('/enseignant', this.enseignant.routes());
+    this.router.use('/departement', this.departement.routes());
     
 
     return this.router;

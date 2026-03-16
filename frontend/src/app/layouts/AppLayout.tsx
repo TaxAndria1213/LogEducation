@@ -49,7 +49,7 @@ export default function AppLayout() {
               }}
               onClick={() => setCollapsed(!collapsed)}
             >
-              {collapsed ? <FiMenu /> : user?.etablissement?.nom.slice(0, 2)}
+              {collapsed ? <FiMenu /> : user?.etablissement?.nom.slice(0, 2) || "E"}
             </div>
             {!collapsed && (
               <div>

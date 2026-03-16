@@ -16,6 +16,9 @@ import { niveauComponents } from "../pages/scolarite/niveaux/components/CI.nivea
 import { parentTuteurComponents } from "../pages/scolarite/parents_tuteurs/components/CI.ParentTuteur";
 import { identifiantEleveComponents } from "../pages/scolarite/identifiant_eleve/components/CI.IdEleve";
 import { eleveComponents } from "../pages/scolarite/eleve/components/CI.eleve";
+import { personnelComponents } from "../pages/personnel/personnels/components/CI.personnel";
+import { enseignantComponents } from "../pages/personnel/enseignants/components/CI.enseignants";
+import { departementComponents } from "../pages/personnel/departements/components/CI.departement";
 
 export type ComponentIdentifierType = {
   id: componentId;
@@ -45,6 +48,9 @@ const components: ComponentIdentifierType[] = [
   ...parentTuteurComponents,
   ...identifiantEleveComponents,
   ...eleveComponents,
+  ...personnelComponents,
+  ...enseignantComponents,
+  ...departementComponents,
 ];
 
 /**
