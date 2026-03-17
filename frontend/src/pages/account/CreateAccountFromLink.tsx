@@ -11,10 +11,11 @@ import { styles } from "../../styles/styles";
 import type { WizardDataUserPersonnel } from "../../types/types";
 import z from "zod";
 import { useAuth } from "../../auth/AuthContext";
-import type { Profil, Utilisateur, UtilisateurRole } from "../../types/models";
+import type { Personnel, Profil, Utilisateur, UtilisateurRole } from "../../types/models";
 import { authService } from "../../app/api/authService";
 import ProfileService from "../../services/profile.service";
 import UtilisateurRoleService from "../../services/utilisateur_role.service";
+import PersonnelService from "../../services/personnel.service";
 
 const steps = [
   { key: "utilisateur", title: "Utilisateur", desc: "Compte de connexion" },
@@ -216,6 +217,26 @@ export default function CreateAccountFromLink() {
           } catch (error) {
             console.log("Erreur de création de l'utilisateur_role : ", error);
             throw error;
+          }
+        }
+
+        //création de du statut personnel
+        if (resultUser?.status.success) {
+          try {
+            const personnelService = new PersonnelService();
+            const dataPersonnel: Partial<Personnel> = {
+              etablissement_id: finalData.etablissement_id,
+              utilisateur_id: resultUser.data.id,
+              date_embauche: new Date(),
+              statut: "ACTIF",
+            } as Partial<Personnel>;
+            const result = await personnelService.create(dataPersonnel);
+            console.log(
+              "🚀 ~ PersonnelService ~ createPersonnelAccount ~ result:",
+              result,
+            )
+          } catch (error) {
+            console.log("Erreur de création du statut personnel : ", error);
           }
         }
 

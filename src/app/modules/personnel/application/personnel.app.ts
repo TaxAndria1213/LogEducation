@@ -3,6 +3,7 @@ import Response from "../../../common/app/response";
 import PersonnelModel from "../models/personnel.model";
 import { Personnel } from "@prisma/client";
 import { getAllPaginated } from "../../../common/utils/functions";
+import Code from "../../../common/app/code";
 
 class PersonnelApp {
     public app: Application;
@@ -28,6 +29,15 @@ class PersonnelApp {
     private async create(req: Request, res: R, next: NextFunction): Promise<void> {
         try {
             const data: Personnel = req.body;
+            const lastPersonnel: Personnel = await this.personnel.findLast({
+                where: {
+                    etablissement_id: data.etablissement_id
+                }
+            })
+            //générer un code
+            const code = new Code("P", 3, lastPersonnel.code_personnel as string);
+            data.code_personnel = code.next();
+
             const result = await this.personnel.create(data);
             Response.success(res, "Personnel created.", result);
         } catch (error) {

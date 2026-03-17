@@ -40,6 +40,7 @@ export function Form({
       ...(initialValues ?? {}),
     };
   }, [fields, initialValues]);
+  console.log("🚀 ~ Form ~ defaultValues:", defaultValues);
 
   const { info } = useInfo();
 
@@ -54,21 +55,29 @@ export function Form({
     try {
       // ✅ mode "data only"
       if (dataOnly) {
-        await dataOnly(data);
+        try {
+          await dataOnly(data);
+          info(`${labelMessage} créé(e) avec succès !`, "success");
+        } catch (error) {
+          console.log(error);
+          info(`${labelMessage} non créé(e) !`, "error");
+        }
         return;
       }
 
       // ✅ mode "service" (optionnel)
       if (!service) {
-        console.warn("Form: service is null/undefined and no dataOnly provided.");
+        console.error(
+          "Form: service is null/undefined and no dataOnly provided.",
+        );
         return;
       }
 
       const result = await service.create(data);
       console.log("🚀 ~ onValid ~ result:", result);
-      info(`${labelMessage} créé avec succès !`, "success");
+      info(`${labelMessage} créé(e) avec succès !`, "success");
       // optionnel : reset après succès
-      // form.reset(defaultValues);
+      form.reset(defaultValues);
     } finally {
       setLoading(false);
     }
@@ -84,16 +93,18 @@ export function Form({
       onSubmit={form.handleSubmit(onValid, onInvalid)}
       style={{ display: "grid", gap: 12 }}
     >
-      {fields.map(({ name, label, Component, props, required }: any) => (
-        <Component
-          key={String(name)}
-          control={form.control}
-          name={name}
-          label={label}
-          required={required}
-          {...(props ?? {})}
-        />
-      ))}
+      {fields.map(({ name, label, Component, props, required }: any) => {
+        return (
+          <Component
+            key={String(name)}
+            control={form.control}
+            name={name}
+            label={label}
+            required={required}
+            {...(props ?? {})}
+          />
+        );
+      })}
 
       <button
         type="submit"

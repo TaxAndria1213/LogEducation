@@ -24,13 +24,14 @@ export function formatDateWithLocalTimezone(
     };
   }
 
-  const savedTimeZone = localStorage.getItem(storageKey) || "UTC";
+  const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const savedTimeZone = localStorage.getItem(storageKey) || browserTimeZone;
 
   let timeZone = savedTimeZone;
   try {
     new Intl.DateTimeFormat("fr-FR", { timeZone }).format(dateObj);
   } catch {
-    timeZone = "UTC";
+    timeZone = browserTimeZone;
   }
 
   const dateParts = new Intl.DateTimeFormat("fr-FR", {

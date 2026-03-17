@@ -19,6 +19,13 @@ import { eleveComponents } from "../pages/scolarite/eleve/components/CI.eleve";
 import { personnelComponents } from "../pages/personnel/personnels/components/CI.personnel";
 import { enseignantComponents } from "../pages/personnel/enseignants/components/CI.enseignants";
 import { departementComponents } from "../pages/personnel/departements/components/CI.departement";
+import { matiereComponents } from "../pages/pedagogie/matieres/components/CI.matiere";
+import { programmeComponents } from "../pages/pedagogie/programmes/components/CI.programme";
+import { coursComponents } from "../pages/pedagogie/cours/components/CI.cours";
+import { evaluationComponents } from "../pages/pedagogie/evaluations/components/CI.evaluation";
+import { noteComponents } from "../pages/pedagogie/notes/components/CI.note";
+import { bulletinComponents } from "../pages/pedagogie/bulletins/components/CI.bulletin";
+import { regleNoteComponents } from "../pages/pedagogie/regles_notes/components/CI.regleNote";
 
 export type ComponentIdentifierType = {
   id: componentId;
@@ -51,18 +58,25 @@ const components: ComponentIdentifierType[] = [
   ...personnelComponents,
   ...enseignantComponents,
   ...departementComponents,
+  ...matiereComponents,
+  ...programmeComponents,
+  ...coursComponents,
+  ...evaluationComponents,
+  ...noteComponents,
+  ...bulletinComponents,
+  ...regleNoteComponents,
 ];
 
 /**
- * Index O(1) : Ã©vite un `.find()` Ã  chaque render
- * (crÃ©Ã© une seule fois au chargement du module)
+ * Index O(1) : évite un `.find()` à chaque render
+ * (créé une seule fois au chargement du module)
  */
 const componentsById: Partial<Record<componentId, ComponentIdentifierType>> =
   Object.fromEntries(components.map((c) => [c.id, c])) as Partial<
     Record<componentId, ComponentIdentifierType>
   >;
 
-// rÃ©cupÃ©ration du composant par son id
+// récupération du composant par son id
 export function getComponentById(id: componentId) {
   const DynamicComponent: React.FC<{
     optionsStyle?: React.CSSProperties;
@@ -78,7 +92,7 @@ export function getComponentById(id: componentId) {
     const item = componentsById[id];
     if (!item) return null;
 
-    // âœ… applique adminOnly ici
+    // ? applique adminOnly ici
     if (!access) return null;
 
     return item.component(id, access, props.optionsStyle, props.onClick);
@@ -88,13 +102,12 @@ export function getComponentById(id: componentId) {
   return React.memo(DynamicComponent);
 }
 
-// vÃ©rification de l'accÃ¨s de l'utilisateur (pure function)
+// vérification de l'accès de l'utilisateur (pure function)
 function verifyAccess(
   user: Utilisateur,
   roles: UtilisateurRole[],
   id: componentId,
 ): boolean {
-  // si un jour tu ajoutes d'autres rÃ¨gles, tu les mets ici
   const isAdmin = roles.some((role) => role.role?.nom === "ADMIN")
     ? true
     : false;
@@ -108,10 +121,7 @@ function verifyAccess(
     else return true;
   }
 
-  // garde ton log si tu veux
-  // console.log("ðŸš€ ~ verifyAccess ~ isAdmin:", isAdmin);
-
   return isAdmin;
 }
 
-export {verifyAccess as hasAccess};
+export { verifyAccess as hasAccess };

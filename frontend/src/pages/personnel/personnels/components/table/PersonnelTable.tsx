@@ -38,9 +38,13 @@ export default function PersonnelList() {
     },
     {
       key: "poste",
-      header: "Poste",
+      header: "Poste(s)",
       accessor: "poste",
       sortable: true,
+      render: (row) => {
+        const roles = row.utilisateur?.roles ?? [];
+        return roles.map((role) => role.role?.nom).join(", ");
+      },
       sortKey: "poste",
     },
     {
@@ -67,7 +71,7 @@ export default function PersonnelList() {
       label: "Voir",
       variant: "secondary",
       onClick: (row) => {
-        console.log("voir", row.id);
+        console.log("voir", row);
       },
     },
     {
@@ -94,7 +98,16 @@ export default function PersonnelList() {
       initialQuery={{
         page: 1,
         take: 10,
-        includeSpec: { utilisateur: { include: { profil: true } } },
+        includeSpec: {
+          utilisateur: {
+            include: {
+              profil: true,
+              roles: {
+                include: { role: true },
+              },
+            },
+          },
+        },
         where: { etablissement_id },
       }}
       showSearch

@@ -20,6 +20,13 @@ import EleveApp from "../modules/eleve/application/eleve.app";
 import PersonnelApp from "../modules/personnel/application/personnel.app";
 import EnseignantApp from "../modules/enseignant/application/enseignant.app";
 import DepartementApp from "../modules/departement/application/departement.app";
+import MatiereApp from "../modules/matiere/application/matiere.app";
+import ProgrammeApp from "../modules/programme/application/programme.app";
+import CoursApp from "../modules/cours/application/cours.app";
+import EvaluationApp from "../modules/evaluation/application/evaluation.app";
+import NoteApp from "../modules/note/application/note.app";
+import BulletinApp from "../modules/bulletin/application/bulletin.app";
+import RegleNoteApp from "../modules/regle_note/application/regle_note.app";
 
 export class ApiRoutes {
   public app: Application;
@@ -50,6 +57,14 @@ export class ApiRoutes {
   private personnel: PersonnelApp;
   private enseignant: EnseignantApp;
   private departement: DepartementApp;
+  //pédagogie
+  private matiere: MatiereApp;
+  private programme: ProgrammeApp;
+  private cours: CoursApp;
+  private evaluation: EvaluationApp;
+  private note: NoteApp;
+  private bulletin: BulletinApp;
+  private regleNote: RegleNoteApp;
 
 
   constructor(app: Application) {
@@ -75,6 +90,13 @@ export class ApiRoutes {
     this.personnel = new PersonnelApp(app);
     this.enseignant = new EnseignantApp(app);
     this.departement = new DepartementApp(app);
+    this.matiere = new MatiereApp(app);
+    this.programme = new ProgrammeApp(app);
+    this.cours = new CoursApp(app);
+    this.evaluation = new EvaluationApp(app);
+    this.note = new NoteApp(app);
+    this.bulletin = new BulletinApp(app);
+    this.regleNote = new RegleNoteApp(app);
     this.routes();
   }
 
@@ -108,7 +130,15 @@ export class ApiRoutes {
     this.router.use('/personnel', this.personnel.routes());
     this.router.use('/enseignant', this.enseignant.routes());
     this.router.use('/departement', this.departement.routes());
-    
+
+    //pédagogie
+    this.router.use('/matiere', this.matiere.routes());
+    this.router.use('/programme', this.programme.routes());
+    this.router.use('/cours', this.cours.routes());
+    this.router.use('/evaluation', this.evaluation.routes());
+    this.router.use('/note', this.note.routes());
+    this.router.use('/bulletin', this.bulletin.routes());
+    this.router.use('/regle-note', this.regleNote.routes());
 
     return this.router;
   }
