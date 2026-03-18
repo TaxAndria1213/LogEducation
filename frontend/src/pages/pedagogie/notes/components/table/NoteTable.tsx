@@ -10,7 +10,7 @@ import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions"
 import { useAuth } from "../../../../../auth/AuthContext";
 
 export default function NoteTable() {
-  const {etablissement_id} = useAuth();
+  const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new NoteService(), []);
 
@@ -91,23 +91,31 @@ export default function NoteTable() {
         take: 10,
         where: {
           eleve: {
-            etablissement_id: etablissement_id
-          }
+            etablissement_id: etablissement_id,
+          },
         },
-        includeSpec: { evaluation: {
-          include: {cours: {
+        includeSpec: {
+          evaluation: {
             include: {
-              matiere: true,
-              classe: true,
-            }
-          }}
-        }, eleve: true },
+              cours: {
+                include: {
+                  matiere: true,
+                  classe: true,
+                },
+              },
+            },
+          },
+          eleve: true,
+        },
       }}
       showSearch
       onSearchBuildWhere={(text) => ({
         OR: [
           { eleve: { code_eleve: { contains: text } } },
           { evaluation: { titre: { contains: text } } },
+          { evaluation: { cours: { matiere: { code: { contains: text } } } } },
+          { evaluation: { cours: { classe: { nom: { contains: text } } } } },
+          
         ],
       })}
     />
