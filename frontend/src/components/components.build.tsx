@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+ï»¿import React, { useMemo } from "react";
 import { useAuth } from "../auth/AuthContext";
 import type { Utilisateur, UtilisateurRole } from "../types/models";
 import type { componentId } from "../types/types";
@@ -26,6 +26,8 @@ import { evaluationComponents } from "../pages/pedagogie/evaluations/components/
 import { noteComponents } from "../pages/pedagogie/notes/components/CI.note";
 import { bulletinComponents } from "../pages/pedagogie/bulletins/components/CI.bulletin";
 import { regleNoteComponents } from "../pages/pedagogie/regles_notes/components/CI.regleNote";
+import { emploiDuTempsComponents } from "../pages/emploi_du_temps/components/CI.emploiDuTemps";
+import { evenementCalendrierComponents } from "../pages/emploi_du_temps/components/CI.evenement";
 
 export type ComponentIdentifierType = {
   id: componentId;
@@ -65,18 +67,20 @@ const components: ComponentIdentifierType[] = [
   ...noteComponents,
   ...bulletinComponents,
   ...regleNoteComponents,
+  ...emploiDuTempsComponents,
+  ...evenementCalendrierComponents,
 ];
 
 /**
- * Index O(1) : évite un `.find()` à chaque render
- * (créé une seule fois au chargement du module)
+ * Index O(1) : Ã©vite un `.find()` Ã  chaque render
+ * (crÃ©Ã© une seule fois au chargement du module)
  */
 const componentsById: Partial<Record<componentId, ComponentIdentifierType>> =
   Object.fromEntries(components.map((c) => [c.id, c])) as Partial<
     Record<componentId, ComponentIdentifierType>
   >;
 
-// récupération du composant par son id
+// rÃ©cupÃ©ration du composant par son id
 export function getComponentById(id: componentId) {
   const DynamicComponent: React.FC<{
     optionsStyle?: React.CSSProperties;
@@ -102,7 +106,7 @@ export function getComponentById(id: componentId) {
   return React.memo(DynamicComponent);
 }
 
-// vérification de l'accès de l'utilisateur (pure function)
+// vÃ©rification de l'accÃ¨s de l'utilisateur (pure function)
 function verifyAccess(
   user: Utilisateur,
   roles: UtilisateurRole[],
@@ -125,3 +129,4 @@ function verifyAccess(
 }
 
 export { verifyAccess as hasAccess };
+

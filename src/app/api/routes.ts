@@ -27,6 +27,9 @@ import EvaluationApp from "../modules/evaluation/application/evaluation.app";
 import NoteApp from "../modules/note/application/note.app";
 import BulletinApp from "../modules/bulletin/application/bulletin.app";
 import RegleNoteApp from "../modules/regle_note/application/regle_note.app";
+import EmploiDuTempsApp from "../modules/emploi_du_temps/application/emploi_du_temps.app";
+import EvenementCalendrierApp from "../modules/evenement_calendrier/application/evenement_calendrier.app";
+import CreneauHoraireApp from "../modules/creneau_horaire/application/creneau_horaire.app";
 
 export class ApiRoutes {
   public app: Application;
@@ -65,6 +68,9 @@ export class ApiRoutes {
   private note: NoteApp;
   private bulletin: BulletinApp;
   private regleNote: RegleNoteApp;
+  private emploiDuTemps: EmploiDuTempsApp;
+  private evenementCalendrier: EvenementCalendrierApp;
+  private creneauHoraire: CreneauHoraireApp;
 
 
   constructor(app: Application) {
@@ -97,6 +103,9 @@ export class ApiRoutes {
     this.note = new NoteApp(app);
     this.bulletin = new BulletinApp(app);
     this.regleNote = new RegleNoteApp(app);
+    this.emploiDuTemps = new EmploiDuTempsApp(app);
+    this.evenementCalendrier = new EvenementCalendrierApp(app);
+    this.creneauHoraire = new CreneauHoraireApp(app);
     this.routes();
   }
 
@@ -139,6 +148,9 @@ export class ApiRoutes {
     this.router.use('/note', this.note.routes());
     this.router.use('/bulletin', this.bulletin.routes());
     this.router.use('/regle-note', this.regleNote.routes());
+    this.router.use('/emploi-du-temps', this.emploiDuTemps.routes());
+    this.router.use('/evenement-calendrier', this.evenementCalendrier.routes());
+    this.router.use('/creneau-horaire', this.creneauHoraire.routes());
 
     return this.router;
   }
