@@ -10,6 +10,7 @@ import {
 import type { Bulletin, BulletinLigne } from "../../../../../types/models";
 import BulletinService from "../../../../../services/bulletin.service";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
+import { useAuth } from "../../../../../auth/AuthContext";
 
 const formatDate = (value?: Date | string | null) =>
   value ? formatDateWithLocalTimezone(value.toString()).date : "-";
@@ -22,20 +23,26 @@ const moyenneGenerale = (lignes?: BulletinLigne[]) => {
 };
 
 export default function BulletinTable() {
+  const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new BulletinService(), []);
 
   const buildPdf = (row: Bulletin) => {
-    console.log("🚀 ~ buildPdf ~ row:", row)
+    console.log("🚀 ~ buildPdf ~ row:", row);
     const doc = new jsPDF();
-    const fullName = `${row.eleve?.utilisateur?.profil?.nom ?? ""} ${row.eleve?.utilisateur?.profil?.prenom ?? ""}`.trim();
+    const fullName =
+      `${row.eleve?.utilisateur?.profil?.nom ?? ""} ${row.eleve?.utilisateur?.profil?.prenom ?? ""}`.trim();
     const headerY = 18;
 
     doc.setFontSize(16);
     doc.text("Bulletin de notes", 14, headerY);
 
     doc.setFontSize(11);
-    doc.text(`Élève : ${fullName || row.eleve?.code_eleve || "-"}`, 14, headerY + 10);
+    doc.text(
+      `Élève : ${fullName || row.eleve?.code_eleve || "-"}`,
+      14,
+      headerY + 10,
+    );
     doc.text(`Classe : ${row.classe?.nom ?? "-"}`, 14, headerY + 16);
     doc.text(`Période : ${row.periode?.nom ?? "-"}`, 14, headerY + 22);
     doc.text(`Statut : ${row.statut ?? "-"}`, 14, headerY + 28);
@@ -48,7 +55,9 @@ export default function BulletinTable() {
       head: [["Matière", "Moyenne", "Commentaire enseignant"]],
       body: lignes.map((l) => [
         l.matiere?.nom ?? "-",
-        l.moyenne !== null && l.moyenne !== undefined ? l.moyenne.toFixed(2) : "-",
+        l.moyenne !== null && l.moyenne !== undefined
+          ? l.moyenne.toFixed(2)
+          : "-",
         l.commentaire_enseignant ?? "",
       ]),
       styles: { fontSize: 10, cellPadding: 3 },
@@ -126,7 +135,11 @@ export default function BulletinTable() {
       variant: "secondary",
       onClick: (row) => buildPdf(row),
     },
-    { label: "Voir", variant: "secondary", onClick: (row) => console.log("voir", row.id) },
+    {
+      label: "Voir",
+      variant: "secondary",
+      onClick: (row) => console.log("voir", row.id),
+    },
     {
       label: "Supprimer",
       variant: "danger",
@@ -148,11 +161,14 @@ export default function BulletinTable() {
       initialQuery={{
         page: 1,
         take: 10,
+        where: {
+          classe: { etablissement_id: etablissement_id },
+        },
         includeSpec: {
           eleve: {
             include: {
               utilisateur: { include: { profil: true } },
-            }
+            },
           },
           periode: true,
           classe: true,
