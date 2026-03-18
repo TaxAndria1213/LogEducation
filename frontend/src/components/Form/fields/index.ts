@@ -16,6 +16,7 @@ export * from "./BooleanField";
 
 export * from "./DateField";
 export * from "./DateTimeField";
+export * from "./TimeField";
 
 export * from "./SelectField";
 export * from "./EnumSelectField";

@@ -5,6 +5,7 @@ import RolesApp from "../modules/roles/application/roles.app";
 import RoleUserApp from "../modules/roles_user/application/roles_user.app";
 import SiteApp from "../modules/site/application/site.app";
 import ProfileApp from "../modules/profile/application/profile.app";
+import PermissionApp from "../modules/permission/application/permission.app";
 import AuthApp from "../modules/auth/application/auth.app";
 import { tenantMiddleware } from "../../middleware/tenant";
 import SalleApp from "../modules/salle/application/salle.app";
@@ -41,6 +42,7 @@ export class ApiRoutes {
   private roles: RolesApp;
   private rolesUser: RoleUserApp;
   private profile: ProfileApp;
+  private permission: PermissionApp;
   
   //Etablissement
   private etablissement: EtablissementApp;
@@ -81,6 +83,7 @@ export class ApiRoutes {
     this.roles = new RolesApp(app);
     this.rolesUser = new RoleUserApp(app);
     this.profile = new ProfileApp(app);
+    this.permission = new PermissionApp(app);
     this.etablissement = new EtablissementApp(app);
     this.site = new SiteApp(app);
     this.salle = new SalleApp(app);
@@ -118,6 +121,7 @@ export class ApiRoutes {
     this.router.use('/user', this.user.routes());
     this.router.use('/roles_user', this.rolesUser.routes());
     this.router.use('/profile', this.profile.routes());
+    this.router.use('/permission', this.permission.routes());
     
     //Etablissement
     this.router.use('/etablissement', this.etablissement.routes());

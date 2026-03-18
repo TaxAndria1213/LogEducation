@@ -54,7 +54,7 @@ export default function RoleList() {
       variant: "danger",
       confirm: {
         title: "Suppression",
-        message: "Voulez-vous supprimer ce site ?",
+        message: "Voulez-vous supprimer ce role ?",
       },
       onClick: async (row) => {
         await service.delete(row.id);
@@ -89,6 +89,7 @@ export default function RoleList() {
           const url = new URL("/compte/creation/", window.location.origin);
           url.searchParams.set("role_id", String(roleId));
           url.searchParams.set("etablissement_id", String(etabId));
+          url.searchParams.set("role_name", row.nom);
 
           const finalUrl = url.toString();
           navigator.clipboard.writeText(finalUrl);

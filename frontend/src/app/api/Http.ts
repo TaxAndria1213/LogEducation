@@ -4,6 +4,27 @@ import ErrorHandler from '../Error'
 import { api, systemApi } from './axios'
 
 export class Http {
+    private static normalizeError(error: any) {
+        if (error?.response) return error;
+
+        const code = error?.code ?? error?.status?.code ?? 400;
+        const message = error?.message ?? error?.status?.message ?? "Une erreur est survenue.";
+
+        return {
+            ...error,
+            response: {
+                status: code,
+                data: {
+                    message,
+                    status: {
+                        code,
+                        success: false,
+                        message,
+                    },
+                },
+            },
+        };
+    }
 
     static async get(url: string, params: any) {
         try {
@@ -14,10 +35,12 @@ export class Http {
             if (data?.status?.success) {
                 return { status: data?.status, data: data?.data }
             } else {
-                throw data?.status
+                throw data?.status ?? new Error("La requete a echoue.")
             }
         } catch (e) {
-            ErrorHandler.handle(e)
+            const normalizedError = this.normalizeError(e);
+            ErrorHandler.handle(normalizedError)
+            throw normalizedError;
         }
     }
 
@@ -27,10 +50,12 @@ export class Http {
             if (data?.status?.success) {
                 return { status: data?.status, data: data?.data }
             } else {
-                throw data?.status
+                throw data?.status ?? new Error("La requete a echoue.")
             }
         } catch (e) {
-            ErrorHandler.handle(e)
+            const normalizedError = this.normalizeError(e);
+            ErrorHandler.handle(normalizedError)
+            throw normalizedError;
         }
     }
 
@@ -41,10 +66,12 @@ export class Http {
             if (data?.status?.success) {
                 return { status: data?.status, data: data?.data }
             } else {
-                throw data?.status
+                throw data?.status ?? new Error("La requete a echoue.")
             }
         } catch (e) {
-            ErrorHandler.handle(e)
+            const normalizedError = this.normalizeError(e);
+            ErrorHandler.handle(normalizedError)
+            throw normalizedError;
         }
     }
 
@@ -54,10 +81,12 @@ export class Http {
             if (data?.status?.success) {
                 return { status: data?.status, data: data?.data }
             } else {
-                throw data?.status
+                throw data?.status ?? new Error("La requete a echoue.")
             }
         } catch (e) {
-            ErrorHandler.handle(e)
+            const normalizedError = this.normalizeError(e);
+            ErrorHandler.handle(normalizedError)
+            throw normalizedError;
         }
     }
 
@@ -67,10 +96,12 @@ export class Http {
             if (data?.status?.success) {
                 return { status: data?.status, data: data?.data }
             } else {
-                throw data?.status
+                throw data?.status ?? new Error("La requete a echoue.")
             }
         } catch (e) {
-            ErrorHandler.handle(e)
+            const normalizedError = this.normalizeError(e);
+            ErrorHandler.handle(normalizedError)
+            throw normalizedError;
         }
     }
 
@@ -83,10 +114,12 @@ export class Http {
             if (data?.status?.success) {
                 return { status: data?.status, data: data?.data }
             } else {
-                throw data?.status
+                throw data?.status ?? new Error("La requete systeme a echoue.")
             }
         } catch (e) {
-            ErrorHandler.handle(e)
+            const normalizedError = this.normalizeError(e);
+            ErrorHandler.handle(normalizedError)
+            throw normalizedError;
         }
     }
 
@@ -97,10 +130,12 @@ export class Http {
             if (data?.status?.success) {
                 return { status: data?.status, data: data?.data }
             } else {
-                throw data?.status
+                throw data?.status ?? new Error("La requete systeme a echoue.")
             }
         } catch (e) {
-            ErrorHandler.handle(e)
+            const normalizedError = this.normalizeError(e);
+            ErrorHandler.handle(normalizedError)
+            throw normalizedError;
         }
     }
 
@@ -111,10 +146,12 @@ export class Http {
             if (data?.status?.success) {
                 return { status: data?.status, data: data?.data }
             } else {
-                throw data?.status
+                throw data?.status ?? new Error("La requete systeme a echoue.")
             }
         } catch (e) {
-            ErrorHandler.handle(e)
+            const normalizedError = this.normalizeError(e);
+            ErrorHandler.handle(normalizedError)
+            throw normalizedError;
         }
     }
 
@@ -124,10 +161,12 @@ export class Http {
             if (data?.status?.success) {
                 return { status: data?.status, data: data?.data }
             } else {
-                throw data?.status
+                throw data?.status ?? new Error("La requete systeme a echoue.")
             }
         } catch (e) {
-            ErrorHandler.handle(e)
+            const normalizedError = this.normalizeError(e);
+            ErrorHandler.handle(normalizedError)
+            throw normalizedError;
         }
     }
 
@@ -137,10 +176,12 @@ export class Http {
             if (data?.status?.success) {
                 return { status: data?.status, data: data?.data }
             } else {
-                throw data?.status
+                throw data?.status ?? new Error("La requete systeme a echoue.")
             }
         } catch (e) {
-            ErrorHandler.handle(e)
+            const normalizedError = this.normalizeError(e);
+            ErrorHandler.handle(normalizedError)
+            throw normalizedError;
         }
     }
 }

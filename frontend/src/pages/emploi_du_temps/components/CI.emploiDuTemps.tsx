@@ -22,7 +22,7 @@ export const emploiDuTempsComponents: ComponentIdentifierType[] = [
   {
     id: "EDT.EMPLOIDUTEMPS.MENUACTION.PARAMETRE",
     name: "Emploi du temps - parametre",
-    component: menuItem(FiSettings, "Parametre"),
+    component: menuItem(FiSettings, "Creneaux"),
   },
   {
     id: "EDT.EMPLOIDUTEMPS.MENUACTION.ADD",

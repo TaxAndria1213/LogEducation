@@ -9,7 +9,11 @@ const translations: { [key: string]: string } = {
 
 class ErrorHandler {
   static handle(error: any) {
-    const message = error.response?.data?.status?.message;
+    const message =
+      error.response?.data?.status?.message ||
+      error.response?.data?.message ||
+      error.message ||
+      "Une erreur est survenue.";
     const translatedMessage = translations[message] || message;
 
     switch (error.response?.status) {

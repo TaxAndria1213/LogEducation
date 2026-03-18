@@ -1,21 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import z from "zod";
 import { Form } from "../../components/Form/Form";
-import { ProfilSchema, UtilisateurSchema } from "../../generated/zod";
 import { getFieldsFromZodObjectSchema } from "../../components/Form/fields";
-import UtilisateurService from "../../services/utilisateur.service";
 import FlyPopup from "../../components/popup/FlyPopup";
 import Spin from "../../components/anim/Spin";
+import { ProfilSchema, UtilisateurSchema } from "../../generated/zod";
+import UtilisateurService from "../../services/utilisateur.service";
+import RoleService from "../../services/role.service";
 import { styles } from "../../styles/styles";
 import type { WizardDataUserPersonnel } from "../../types/types";
-import z from "zod";
-import { useAuth } from "../../auth/AuthContext";
-import type { Personnel, Profil, Utilisateur, UtilisateurRole } from "../../types/models";
-import { authService } from "../../app/api/authService";
-import ProfileService from "../../services/profile.service";
-import UtilisateurRoleService from "../../services/utilisateur_role.service";
-import PersonnelService from "../../services/personnel.service";
+import type { Profil, Utilisateur } from "../../types/models";
+
+const PERSONNEL_ROLE_NAMES = new Set([
+  "DIRECTION",
+  "SECRETARIAT",
+  "ENSEIGNANT",
+  "COMPTABLE",
+  "SURVEILLANT",
+]);
 
 const steps = [
   { key: "utilisateur", title: "Utilisateur", desc: "Compte de connexion" },
@@ -23,23 +27,21 @@ const steps = [
 ] as const;
 
 export default function CreateAccountFromLink() {
-  const { login, logout } = useAuth();
   const [searchParams] = useSearchParams();
 
   const [step, setStep] = useState<0 | 1>(0);
   const [allData, setAllData] = useState<WizardDataUserPersonnel>({});
   const [loading, setLoading] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState<string>("");
+  const [submitMessage, setSubmitMessage] = useState("");
   const [openConfirmationPopup, setOpenConfirmationPopup] = useState(false);
   const [completed, setCompleted] = useState<{ 0?: boolean; 1?: boolean }>({});
+  const [roleName, setRoleName] = useState(searchParams.get("role_name") ?? "");
 
-  // --------- params depuis l'URL ----------
   const role_id = searchParams.get("role_id");
   const etablissement_id = searchParams.get("etablissement_id");
-  console.log(
-    "🚀 ~ CreateAccountFromLink ~ etablissement_id:",
-    etablissement_id,
-  );
+  const normalizedRoleName = roleName.trim().toUpperCase();
+  const shouldCreatePersonnel = PERSONNEL_ROLE_NAMES.has(normalizedRoleName);
+  const shouldCreateEnseignant = normalizedRoleName === "ENSEIGNANT";
 
   useEffect(() => {
     setAllData((prev) => ({
@@ -48,16 +50,32 @@ export default function CreateAccountFromLink() {
       etablissement_id,
       etablissement: etablissement_id ? { id: etablissement_id } : undefined,
     }));
-
-    console.log("🔗 Params URL:", { role_id, etablissement_id });
   }, [role_id, etablissement_id]);
 
-  // ---------- schemas/fields ----------
+  useEffect(() => {
+    const run = async () => {
+      if (roleName || !role_id) return;
+
+      const roleService = new RoleService();
+      const result = await roleService.getAll({
+        take: 1,
+        where: JSON.stringify({ id: role_id }),
+      });
+
+      if (result?.status.success && result.data.data[0]?.nom) {
+        setRoleName(result.data.data[0].nom);
+      }
+    };
+
+    void run();
+  }, [roleName, role_id]);
+
   const utilisateurField = useMemo(() => {
     const UtilisateurSchemaEmailRequired = UtilisateurSchema.extend({
       email: z.string(),
       mot_de_passe_hash: z.string(),
     });
+
     return getFieldsFromZodObjectSchema(UtilisateurSchemaEmailRequired, {
       omit: [
         "id",
@@ -70,7 +88,7 @@ export default function CreateAccountFromLink() {
       ],
       labelByField: {
         mot_de_passe_hash: "Mot de passe",
-        telephone: "Téléphone",
+        telephone: "Telephone",
       },
       metaByField: {
         mot_de_passe_hash: { widget: "password" },
@@ -131,129 +149,74 @@ export default function CreateAccountFromLink() {
     [],
   );
 
-  // ---------- computed ----------
   const progress = useMemo(() => ((step + 1) / steps.length) * 100, [step]);
   const current = steps[step];
 
-  // ✅ initialValues = ce qui est déjà stocké (utile au retour arrière)
   const utilisateurInitialValues = useMemo(
     () => allData.utilisateur ?? {},
     [allData.utilisateur],
   );
-
   const profilInitialValues = useMemo(
     () => allData.profil ?? {},
     [allData.profil],
   );
 
-  // ---------- navigation ----------
-  const goBack = () => setStep((s) => (s === 0 ? s : ((s - 1) as any)));
+  const goBack = () => setStep((s) => (s === 0 ? s : ((s - 1) as 0 | 1)));
 
-  // ---------- handlers ----------
-  const nextFromUtilisateur = (data: any) => {
+  const nextFromUtilisateur = (data: Partial<Utilisateur>) => {
     setAllData((prev) => ({ ...prev, utilisateur: data }));
-    setCompleted((c) => ({ ...c, 0: true }));
+    setCompleted((currentState) => ({ ...currentState, 0: true }));
     setStep(1);
   };
 
-  const finishFromProfil = async (data: any) => {
+  const finishFromProfil = async (data: Partial<Profil>) => {
     const finalData: WizardDataUserPersonnel = { ...allData, profil: data };
 
-    // setLoading(true);
-    // setOpenConfirmationPopup(true);
     setAllData(finalData);
-    setCompleted((c) => ({ ...c, 1: true }));
+    setCompleted((currentState) => ({ ...currentState, 1: true }));
+    setLoading(true);
+    setSubmitMessage("");
+    setOpenConfirmationPopup(true);
 
-    console.log("✅ DONNÉES FINALES CRÉATION :", finalData);
+    try {
+      if (!finalData.etablissement_id || !finalData.role_id) {
+        throw new Error("Le lien de creation est incomplet.");
+      }
 
-    const service = new UtilisateurService();
-    const resultUser = await service.createUser(
-      {
-        ...finalData.utilisateur as Partial<Utilisateur>,
+      const utilisateurService = new UtilisateurService();
+      const createResult = await utilisateurService.createAccountFromLink({
         etablissement_id: finalData.etablissement_id,
+        role_id: finalData.role_id,
+        utilisateur: {
+          email: finalData.utilisateur?.email ?? null,
+          telephone: finalData.utilisateur?.telephone ?? null,
+          mot_de_passe_hash: finalData.utilisateur?.mot_de_passe_hash ?? null,
+        },
+        profil: {
+          prenom: finalData.profil?.prenom ?? "",
+          nom: finalData.profil?.nom ?? "",
+          date_naissance: finalData.profil?.date_naissance ?? null,
+          genre: finalData.profil?.genre ?? null,
+          adresse: finalData.profil?.adresse ?? null,
+        },
+      });
+
+      if (!createResult?.status.success) {
+        throw new Error("La creation du compte a echoue.");
       }
-    );
 
-    if (resultUser?.status.success === true) {
-      const dataUser = await authService.login(
-        finalData.utilisateur?.email as string,
-        finalData.utilisateur?.mot_de_passe_hash as string,
-      );
-      login(
-        dataUser.user,
-        dataUser.rolesAccessList,
-        { accessToken: dataUser.result.accessToken, refreshToken: dataUser.result.refreshToken },
-      );
-
-      //creation de profile
-      if (resultUser?.status.success) {
-        try {
-          const profileService = new ProfileService();
-          const dataProfile: Profil = {
-            utilisateur_id: resultUser.data.id,
-            ...finalData.profil,
-          } as Profil;
-          const resultProfile = await profileService.create(dataProfile);
-          console.log(resultProfile);
-        } catch (error) {
-          console.log("Erreur de création du profil : ", error);
-          throw error;
-        }
-
-        //creation de l'utilisateur_role
-        if (resultUser?.status.success) {
-          try {
-            const utilisateurRoleService = new UtilisateurRoleService();
-            const dataUtilisateurRole: UtilisateurRole = {
-              utilisateur_id: resultUser.data.id,
-              role_id: finalData.role_id,
-            } as UtilisateurRole;
-            const result =
-              await utilisateurRoleService.create(dataUtilisateurRole);
-            console.log(
-              "🚀 ~ UtilisateurService ~ createPersonnelAccount ~ result:",
-              result,
-            );
-          } catch (error) {
-            console.log("Erreur de création de l'utilisateur_role : ", error);
-            throw error;
-          }
-        }
-
-        //création de du statut personnel
-        if (resultUser?.status.success) {
-          try {
-            const personnelService = new PersonnelService();
-            const dataPersonnel: Partial<Personnel> = {
-              etablissement_id: finalData.etablissement_id,
-              utilisateur_id: resultUser.data.id,
-              date_embauche: new Date(),
-              statut: "ACTIF",
-            } as Partial<Personnel>;
-            const result = await personnelService.create(dataPersonnel);
-            console.log(
-              "🚀 ~ PersonnelService ~ createPersonnelAccount ~ result:",
-              result,
-            )
-          } catch (error) {
-            console.log("Erreur de création du statut personnel : ", error);
-          }
-        }
-
-        logout();
-      }
-    }
-
-    if (resultUser?.status.success === true) {
-      setLoading(false);
       setSubmitMessage(
-        "Compte créé avec succès ! Veuillez vous connecter.",
+        shouldCreateEnseignant
+          ? "Compte, personnel et profil enseignant crees avec succes. Vous pouvez maintenant vous connecter."
+          : shouldCreatePersonnel
+            ? "Compte et personnel crees avec succes. Vous pouvez maintenant vous connecter."
+            : "Compte cree avec succes. Vous pouvez maintenant vous connecter.",
       );
-    } else {
+    } catch (error) {
+      console.log("Erreur creation compte depuis lien :", error);
+      setSubmitMessage(getErrorMessage(error));
+    } finally {
       setLoading(false);
-      setSubmitMessage(
-        "Une erreur est survenue lors de la création du compte.",
-      );
     }
   };
 
@@ -267,6 +230,8 @@ export default function CreateAccountFromLink() {
     });
     setCompleted({});
     setStep(0);
+    setSubmitMessage("");
+    setOpenConfirmationPopup(false);
   };
 
   return (
@@ -288,7 +253,6 @@ export default function CreateAccountFromLink() {
             gap: 18,
           }}
         >
-          {/* LEFT */}
           <aside
             style={{
               position: "sticky",
@@ -303,20 +267,18 @@ export default function CreateAccountFromLink() {
             }}
           >
             <div style={{ display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 16 }}>
-                Création de compte
-              </div>
+              <div style={{ fontSize: 16 }}>Creation de compte</div>
               <div style={{ fontSize: 12, opacity: 0.7 }}>
-                L’établissement est fourni par le lien.
+                Le role et l'etablissement sont fournis par le lien.
               </div>
 
-              <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.4 }}>
-                <b>role_id</b> : {role_id ?? "—"} <br />
-                <b>etablissement_id</b> : {etablissement_id ?? "—"}
+              <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.5 }}>
+                <b>role</b> : {roleName || "Non determine"} <br />
+                <b>role_id</b> : {role_id ?? "-"} <br />
+                <b>etablissement_id</b> : {etablissement_id ?? "-"}
               </div>
             </div>
 
-            {/* progress bar */}
             <div style={{ display: "grid", gap: 6 }}>
               <div
                 style={{
@@ -347,27 +309,34 @@ export default function CreateAccountFromLink() {
               </div>
             </div>
 
-            <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.5 }}>
               {completed[0]
-                ? "✓ Utilisateur renseigné"
-                : "• Utilisateur à compléter"}
+                ? "✓ Utilisateur renseigne"
+                : "• Utilisateur a completer"}
               <br />
-              {completed[1] ? "✓ Profil renseigné" : "• Profil à compléter"}
+              {completed[1] ? "✓ Profil renseigne" : "• Profil a completer"}
+              <br />
+              {shouldCreatePersonnel
+                ? "✓ Un personnel sera cree automatiquement"
+                : "• Aucun personnel supplementaire prevu"}
+              <br />
+              {shouldCreateEnseignant
+                ? "✓ Un enseignant sera cree automatiquement"
+                : "• Aucun profil enseignant prevu"}
             </div>
 
             {(completed[0] || completed[1]) && (
               <button
                 type="button"
                 onClick={resetAll}
-                className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-3 rounded"
+                className="cursor-pointer rounded bg-gray-100 px-3 py-2 font-bold text-black hover:bg-gray-200"
                 style={{ justifySelf: "start", fontSize: 13 }}
               >
-                Réinitialiser
+                Reinitialiser
               </button>
             )}
           </aside>
 
-          {/* RIGHT */}
           <main
             style={{
               border: "1px solid rgba(0,0,0,.08)",
@@ -387,19 +356,15 @@ export default function CreateAccountFromLink() {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 18 }}>
-                    {current.title}
-                  </div>
-                  <div style={{ fontSize: 12, opacity: 0.7 }}>
-                    {current.desc}
-                  </div>
+                  <div style={{ fontSize: 18 }}>{current.title}</div>
+                  <div style={{ fontSize: 12, opacity: 0.7 }}>{current.desc}</div>
                 </div>
 
                 <button
                   type="button"
                   onClick={goBack}
                   disabled={step === 0}
-                  className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-3 rounded"
+                  className="cursor-pointer rounded bg-gray-100 px-3 py-2 font-bold text-black hover:bg-gray-200"
                   style={{ opacity: step === 0 ? 0.5 : 1 }}
                 >
                   ← Retour
@@ -407,31 +372,30 @@ export default function CreateAccountFromLink() {
               </div>
             </header>
 
-            <div style={{marginTop: 20}}>
+            <div style={{ marginTop: 20 }}>
               {step === 0 && (
-              <Form
-                schema={utilisateurSchema}
-                fields={utilisateurField}
-                initialValues={utilisateurInitialValues}
-                dataOnly={nextFromUtilisateur}
-                labelMessage={"Utilisateur"}
-              />
-            )}
+                <Form
+                  schema={utilisateurSchema}
+                  fields={utilisateurField}
+                  initialValues={utilisateurInitialValues}
+                  dataOnly={nextFromUtilisateur}
+                  labelMessage={"Utilisateur"}
+                />
+              )}
 
-            {step === 1 && (
-              <Form
-                schema={profileSchema}
-                fields={profileField}
-                initialValues={profilInitialValues}
-                dataOnly={finishFromProfil}
-                labelMessage={"Profil"}
-              />
-            )}
+              {step === 1 && (
+                <Form
+                  schema={profileSchema}
+                  fields={profileField}
+                  initialValues={profilInitialValues}
+                  dataOnly={finishFromProfil}
+                  labelMessage={"Profil"}
+                />
+              )}
             </div>
           </main>
         </div>
 
-        {/* Sticky footer */}
         <div
           style={{
             position: "fixed",
@@ -455,7 +419,7 @@ export default function CreateAccountFromLink() {
             }}
           >
             <div style={{ fontSize: 12, opacity: 0.75 }}>
-              Étape <b>{step + 1}</b> sur <b>{steps.length}</b>
+              Etape <b>{step + 1}</b> sur <b>{steps.length}</b>
             </div>
 
             <div style={{ display: "flex", gap: 10 }}>
@@ -463,20 +427,19 @@ export default function CreateAccountFromLink() {
                 type="button"
                 onClick={goBack}
                 disabled={step === 0}
-                className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-4 rounded"
+                className="cursor-pointer rounded bg-gray-100 px-4 py-2 font-bold text-black hover:bg-gray-200"
                 style={{ opacity: step === 0 ? 0.5 : 1 }}
               >
                 Retour
               </button>
 
-              {/* bouton de navigation vers la page connexion */}
               <a
                 style={{
                   background: styles.color.primary,
                   color: "white",
                 }}
                 href="/login"
-                className={`cursor-pointer hover:bg-gray-200 py-2 px-4 rounded`}
+                className="cursor-pointer rounded px-4 py-2"
               >
                 Connexion
               </a>
@@ -503,7 +466,7 @@ export default function CreateAccountFromLink() {
         setIsOpen={setOpenConfirmationPopup}
       >
         {loading && <Spin size={100} />}
-        {submitMessage && (
+        {!loading && submitMessage && (
           <div
             style={{ fontSize: 16, textAlign: "center" }}
             className="flex flex-col items-center gap-6"
@@ -517,4 +480,35 @@ export default function CreateAccountFromLink() {
       </FlyPopup>
     </>
   );
+}
+
+function getErrorMessage(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null
+  ) {
+    const response = error.response as {
+      data?: {
+        message?: string;
+        status?: { message?: string };
+      };
+    };
+
+    if (response.data?.status?.message) {
+      return response.data.status.message;
+    }
+
+    if (response.data?.message) {
+      return response.data.message;
+    }
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Une erreur est survenue lors de la creation du compte.";
 }

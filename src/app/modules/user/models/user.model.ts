@@ -8,7 +8,15 @@ class UserModel extends PrismaService {
 
     async findByEmail(email: string) {
         const res = await this.findByCondition({ email }, {
-            include: { roles: { include: { role: true, } }, profil: true, etablissement: true },
+            include: {
+                roles: {
+                    include: {
+                        role: true,
+                    },
+                },
+                profil: true,
+                etablissement: true,
+            },
         });
         return res[0] as Utilisateur;
     }

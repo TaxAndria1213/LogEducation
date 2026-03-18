@@ -8,7 +8,11 @@ import {
 } from "../../../../shared/table/DataTable";
 import type { ColumnDef, RowAction } from "../../../../shared/table/types";
 import type { EmploiDuTemps } from "../../../../types/models";
-import { getCreneauLabel, getWeekdayLabel } from "../../types";
+import {
+  getCreneauLabel,
+  getTeacherDisplayLabel,
+  getWeekdayLabel,
+} from "../../types";
 
 export default function ScheduleList() {
   const { etablissement_id } = useAuth();
@@ -49,11 +53,7 @@ export default function ScheduleList() {
     {
       key: "enseignant",
       header: "Enseignant",
-      render: (row) =>
-        row.enseignant?.personnel?.code_personnel ??
-        row.enseignant?.personnel?.poste ??
-        row.enseignant_id ??
-        "-",
+      render: (row) => getTeacherDisplayLabel(row.enseignant),
     },
     {
       key: "salle",
@@ -99,55 +99,77 @@ export default function ScheduleList() {
   ];
 
   return (
-    <DataTable<EmploiDuTemps>
-      ref={tableRef}
-      service={service}
-      columns={columns}
-      actions={actions}
-      getRowId={(row) => row.id}
-      initialQuery={{
-        page: 1,
-        take: 10,
-        where: baseWhere,
-        includeSpec: {
-          classe: true,
-          cours: {
-            include: {
+    <div className="space-y-5">
+      <section className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,_#ffffff_0%,_#f8fafc_50%,_#eef2ff_100%)] px-6 py-5 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)]">
+        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+          Lignes d'emploi du temps
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+          Consulte rapidement les affectations de cours, de salles et d'enseignants.
+          Les enseignants sont affiches avec leur code et leur identite quand elle est disponible.
+        </p>
+      </section>
+
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)]">
+        <DataTable<EmploiDuTemps>
+          ref={tableRef}
+          service={service}
+          columns={columns}
+          actions={actions}
+          getRowId={(row) => row.id}
+          initialQuery={{
+            page: 1,
+            take: 10,
+            where: baseWhere,
+            includeSpec: {
               classe: true,
+              cours: {
+                include: {
+                  classe: true,
+                  matiere: true,
+                },
+              },
               matiere: true,
+              enseignant: {
+                include: {
+                  personnel: {
+                    include: {
+                      utilisateur: {
+                        include: {
+                          profil: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              salle: {
+                include: {
+                  site: true,
+                },
+              },
+              creneau: true,
             },
-          },
-          matiere: true,
-          enseignant: {
-            include: {
-              personnel: true,
-            },
-          },
-          salle: {
-            include: {
-              site: true,
-            },
-          },
-          creneau: true,
-        },
-        orderBy: [{ jour_semaine: "asc" }, { creneau_horaire_id: "asc" }],
-      }}
-      showSearch
-      onSearchBuildWhere={(text) => ({
-        AND: [
-          baseWhere,
-          {
-            OR: [
-              { classe: { nom: { contains: text } } },
-              { cours: { classe: { nom: { contains: text } } } },
-              { matiere: { nom: { contains: text } } },
-              { cours: { matiere: { nom: { contains: text } } } },
-              { salle: { nom: { contains: text } } },
-              { creneau: { nom: { contains: text } } },
+            orderBy: [{ jour_semaine: "asc" }, { creneau_horaire_id: "asc" }],
+          }}
+          showSearch
+          onSearchBuildWhere={(text) => ({
+            AND: [
+              baseWhere,
+              {
+                OR: [
+                  { classe: { nom: { contains: text } } },
+                  { cours: { classe: { nom: { contains: text } } } },
+                  { matiere: { nom: { contains: text } } },
+                  { cours: { matiere: { nom: { contains: text } } } },
+                  { salle: { nom: { contains: text } } },
+                  { creneau: { nom: { contains: text } } },
+                ],
+              },
             ],
-          },
-        ],
-      })}
-    />
+          })}
+        />
+      </section>
+    </div>
   );
 }

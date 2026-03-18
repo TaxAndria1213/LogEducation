@@ -16,7 +16,7 @@ export const emploi_du_temps: menu = {
     },
     {
       key: "evenements",
-      name: "Evenements",
+      name: "Evenements & calendrier",
       path: "/emploi_du_temps/evenements",
       elements: <EvenementsIndex />,
     },

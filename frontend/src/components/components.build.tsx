@@ -10,6 +10,9 @@ import { salleComponents } from "../pages/etablissement/salles/components/CI.sal
 import { anneeScolaireComponents } from "../pages/etablissement/anneeScolaire/components/CI.AnneeScolaire";
 import { periodeComponents } from "../pages/etablissement/periodes/components/CI.periode";
 import { roleComponents } from "../pages/compte_securite/roles/components/CI.role";
+import { profileComponents } from "../pages/compte_securite/profils/components/CI.profile";
+import { permissionComponents } from "../pages/compte_securite/permissions/components/CI.permission";
+import { affectationComponents } from "../pages/compte_securite/affectations/components/CI.affectation";
 import { inscriptionComponents } from "../pages/scolarite/inscriptions/components/CI.inscription";
 import { classeComponents } from "../pages/scolarite/classes/components/CI.classe";
 import { niveauComponents } from "../pages/scolarite/niveaux/components/CI.niveau";
@@ -28,6 +31,10 @@ import { bulletinComponents } from "../pages/pedagogie/bulletins/components/CI.b
 import { regleNoteComponents } from "../pages/pedagogie/regles_notes/components/CI.regleNote";
 import { emploiDuTempsComponents } from "../pages/emploi_du_temps/components/CI.emploiDuTemps";
 import { evenementCalendrierComponents } from "../pages/emploi_du_temps/components/CI.evenement";
+import {
+  extractPermissionCodes,
+  permissionMatches,
+} from "../utils/permissionScope";
 
 export type ComponentIdentifierType = {
   id: componentId;
@@ -51,6 +58,9 @@ const components: ComponentIdentifierType[] = [
   ...anneeScolaireComponents,
   ...periodeComponents,
   ...roleComponents,
+  ...profileComponents,
+  ...permissionComponents,
+  ...affectationComponents,
   ...inscriptionComponents,
   ...classeComponents,
   ...niveauComponents,
@@ -79,6 +89,26 @@ const componentsById: Partial<Record<componentId, ComponentIdentifierType>> =
   Object.fromEntries(components.map((c) => [c.id, c])) as Partial<
     Record<componentId, ComponentIdentifierType>
   >;
+
+export type ComponentPermissionCatalogItem = {
+  code: componentId;
+  description: string;
+  adminOnly?: boolean;
+};
+
+export const componentPermissionCatalog: ComponentPermissionCatalogItem[] =
+  Array.from(
+    new Map(
+      components.map((item) => [
+        item.id,
+        {
+          code: item.id,
+          description: item.name,
+          adminOnly: Boolean(item.adminOnly),
+        },
+      ]),
+    ).values(),
+  );
 
 // récupération du composant par son id
 export function getComponentById(id: componentId) {
@@ -112,20 +142,72 @@ function verifyAccess(
   roles: UtilisateurRole[],
   id: componentId,
 ): boolean {
-  const isAdmin = roles.some((role) => role.role?.nom === "ADMIN")
-    ? true
-    : false;
-  const isDirection = roles.some((role) => role.role?.nom === "DIRECTION")
-    ? true
-    : false;
+  const isAdmin = roles.some((role) => role.role?.nom === "ADMIN");
+  const isDirection = roles.some((role) => role.role?.nom === "DIRECTION");
+  const item = componentsById[id];
+  const grantedCodes = getGrantedPermissionCodes(roles);
 
-  if (isAdmin && componentsById[id]?.adminOnly) return true;
-  else if (isDirection) {
-    if (componentsById[id]?.adminOnly) return false;
-    else return true;
+  if (item?.adminOnly) {
+    return isAdmin;
   }
 
-  return isAdmin;
+  if (isAdmin) return true;
+
+  const deniedCodes = getDeniedPermissionCodes(roles);
+  if (deniedCodes.some((code) => permissionMatches(code, id))) {
+    return false;
+  }
+
+  if (grantedCodes.some((code) => permissionMatches(code, id))) {
+    return true;
+  }
+
+  // Transition douce: tant qu'un utilisateur direction n'a pas encore
+  // de permissions explicites rattachees a ses roles, on garde l'ancien comportement.
+  if (isDirection && grantedCodes.length === 0) {
+    return true;
+  }
+
+  return false;
+}
+
+export function getGrantedPermissionCodes(roles: UtilisateurRole[]): string[] {
+  return Array.from(
+    new Set(
+      roles.flatMap((assignment) => [
+        ...extractPermissionCodes(assignment.role?.scope_json, "permissions"),
+        ...extractPermissionCodes(assignment.scope_json, "permissions"),
+        ...extractPermissionCodes(assignment.scope_json, "allowed_permissions"),
+      ]),
+    ),
+  );
+}
+
+export function getDeniedPermissionCodes(roles: UtilisateurRole[]): string[] {
+  return Array.from(
+    new Set(
+      roles.flatMap((assignment) =>
+        extractPermissionCodes(assignment.scope_json, "denied_permissions"),
+      ),
+    ),
+  );
+}
+
+export function getScopesForPermission(
+  roles: UtilisateurRole[],
+  requestedCode: componentId | string,
+) {
+  return roles
+    .filter((assignment) =>
+      getGrantedPermissionCodes([assignment]).some((code) =>
+        permissionMatches(code, requestedCode),
+      ) &&
+      !getDeniedPermissionCodes([assignment]).some((code) =>
+        permissionMatches(code, requestedCode),
+      ),
+    )
+    .map((assignment) => assignment.scope_json)
+    .filter((scope) => scope != null);
 }
 
 export { verifyAccess as hasAccess };

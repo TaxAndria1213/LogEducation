@@ -13,7 +13,11 @@ import CreneauHoraireService from "../../../services/creneauHoraire.service";
 import EnseignantService from "../../../services/enseignant.service";
 import MatiereService from "../../../services/matiere.service";
 import salleService from "../../../services/salle.service";
-import type { ScheduleFormInput, SelectOption } from "../types";
+import {
+  getTeacherDisplayLabel,
+  type ScheduleFormInput,
+  type SelectOption,
+} from "../types";
 
 type State = {
   loading: boolean;
@@ -79,7 +83,15 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
           },
         }),
         includeSpec: JSON.stringify({
-          personnel: true,
+          personnel: {
+            include: {
+              utilisateur: {
+                include: {
+                  profil: true,
+                },
+              },
+            },
+          },
         }),
       }),
       salleService.getAll({
@@ -122,10 +134,7 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
       enseignantOptions: enseignantResult?.status.success
         ? enseignantResult.data.data.map((item: Enseignant) => ({
             value: item.id,
-            label:
-              item.personnel?.code_personnel ??
-              item.personnel?.poste ??
-              item.id,
+            label: getTeacherDisplayLabel(item),
           }))
         : [],
       salleOptions: salleResult?.status.success

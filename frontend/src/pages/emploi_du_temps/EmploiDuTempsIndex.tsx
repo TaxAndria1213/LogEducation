@@ -1,22 +1,15 @@
-import { useEffect, useState, type JSX } from "react";
 import ERPPage from "../../components/page/ERPPage";
 import { getComponentById } from "../../components/components.build";
 import ListContainer from "../../components/sidebar/ListContainer";
-import NotFound from "../NotFound";
 import { useEmploiDuTempsStore } from "./store/EmploiDuTempsIndexStore";
 
 function EmploiDuTempsIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
   const menuListIsVisible = useEmploiDuTempsStore((state) => state.menuListIsVisible);
   const setMenuListIsVisible = useEmploiDuTempsStore((state) => state.setMenuListIsVisible);
   const renderState = useEmploiDuTempsStore((state) => state.renderState);
   const renderedComponent = useEmploiDuTempsStore((state) => state.renderedComponent);
   const setRenderState = useEmploiDuTempsStore((state) => state.setRenderState);
   const setRenderedComponent = useEmploiDuTempsStore((state) => state.setRenderedComponent);
-
-  useEffect(() => {
-    if (renderedComponent) setRender(renderedComponent);
-  }, [renderedComponent]);
 
   const OptionButton = getComponentById("EDT.EMPLOIDUTEMPS.MENUACTION");
   const ListButtonComponent = getComponentById("EDT.EMPLOIDUTEMPS.MENUACTION.LIST");
@@ -39,10 +32,10 @@ function EmploiDuTempsIndex() {
         />,
       ]}
     >
-      <div className="flex">
-        <div className="flex-1">{render}</div>
+      <div className="flex items-start gap-4">
+        <div className="min-w-0 flex-1">{renderedComponent}</div>
         {menuListIsVisible ? (
-          <div className="border-l border-slate-200 pl-4 ml-4">
+          <div className="w-52 shrink-0 border-l border-slate-200 pl-4">
             <ListContainer
               selected={renderState}
               setSelected={setRenderState}

@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import type { JSX } from "react";
 import NotFound from "../../NotFound";
+import EventDashboard from "../components/Evenement/EventDashboard";
 import EventForm from "../components/Evenement/EventForm";
 import EventsList from "../components/Evenement/EventsList";
+import EventSettings from "../components/Evenement/EventSettings";
 
 type MenuComponent = {
   id: string;
@@ -10,8 +12,10 @@ type MenuComponent = {
 };
 
 const renderList: MenuComponent[] = [
+  { id: "dashboard", component: <EventDashboard /> },
   { id: "add", component: <EventForm /> },
   { id: "list", component: <EventsList /> },
+  { id: "parametre", component: <EventSettings /> },
 ];
 
 type State = {
@@ -25,7 +29,7 @@ type State = {
 
 export const useEvenementStore = create<State>((set) => ({
   menuListIsVisible: false,
-  renderedComponent: <NotFound />,
+  renderedComponent: <EventDashboard />,
   renderState: 0,
   setRenderState: (value: number) => set({ renderState: value }),
   setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),

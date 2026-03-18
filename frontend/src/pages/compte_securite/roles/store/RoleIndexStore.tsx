@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import NotFound from "../../../NotFound";
 import type { JSX } from "react";
+import RoleDashboard from "../components/dashboard/RoleDashboard";
 import RoleList from "../components/table/RoleTable";
 import RoleForm from "../components/form/RoleForm";
+import RoleSettings from "../components/settings/RoleSettings";
 
 type menuItemToComponentType = {
   id: string;
@@ -11,12 +13,20 @@ type menuItemToComponentType = {
 
 const renderList: menuItemToComponentType[] = [
   {
+    id: "dashboard",
+    component: <RoleDashboard />,
+  },
+  {
     id: "add",
     component: <RoleForm />,
   },
   {
     id: "list",
     component: <RoleList />,
+  },
+  {
+    id: "parametre",
+    component: <RoleSettings />,
   },
 ];
 
@@ -32,7 +42,7 @@ type State = {
 export const useRoleStore = create<State>((set) => {
   return {
     menuListIsVisible: false,
-    renderedComponent: <NotFound />,
+    renderedComponent: <RoleDashboard />,
     renderState: 0,
     setRenderState: (value: number) => set({ renderState: value }),
     setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),

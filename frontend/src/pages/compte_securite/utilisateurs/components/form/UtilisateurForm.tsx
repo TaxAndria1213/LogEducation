@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { getFieldsFromZodObjectSchema } from "../../../../../components/Form/fields";
 import { Form } from "../../../../../components/Form/Form";
 import { UtilisateurSchema } from "../../../../../generated/zod";
@@ -10,7 +10,18 @@ import type { Utilisateur } from "../../../../../types/models";
 
 function UtilisateurForm() {
   const {etablissement_id} = useAuth();
-  const service = new UtilisateurService();
+  const service = useMemo(() => {
+    const api = new UtilisateurService();
+
+    return {
+      create: async (data: Partial<Utilisateur>) =>
+        api.createUser({
+          ...data,
+          etablissement_id: etablissement_id ?? undefined,
+          statut: "ACTIF",
+        }),
+    };
+  }, [etablissement_id]);
   const loading = useUtilisateurCreateStore((state) => state.loading);
   const etablissementOptions = useUtilisateurCreateStore(
     (state) => state.etablissementOptions,
@@ -40,6 +51,7 @@ function UtilisateurForm() {
           options: etablissementOptions,
         },
       },
+      mot_de_passe_hash: { widget: "password" },
     },
 
     labelByField: {
@@ -57,8 +69,6 @@ function UtilisateurForm() {
     dernier_login: true,
     statut: true,
     scope_json: true,
-    
-
   });
 
   return (

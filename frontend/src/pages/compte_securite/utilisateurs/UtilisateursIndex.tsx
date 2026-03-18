@@ -6,7 +6,6 @@ import {
 import ListContainer from "../../../components/sidebar/ListContainer";
 import { useUtilisateurStore } from "./store/UtilisateurIndexStore";
 import { useEffect, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
 import { useAuth } from "../../../auth/AuthContext";
 import type { Utilisateur, UtilisateurRole } from "../../../generated/zod";
 
@@ -16,7 +15,6 @@ function UtilisateursIndex() {
   const utilisateur = user as Utilisateur;
   const utilisateurRoles = roles as UtilisateurRole[];
   //states
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
   const [renderList, setRenderList] = useState<JSX.Element[]>([<></>]);
 
   const menuListIsVisible = useUtilisateurStore(
@@ -37,12 +35,6 @@ function UtilisateursIndex() {
   );
 
   const OptionButton = getComponentById("CS.UTILISATEURS.MENUACTION");
-
-  useEffect(() => {
-    if (renderedElement) {
-      setRender(renderedElement);
-    }
-  }, [renderedElement]);
 
   useEffect(() => {
     if (user && roles) {
@@ -118,10 +110,10 @@ function UtilisateursIndex() {
         />,
       ]}
     >
-      <div className="flex">
-        <div className="flex-1">{render}</div>
+      <div className="flex items-start gap-4">
+        <div className="min-w-0 flex-1">{renderedElement}</div>
         {menuListIsVisible ? (
-          <div className="border-l border-slate-200 pl-4 ml-4">
+          <div className="w-52 shrink-0 border-l border-slate-200 pl-4">
             <ListContainer
               selected={renderState}
               setSelected={setRenderState}

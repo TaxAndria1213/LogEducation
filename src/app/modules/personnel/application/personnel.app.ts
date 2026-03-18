@@ -29,13 +29,13 @@ class PersonnelApp {
     private async create(req: Request, res: R, next: NextFunction): Promise<void> {
         try {
             const data: Personnel = req.body;
-            const lastPersonnel: Personnel = await this.personnel.findLast({
+            const lastPersonnel = await this.personnel.findLast({
                 where: {
                     etablissement_id: data.etablissement_id
                 }
             })
             //générer un code
-            const code = new Code("P", 3, lastPersonnel.code_personnel as string);
+            const code = new Code("P", 3, (lastPersonnel as Personnel | null)?.code_personnel ?? "");
             data.code_personnel = code.next();
 
             const result = await this.personnel.create(data);

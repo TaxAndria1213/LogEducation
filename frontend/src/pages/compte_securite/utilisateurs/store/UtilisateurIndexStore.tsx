@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import NotFound from "../../../NotFound";
 import type { JSX } from "react";
+import UtilisateurDashboard from "../components/dashboard/UtilisateurDashboard";
 import UtilisateurList from "../components/table/UtilisateursTable";
 import UtilisateurForm from "../components/form/UtilisateurForm";
 import ApprobationList from "../components/table/Utilisateur.AprobationTable";
+import UtilisateurSettings from "../components/settings/UtilisateurSettings";
 
 type menuItemToComponentType = {
   id: string;
@@ -11,6 +13,10 @@ type menuItemToComponentType = {
 };
 
 const renderList: menuItemToComponentType[] = [
+  {
+    id: "dashboard",
+    component: <UtilisateurDashboard />,
+  },
   {
     id: "add",
     component: <UtilisateurForm />,
@@ -22,6 +28,10 @@ const renderList: menuItemToComponentType[] = [
   {
     id: "approbation",
     component: <ApprobationList />,
+  },
+  {
+    id: "parametre",
+    component: <UtilisateurSettings />,
   },
 ];
 
@@ -37,7 +47,7 @@ type State = {
 export const useUtilisateurStore = create<State>((set) => {
   return {
     menuListIsVisible: false,
-    renderedComponent: <NotFound />,
+    renderedComponent: <UtilisateurDashboard />,
     renderState: 0,
     setRenderState: (value: number) => set({ renderState: value }),
     setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),

@@ -1,22 +1,19 @@
-import { useEffect, useState, type JSX } from "react";
 import ERPPage from "../../components/page/ERPPage";
 import { getComponentById } from "../../components/components.build";
 import ListContainer from "../../components/sidebar/ListContainer";
-import NotFound from "../NotFound";
 import { useEvenementStore } from "./store/EvenementIndexStore";
 
 function EvenementsIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
   const menuListIsVisible = useEvenementStore((state) => state.menuListIsVisible);
-  const setMenuListIsVisible = useEvenementStore((state) => state.setMenuListIsVisible);
+  const setMenuListIsVisible = useEvenementStore(
+    (state) => state.setMenuListIsVisible,
+  );
   const renderState = useEvenementStore((state) => state.renderState);
   const renderedComponent = useEvenementStore((state) => state.renderedComponent);
   const setRenderState = useEvenementStore((state) => state.setRenderState);
-  const setRenderedComponent = useEvenementStore((state) => state.setRenderedComponent);
-
-  useEffect(() => {
-    if (renderedComponent) setRender(renderedComponent);
-  }, [renderedComponent]);
+  const setRenderedComponent = useEvenementStore(
+    (state) => state.setRenderedComponent,
+  );
 
   const OptionButton = getComponentById("EDT.EVENEMENTS.MENUACTION");
   const ListButtonComponent = getComponentById("EDT.EVENEMENTS.MENUACTION.LIST");
@@ -29,7 +26,7 @@ function EvenementsIndex() {
   return (
     <ERPPage
       title="Evenements"
-      description="Gerer le calendrier de l'etablissement"
+      description="Gerer le calendrier et les temps forts de l'etablissement"
       headerActions={[
         <OptionButton
           key="EDT.EVENEMENTS.MENUACTION"
@@ -37,10 +34,10 @@ function EvenementsIndex() {
         />,
       ]}
     >
-      <div className="flex">
-        <div className="flex-1">{render}</div>
+      <div className="flex items-start gap-4">
+        <div className="min-w-0 flex-1">{renderedComponent}</div>
         {menuListIsVisible ? (
-          <div className="border-l border-slate-200 pl-4 ml-4">
+          <div className="w-52 shrink-0 border-l border-slate-200 pl-4">
             <ListContainer
               selected={renderState}
               setSelected={setRenderState}

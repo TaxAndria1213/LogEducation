@@ -6,14 +6,12 @@ import {
 import ListContainer from "../../../components/sidebar/ListContainer";
 import { useRoleStore } from "./store/RoleIndexStore";
 import { useEffect, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
 import { useAuth } from "../../../auth/AuthContext";
 
 function RolesIndex() {
   const { user, roles } = useAuth();
 
   //states
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
   const [renderList, setRenderList] = useState<JSX.Element[]>([<></>]);
 
   const menuListIsVisible = useRoleStore((state) => state.menuListIsVisible);
@@ -30,12 +28,6 @@ function RolesIndex() {
   );
 
   const OptionButton = getComponentById("CS.ROLES.MENUACTION");
-
-  useEffect(() => {
-    if (renderedElement) {
-      setRender(renderedElement);
-    }
-  }, [renderedElement]);
 
   useEffect(() => {
     if (user && roles) {
@@ -91,10 +83,10 @@ function RolesIndex() {
         />,
       ]}
     >
-      <div className="flex">
-        <div className="flex-1">{render}</div>
+      <div className="flex items-start gap-4">
+        <div className="min-w-0 flex-1">{renderedElement}</div>
         {menuListIsVisible ? (
-          <div className="border-l border-slate-200 pl-4 ml-4">
+          <div className="w-52 shrink-0 border-l border-slate-200 pl-4">
             <ListContainer
               selected={renderState}
               setSelected={setRenderState}

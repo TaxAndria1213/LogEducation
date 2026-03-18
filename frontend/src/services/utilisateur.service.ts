@@ -7,6 +7,13 @@ import ProfileService from "./profile.service";
 import RoleService from "./role.service";
 import UtilisateurRoleService from "./utilisateur_role.service";
 
+export type CreateAccountFromLinkPayload = {
+    etablissement_id: string;
+    role_id: string;
+    utilisateur: Pick<Utilisateur, "email" | "telephone" | "mot_de_passe_hash">;
+    profil: Pick<Profil, "prenom" | "nom" | "date_naissance" | "genre" | "adresse">;
+}
+
 class UtilisateurService extends Service {
     constructor() {
         super("user");
@@ -25,6 +32,16 @@ class UtilisateurService extends Service {
     async createUser(data: Partial<Utilisateur>) {
         try {
             const response = await Http.post(["api", this.url, "create"].join("/"), data);
+            return response;
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+
+    async createAccountFromLink(data: CreateAccountFromLinkPayload) {
+        try {
+            const response = await Http.post(["api", this.url, "create-from-link"].join("/"), data);
             return response;
         } catch (error) {
             console.log(error);

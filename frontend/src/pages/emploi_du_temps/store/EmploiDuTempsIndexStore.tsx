@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { JSX } from "react";
 import NotFound from "../../NotFound";
+import CreneauManager from "../components/EmploiDuTemps/CreneauManager";
+import ScheduleDashboard from "../components/EmploiDuTemps/ScheduleDashboard";
 import ScheduleForm from "../components/EmploiDuTemps/ScheduleForm";
 import ScheduleList from "../components/EmploiDuTemps/ScheduleList";
 
@@ -10,8 +12,10 @@ type MenuComponent = {
 };
 
 const renderList: MenuComponent[] = [
+  { id: "dashboard", component: <ScheduleDashboard /> },
   { id: "add", component: <ScheduleForm /> },
   { id: "list", component: <ScheduleList /> },
+  { id: "parametre", component: <CreneauManager /> },
 ];
 
 type State = {
@@ -25,7 +29,7 @@ type State = {
 
 export const useEmploiDuTempsStore = create<State>((set) => ({
   menuListIsVisible: false,
-  renderedComponent: <NotFound />,
+  renderedComponent: <ScheduleDashboard />,
   renderState: 0,
   setRenderState: (value: number) => set({ renderState: value }),
   setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),

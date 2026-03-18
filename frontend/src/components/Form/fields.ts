@@ -16,6 +16,7 @@ import {
   BooleanField,
   DateField,
   DateTimeField,
+  TimeField,
   EnumSelectField,
   JsonField,
   BytesField,
@@ -198,7 +199,7 @@ export function resolveFieldComponent(
     widget?: "password" | "textarea" | "text" | "json" | "bytes";
     relation?: { multiple?: boolean; options?: Array<{ value: string; label: string }> };
     enumLabels?: Record<string, string>;
-    dateMode?: "date" | "datetime";
+    dateMode?: "date" | "datetime" | "time";
     decimalMode?: "decimal";
     bigintMode?: "bigint";
   }
@@ -228,6 +229,7 @@ export function resolveFieldComponent(
 
     if (checks.has("email")) return { Component: EmailField, required, nullable };
     if (checks.has("url")) return { Component: UrlField, required, nullable };
+    if (meta?.dateMode === "time") return { Component: TimeField, required, nullable };
 
     if (meta?.decimalMode === "decimal") return { Component: DecimalField, required, nullable };
     if (meta?.bigintMode === "bigint") return { Component: BigIntField, required, nullable };
@@ -247,6 +249,7 @@ export function resolveFieldComponent(
   if (tn === "ZodDate") {
     if (meta?.dateMode === "date") return { Component: DateField, required, nullable };
     if (meta?.dateMode === "datetime") return { Component: DateTimeField, required, nullable };
+    if (meta?.dateMode === "time") return { Component: TimeField, required, nullable };
     return { Component: pickDateComponent(fieldName), required, nullable };
   }
 

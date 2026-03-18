@@ -4,8 +4,11 @@ import type {
   EmploiDuTemps,
   Enseignant,
   EvenementCalendrier,
+  Personnel,
+  Profil,
   Salle,
   Site,
+  Utilisateur,
 } from "../../../types/models";
 
 export type SelectOption = {
@@ -13,8 +16,33 @@ export type SelectOption = {
   label: string;
 };
 
+export type PlannerCellDraft = {
+  cours_id?: string;
+  salle_id?: string;
+  sourceId?: string;
+};
+
+export function getPlannerCellKey(day: number, creneauId: string): string {
+  return `${day}::${creneauId}`;
+}
+
+export const WEEKDAY_OPTIONS: Array<{ value: number; label: string }> = [
+  { value: 1, label: "Lundi" },
+  { value: 2, label: "Mardi" },
+  { value: 3, label: "Mercredi" },
+  { value: 4, label: "Jeudi" },
+  { value: 5, label: "Vendredi" },
+  { value: 6, label: "Samedi" },
+  { value: 7, label: "Dimanche" },
+];
+
 export type ScheduleFormInput = Omit<
   EmploiDuTemps,
+  "id" | "created_at" | "updated_at"
+>;
+
+export type CreneauFormInput = Omit<
+  CreneauHoraire,
   "id" | "created_at" | "updated_at"
 >;
 
@@ -23,12 +51,42 @@ export type EventFormInput = Omit<
   "id" | "created_at" | "updated_at"
 >;
 
+export type EventRow = EvenementCalendrier & {
+  site?: Site | null;
+};
+
+export const EVENT_TYPE_OPTIONS: SelectOption[] = [
+  { value: "Cours", label: "Cours special" },
+  { value: "Examen", label: "Examen" },
+  { value: "Reunion", label: "Reunion" },
+  { value: "Activite", label: "Activite" },
+  { value: "Ferie", label: "Jour ferie" },
+  { value: "Sortie", label: "Sortie" },
+];
+
 export type ScheduleRow = EmploiDuTemps & {
   cours?: (Cours & { classe?: EmploiDuTemps["classe"] }) | null;
-  enseignant?: (Enseignant & { personnel?: Enseignant["personnel"] }) | null;
+  enseignant?: (Enseignant & {
+    personnel?: (Personnel & {
+      utilisateur?: (Utilisateur & { profil?: Profil | null }) | null;
+    }) | null;
+  }) | null;
   salle?: (Salle & { site?: Site | null }) | null;
   creneau?: CreneauHoraire;
 };
+
+type TeacherLike = {
+  personnel?: {
+    code_personnel?: string | null;
+    poste?: string | null;
+    utilisateur?: {
+      profil?: {
+        prenom?: string | null;
+        nom?: string | null;
+      } | null;
+    } | null;
+  } | null;
+} | null;
 
 const WEEKDAY_LABELS: Record<number, string> = {
   1: "Lundi",
@@ -48,4 +106,83 @@ export function getWeekdayLabel(day: number | null | undefined): string {
 export function getCreneauLabel(creneau?: CreneauHoraire | null): string {
   if (!creneau) return "-";
   return `${creneau.nom} (${creneau.heure_debut} - ${creneau.heure_fin})`;
+}
+
+export function getEventTypeLabel(type?: string | null): string {
+  if (!type) return "Non classe";
+  return EVENT_TYPE_OPTIONS.find((item) => item.value === type)?.label ?? type;
+}
+
+export function getEventStatus(event: Pick<EvenementCalendrier, "debut" | "fin">): {
+  label: string;
+  tone: string;
+} {
+  const now = new Date();
+  const start = new Date(event.debut);
+  const end = new Date(event.fin);
+
+  if (start <= now && end >= now) {
+    return { label: "En cours", tone: "bg-emerald-100 text-emerald-700" };
+  }
+
+  if (start > now) {
+    return { label: "A venir", tone: "bg-sky-100 text-sky-700" };
+  }
+
+  return { label: "Termine", tone: "bg-slate-200 text-slate-700" };
+}
+
+export function getEventDurationLabel(event: Pick<EvenementCalendrier, "debut" | "fin">): string {
+  const start = new Date(event.debut).getTime();
+  const end = new Date(event.fin).getTime();
+
+  if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return "-";
+
+  const totalMinutes = Math.round((end - start) / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0 && minutes > 0) return `${hours} h ${minutes} min`;
+  if (hours > 0) return `${hours} h`;
+  return `${minutes} min`;
+}
+
+export function isEventOnSameDay(
+  event: Pick<EvenementCalendrier, "debut">,
+  date: Date,
+): boolean {
+  const target = new Date(event.debut);
+  return (
+    target.getFullYear() === date.getFullYear() &&
+    target.getMonth() === date.getMonth() &&
+    target.getDate() === date.getDate()
+  );
+}
+
+export function getTeacherDisplayLabel(teacher?: TeacherLike): string {
+  const prenom = teacher?.personnel?.utilisateur?.profil?.prenom?.trim() ?? "";
+  const nom = teacher?.personnel?.utilisateur?.profil?.nom?.trim() ?? "";
+  const fullName = [prenom, nom].filter(Boolean).join(" ").trim();
+  const code = teacher?.personnel?.code_personnel?.trim() ?? "";
+  const poste = teacher?.personnel?.poste?.trim() ?? "";
+
+  if (code && fullName) return `${code} - ${fullName}`;
+  if (fullName) return fullName;
+  if (code && poste) return `${code} - ${poste}`;
+  if (code) return code;
+  if (poste) return poste;
+  return "Enseignant non renseigne";
+}
+
+export function getTeacherSecondaryLabel(teacher?: TeacherLike): string {
+  const prenom = teacher?.personnel?.utilisateur?.profil?.prenom?.trim() ?? "";
+  const nom = teacher?.personnel?.utilisateur?.profil?.nom?.trim() ?? "";
+  const fullName = [prenom, nom].filter(Boolean).join(" ").trim();
+  const code = teacher?.personnel?.code_personnel?.trim() ?? "";
+  const poste = teacher?.personnel?.poste?.trim() ?? "";
+
+  if (fullName && poste) return poste;
+  if (code && poste) return poste;
+  if (!fullName && code) return "Code enseignant";
+  return "";
 }
