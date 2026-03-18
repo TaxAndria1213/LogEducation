@@ -62,7 +62,8 @@ class Server {
       (req, res, next) => {
         // Skip authGuard for /api/user/create and /api/auth/login
         if ((req.path === "/user/create" && req.method === "POST") ||
-            (req.path === "/auth/login" && req.method === "POST")) {
+            (req.path === "/auth/login" && req.method === "POST") ||
+            (req.path === "/auth/refresh" && req.method === "POST")) {
           return next();
         }
         Promise.resolve(authGuard.handle(req, res, next)).catch(next);

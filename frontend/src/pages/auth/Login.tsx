@@ -20,7 +20,7 @@ export default function Login() {
 
   useEffect(() => {
     if (user && token && rolesAccessList) {
-      login(JSON.parse(user), JSON.parse(rolesAccessList), token);
+      login(JSON.parse(user), JSON.parse(rolesAccessList), { accessToken: token, refreshToken: localStorage.getItem("refreshToken") as string });
       navigate(from, { replace: true });
     }
   }, [user, token, rolesAccessList, from, navigate, login]);
@@ -30,7 +30,7 @@ export default function Login() {
     try {
       const data = await authService.login(username, password);
       console.log("🚀 ~ handleSubmit ~ data:", data);
-      login(data.user, data.rolesAccessList, data.result.accessToken);
+      login(data.user, data.rolesAccessList, { accessToken: data.result.accessToken, refreshToken: data.result.refreshToken });
       navigate(from, { replace: true });
     } catch (err) {
       console.error(err);

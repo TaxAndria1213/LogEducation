@@ -9,7 +9,8 @@ export type AuthContextType = {
   profil: Profil | null;
   rolesAccessList: Role[] | null;
   token: null | string;
-  login: (user: Utilisateur, roles: Role[], token: string) => void;
+  refreshToken: null | string;
+  login: (user: Utilisateur, roles: Role[], tokens: { accessToken: string; refreshToken: string }) => void;
   logout: () => void;
 };
 

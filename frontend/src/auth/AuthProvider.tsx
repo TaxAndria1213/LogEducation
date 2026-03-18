@@ -19,14 +19,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return rolesAccessListData ? JSON.parse(rolesAccessListData) : [];
   });
 
-  const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem("token");
-  });
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
+  const [refreshToken, setRefreshToken] = useState<string | null>(() => localStorage.getItem("refreshToken"));
 
   const login = useCallback(
-    (user: Utilisateur, roles: Role[], token: string) => {
+    (user: Utilisateur, roles: Role[], tokens: { accessToken: string; refreshToken: string }) => {
       setUser(user);
-      setToken(token);
+      setToken(tokens.accessToken);
+      setRefreshToken(tokens.refreshToken);
       setRolesAccessList(roles);
       setEtablissementId(user.etablissement_id);
       localStorage.setItem(
@@ -34,13 +34,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         JSON.stringify({ etablissement_id: user.etablissement_id }),
       );
       localStorage.setItem("rolesAccessList", JSON.stringify(roles));
-      localStorage.setItem("token", token);
+      localStorage.setItem("token", tokens.accessToken);
+      localStorage.setItem("refreshToken", tokens.refreshToken);
     },
     [],
   );
 
   const logout = useCallback(() => {
     setUser(null);
+    setToken(null);
+    setRefreshToken(null);
     localStorage.clear();
   }, []);
 
@@ -66,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       roles,
       rolesAccessList,
       token,
+      refreshToken,
       login,
       logout,
     }),
@@ -76,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       roles,
       rolesAccessList,
       token,
+      refreshToken,
       login,
       logout,
     ],

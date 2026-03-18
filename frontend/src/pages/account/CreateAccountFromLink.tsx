@@ -182,7 +182,7 @@ export default function CreateAccountFromLink() {
       login(
         dataUser.user,
         dataUser.rolesAccessList,
-        dataUser.result.accessToken,
+        { accessToken: dataUser.result.accessToken, refreshToken: dataUser.result.refreshToken },
       );
 
       //creation de profile

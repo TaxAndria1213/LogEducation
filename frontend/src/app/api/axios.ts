@@ -21,6 +21,17 @@ function apiApp(url: string) {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      const tenant = localStorage.getItem("contextParams");
+      if (tenant) {
+        try {
+          const parsed = JSON.parse(tenant);
+          if (parsed.etablissement_id) {
+            config.headers["x-etablissement-id"] = parsed.etablissement_id;
+          }
+        } catch {
+          /* noop */
+        }
+      }
       return config;
     },
     (error) => Promise.reject(error)
@@ -29,10 +40,29 @@ function apiApp(url: string) {
   // Gestion des erreurs globales
   api.interceptors.response.use(
     (response) => response,
-    (error) => {
-      if (error.response?.status === 401) {
-        // Si le token a expiré ou non valide → redirection vers login
-        localStorage.removeItem("token");
+    async (error) => {
+      const originalRequest = error.config;
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+        try {
+          const refreshToken = localStorage.getItem("refreshToken");
+          if (!refreshToken) throw new Error("missing refresh token");
+          const { data } = await api.post("/auth/refresh", { refreshToken });
+          const newAccess = data?.data?.accessToken;
+          const newRefresh = data?.data?.refreshToken;
+          if (newAccess) {
+            localStorage.setItem("token", newAccess);
+            if (newRefresh) localStorage.setItem("refreshToken", newRefresh);
+            originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+            return api(originalRequest);
+          }
+        } catch (e) {
+          console.log("🚀 ~ apiApp ~ e:", e)
+          localStorage.clear();
+          window.location.href = "/login";
+        }
+      }
+      if (error.response?.status === 403) {
         window.location.href = "/login";
       }
       return Promise.reject(error);

@@ -21,10 +21,11 @@ class AuthApp {
     this.routes();
   }
 
-  public routes(): Router {
-    this.router.post("/login", this.login.bind(this));
-    return this.router;
-  }
+    public routes(): Router {
+        this.router.post("/login", this.login.bind(this));
+        this.router.post("/refresh", this.refresh.bind(this));
+        return this.router;
+    }
 
   private async login(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
@@ -53,6 +54,24 @@ class AuthApp {
       Response.success(res, "Login successful", { result, user: resultUser, rolesAccessList });
     } catch (error) {
       console.log("🚀 ~ AuthApp ~ login ~ error:", error);
+      next(error);
+    }
+  }
+
+  private async refresh(req: Request, res: R, next: NextFunction): Promise<void> {
+    try {
+      const token = (req.body?.refreshToken ?? req.headers["x-refresh-token"]) as string;
+      if (!token) {
+        Response.error(res, "Refresh token manquant", 401, new Error("missing refresh token"));
+        return;
+      }
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+      const jwt = new JwtService(secret);
+      const authService = new AuthService(jwt);
+      const result = await authService.refreshToken(token);
+      Response.success(res, "Token rafraîchi", result);
+    } catch (error) {
+      Response.error(res, "Refresh token invalide ou expiré", 401, error as Error);
       next(error);
     }
   }

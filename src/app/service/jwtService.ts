@@ -1,9 +1,12 @@
 // src/services/JwtService.ts
 import { SignJWT, jwtVerify, JWTPayload } from 'jose';
+import { randomUUID } from 'node:crypto';
 
 export interface AccessPayload extends JWTPayload {
   sub: string;          // identifiant utilisateur
-  role: string;         // custom claim
+  role: string[];       // roles (multis)
+  etablissement_id: string | null;
+  jti: string;
 }
 
 export class JwtService {
