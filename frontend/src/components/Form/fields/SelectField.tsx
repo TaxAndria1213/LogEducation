@@ -37,7 +37,17 @@ export function SelectField<TFieldValues extends FieldValues, TValue extends str
           <select
             id={id}
             value={field.value ?? ""}
-            onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.value)}
+            onChange={(e) => {
+              const nextValue = e.target.value;
+
+              if (nextValue === "") {
+                field.onChange(undefined);
+                return;
+              }
+
+              const matchedOption = options.find((option) => String(option.value) === nextValue);
+              field.onChange(matchedOption ? matchedOption.value : nextValue);
+            }}
             onBlur={field.onBlur}
             ref={field.ref}
             disabled={disabled}

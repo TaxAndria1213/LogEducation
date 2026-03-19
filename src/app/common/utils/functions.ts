@@ -25,7 +25,7 @@ export async function getAllPaginated(query: ParsedQs, model: PrismaService) {
         includes,
         includeSpec,
         select,
-        maxTake: 100,
+        maxTake: 5000,
     });
 
     return result;

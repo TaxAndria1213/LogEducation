@@ -49,9 +49,7 @@ function EmploiDuTempsIndex() {
               ]}
             />
           </div>
-        ) : (
-          <div className="none"></div>
-        )}
+        ) : null}
       </div>
     </ERPPage>
   );

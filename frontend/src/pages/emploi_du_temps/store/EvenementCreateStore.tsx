@@ -90,7 +90,7 @@ export const useEvenementCreateStore = create<State>((set) => ({
 
     const siteService = new SiteService();
     const result = await siteService.getAll({
-      take: 1000,
+      take: 5000,
       where: JSON.stringify({ etablissement_id }),
       orderBy: JSON.stringify({ nom: "asc" }),
     });

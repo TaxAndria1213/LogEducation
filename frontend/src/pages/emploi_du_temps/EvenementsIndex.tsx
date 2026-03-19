@@ -51,9 +51,7 @@ function EvenementsIndex() {
               ]}
             />
           </div>
-        ) : (
-          <div className="none"></div>
-        )}
+        ) : null}
       </div>
     </ERPPage>
   );

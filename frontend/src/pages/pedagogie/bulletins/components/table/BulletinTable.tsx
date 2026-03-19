@@ -1,7 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
 import {
   DataTable,
@@ -11,6 +8,12 @@ import type { Bulletin, BulletinLigne } from "../../../../../types/models";
 import BulletinService from "../../../../../services/bulletin.service";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
 import { useAuth } from "../../../../../auth/AuthContext";
+import {
+  addPdfHeader,
+  addPdfTable,
+  createPdfDocument,
+  savePdf,
+} from "../../../../../utils/pdf";
 
 const formatDate = (value?: Date | string | null) =>
   value ? formatDateWithLocalTimezone(value.toString()).date : "-";
@@ -28,31 +31,26 @@ export default function BulletinTable() {
   const service = React.useMemo(() => new BulletinService(), []);
 
   const buildPdf = (row: Bulletin) => {
-    console.log("🚀 ~ buildPdf ~ row:", row);
-    const doc = new jsPDF();
+    const doc = createPdfDocument();
     const fullName =
       `${row.eleve?.utilisateur?.profil?.nom ?? ""} ${row.eleve?.utilisateur?.profil?.prenom ?? ""}`.trim();
-    const headerY = 18;
 
-    doc.setFontSize(16);
-    doc.text("Bulletin de notes", 14, headerY);
-
-    doc.setFontSize(11);
-    doc.text(
-      `Élève : ${fullName || row.eleve?.code_eleve || "-"}`,
-      14,
-      headerY + 10,
-    );
-    doc.text(`Classe : ${row.classe?.nom ?? "-"}`, 14, headerY + 16);
-    doc.text(`Période : ${row.periode?.nom ?? "-"}`, 14, headerY + 22);
-    doc.text(`Statut : ${row.statut ?? "-"}`, 14, headerY + 28);
-    doc.text(`Publié le : ${formatDate(row.publie_le)}`, 120, headerY + 10);
-    doc.text(`Généré le : ${formatDate(new Date())}`, 120, headerY + 16);
+    const headerY = addPdfHeader(doc, {
+      title: "Bulletin de notes",
+      metadata: [
+        { label: "Eleve", value: fullName || row.eleve?.code_eleve || "-" },
+        { label: "Classe", value: row.classe?.nom ?? "-" },
+        { label: "Periode", value: row.periode?.nom ?? "-" },
+        { label: "Statut", value: row.statut ?? "-" },
+        { label: "Publie le", value: formatDate(row.publie_le) },
+        { label: "Genere le", value: formatDate(new Date()) },
+      ],
+    });
 
     const lignes = row.lignes ?? [];
-    autoTable(doc, {
-      startY: headerY + 35,
-      head: [["Matière", "Moyenne", "Commentaire enseignant"]],
+    const finalY = addPdfTable(doc, {
+      startY: headerY,
+      head: ["Matiere", "Moyenne", "Commentaire enseignant"],
       body: lignes.map((l) => [
         l.matiere?.nom ?? "-",
         l.moyenne !== null && l.moyenne !== undefined
@@ -60,32 +58,27 @@ export default function BulletinTable() {
           : "-",
         l.commentaire_enseignant ?? "",
       ]),
-      styles: { fontSize: 10, cellPadding: 3 },
-      headStyles: { fillColor: [37, 99, 235], textColor: 255 },
-      alternateRowStyles: { fillColor: [245, 247, 250] },
-      margin: { left: 14, right: 14 },
     });
 
-    const finalY = (doc as any).lastAutoTable?.finalY ?? headerY + 40;
     const moyenne = moyenneGenerale(lignes);
     doc.setFontSize(12);
-    doc.text(`Moyenne générale : ${moyenne.toFixed(2)}`, 14, finalY + 12);
+    doc.text(`Moyenne generale : ${moyenne.toFixed(2)}`, 14, finalY + 12);
 
     const filename = `bulletin-${row.eleve?.code_eleve ?? row.id}.pdf`;
-    doc.save(filename);
+    savePdf(doc, filename);
   };
 
   const columns: ColumnDef<Bulletin>[] = [
     {
       key: "eleve",
-      header: "Élève",
+      header: "Eleve",
       render: (row) => row.eleve?.code_eleve ?? "-",
       sortable: true,
       sortKey: "eleve.code_eleve",
     },
     {
       key: "periode",
-      header: "Période",
+      header: "Periode",
       render: (row) => row.periode?.nom ?? "-",
       sortable: true,
       sortKey: "periode.nom",
@@ -99,7 +92,7 @@ export default function BulletinTable() {
     },
     {
       key: "moyenne_generale",
-      header: "Moy. générale",
+      header: "Moy. generale",
       render: (row) => {
         const moy = moyenneGenerale(row.lignes);
         return row.lignes?.length ? moy.toFixed(2) : "-";
@@ -114,7 +107,7 @@ export default function BulletinTable() {
     },
     {
       key: "publie_le",
-      header: "Publié le",
+      header: "Publie le",
       render: (row) => formatDate(row.publie_le),
       sortable: true,
       sortKey: "publie_le",
@@ -123,7 +116,7 @@ export default function BulletinTable() {
 
   const actions: RowAction<Bulletin>[] = [
     {
-      label: "Générer",
+      label: "Generer",
       variant: "primary",
       onClick: async (row) => {
         await service.generate(row.id);

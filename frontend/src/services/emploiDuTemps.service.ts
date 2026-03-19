@@ -1,4 +1,5 @@
 import Service from "../app/api/Service";
+import { Http } from "../app/api/Http";
 import type { EmploiDuTemps } from "../types/models";
 
 class EmploiDuTempsService extends Service {
@@ -8,7 +9,7 @@ class EmploiDuTempsService extends Service {
 
     async getClassePlanning(classe_id: string) {
         return this.getAll({
-            take: 1000,
+            take: 5000,
             where: JSON.stringify({ classe_id }),
             includeSpec: JSON.stringify({
                 classe: true,
@@ -41,44 +42,39 @@ class EmploiDuTempsService extends Service {
             }),
             orderBy: JSON.stringify([
                 { jour_semaine: "asc" },
-                { creneau_horaire_id: "asc" },
+                { creneau: { ordre: "asc" } },
+                { creneau: { heure_debut: "asc" } },
             ]),
         });
     }
 
-    async replaceClassePlanning(classe_id: string, entries: Array<Omit<EmploiDuTemps, "id" | "created_at" | "updated_at">>) {
-        const existing = await this.getClassePlanning(classe_id);
+    async replaceClassePlanning(
+        classe_id: string,
+        entries: Array<Omit<EmploiDuTemps, "id" | "created_at" | "updated_at">>,
+        options?: {
+            existingEntries?: EmploiDuTemps[];
+        },
+    ) {
+        let existingEntryIds = (options?.existingEntries ?? []).map((item) => item.id);
 
-        if (!existing?.status.success) {
-            return {
-                status: { success: false, message: "Impossible de charger le planning existant." },
-                data: [],
-            };
+        if (!options?.existingEntries) {
+            const existing = await this.getClassePlanning(classe_id);
+
+            if (!existing?.status.success) {
+                return {
+                    status: { success: false, message: "Impossible de charger le planning existant." },
+                    data: null,
+                };
+            }
+
+            existingEntryIds = (existing.data?.data ?? []).map((item: EmploiDuTemps) => item.id);
         }
 
-        const deleteResults = await Promise.all(
-            existing.data.data.map((item: EmploiDuTemps) => this.delete(item.id)),
-        );
-
-        if (deleteResults.some((result) => !result?.status?.success)) {
-            return {
-                status: { success: false, message: "Impossible de nettoyer le planning existant." },
-                data: deleteResults,
-            };
-        }
-
-        if (!entries.length) return { status: { success: true }, data: [] };
-
-        const results = await Promise.all(entries.map((entry) => this.create(entry)));
-
-        if (results.some((result) => !result?.status?.success)) {
-            return {
-                status: { success: false, message: "Une partie du planning n'a pas pu etre creee." },
-                data: results,
-            };
-        }
-
-        return { status: { success: true }, data: results };
+        return Http.post(["/api", this.url, "replace-classe-planning"].join("/"), {
+            classe_id,
+            entries,
+            existing_entry_ids: existingEntryIds,
+        });
     }
 }
 

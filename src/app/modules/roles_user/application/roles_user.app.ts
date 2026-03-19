@@ -1,7 +1,7 @@
 import { Application, Router, Request, Response as R, NextFunction } from "express";
 import Response from "../../../common/app/response";
 import RolesUserModel from "../models/roles_user.model";
-import { PrismaClient, UtilisateurRole } from "@prisma/client";
+import { Prisma, PrismaClient, UtilisateurRole } from "@prisma/client";
 import { getAllPaginated } from "../../../common/utils/functions";
 
 const prisma = new PrismaClient();
@@ -94,7 +94,10 @@ class RoleUserApp {
                     },
                 },
                 data: {
-                    scope_json: body.scope_json ?? null,
+                    scope_json:
+                        body.scope_json == null
+                            ? Prisma.JsonNull
+                            : (body.scope_json as Prisma.InputJsonValue),
                 },
             });
 

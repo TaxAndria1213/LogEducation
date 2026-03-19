@@ -14,6 +14,7 @@ import EnseignantService from "../../../services/enseignant.service";
 import MatiereService from "../../../services/matiere.service";
 import salleService from "../../../services/salle.service";
 import {
+  PAUSE_COURSE_ID,
   getTeacherDisplayLabel,
   type ScheduleFormInput,
   type SelectOption,
@@ -60,11 +61,11 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
       creneauResult,
     ] = await Promise.all([
       classeService.getAll({
-        take: 1000,
+        take: 5000,
         where: JSON.stringify({ etablissement_id }),
       }),
       coursService.getAll({
-        take: 1000,
+        take: 5000,
         where: JSON.stringify({ etablissement_id }),
         includeSpec: JSON.stringify({
           classe: true,
@@ -72,11 +73,11 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
         }),
       }),
       matiereService.getAll({
-        take: 1000,
+        take: 5000,
         where: JSON.stringify({ etablissement_id }),
       }),
       enseignantService.getAll({
-        take: 1000,
+        take: 5000,
         where: JSON.stringify({
           personnel: {
             etablissement_id,
@@ -95,7 +96,7 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
         }),
       }),
       salleService.getAll({
-        take: 1000,
+        take: 5000,
         where: JSON.stringify({
           site: {
             etablissement_id,
@@ -106,7 +107,7 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
         }),
       }),
       creneauHoraireService.getAll({
-        take: 1000,
+        take: 5000,
         where: JSON.stringify({ etablissement_id }),
         orderBy: JSON.stringify({ ordre: "asc" }),
       }),
@@ -120,10 +121,16 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
           }))
         : [],
       coursOptions: coursResult?.status.success
-        ? coursResult.data.data.map((item: Cours) => ({
-            value: item.id,
-            label: `${item.matiere?.nom ?? item.matiere_id} - ${item.classe?.nom ?? item.classe_id}`,
-          }))
+        ? [
+            {
+              value: PAUSE_COURSE_ID,
+              label: "Pause",
+            },
+            ...coursResult.data.data.map((item: Cours) => ({
+              value: item.id,
+              label: `${item.matiere?.nom ?? item.matiere_id} - ${item.classe?.nom ?? item.classe_id}`,
+            })),
+          ]
         : [],
       matiereOptions: matiereResult?.status.success
         ? matiereResult.data.data.map((item: Matiere) => ({

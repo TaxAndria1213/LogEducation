@@ -36,7 +36,7 @@ export default function EventsList() {
           <div className="font-medium text-slate-900">{row.titre}</div>
           <div className="text-xs text-slate-500">
             {getEventTypeLabel(row.type)}
-            {row.site?.nom ? ` • ${row.site.nom}` : ""}
+            {row.site?.nom ? ` - ${row.site.nom}` : ""}
           </div>
         </div>
       ),

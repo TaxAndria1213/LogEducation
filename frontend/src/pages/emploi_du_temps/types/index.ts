@@ -20,7 +20,14 @@ export type PlannerCellDraft = {
   cours_id?: string;
   salle_id?: string;
   sourceId?: string;
+  isPause?: boolean;
 };
+
+export const PAUSE_COURSE_ID = "__DEFAULT_PAUSE__";
+
+export function isPauseCourseValue(value?: string | null): boolean {
+  return value === PAUSE_COURSE_ID;
+}
 
 export function getPlannerCellKey(day: number, creneauId: string): string {
   return `${day}::${creneauId}`;
@@ -106,6 +113,32 @@ export function getWeekdayLabel(day: number | null | undefined): string {
 export function getCreneauLabel(creneau?: CreneauHoraire | null): string {
   if (!creneau) return "-";
   return `${creneau.nom} (${creneau.heure_debut} - ${creneau.heure_fin})`;
+}
+
+export function getScheduleScopeMeta(
+  schedule: Pick<EmploiDuTemps, "effectif_du" | "effectif_au">,
+): {
+  label: string;
+  tone: string;
+} {
+  const start = new Date(schedule.effectif_du);
+  const end = new Date(schedule.effectif_au);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return { label: "Non defini", tone: "bg-slate-100 text-slate-600" };
+  }
+
+  const diffDays = Math.round(
+    (new Date(end.setHours(23, 59, 59, 999)).getTime() -
+      new Date(start.setHours(0, 0, 0, 0)).getTime()) /
+      86400000,
+  );
+
+  if (diffDays <= 6) {
+    return { label: "Specifique", tone: "bg-cyan-100 text-cyan-700" };
+  }
+
+  return { label: "Recurrent", tone: "bg-emerald-100 text-emerald-700" };
 }
 
 export function getEventTypeLabel(type?: string | null): string {

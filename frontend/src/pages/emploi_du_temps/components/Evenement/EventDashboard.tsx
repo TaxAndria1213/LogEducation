@@ -3,7 +3,6 @@ import { FiCalendar, FiClock, FiMapPin, FiTrendingUp } from "react-icons/fi";
 import { useAuth } from "../../../../auth/AuthContext";
 import Spin from "../../../../components/anim/Spin";
 import EvenementCalendrierService from "../../../../services/evenementCalendrier.service";
-import type { EvenementCalendrier } from "../../../../types/models";
 import { formatDateWithLocalTimezone } from "../../../../app/utils/functions";
 import {
   getEventDurationLabel,
@@ -63,7 +62,7 @@ export default function EventDashboard() {
       setLoading(true);
       try {
         const result = await eventService.getAll({
-          take: 1000,
+          take: 5000,
           where: JSON.stringify({ etablissement_id }),
           includeSpec: JSON.stringify({ site: true }),
           orderBy: JSON.stringify([{ debut: "asc" }]),
@@ -224,7 +223,7 @@ export default function EventDashboard() {
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
                           {getEventTypeLabel(event.type)}
-                          {event.site?.nom ? ` • ${event.site.nom}` : ""}
+                          {event.site?.nom ? ` - ${event.site.nom}` : ""}
                         </p>
                       </div>
                       <span

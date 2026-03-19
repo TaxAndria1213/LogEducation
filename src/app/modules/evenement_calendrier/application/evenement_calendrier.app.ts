@@ -3,6 +3,7 @@ import { EvenementCalendrier } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import EvenementCalendrierModel from "../models/evenement_calendrier.model";
+import { prisma } from "../../../service/prisma";
 
 class EvenementCalendrierApp {
     public app: Application;
@@ -64,6 +65,16 @@ class EvenementCalendrierApp {
             return "La fin doit etre strictement apres le debut.";
         }
 
+        if (body.site_id) {
+            const site = await prisma.site.findUnique({
+                where: { id: body.site_id },
+            });
+
+            if (!site || site.etablissement_id !== body.etablissement_id) {
+                return "Le site selectionne ne correspond pas a l'etablissement de l'evenement.";
+            }
+        }
+
         if (!body.site_id) {
             return null;
         }
@@ -93,7 +104,6 @@ class EvenementCalendrierApp {
             const result = await this.evenementCalendrier.create(data);
             Response.success(res, "Evenement calendrier created.", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la creation de l'evenement", 400, error as Error);
             next(error);
         }
     }
@@ -103,7 +113,6 @@ class EvenementCalendrierApp {
             const result = await getAllPaginated(req.query, this.evenementCalendrier);
             Response.success(res, "Evenements calendrier list.", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la recuperation des evenements", 400, error as Error);
             next(error);
         }
     }
