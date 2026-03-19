@@ -4,6 +4,7 @@ import {
   hasAccess,
 } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
+import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import { useAffectationStore } from "./store/AffectationIndexStore";
 import { useEffect, useState, type JSX } from "react";
 import { useAuth } from "../../../auth/AuthContext";
@@ -80,17 +81,14 @@ function AffectationsIndex() {
     >
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">{renderedElement}</div>
-        {menuListIsVisible ? (
-          <div className="w-52 shrink-0 border-l border-slate-200 pl-4">
+        <PageSidebarPopup open={menuListIsVisible} onClose={() => setMenuListIsVisible(false)}>
             <ListContainer
+              onItemClick={() => setMenuListIsVisible(false)}
               selected={renderState}
               setSelected={setRenderState}
               components={renderList}
             />
-          </div>
-        ) : (
-          <div className="none"></div>
-        )}
+          </PageSidebarPopup>
       </div>
     </ERPPage>
   );

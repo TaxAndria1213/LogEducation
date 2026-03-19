@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { FiMenu } from "react-icons/fi";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useAuth } from "../../hooks/useAuth";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { modules } from "../../routes/modules";
 import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import Header from "./Header";
@@ -28,7 +28,14 @@ export default function AppLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-gray-800">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-gray-800"
+      style={
+        {
+          "--app-sidebar-offset": collapsed ? "72px" : "18rem",
+        } as CSSProperties
+      }
+    >
       {/* Sidebar */}
       <aside
         className={`fixed left-0 top-0 h-screen transition-all duration-300 border-r shadow-lg ${

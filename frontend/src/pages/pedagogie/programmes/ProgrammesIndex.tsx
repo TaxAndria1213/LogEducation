@@ -1,6 +1,7 @@
 import ERPPage from "../../../components/page/ERPPage";
 import { getComponentById } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
+import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import { useEffect, useState, type JSX } from "react";
 import NotFound from "../../NotFound";
 import { useProgrammeStore } from "./store/ProgrammeIndexStore";
@@ -41,9 +42,9 @@ function ProgrammesIndex() {
     >
       <div className="flex">
         <div className="flex-1">{render}</div>
-        {menuListIsVisible ? (
-          <div className="border-l border-slate-200 pl-4 ml-4">
+        <PageSidebarPopup open={menuListIsVisible} onClose={() => setMenuListIsVisible(false)}>
             <ListContainer
+              onItemClick={() => setMenuListIsVisible(false)}
               selected={renderState}
               setSelected={setRenderState}
               components={[
@@ -53,10 +54,7 @@ function ProgrammesIndex() {
                 <AddButtonComponent onClick={() => setRenderedComponent("add")} />,
               ]}
             />
-          </div>
-        ) : (
-          <div className="none"></div>
-        )}
+          </PageSidebarPopup>
       </div>
     </ERPPage>
   );

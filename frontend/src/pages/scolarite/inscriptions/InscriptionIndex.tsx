@@ -4,6 +4,7 @@ import {
   hasAccess,
 } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
+import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import { useInscriptionStore } from "./store/InscriptionIndexStore";
 import { useEffect, useMemo, useState, type JSX } from "react";
 import NotFound from "../../NotFound";
@@ -127,18 +128,17 @@ function InscriptionsIndex() {
     >
       <div className="flex">
         <div className="flex-1">{render}</div>
-
-        {menuListIsVisible ? (
-          <div className="ml-4 border-l border-slate-200 pl-4">
-            <ListContainer
-              selected={renderState}
-              setSelected={setRenderState}
-              components={renderList}
-            />
-          </div>
-        ) : (
-          <div className="hidden" />
-        )}
+        <PageSidebarPopup
+          open={menuListIsVisible}
+          onClose={() => setMenuListIsVisible(false)}
+        >
+          <ListContainer
+            onItemClick={() => setMenuListIsVisible(false)}
+            selected={renderState}
+            setSelected={setRenderState}
+            components={renderList}
+          />
+        </PageSidebarPopup>
       </div>
     </ERPPage>
   );

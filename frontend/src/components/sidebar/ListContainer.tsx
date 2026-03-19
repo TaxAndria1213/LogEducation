@@ -5,9 +5,10 @@ type Props = {
   components: ReactElement[];
   selected?: number;
   setSelected?: (index: number) => void;
+  onItemClick?: () => void;
 };
 
-function ListContainer({ components, selected, setSelected }: Props) {
+function ListContainer({ components, selected, setSelected, onItemClick }: Props) {
   const [hover, setHover] = useState({ id: -1, state: false });
   const s = styles;
 
@@ -20,7 +21,14 @@ function ListContainer({ components, selected, setSelected }: Props) {
             <div
               onMouseEnter={() => setHover({ id: index, state: true })}
               onMouseLeave={() => setHover({ id: -1, state: false })}
-              onClick={() => setSelected && setSelected(index)}
+              onClick={() => {
+                if (setSelected) {
+                  setSelected(index);
+                }
+                if (onItemClick) {
+                  onItemClick();
+                }
+              }}
               key={index}
               style={{
                 backgroundColor:
