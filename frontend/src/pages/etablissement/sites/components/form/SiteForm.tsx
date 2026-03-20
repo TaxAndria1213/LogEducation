@@ -1,57 +1,53 @@
 import { useEffect } from "react";
-import { getFieldsFromZodObjectSchema } from "../../../../../components/Form/fields";
+import Spin from "../../../../../components/anim/Spin";
 import { Form } from "../../../../../components/Form/Form";
+import { getFieldsFromZodObjectSchema } from "../../../../../components/Form/fields";
 import { SiteSchema } from "../../../../../generated/zod";
+import { useAuth } from "../../../../../hooks/useAuth";
 import SiteService from "../../../../../services/site.service";
 import { useSiteCreateStore, type SiteCreateInput } from "../../store/SiteCreateStore";
-import Spin from "../../../../../components/anim/Spin";
-import { useAuth } from "../../../../../auth/AuthContext";
 
 function SiteForm() {
-  const {etablissement_id} = useAuth();
+  const { etablissement_id } = useAuth();
   const service = new SiteService();
   const loading = useSiteCreateStore((state) => state.loading);
   const etablissementOptions = useSiteCreateStore(
     (state) => state.etablissementOptions,
   );
-
   const initialData = useSiteCreateStore((state) => state.initialData);
-
-  const setInitialData = useSiteCreateStore(
-    (state) => state.setInitialData,
-  );
-
-
+  const setInitialData = useSiteCreateStore((state) => state.setInitialData);
   const getEtablissementOptions = useSiteCreateStore(
     (state) => state.getEtablissementOptions,
   );
 
   useEffect(() => {
-    getEtablissementOptions();
     if (etablissement_id) {
-      setInitialData({ etablissement_id: etablissement_id });
+      setInitialData({ etablissement_id });
+      return;
     }
-  }, [getEtablissementOptions, etablissement_id, setInitialData]);
 
+    void getEtablissementOptions();
+  }, [etablissement_id, getEtablissementOptions, setInitialData]);
+
+  const omitFieldNames = etablissement_id
+    ? ["id", "created_at", "updated_at", "etablissement_id"]
+    : ["id", "created_at", "updated_at"];
 
   const siteFields = getFieldsFromZodObjectSchema(SiteSchema, {
-    omit: ["id", "created_at", "updated_at", "etablissement_id"],
-
+    omit: omitFieldNames,
     metaByField: {
       created_at: { dateMode: "datetime" },
       updated_at: { dateMode: "datetime" },
-      // relation example:
       etablissement_id: {
         relation: {
           options: etablissementOptions,
         },
       },
     },
-
     labelByField: {
       nom: "Nom",
       etablissement_id: "Etablissement",
-      telephone: "Téléphone",
+      telephone: "Telephone",
       adresse: "Adresse",
     },
   });
@@ -62,9 +58,8 @@ function SiteForm() {
     updated_at: true,
   });
 
-
   return (
-    <div className="w-[100%]">
+    <div className="w-full">
       {loading ? (
         <Spin label="Chargement des ressources..." showLabel />
       ) : (
@@ -72,7 +67,7 @@ function SiteForm() {
           schema={siteSchema}
           fields={siteFields}
           service={service}
-          labelMessage={"Site"}
+          labelMessage="Site"
           initialValues={initialData as Partial<SiteCreateInput>}
         />
       )}

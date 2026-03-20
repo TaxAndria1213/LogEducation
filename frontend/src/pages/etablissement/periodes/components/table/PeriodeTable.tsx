@@ -1,14 +1,10 @@
 import React from "react";
-import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
-import {
-  DataTable,
-  type DataTableHandle,
-} from "../../../../../shared/table/DataTable";
-import type { Periode } from "../../../../../types/models";
-import PeriodeService from "../../../../../services/periode.service";
-// import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
-import { useAuth } from "../../../../../hooks/useAuth";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
+import { useAuth } from "../../../../../hooks/useAuth";
+import PeriodeService from "../../../../../services/periode.service";
+import { DataTable, type DataTableHandle } from "../../../../../shared/table/DataTable";
+import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
+import type { Periode } from "../../../../../types/models";
 
 export default function PeriodeList() {
   const { etablissement_id } = useAuth();
@@ -25,21 +21,18 @@ export default function PeriodeList() {
     },
     {
       key: "annee",
-      header: "Année scolaire",
+      header: "Annee scolaire",
       render: (row) => row.annee?.nom ?? "-",
       sortable: true,
       sortKey: "annee",
     },
     {
       key: "date_debut",
-      header: "Début",
+      header: "Debut",
       accessor: "date_debut",
       sortable: true,
       sortKey: "date_debut",
-      render: (row) => {
-        const date = formatDateWithLocalTimezone(row.date_debut.toString());
-        return date.date;
-      }
+      render: (row) => formatDateWithLocalTimezone(row.date_debut.toString()).date,
     },
     {
       key: "date_fin",
@@ -47,10 +40,7 @@ export default function PeriodeList() {
       accessor: "date_fin",
       sortable: true,
       sortKey: "date_fin",
-      render: (row) => {
-        const date = formatDateWithLocalTimezone(row.date_fin.toString());
-        return date.date;
-      }
+      render: (row) => formatDateWithLocalTimezone(row.date_fin.toString()).date,
     },
     {
       key: "ordre",
@@ -74,12 +64,10 @@ export default function PeriodeList() {
       variant: "danger",
       confirm: {
         title: "Suppression",
-        message: "Voulez-vous supprimer ce site ?",
+        message: "Voulez-vous supprimer cette periode ?",
       },
       onClick: async (row) => {
         await service.delete(row.id);
-        // DataTable refresh auto? (ici non) -> on préfère passer action via hook,
-        // mais simplest: on force reload via window ou via un ref.
         tableRef.current?.refresh();
       },
     },
@@ -95,17 +83,12 @@ export default function PeriodeList() {
       initialQuery={{
         page: 1,
         take: 10,
-        // Exemple: includes relationnelles
-        // includeAll: true,
         includes: ["annee"],
         where: { annee: { etablissement_id } },
       }}
       showSearch
       onSearchBuildWhere={(text) => ({
-        OR: [
-          { nom: { contains: text } },
-          { annee: { nom: { contains: text } } },
-        ],
+        OR: [{ nom: { contains: text } }, { annee: { nom: { contains: text } } }],
       })}
     />
   );

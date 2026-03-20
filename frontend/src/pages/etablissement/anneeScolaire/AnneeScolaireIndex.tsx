@@ -1,13 +1,12 @@
-import ERPPage from "../../../components/page/ERPPage";
+import { useEffect, useState, type JSX } from "react";
 import { getComponentById } from "../../../components/components.build";
+import ERPPage from "../../../components/page/ERPPage";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
-import { useAnneeScolaireStore } from "./store/AnneeScolaireIndexStore";
-import { useEffect, useState, type JSX } from "react";
 import NotFound from "../../NotFound";
+import { useAnneeScolaireStore } from "./store/AnneeScolaireIndexStore";
 
 function AnneeScolaireIndex() {
-  //states
   const [render, setRender] = useState<JSX.Element>(<NotFound />);
 
   const menuListIsVisible = useAnneeScolaireStore(
@@ -16,17 +15,11 @@ function AnneeScolaireIndex() {
   const setMenuListIsVisible = useAnneeScolaireStore(
     (state) => state.setMenuListIsVisible,
   );
-
-  const renderState = useAnneeScolaireStore(
-    (state) => state.renderState,
-  );
+  const renderState = useAnneeScolaireStore((state) => state.renderState);
   const renderedElement = useAnneeScolaireStore(
     (state) => state.renderedComponent,
   );
-
-  const setRenderState = useAnneeScolaireStore(
-    (state) => state.setRenderState,
-  );
+  const setRenderState = useAnneeScolaireStore((state) => state.setRenderState);
   const setRenderedComponent = useAnneeScolaireStore(
     (state) => state.setRenderedComponent,
   );
@@ -37,51 +30,59 @@ function AnneeScolaireIndex() {
     }
   }, [renderedElement]);
 
-  //composants
   const OptionButton = getComponentById("ET.ANNEESCOLAIRES.MENUACTION");
-  const ListButtonComponent = getComponentById("ET.ANNEESCOLAIRES.MENUACTION.LIST");
+  const ListButtonComponent = getComponentById(
+    "ET.ANNEESCOLAIRES.MENUACTION.LIST",
+  );
   const ParametreButtonComponent = getComponentById(
     "ET.ANNEESCOLAIRES.MENUACTION.PARAMETRE",
   );
   const AddButtonComponent = getComponentById("ET.ANNEESCOLAIRES.MENUACTION.ADD");
-  const DashboardButton = getComponentById("ET.ANNEESCOLAIRES.MENUACTION.DASHBOARD");
+  const DashboardButton = getComponentById(
+    "ET.ANNEESCOLAIRES.MENUACTION.DASHBOARD",
+  );
 
   return (
     <ERPPage
-      title="Année scolaire"
-      description="Gérer l'année scolaire de l'établissement"
+      title="Annee scolaire"
+      description="Gestion des annees scolaires rattachees a l'etablissement"
       headerActions={[
         <OptionButton
           onClick={() => setMenuListIsVisible(!menuListIsVisible)}
-          key={"ET.ANNEESCOLAIRES.MENUACTION"}
+          key="ET.ANNEESCOLAIRES.MENUACTION"
         />,
       ]}
     >
       <div className="flex">
         <div className="flex-1">{render}</div>
-        <PageSidebarPopup open={menuListIsVisible} onClose={() => setMenuListIsVisible(false)}>
-            <ListContainer
-              onItemClick={() => setMenuListIsVisible(false)}
-              selected={renderState}
-              setSelected={setRenderState}
-              components={[
-                <DashboardButton
-                  onClick={() => setRenderedComponent("dashboard")}
-                />,
-                <ListButtonComponent
-                  onClick={() => setRenderedComponent("list")}
-                />,
-                <ParametreButtonComponent
-                  onClick={() => setRenderedComponent("parametre")}
-                />,
-                <AddButtonComponent
-                  onClick={() => {
-                    setRenderedComponent("add");
-                  }}
-                />,
-              ]}
-            />
-          </PageSidebarPopup>
+        <PageSidebarPopup
+          open={menuListIsVisible}
+          onClose={() => setMenuListIsVisible(false)}
+        >
+          <ListContainer
+            onItemClick={() => setMenuListIsVisible(false)}
+            selected={renderState}
+            setSelected={setRenderState}
+            components={[
+              <DashboardButton
+                key="dashboard"
+                onClick={() => setRenderedComponent("dashboard")}
+              />,
+              <ListButtonComponent
+                key="list"
+                onClick={() => setRenderedComponent("list")}
+              />,
+              <ParametreButtonComponent
+                key="parametre"
+                onClick={() => setRenderedComponent("parametre")}
+              />,
+              <AddButtonComponent
+                key="add"
+                onClick={() => setRenderedComponent("add")}
+              />,
+            ]}
+          />
+        </PageSidebarPopup>
       </div>
     </ERPPage>
   );

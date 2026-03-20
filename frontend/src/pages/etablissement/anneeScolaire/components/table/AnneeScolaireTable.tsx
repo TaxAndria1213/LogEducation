@@ -1,13 +1,10 @@
 import React from "react";
-import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
-import {
-  DataTable,
-  type DataTableHandle,
-} from "../../../../../shared/table/DataTable";
-import type { AnneeScolaire } from "../../../../../types/models";
-import AnneeScolaireService from "../../../../../services/anneeScolaire.service";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
 import { useAuth } from "../../../../../hooks/useAuth";
+import AnneeScolaireService from "../../../../../services/anneeScolaire.service";
+import { DataTable, type DataTableHandle } from "../../../../../shared/table/DataTable";
+import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
+import type { AnneeScolaire } from "../../../../../types/models";
 
 export default function AnneeScolaireList() {
   const { etablissement_id } = useAuth();
@@ -24,14 +21,11 @@ export default function AnneeScolaireList() {
     },
     {
       key: "date_debut",
-      header: "Début",
+      header: "Debut",
       accessor: "date_debut",
       sortable: true,
       sortKey: "date_debut",
-      render: (row) => {
-        const date = formatDateWithLocalTimezone(row.date_debut.toString());
-        return date.date;
-      },
+      render: (row) => formatDateWithLocalTimezone(row.date_debut.toString()).date,
     },
     {
       key: "date_fin",
@@ -39,10 +33,7 @@ export default function AnneeScolaireList() {
       accessor: "date_fin",
       sortable: true,
       sortKey: "date_fin",
-      render: (row) => {
-        const date = formatDateWithLocalTimezone(row.date_fin.toString());
-        return date.date;
-      },
+      render: (row) => formatDateWithLocalTimezone(row.date_fin.toString()).date,
     },
     {
       key: "est_active",
@@ -50,9 +41,7 @@ export default function AnneeScolaireList() {
       accessor: "est_active",
       sortable: true,
       sortKey: "est_active",
-      render: (row) => {
-        return row.est_active ? "En cours" : "Terminée";
-      },
+      render: (row) => (row.est_active ? "Active" : "Archivee"),
     },
   ];
 
@@ -69,12 +58,10 @@ export default function AnneeScolaireList() {
       variant: "danger",
       confirm: {
         title: "Suppression",
-        message: "Voulez-vous supprimer cette année scolaire ?",
+        message: "Voulez-vous supprimer cette annee scolaire ?",
       },
       onClick: async (row) => {
         await service.delete(row.id);
-        // DataTable refresh auto? (ici non) -> on préfère passer action via hook,
-        // mais simplest: on force reload via window ou via un ref.
         tableRef.current?.refresh();
       },
     },
@@ -90,9 +77,6 @@ export default function AnneeScolaireList() {
       initialQuery={{
         page: 1,
         take: 10,
-        // Exemple: includes relationnelles
-        // includeAll: true,
-        // includes: ["etablissement"],
         where: { etablissement_id },
       }}
       showSearch

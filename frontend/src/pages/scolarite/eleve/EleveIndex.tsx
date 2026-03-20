@@ -1,3 +1,4 @@
+import { useEffect, useState, type JSX } from "react";
 import ERPPage from "../../../components/page/ERPPage";
 import {
   getComponentById,
@@ -5,15 +6,12 @@ import {
 } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
-import { useEleveStore } from "./store/EleveIndexStore";
-import { useEffect, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
 import { useAuth } from "../../../auth/AuthContext";
+import NotFound from "../../NotFound";
+import { useEleveStore } from "./store/EleveIndexStore";
 
 function EleveIndex() {
   const { user, roles } = useAuth();
-
-  //states
   const [render, setRender] = useState<JSX.Element>(<NotFound />);
   const [renderList, setRenderList] = useState<JSX.Element[]>([<></>]);
 
@@ -24,7 +22,6 @@ function EleveIndex() {
 
   const renderState = useEleveStore((state) => state.renderState);
   const renderedElement = useEleveStore((state) => state.renderedComponent);
-
   const setRenderState = useEleveStore((state) => state.setRenderState);
   const setRenderedComponent = useEleveStore(
     (state) => state.setRenderedComponent,
@@ -40,7 +37,6 @@ function EleveIndex() {
 
   useEffect(() => {
     if (user && roles) {
-      //composants
       const ListButtonComponent = getComponentById("SC.ELEVES.MENUACTION.LIST");
       const ParametreButtonComponent = getComponentById(
         "SC.ELEVES.MENUACTION.PARAMETRE",
@@ -49,25 +45,13 @@ function EleveIndex() {
       const DashboardButton = getComponentById("SC.ELEVES.MENUACTION.DASHBOARD");
 
       const sidebarComponents = [
-        hasAccess(
-          user,
-          roles,
-          "SC.ELEVES.MENUACTION.DASHBOARD",
-        ) && (
+        hasAccess(user, roles, "SC.ELEVES.MENUACTION.DASHBOARD") && (
           <DashboardButton onClick={() => setRenderedComponent("dashboard")} />
         ),
-        hasAccess(
-          user,
-          roles,
-          "SC.ELEVES.MENUACTION.LIST",
-        ) && (
+        hasAccess(user, roles, "SC.ELEVES.MENUACTION.LIST") && (
           <ListButtonComponent onClick={() => setRenderedComponent("list")} />
         ),
-        hasAccess(
-          user,
-          roles,
-          "SC.ELEVES.MENUACTION.PARAMETRE",
-        ) && (
+        hasAccess(user, roles, "SC.ELEVES.MENUACTION.PARAMETRE") && (
           <ParametreButtonComponent
             onClick={() => setRenderedComponent("parametre")}
           />
@@ -79,29 +63,32 @@ function EleveIndex() {
 
       setRenderList(sidebarComponents);
     }
-  }, [user, roles, setRenderedComponent]);
+  }, [roles, setRenderedComponent, user]);
 
   return (
     <ERPPage
-      title="Elève"
-      description="Gérer les élèves de l'établissement"
+      title="Eleves"
+      description="Gerer les eleves de l'etablissement"
       headerActions={[
         <OptionButton
           onClick={() => setMenuListIsVisible(!menuListIsVisible)}
-          key={"SC.ELEVES.MENUACTION"}
+          key="SC.ELEVES.MENUACTION"
         />,
       ]}
     >
       <div className="flex">
         <div className="flex-1">{render}</div>
-        <PageSidebarPopup open={menuListIsVisible} onClose={() => setMenuListIsVisible(false)}>
-            <ListContainer
-              onItemClick={() => setMenuListIsVisible(false)}
-              selected={renderState}
-              setSelected={setRenderState}
-              components={renderList}
-            />
-          </PageSidebarPopup>
+        <PageSidebarPopup
+          open={menuListIsVisible}
+          onClose={() => setMenuListIsVisible(false)}
+        >
+          <ListContainer
+            onItemClick={() => setMenuListIsVisible(false)}
+            selected={renderState}
+            setSelected={setRenderState}
+            components={renderList}
+          />
+        </PageSidebarPopup>
       </div>
     </ERPPage>
   );

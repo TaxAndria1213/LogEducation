@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
 import type { Periode } from "../../../../generated/zod";
-import PeriodeService from "../../../../services/periode.service";
 import AnneeScolaireService from "../../../../services/anneeScolaire.service";
+import PeriodeService from "../../../../services/periode.service";
 import type { AnneeScolaire } from "../../../../types/models";
 
 export type PeriodeCreateInput = Omit<Periode, "id" | "created_at" | "updated_at">;
@@ -10,57 +10,69 @@ export type PeriodeCreateInput = Omit<Periode, "id" | "created_at" | "updated_at
 type State = {
   loading: boolean;
   periode: PeriodeCreateInput | null;
-  service: typeof PeriodeService;
   initialData: Partial<PeriodeCreateInput> | null;
   anneeScolaireOptions: { value: string; label: string }[];
   setInitialData: (periode: Partial<PeriodeCreateInput>) => void;
   onCreate: (periode: PeriodeCreateInput) => Promise<any>;
   setLoading: (loading: boolean) => void;
   setPeriode: (periode: PeriodeCreateInput) => void;
-  getAnneeScolaireOptions: (etablissement_id: string) => Promise<void>;
+  getAnneeScolaireOptions: (etablissementId?: string | null) => Promise<void>;
 };
 
-export const usePeriodeCreateStore = create<State>((set, get) => ({
+export const usePeriodeCreateStore = create<State>((set) => ({
   periode: null,
-  service: PeriodeService,
   anneeScolaireOptions: [],
   loading: false,
   initialData: null,
 
   setLoading: (loading: boolean) => set({ loading }),
 
-  getAnneeScolaireOptions: async (etablissement_id: string) => {
+  getAnneeScolaireOptions: async (etablissementId?: string | null) => {
     set({ loading: true });
-    const service = AnneeScolaireService;
-    const result = await service.getAll({
-      take: 100,
-      where: JSON.stringify({etablissement_id: etablissement_id}),
-    });
-    if (result?.status.success) {
+
+    try {
+      if (!etablissementId) {
+        set({ anneeScolaireOptions: [], initialData: null });
+        return;
+      }
+
+      const [yearsResult, currentYear] = await Promise.all([
+        AnneeScolaireService.getAll({
+          take: 100,
+          where: { etablissement_id: etablissementId },
+          orderBy: [{ date_debut: "desc" }],
+        }),
+        AnneeScolaireService.getCurrent(etablissementId),
+      ]);
+
+      const options = yearsResult?.status.success
+        ? yearsResult.data.data.map((annee: AnneeScolaire) => ({
+            value: annee.id,
+            label: annee.nom,
+          }))
+        : [];
+
       set({
-        anneeScolaireOptions: result.data.data.map((e: AnneeScolaire) => ({
-          value: e.id,
-          label: e.nom,
-        })),
+        anneeScolaireOptions: options,
+        initialData: currentYear ? { annee_scolaire_id: currentYear.id } : null,
       });
-    } else {
-      throw new Error("Failed to load etablissement options");
+    } finally {
+      set({ loading: false });
     }
-    set({ loading: false });
   },
+
   setInitialData: (data: Partial<PeriodeCreateInput>) => set({ initialData: data }),
 
   onCreate: async (periode: PeriodeCreateInput): Promise<any> => {
     try {
-      const result = await get().service.create(periode);
+      const result = await PeriodeService.create(periode);
       if (result?.status.success) {
         return result;
-      } else {
-        throw new Error();
       }
+
+      throw new Error();
     } catch (error) {
-      console.log("🚀 ~ error:", error);
-      //   throw error;
+      console.log("error:", error);
       return {
         status: {
           success: false,
@@ -69,5 +81,5 @@ export const usePeriodeCreateStore = create<State>((set, get) => ({
     }
   },
 
-  setPeriode: (periode: PeriodeCreateInput) => set({ periode: periode }),
+  setPeriode: (periode: PeriodeCreateInput) => set({ periode }),
 }));

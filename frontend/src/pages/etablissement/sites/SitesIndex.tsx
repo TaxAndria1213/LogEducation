@@ -1,13 +1,12 @@
-import ERPPage from "../../../components/page/ERPPage";
+import { useEffect, useState, type JSX } from "react";
 import { getComponentById } from "../../../components/components.build";
+import ERPPage from "../../../components/page/ERPPage";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
-import { useProfileEtablissementStore } from "./store/SiteIndexStore";
-import { useEffect, useState, type JSX } from "react";
 import NotFound from "../../NotFound";
+import { useProfileEtablissementStore } from "./store/SiteIndexStore";
 
 function SitesIndex() {
-  //states
   const [render, setRender] = useState<JSX.Element>(<NotFound />);
 
   const menuListIsVisible = useProfileEtablissementStore(
@@ -17,9 +16,7 @@ function SitesIndex() {
     (state) => state.setMenuListIsVisible,
   );
 
-  const renderState = useProfileEtablissementStore(
-    (state) => state.renderState,
-  );
+  const renderState = useProfileEtablissementStore((state) => state.renderState);
   const renderedElement = useProfileEtablissementStore(
     (state) => state.renderedComponent,
   );
@@ -37,7 +34,6 @@ function SitesIndex() {
     }
   }, [renderedElement]);
 
-  //composants
   const OptionButton = getComponentById("ET.SITES.MENUACTION");
   const ListButtonComponent = getComponentById("ET.SITES.MENUACTION.LIST");
   const ParametreButtonComponent = getComponentById(
@@ -48,40 +44,45 @@ function SitesIndex() {
 
   return (
     <ERPPage
-      title="Site"
-      description="Gérer les sites de l'établissement"
+      title="Sites"
+      description="Gestion des sites rattaches a l'etablissement de l'utilisateur"
       headerActions={[
         <OptionButton
           onClick={() => setMenuListIsVisible(!menuListIsVisible)}
-          key={"ET.SITES.MENUACTION"}
+          key="ET.SITES.MENUACTION"
         />,
       ]}
     >
       <div className="flex">
         <div className="flex-1">{render}</div>
-        <PageSidebarPopup open={menuListIsVisible} onClose={() => setMenuListIsVisible(false)}>
-            <ListContainer
-              onItemClick={() => setMenuListIsVisible(false)}
-              selected={renderState}
-              setSelected={setRenderState}
-              components={[
-                <DashboardButton
-                  onClick={() => setRenderedComponent("dashboard")}
-                />,
-                <ListButtonComponent
-                  onClick={() => setRenderedComponent("list")}
-                />,
-                <ParametreButtonComponent
-                  onClick={() => setRenderedComponent("parametre")}
-                />,
-                <AddButtonComponent
-                  onClick={() => {
-                    setRenderedComponent("add");
-                  }}
-                />,
-              ]}
-            />
-          </PageSidebarPopup>
+        <PageSidebarPopup
+          open={menuListIsVisible}
+          onClose={() => setMenuListIsVisible(false)}
+        >
+          <ListContainer
+            onItemClick={() => setMenuListIsVisible(false)}
+            selected={renderState}
+            setSelected={setRenderState}
+            components={[
+              <DashboardButton
+                key="dashboard"
+                onClick={() => setRenderedComponent("dashboard")}
+              />,
+              <ListButtonComponent
+                key="list"
+                onClick={() => setRenderedComponent("list")}
+              />,
+              <ParametreButtonComponent
+                key="parametre"
+                onClick={() => setRenderedComponent("parametre")}
+              />,
+              <AddButtonComponent
+                key="add"
+                onClick={() => setRenderedComponent("add")}
+              />,
+            ]}
+          />
+        </PageSidebarPopup>
       </div>
     </ERPPage>
   );

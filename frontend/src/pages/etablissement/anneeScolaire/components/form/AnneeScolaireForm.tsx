@@ -1,56 +1,57 @@
 import { useEffect } from "react";
-import { getFieldsFromZodObjectSchema } from "../../../../../components/Form/fields";
-import { Form } from "../../../../../components/Form/Form";
-import { AnneeScolaireSchema } from "../../../../../generated/zod";
-import AnneeScolaireService from "../../../../../services/anneeScolaire.service";
-import { useAnneeScolaireCreateStore, type AnneeScolaireCreateInput } from "../../store/AnneeScolaireCreateStore";
 import Spin from "../../../../../components/anim/Spin";
-import { useAuth } from "../../../../../auth/AuthContext";
+import { Form } from "../../../../../components/Form/Form";
+import { getFieldsFromZodObjectSchema } from "../../../../../components/Form/fields";
+import { AnneeScolaireSchema } from "../../../../../generated/zod";
+import { useAuth } from "../../../../../hooks/useAuth";
+import AnneeScolaireService from "../../../../../services/anneeScolaire.service";
+import {
+  useAnneeScolaireCreateStore,
+  type AnneeScolaireCreateInput,
+} from "../../store/AnneeScolaireCreateStore";
 
 function AnneeScolaireForm() {
-  const {etablissement_id} = useAuth();
-  const service = AnneeScolaireService;
+  const { etablissement_id } = useAuth();
   const loading = useAnneeScolaireCreateStore((state) => state.loading);
   const etablissementOptions = useAnneeScolaireCreateStore(
     (state) => state.etablissementOptions,
   );
-
   const initialData = useAnneeScolaireCreateStore((state) => state.initialData);
-
-  const setInitialData = useAnneeScolaireCreateStore(
-    (state) => state.setInitialData,
-  );
-
-
+  const setInitialData = useAnneeScolaireCreateStore((state) => state.setInitialData);
   const getEtablissementOptions = useAnneeScolaireCreateStore(
     (state) => state.getEtablissementOptions,
   );
 
   useEffect(() => {
-    getEtablissementOptions();
     if (etablissement_id) {
-      setInitialData({ etablissement_id: etablissement_id, est_active: true });
+      setInitialData({ etablissement_id, est_active: true });
+      return;
     }
-  }, [getEtablissementOptions, etablissement_id, setInitialData]);
 
-  const AnneeScolaireFields = getFieldsFromZodObjectSchema(AnneeScolaireSchema, {
-    omit: ["id", "created_at", "updated_at", "etablissement_id", "est_active"],
+    void getEtablissementOptions();
+  }, [etablissement_id, getEtablissementOptions, setInitialData]);
 
+  const omitFieldNames = etablissement_id
+    ? ["id", "created_at", "updated_at", "etablissement_id", "est_active"]
+    : ["id", "created_at", "updated_at", "est_active"];
+
+  const anneeScolaireFields = getFieldsFromZodObjectSchema(AnneeScolaireSchema, {
+    omit: omitFieldNames,
     metaByField: {
       created_at: { dateMode: "datetime" },
       updated_at: { dateMode: "datetime" },
-      // relation example:
       etablissement_id: {
         relation: {
           options: etablissementOptions,
         },
       },
     },
-
     labelByField: {
+      etablissement_id: "Etablissement",
       nom: "Nom",
       date_debut: "Date de debut",
       date_fin: "Date de fin",
+      est_active: "Annee active",
     },
   });
 
@@ -60,17 +61,16 @@ function AnneeScolaireForm() {
     updated_at: true,
   });
 
-
   return (
-    <div className="w-[100%]">
+    <div className="w-full">
       {loading ? (
         <Spin label="Chargement des ressources..." showLabel />
       ) : (
         <Form
           schema={anneeScolaireSchema}
-          fields={AnneeScolaireFields}
-          service={service}
-          labelMessage={"Année scolaire"}
+          fields={anneeScolaireFields}
+          service={AnneeScolaireService}
+          labelMessage="Annee scolaire"
           initialValues={initialData as Partial<AnneeScolaireCreateInput>}
         />
       )}

@@ -2,21 +2,35 @@ import { create } from "zustand";
 import NotFound from "../../../NotFound";
 import type { JSX } from "react";
 import SiteList from "../components/table/SitesTable";
-import EtablissementForm from "../components/form/SiteForm";
+import SiteForm from "../components/form/SiteForm";
+import SitesOverview from "../components/dashboard/SitesOverview";
 
 type menuItemToComponentType = {
   id: string;
   component: JSX.Element;
+  renderState: number;
 };
 
 const renderList: menuItemToComponentType[] = [
   {
-    id: "add",
-    component: <EtablissementForm />,
+    id: "dashboard",
+    component: <SitesOverview />,
+    renderState: 0,
   },
   {
     id: "list",
     component: <SiteList />,
+    renderState: 1,
+  },
+  {
+    id: "parametre",
+    component: <SitesOverview mode="settings" />,
+    renderState: 2,
+  },
+  {
+    id: "add",
+    component: <SiteForm />,
+    renderState: 3,
   },
 ];
 
@@ -32,15 +46,17 @@ type State = {
 export const useProfileEtablissementStore = create<State>((set) => {
   return {
     menuListIsVisible: false,
-    renderedComponent: <NotFound />,
+    renderedComponent: <SitesOverview />,
     renderState: 0,
     setRenderState: (value: number) => set({ renderState: value }),
     setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),
     setRenderedComponent: (value: string) => {
-      if (renderList.find((item) => item.id === value) !== undefined) {
+      const item = renderList.find((entry) => entry.id === value);
+
+      if (item !== undefined) {
         set({
-          renderedComponent: renderList.find((item) => item.id === value)!
-            .component,
+          renderedComponent: item.component,
+          renderState: item.renderState,
         });
       } else {
         set({ renderedComponent: <NotFound />, renderState: -1 });

@@ -1,22 +1,36 @@
+import type { JSX } from "react";
 import { create } from "zustand";
 import NotFound from "../../../NotFound";
-import type { JSX } from "react";
-import AnneeScolaireList from "../components/table/AnneeScolaireTable";
+import AnneeScolaireOverview from "../components/dashboard/AnneeScolaireOverview";
 import AnneeScolaireForm from "../components/form/AnneeScolaireForm";
+import AnneeScolaireList from "../components/table/AnneeScolaireTable";
 
-type menuItemToComponentType = {
+type MenuItemToComponentType = {
   id: string;
   component: JSX.Element;
+  renderState: number;
 };
 
-const renderList: menuItemToComponentType[] = [
+const renderList: MenuItemToComponentType[] = [
   {
-    id: "add",
-    component: <AnneeScolaireForm />,
+    id: "dashboard",
+    component: <AnneeScolaireOverview />,
+    renderState: 0,
   },
   {
     id: "list",
     component: <AnneeScolaireList />,
+    renderState: 1,
+  },
+  {
+    id: "parametre",
+    component: <AnneeScolaireOverview mode="settings" />,
+    renderState: 2,
+  },
+  {
+    id: "add",
+    component: <AnneeScolaireForm />,
+    renderState: 3,
   },
 ];
 
@@ -29,22 +43,23 @@ type State = {
   setRenderedComponent: (value: string) => void;
 };
 
-export const useAnneeScolaireStore = create<State>((set) => {
-  return {
-    menuListIsVisible: false,
-    renderedComponent: <NotFound />,
-    renderState: 0,
-    setRenderState: (value: number) => set({ renderState: value }),
-    setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),
-    setRenderedComponent: (value: string) => {
-      if (renderList.find((item) => item.id === value) !== undefined) {
-        set({
-          renderedComponent: renderList.find((item) => item.id === value)!
-            .component,
-        });
-      } else {
-        set({ renderedComponent: <NotFound />, renderState: -1 });
-      }
-    },
-  };
-});
+export const useAnneeScolaireStore = create<State>((set) => ({
+  menuListIsVisible: false,
+  renderedComponent: <AnneeScolaireOverview />,
+  renderState: 0,
+  setRenderState: (value: number) => set({ renderState: value }),
+  setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),
+  setRenderedComponent: (value: string) => {
+    const item = renderList.find((entry) => entry.id === value);
+
+    if (item) {
+      set({
+        renderedComponent: item.component,
+        renderState: item.renderState,
+      });
+      return;
+    }
+
+    set({ renderedComponent: <NotFound />, renderState: -1 });
+  },
+}));

@@ -48,8 +48,8 @@ function ProfileEtablissementIndex() {
 
   return (
     <ERPPage
-      title="Etablissement"
-      description="Gestion des etablissements et Profiles"
+      title="Profil de l'etablissement"
+      description="Informations et parametres de l'etablissement rattache a l'utilisateur"
       headerActions={[
         <OptionButton
           onClick={() => setMenuListIsVisible(!menuListIsVisible)}

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
 import type { Etablissement, Site } from "../../../../generated/zod";
-import SiteService from "../../../../services/site.service";
 import EtablissementService from "../../../../services/etablissement.service";
+import SiteService from "../../../../services/site.service";
 
 export type SiteCreateInput = Omit<Site, "id" | "created_at" | "updated_at">;
 
@@ -30,20 +30,26 @@ export const useSiteCreateStore = create<State>((set, get) => ({
 
   getEtablissementOptions: async () => {
     set({ loading: true });
-    const etablissementService = new EtablissementService();
-    const result = await etablissementService.getAll({});
-    if (result?.status.success) {
-      set({
-        etablissementOptions: result.data.data.map((e: Etablissement) => ({
-          value: e.id,
-          label: e.nom,
-        })),
-      });
-    } else {
+    try {
+      const etablissementService = new EtablissementService();
+      const result = await etablissementService.getAll({});
+
+      if (result?.status.success) {
+        set({
+          etablissementOptions: result.data.data.map((e: Etablissement) => ({
+            value: e.id,
+            label: e.nom,
+          })),
+        });
+        return;
+      }
+
       throw new Error("Failed to load etablissement options");
+    } finally {
+      set({ loading: false });
     }
-    set({ loading: false });
   },
+
   setInitialData: (data: Partial<SiteCreateInput>) => set({ initialData: data }),
 
   onCreate: async (site: SiteCreateInput): Promise<any> => {
@@ -51,12 +57,11 @@ export const useSiteCreateStore = create<State>((set, get) => ({
       const result = await get().service.create(site);
       if (result?.status.success) {
         return result;
-      } else {
-        throw new Error();
       }
+
+      throw new Error();
     } catch (error) {
-      console.log("🚀 ~ error:", error);
-      //   throw error;
+      console.log("error:", error);
       return {
         status: {
           success: false,
