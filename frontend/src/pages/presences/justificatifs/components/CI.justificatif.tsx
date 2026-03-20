@@ -1,7 +1,7 @@
 ﻿import { FiBarChart2, FiList, FiMenu, FiPlus, FiSettings } from "react-icons/fi";
-import IconButton from "../../../../../components/actions/IconButton";
-import { type ComponentIdentifierType } from "../../../../../components/components.build";
-import { menuItem, withAccess } from "../../../../../components/accessComponent";
+import IconButton from "../../../../components/actions/IconButton";
+import { type ComponentIdentifierType } from "../../../../components/components.build";
+import { menuItem, withAccess } from "../../../../components/accessComponent";
 
 export const justificatifAbsenceComponents: ComponentIdentifierType[] = [
   { id: "PR.JUSTIFICATIFS.MENUACTION", name: "Justificatifs - menu action", component: withAccess(() => <IconButton icon={<FiMenu />} w={40} h={40} />) },

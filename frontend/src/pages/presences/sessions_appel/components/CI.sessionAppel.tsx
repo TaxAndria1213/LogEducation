@@ -1,7 +1,7 @@
 ﻿import { FiBarChart2, FiList, FiMenu, FiPlus, FiSettings } from "react-icons/fi";
-import IconButton from "../../../../../components/actions/IconButton";
-import { type ComponentIdentifierType } from "../../../../../components/components.build";
-import { menuItem, withAccess } from "../../../../../components/accessComponent";
+import IconButton from "../../../../components/actions/IconButton";
+import { type ComponentIdentifierType } from "../../../../components/components.build";
+import { menuItem, withAccess } from "../../../../components/accessComponent";
 
 export const sessionAppelComponents: ComponentIdentifierType[] = [
   {
