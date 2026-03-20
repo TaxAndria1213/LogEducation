@@ -1,11 +1,16 @@
-import React from "react";
+﻿import React from "react";
 import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
 import {
   DataTable,
   type DataTableHandle,
 } from "../../../../../shared/table/DataTable";
-import type { Bulletin, BulletinLigne } from "../../../../../types/models";
-import BulletinService from "../../../../../services/bulletin.service";
+import BulletinService, {
+  getBulletinAverage,
+  getBulletinDisplayLabel,
+  getBulletinSecondaryLabel,
+  type BulletinWithRelations,
+} from "../../../../../services/bulletin.service";
+import { getEleveDisplayLabel } from "../../../../../services/note.service";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
 import { useAuth } from "../../../../../auth/AuthContext";
 import {
@@ -18,27 +23,18 @@ import {
 const formatDate = (value?: Date | string | null) =>
   value ? formatDateWithLocalTimezone(value.toString()).date : "-";
 
-const moyenneGenerale = (lignes?: BulletinLigne[]) => {
-  if (!lignes?.length) return 0;
-  const valid = lignes.filter((l) => typeof l.moyenne === "number");
-  if (!valid.length) return 0;
-  return valid.reduce((sum, l) => sum + (l.moyenne ?? 0), 0) / valid.length;
-};
-
 export default function BulletinTable() {
   const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new BulletinService(), []);
 
-  const buildPdf = (row: Bulletin) => {
+  const buildPdf = (row: BulletinWithRelations) => {
     const doc = createPdfDocument();
-    const fullName =
-      `${row.eleve?.utilisateur?.profil?.nom ?? ""} ${row.eleve?.utilisateur?.profil?.prenom ?? ""}`.trim();
 
     const headerY = addPdfHeader(doc, {
       title: "Bulletin de notes",
       metadata: [
-        { label: "Eleve", value: fullName || row.eleve?.code_eleve || "-" },
+        { label: "Eleve", value: row.eleve ? getBulletinDisplayLabel(row).split(" - ")[0] : "-" },
         { label: "Classe", value: row.classe?.nom ?? "-" },
         { label: "Periode", value: row.periode?.nom ?? "-" },
         { label: "Statut", value: row.statut ?? "-" },
@@ -50,71 +46,73 @@ export default function BulletinTable() {
     const lignes = row.lignes ?? [];
     const finalY = addPdfTable(doc, {
       startY: headerY,
-      head: ["Matiere", "Moyenne", "Commentaire enseignant"],
+      head: ["Matiere", "Moyenne", "Rang", "Commentaire enseignant"],
       body: lignes.map((l) => [
         l.matiere?.nom ?? "-",
-        l.moyenne !== null && l.moyenne !== undefined
-          ? l.moyenne.toFixed(2)
-          : "-",
+        l.moyenne !== null && l.moyenne !== undefined ? l.moyenne.toFixed(2) : "-",
+        l.rang ?? "-",
         l.commentaire_enseignant ?? "",
       ]),
     });
 
-    const moyenne = moyenneGenerale(lignes);
+    const moyenne = getBulletinAverage(lignes);
     doc.setFontSize(12);
-    doc.text(`Moyenne generale : ${moyenne.toFixed(2)}`, 14, finalY + 12);
+    doc.text(
+      `Moyenne generale : ${moyenne !== null ? moyenne.toFixed(2) : "-"}`,
+      14,
+      finalY + 12,
+    );
 
     const filename = `bulletin-${row.eleve?.code_eleve ?? row.id}.pdf`;
     savePdf(doc, filename);
   };
 
-  const columns: ColumnDef<Bulletin>[] = [
+  const columns: ColumnDef<BulletinWithRelations>[] = [
     {
-      key: "eleve",
-      header: "Eleve",
-      render: (row) => row.eleve?.code_eleve ?? "-",
-      sortable: true,
-      sortKey: "eleve.code_eleve",
+      key: "bulletin",
+      header: "Bulletin",
+      render: (row) => (
+        <div>
+          <p className="font-medium text-slate-900">{getBulletinDisplayLabel(row)}</p>
+          <p className="text-xs text-slate-500">{getBulletinSecondaryLabel(row) || "Aucun detail complementaire"}</p>
+        </div>
+      ),
+      sortable: false,
+      sortKey: "created_at",
     },
     {
       key: "periode",
       header: "Periode",
       render: (row) => row.periode?.nom ?? "-",
-      sortable: true,
+      sortable: false,
       sortKey: "periode.nom",
-    },
-    {
-      key: "classe",
-      header: "Classe",
-      render: (row) => row.classe?.nom ?? "-",
-      sortable: true,
-      sortKey: "classe.nom",
     },
     {
       key: "moyenne_generale",
       header: "Moy. generale",
       render: (row) => {
-        const moy = moyenneGenerale(row.lignes);
-        return row.lignes?.length ? moy.toFixed(2) : "-";
+        const moy = getBulletinAverage(row.lignes);
+        return moy !== null ? moy.toFixed(2) : "-";
       },
+      sortable: false,
     },
     {
       key: "statut",
       header: "Statut",
-      accessor: "statut",
-      sortable: true,
+      render: (row) => row.statut ?? "-",
+      sortable: false,
       sortKey: "statut",
     },
     {
       key: "publie_le",
       header: "Publie le",
       render: (row) => formatDate(row.publie_le),
-      sortable: true,
+      sortable: false,
       sortKey: "publie_le",
     },
   ];
 
-  const actions: RowAction<Bulletin>[] = [
+  const actions: RowAction<BulletinWithRelations>[] = [
     {
       label: "Generer",
       variant: "primary",
@@ -145,7 +143,7 @@ export default function BulletinTable() {
   ];
 
   return (
-    <DataTable<Bulletin>
+    <DataTable<BulletinWithRelations>
       ref={tableRef}
       service={service}
       columns={columns}
@@ -154,9 +152,11 @@ export default function BulletinTable() {
       initialQuery={{
         page: 1,
         take: 10,
-        where: {
-          classe: { etablissement_id: etablissement_id },
-        },
+        where: etablissement_id
+          ? {
+              classe: { etablissement_id },
+            }
+          : {},
         includeSpec: {
           eleve: {
             include: {
@@ -164,18 +164,40 @@ export default function BulletinTable() {
             },
           },
           periode: true,
-          classe: true,
-          lignes: { include: { matiere: true } },
+          classe: {
+            include: {
+              niveau: true,
+              site: true,
+            },
+          },
+          lignes: { include: { matiere: { include: { departement: true } } } },
         },
       }}
       showSearch
       onSearchBuildWhere={(text) => ({
-        OR: [
-          { eleve: { code_eleve: { contains: text } } },
-          { periode: { nom: { contains: text } } },
-          { statut: { contains: text } },
+        AND: [
+          ...(etablissement_id
+            ? [
+                {
+                  classe: {
+                    etablissement_id,
+                  },
+                },
+              ]
+            : []),
+          {
+            OR: [
+              { eleve: { code_eleve: { contains: text } } },
+              { eleve: { utilisateur: { profil: { prenom: { contains: text } } } } },
+              { eleve: { utilisateur: { profil: { nom: { contains: text } } } } },
+              { periode: { nom: { contains: text } } },
+              { classe: { nom: { contains: text } } },
+              { statut: { contains: text } },
+            ],
+          },
         ],
       })}
     />
   );
 }
+

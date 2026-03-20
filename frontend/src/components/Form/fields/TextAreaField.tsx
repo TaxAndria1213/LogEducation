@@ -1,6 +1,7 @@
 import { Controller, type FieldValues } from "react-hook-form";
 import { FieldWrapper } from "./FieldWrapper";
 import type { BaseFieldProps } from "./types";
+import { getInputClassName } from "./inputStyles";
 
 export function TextAreaField<TFieldValues extends FieldValues>({
   control,
@@ -36,7 +37,7 @@ export function TextAreaField<TFieldValues extends FieldValues>({
             placeholder={placeholder}
             disabled={disabled}
             rows={4}
-            style={{ padding: 10, border: "1px solid #ccc", borderRadius: 8 }}
+            className={`${getInputClassName(Boolean(fieldState.error))} min-h-28 resize-y`}
           />
         </FieldWrapper>
       )}

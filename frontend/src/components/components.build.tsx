@@ -31,6 +31,10 @@ import { bulletinComponents } from "../pages/pedagogie/bulletins/components/CI.b
 import { regleNoteComponents } from "../pages/pedagogie/regles_notes/components/CI.regleNote";
 import { emploiDuTempsComponents } from "../pages/emploi_du_temps/components/CI.emploiDuTemps";
 import { evenementCalendrierComponents } from "../pages/emploi_du_temps/components/CI.evenement";
+import { sessionAppelComponents } from "../pages/presences/sessions_appel/components/CI.sessionAppel";
+import { presenceEleveComponents } from "../pages/presences/presences_eleves/components/CI.presenceEleve";
+import { justificatifAbsenceComponents } from "../pages/presences/justificatifs/components/CI.justificatif";
+import { presencePersonnelComponents } from "../pages/presences/presences_personnel/components/CI.presencePersonnel";
 import {
   extractPermissionCodes,
   permissionMatches,
@@ -79,6 +83,10 @@ const components: ComponentIdentifierType[] = [
   ...regleNoteComponents,
   ...emploiDuTempsComponents,
   ...evenementCalendrierComponents,
+  ...sessionAppelComponents,
+  ...presenceEleveComponents,
+  ...justificatifAbsenceComponents,
+  ...presencePersonnelComponents,
 ];
 
 /**
@@ -211,4 +219,6 @@ export function getScopesForPermission(
 }
 
 export { verifyAccess as hasAccess };
+
+
 

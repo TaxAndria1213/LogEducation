@@ -1,4 +1,4 @@
-import { create } from "zustand";
+﻿import { create } from "zustand";
 import type { JSX } from "react";
 import NotFound from "../../NotFound";
 import CreneauManager from "../components/EmploiDuTemps/CreneauManager";
@@ -9,13 +9,14 @@ import ScheduleList from "../components/EmploiDuTemps/ScheduleList";
 type MenuComponent = {
   id: string;
   component: JSX.Element;
+  renderState: number;
 };
 
 const renderList: MenuComponent[] = [
-  { id: "dashboard", component: <ScheduleDashboard /> },
-  { id: "add", component: <ScheduleForm /> },
-  { id: "list", component: <ScheduleList /> },
-  { id: "parametre", component: <CreneauManager /> },
+  { id: "dashboard", component: <ScheduleDashboard />, renderState: 0 },
+  { id: "list", component: <ScheduleList />, renderState: 1 },
+  { id: "parametre", component: <CreneauManager />, renderState: 2 },
+  { id: "add", component: <ScheduleForm />, renderState: 3 },
 ];
 
 type State = {
@@ -35,7 +36,15 @@ export const useEmploiDuTempsStore = create<State>((set) => ({
   setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),
   setRenderedComponent: (value: string) => {
     const found = renderList.find((item) => item.id === value);
-    if (found) set({ renderedComponent: found.component });
-    else set({ renderedComponent: <NotFound />, renderState: -1 });
+
+    if (found) {
+      set({
+        renderedComponent: found.component,
+        renderState: found.renderState,
+      });
+      return;
+    }
+
+    set({ renderedComponent: <NotFound />, renderState: -1 });
   },
 }));

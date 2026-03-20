@@ -5,9 +5,10 @@ import { DayPicker } from "react-day-picker";
 import { fr } from "date-fns/locale";
 import "react-day-picker/dist/style.css";
 
-import { FieldWrapper } from "./FieldWrapper";
-import type { BaseFieldProps } from "./types";
 import { formatDateWithLocalTimezone } from "../../../app/utils/functions";
+import { FieldWrapper } from "./FieldWrapper";
+import { getInputClassName, getSurfaceClassName } from "./inputStyles";
+import type { BaseFieldProps } from "./types";
 
 function parseIsoDate(value: unknown): Date | undefined {
   if (!value || typeof value !== "string") return undefined;
@@ -38,13 +39,12 @@ function toIsoDateString(date: Date | undefined): string | undefined {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-type DateFieldProps<TFieldValues extends FieldValues> =
-  BaseFieldProps<TFieldValues> & {
-    placeholder?: string;
-    min?: string;
-    max?: string;
-    defaultValue?: string;
-  };
+type DateFieldProps<TFieldValues extends FieldValues> = BaseFieldProps<TFieldValues> & {
+  placeholder?: string;
+  min?: string;
+  max?: string;
+  defaultValue?: string;
+};
 
 export function DateField<TFieldValues extends FieldValues>(
   props: DateFieldProps<TFieldValues>,
@@ -58,7 +58,6 @@ export function DateField<TFieldValues extends FieldValues>(
       name={props.name}
       defaultValue={props.defaultValue as any}
       render={({ field, fieldState }) => {
-        console.log(field);
         const currentValue = field.value ?? props.defaultValue;
         const selectedDate = parseIsoDate(currentValue);
 
@@ -74,7 +73,7 @@ export function DateField<TFieldValues extends FieldValues>(
             error={fieldState.error?.message}
             className={props.className}
           >
-            <div style={{ position: "relative" }}>
+            <div className="relative">
               <button
                 type="button"
                 id={id}
@@ -83,52 +82,31 @@ export function DateField<TFieldValues extends FieldValues>(
                 disabled={props.disabled}
                 aria-haspopup="dialog"
                 aria-expanded={open}
-                style={{
-                  width: "100%",
-                  minHeight: 44,
-                  padding: "10px 12px",
-                  borderRadius: 8,
-                  border: fieldState.error
-                    ? "1px solid #d32f2f"
-                    : "1px solid #ccc",
-                  background: props.disabled ? "#f5f5f5" : "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  cursor: props.disabled ? "not-allowed" : "pointer",
-                  textAlign: "left",
-                }}
+                className={`${getInputClassName(Boolean(fieldState.error))} flex min-h-12 items-center justify-between text-left`}
               >
                 <span>
                   {selectedDate
-                    ? formatDateWithLocalTimezone(selectedDate.getFullYear() +
-                      "-" +
-                      (selectedDate.getMonth() + 1)
-                        .toString()
-                        .padStart(2, "0") +
-                      "-" +
-                      selectedDate.getDate().toString().padStart(2, "0")).date
+                    ? formatDateWithLocalTimezone(
+                        `${selectedDate.getFullYear()}-${String(
+                          selectedDate.getMonth() + 1,
+                        ).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`,
+                      ).date
                     : field.value
                       ? formatDateWithLocalTimezone(field.value).date
-                      : "Choisir une date"}
+                      : props.placeholder ?? "Choisir une date"}
                 </span>
-                <span aria-hidden="true">📅</span>
+                <span aria-hidden="true" className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Calendrier
+                </span>
               </button>
 
               {open && !props.disabled && (
                 <div
                   role="dialog"
-                  aria-label="Sélecteur de date"
+                  aria-label="Selecteur de date"
+                  className={`${getSurfaceClassName(Boolean(fieldState.error))} absolute left-0 top-[calc(100%+8px)] z-[1000] min-w-[320px] p-3`}
                   style={{
-                    position: "absolute",
-                    zIndex: 1000,
-                    top: "calc(100% + 8px)",
-                    left: 0,
-                    background: "#fff",
-                    border: "1px solid #ddd",
-                    borderRadius: 12,
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-                    padding: 12,
+                    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.14)",
                   }}
                 >
                   <DayPicker
@@ -150,26 +128,14 @@ export function DateField<TFieldValues extends FieldValues>(
                     fixedWeeks
                   />
 
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 8,
-                      marginTop: 8,
-                    }}
-                  >
+                  <div className="mt-3 flex justify-between gap-3">
                     <button
                       type="button"
                       onClick={() => {
                         field.onChange(undefined);
                         setOpen(false);
                       }}
-                      style={{
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        border: "1px solid #ccc",
-                        background: "#fff",
-                      }}
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     >
                       Effacer
                     </button>
@@ -180,14 +146,9 @@ export function DateField<TFieldValues extends FieldValues>(
                         field.onChange(toIsoDateString(new Date()));
                         setOpen(false);
                       }}
-                      style={{
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        border: "1px solid #ccc",
-                        background: "#fff",
-                      }}
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     >
-                      Aujourd’hui
+                      Aujourd'hui
                     </button>
                   </div>
                 </div>

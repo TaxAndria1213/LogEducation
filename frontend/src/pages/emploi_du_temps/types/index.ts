@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   Cours,
   CreneauHoraire,
   EmploiDuTemps,
@@ -95,6 +95,50 @@ type TeacherLike = {
   } | null;
 } | null;
 
+type ScheduleDisplayLike = Pick<
+  EmploiDuTemps,
+  "cours_id" | "matiere_id" | "effectif_du" | "effectif_au"
+> & {
+  classe?: {
+    nom?: string | null;
+    niveau?: {
+      nom?: string | null;
+    } | null;
+    site?: {
+      nom?: string | null;
+    } | null;
+  } | null;
+  cours?: {
+    classe?: {
+      nom?: string | null;
+      niveau?: {
+        nom?: string | null;
+      } | null;
+      site?: {
+        nom?: string | null;
+      } | null;
+    } | null;
+    matiere?: {
+      nom?: string | null;
+    } | null;
+  } | null;
+  matiere?: {
+    nom?: string | null;
+  } | null;
+  enseignant?: TeacherLike;
+  salle?: {
+    nom?: string | null;
+    site?: {
+      nom?: string | null;
+    } | null;
+  } | null;
+  creneau?: {
+    nom?: string | null;
+    heure_debut?: string | null;
+    heure_fin?: string | null;
+  } | null;
+};
+
 const WEEKDAY_LABELS: Record<number, string> = {
   1: "Lundi",
   2: "Mardi",
@@ -113,6 +157,66 @@ export function getWeekdayLabel(day: number | null | undefined): string {
 export function getCreneauLabel(creneau?: CreneauHoraire | null): string {
   if (!creneau) return "-";
   return `${creneau.nom} (${creneau.heure_debut} - ${creneau.heure_fin})`;
+}
+
+export function getScheduleSubjectLabel(schedule?: ScheduleDisplayLike | null): string {
+  if (!schedule) return "Cours non renseigne";
+
+  const matiere = schedule.matiere?.nom?.trim() ?? schedule.cours?.matiere?.nom?.trim() ?? "";
+  if (matiere) return matiere;
+
+  if (!schedule.cours_id && !schedule.matiere_id) {
+    return "Pause";
+  }
+
+  return "Cours non renseigne";
+}
+
+export function getScheduleClasseLabel(schedule?: ScheduleDisplayLike | null): string {
+  if (!schedule) return "Classe non renseignee";
+
+  const classe = schedule.classe ?? schedule.cours?.classe;
+  const nom = classe?.nom?.trim() ?? "";
+  const niveau = classe?.niveau?.nom?.trim() ?? "";
+  const site = classe?.site?.nom?.trim() ?? "";
+
+  if (nom && niveau) return `${nom} - ${niveau}`;
+  if (nom && site) return `${nom} - ${site}`;
+  if (nom) return nom;
+  if (niveau) return niveau;
+  if (site) return site;
+  return "Classe non renseignee";
+}
+
+export function getScheduleRoomLabel(schedule?: ScheduleDisplayLike | null): string {
+  if (!schedule) return "Salle non renseignee";
+
+  const nom = schedule.salle?.nom?.trim() ?? "";
+  const site = schedule.salle?.site?.nom?.trim() ?? "";
+
+  if (nom && site) return `${nom} - ${site}`;
+  if (nom) return nom;
+  if (site) return site;
+  return "Salle non renseignee";
+}
+
+export function getScheduleDateWindowLabel(
+  schedule: Pick<EmploiDuTemps, "effectif_du" | "effectif_au">,
+): string {
+  const start = new Date(schedule.effectif_du);
+  const end = new Date(schedule.effectif_au);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return "Fenetre non renseignee";
+  }
+
+  const formatter = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  return `${formatter.format(start)} - ${formatter.format(end)}`;
 }
 
 export function getScheduleScopeMeta(

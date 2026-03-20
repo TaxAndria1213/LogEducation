@@ -1,11 +1,15 @@
-import React from "react";
+﻿import React from "react";
 import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
 import {
   DataTable,
   type DataTableHandle,
 } from "../../../../../shared/table/DataTable";
-import type { Evaluation } from "../../../../../types/models";
-import EvaluationService from "../../../../../services/evaluation.service";
+import EvaluationService, {
+  getEvaluationDisplayLabel,
+  getEvaluationSecondaryLabel,
+  getEvaluationTypeLabel,
+  type EvaluationWithRelations,
+} from "../../../../../services/evaluation.service";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
 import { useAuth } from "../../../../../auth/AuthContext";
 
@@ -14,63 +18,58 @@ export default function EvaluationTable() {
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new EvaluationService(), []);
 
-  const columns: ColumnDef<Evaluation>[] = [
+  const columns: ColumnDef<EvaluationWithRelations>[] = [
     {
-      key: "titre",
-      header: "Titre",
-      accessor: "titre",
-      sortable: true,
-      sortKey: "titre",
-    },
-    {
-      key: "cours",
-      header: "Cours",
-      accessor: "cours",
-      render: (row: Evaluation) => row.cours?.matiere?.code ?? "-",
-      sortable: true,
-      sortKey: "cours",
-    },
-    {
-      key: "classe",
-      header: "Classe",
-      accessor: "classe",
-      render: (row: Evaluation) => row.cours?.classe?.nom ?? "-",
-      sortable: true,
-      sortKey: "classe",
-    },
-    {
-      key: "periode",
-      header: "Periode",
-      accessor: "periode",
-      render: (row: Evaluation) => row.periode?.nom ?? "-",
-      sortable: true,
-      sortKey: "periode",
+      key: "evaluation",
+      header: "Evaluation",
+      render: (row) => (
+        <div>
+          <p className="font-medium text-slate-900">{getEvaluationDisplayLabel(row)}</p>
+          <p className="text-xs text-slate-500">{getEvaluationSecondaryLabel(row) || "Aucun detail complementaire"}</p>
+        </div>
+      ),
+      sortable: false,
+      sortKey: "date",
     },
     {
       key: "type",
       header: "Type",
-      accessor: "type",
-      sortable: true,
+      render: (row) => getEvaluationTypeLabel(row.type),
+      sortable: false,
       sortKey: "type",
     },
     {
-      key: "note_max",
-      header: "Note max",
-      accessor: "note_max",
-      sortable: true,
-      sortKey: "note_max",
+      key: "notation",
+      header: "Notation",
+      render: (row) => (
+        <div className="space-y-1 text-xs text-slate-600">
+          <p>Note max: {row.note_max}</p>
+          <p>Poids: {row.poids ?? "Non renseigne"}</p>
+        </div>
+      ),
+      sortable: false,
+    },
+    {
+      key: "suivi",
+      header: "Suivi",
+      render: (row) => (
+        <div className="space-y-1 text-xs text-slate-600">
+          <p>{row.est_publiee ? "Publiee" : "Brouillon"}</p>
+          <p>{row.notes?.length ?? 0} note(s)</p>
+        </div>
+      ),
+      sortable: false,
     },
     {
       key: "date",
       header: "Date",
-      render: (row) =>
-        formatDateWithLocalTimezone(row.date.toString()).dateHeure,
-      sortable: true,
+      render: (row) => formatDateWithLocalTimezone(row.date.toString()).dateHeure,
+      sortable: false,
       sortKey: "date",
     },
   ];
 
-  const actions: RowAction<Evaluation>[] = [
+  const actions: RowAction<EvaluationWithRelations>[] = [
     {
       label: "Voir",
       variant: "secondary",
@@ -81,7 +80,7 @@ export default function EvaluationTable() {
       variant: "danger",
       confirm: {
         title: "Suppression",
-        message: "Supprimer cette évaluation ?",
+        message: "Supprimer cette evaluation ?",
       },
       onClick: async (row) => {
         await service.delete(row.id);
@@ -91,7 +90,7 @@ export default function EvaluationTable() {
   ];
 
   return (
-    <DataTable<Evaluation>
+    <DataTable<EvaluationWithRelations>
       ref={tableRef}
       service={service}
       columns={columns}
@@ -100,29 +99,83 @@ export default function EvaluationTable() {
       initialQuery={{
         page: 1,
         take: 10,
-        where: {
-          periode: {
-            annee: {
-              etablissement_id: etablissement_id,
-            },
-          },
-        },
+        where: etablissement_id
+          ? {
+              cours: {
+                etablissement_id,
+              },
+            }
+          : {},
         includeSpec: {
           cours: {
             include: {
-              matiere: true,
-              classe: true,
+              annee: true,
+              classe: {
+                include: {
+                  niveau: true,
+                  site: true,
+                },
+              },
+              matiere: {
+                include: {
+                  departement: true,
+                },
+              },
+              enseignant: {
+                include: {
+                  departement: true,
+                  personnel: {
+                    include: {
+                      utilisateur: {
+                        include: {
+                          profil: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
           periode: true,
+          typeRef: true,
+          createur: {
+            include: {
+              personnel: {
+                include: {
+                  utilisateur: {
+                    include: {
+                      profil: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          notes: true,
         },
       }}
       showSearch
       onSearchBuildWhere={(text) => ({
-        OR: [
-          { titre: { contains: text } },
-          { cours: { matiere: { code: { contains: text } } } },
-          { cours: { classe: { nom: { contains: text } } } },
+        AND: [
+          ...(etablissement_id
+            ? [
+                {
+                  cours: {
+                    etablissement_id,
+                  },
+                },
+              ]
+            : []),
+          {
+            OR: [
+              { titre: { contains: text } },
+              { cours: { matiere: { nom: { contains: text } } } },
+              { cours: { matiere: { code: { contains: text } } } },
+              { cours: { classe: { nom: { contains: text } } } },
+              { periode: { nom: { contains: text } } },
+            ],
+          },
         ],
       })}
     />

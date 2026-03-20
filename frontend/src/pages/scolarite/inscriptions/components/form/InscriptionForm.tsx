@@ -1,16 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo } from "react";
+import {
+  FiBookOpen,
+  FiCreditCard,
+  FiMapPin,
+  FiShield,
+  FiTruck,
+  FiUser,
+  FiUsers,
+} from "react-icons/fi";
 import { z } from "zod";
-import { ProfilSchema } from "../../../../../generated/zod";
 import { getFieldsFromZodObjectSchema } from "../../../../../components/Form/fields";
 import {
   MultiStepFormWizard,
   type WizardStep,
 } from "../../../../../components/Form/multistep/MultiStepFormWizard";
-import { useAuth } from "../../../../../auth/AuthContext";
-import { useInscriptionCreateStore } from "../../store/InscriptionCreateStore";
+import { ProfilSchema } from "../../../../../generated/zod";
 import { useInfo } from "../../../../../hooks/useInfo";
+import { useAuth } from "../../../../../hooks/useAuth";
 import type { StatutInscription } from "../../../../../types/models";
+import { useInscriptionCreateStore } from "../../store/InscriptionCreateStore";
 
 type WizardData = {
   eleve?: any;
@@ -22,65 +31,52 @@ type WizardData = {
   echeancier?: any;
 };
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeOptionalString(value: unknown) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function parseBooleanLabel(value?: boolean) {
+  return value ? "Oui" : "Non";
+}
+
 export default function InscriptionForm() {
-  const {etablissement_id} = useAuth();
+  const { etablissement_id } = useAuth();
   const { info } = useInfo();
 
-  const getEtablissementOptions = useInscriptionCreateStore((state) => state.getInscriptionOptions)
-  const anneeScolaireId = useInscriptionCreateStore((state) => state.anneeScolaireId)
-  const onCreateInscriptionFull = useInscriptionCreateStore((state) => state.onCreateFull);
+  const getInscriptionOptions = useInscriptionCreateStore(
+    (state) => state.getInscriptionOptions,
+  );
+  const anneeScolaireId = useInscriptionCreateStore(
+    (state) => state.anneeScolaireId,
+  );
+  const onCreateInscriptionFull = useInscriptionCreateStore(
+    (state) => state.onCreateFull,
+  );
   const setLoading = useInscriptionCreateStore((state) => state.setLoading);
 
-  useEffect(() => {
-    if(etablissement_id) {
-      getEtablissementOptions(etablissement_id);
-    }
-  }, [etablissement_id, getEtablissementOptions]);
-
-  //// options
   const classeOptions = useInscriptionCreateStore((state) => state.classeOptions);
-
-  //// initial datas
-  const scolariteInitialData = useInscriptionCreateStore((state) => state.scolariteInitialData);
-
-  /**
-   * -------------------------------------------------------
-   * 1) ÉTAPE ÉLÈVE
-   * -------------------------------------------------------
-   * On réutilise ProfilSchema pour les infos personnelles.
-   */
-  const eleveFields = useMemo(
-    () =>
-      getFieldsFromZodObjectSchema(ProfilSchema, {
-        omit: [
-          "id",
-          "created_at",
-          "updated_at",
-          "utilisateur_id",
-          "contact_urgence_json",
-          "photo_url",
-        ],
-        labelByField: {
-          prenom: "Prénom",
-          nom: "Nom",
-          date_naissance: "Date de naissance",
-          genre: "Genre",
-          adresse: "Adresse",
-        },
-        metaByField: {
-          date_naissance: { dateMode: "date" },
-          genre: {
-            relation: {
-              options: [
-                { value: "Homme", label: "Homme" },
-                { value: "Femme", label: "Femme" },
-              ],
-            },
-          },
-        },
-      }),
-    [],
+  const transportLineOptions = useInscriptionCreateStore(
+    (state) => state.transportLineOptions,
   );
+  const transportStopOptions = useInscriptionCreateStore(
+    (state) => state.transportStopOptions,
+  );
+  const cantineFormulaOptions = useInscriptionCreateStore(
+    (state) => state.cantineFormulaOptions,
+  );
+  const scolariteInitialData = useInscriptionCreateStore(
+    (state) => state.scolariteInitialData,
+  );
+
+  useEffect(() => {
+    if (etablissement_id) {
+      void getInscriptionOptions(etablissement_id);
+    }
+  }, [etablissement_id, getInscriptionOptions]);
 
   const eleveSchema = useMemo(
     () =>
@@ -91,23 +87,112 @@ export default function InscriptionForm() {
         utilisateur_id: true,
         contact_urgence_json: true,
         photo_url: true,
+      }).extend({
+        contact_urgence_nom: z.string().optional().nullable(),
+        contact_urgence_telephone: z.string().optional().nullable(),
+        contact_urgence_relation: z.string().optional().nullable(),
       }),
     [],
   );
 
-  /**
-   * -------------------------------------------------------
-   * 2) ÉTAPE SCOLARITÉ
-   * -------------------------------------------------------
-   */
+  const eleveFields = useMemo(
+    () =>
+      getFieldsFromZodObjectSchema(eleveSchema, {
+        labelByField: {
+          prenom: "Prenom",
+          nom: "Nom",
+          date_naissance: "Date de naissance",
+          genre: "Genre",
+          adresse: "Adresse",
+          contact_urgence_nom: "Nom du contact d'urgence",
+          contact_urgence_telephone: "Telephone d'urgence",
+          contact_urgence_relation: "Lien avec l'eleve",
+        },
+        metaByField: {
+          prenom: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Ex: Aina",
+              description: "Prenom officiel de l'eleve.",
+            },
+          },
+          nom: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Ex: Rakoto",
+              description: "Nom de famille utilise pour les dossiers scolaires.",
+            },
+          },
+          date_naissance: {
+            dateMode: "date",
+            fieldProps: {
+              className: "md:col-span-1",
+              description: "La date de naissance sera reprise dans la fiche eleve.",
+            },
+          },
+          genre: {
+            relation: {
+              options: [
+                { value: "Homme", label: "Homme" },
+                { value: "Femme", label: "Femme" },
+                { value: "Autre", label: "Autre" },
+              ],
+            },
+            fieldProps: {
+              className: "md:col-span-1",
+              emptyLabel: "Selectionner",
+            },
+          },
+          adresse: {
+            widget: "textarea",
+            fieldProps: {
+              className: "md:col-span-2",
+              placeholder: "Adresse de residence de l'eleve",
+              description: "Utile pour le suivi administratif et la communication.",
+            },
+          },
+          contact_urgence_nom: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Ex: Oncle, grand-parent...",
+              description: "Personne a joindre en cas d'urgence.",
+            },
+          },
+          contact_urgence_telephone: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Telephone joignable rapidement",
+              description: "Numero prioritaire si le parent principal est indisponible.",
+            },
+          },
+          contact_urgence_relation: {
+            relation: {
+              options: [
+                { value: "Pere", label: "Pere" },
+                { value: "Mere", label: "Mere" },
+                { value: "Tuteur", label: "Tuteur" },
+                { value: "Famille", label: "Famille" },
+                { value: "Autre", label: "Autre" },
+              ],
+            },
+            fieldProps: {
+              className: "md:col-span-2",
+              emptyLabel: "Selectionner",
+            },
+          },
+        },
+      }),
+    [eleveSchema],
+  );
+
   const scolariteSchema = useMemo(
     () =>
       z.object({
         code_eleve: z.string().optional().nullable(),
-        classe_id: z.string(),
+        classe_id: z.string().min(1, "Selectionnez une classe"),
         date_entree: z.coerce.date().nullable(),
         date_inscription: z.coerce.date(),
-        statut_inscription: z.string(),
+        statut_inscription: z.string().default("INSCRIT"),
       }),
     [],
   );
@@ -116,53 +201,73 @@ export default function InscriptionForm() {
     () =>
       getFieldsFromZodObjectSchema(scolariteSchema, {
         labelByField: {
-          code_eleve: "Code élève",
+          code_eleve: "Code eleve",
           classe_id: "Classe",
-          date_entree: "Date d'entrée",
+          date_entree: "Date d'entree",
           date_inscription: "Date d'inscription",
           statut_inscription: "Statut d'inscription",
         },
         metaByField: {
-          date_entree: { dateMode: "date" },
-          date_inscription: { dateMode: "date" },
-          statut_inscription: {
-            relation: {
-              options: [{ value: "INSCRIT", label: "INSCRIT" }],
+          code_eleve: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Code genere automatiquement",
+              description: "Vous pouvez le conserver ou l'ajuster avant validation.",
             },
           },
           classe_id: {
-            relation: {
-              options: classeOptions,
+            relation: { options: classeOptions },
+            fieldProps: {
+              className: "md:col-span-1",
+              emptyLabel: "Choisir une classe",
+              description: "La classe determine l'affectation scolaire initiale.",
             },
-          }
+          },
+          date_entree: {
+            dateMode: "date",
+            fieldProps: {
+              className: "md:col-span-1",
+            },
+          },
+          date_inscription: {
+            dateMode: "date",
+            fieldProps: {
+              className: "md:col-span-1",
+            },
+          },
+          statut_inscription: {
+            relation: {
+              options: [{ value: "INSCRIT", label: "Inscrit" }],
+            },
+            fieldProps: {
+              className: "md:col-span-2",
+              emptyLabel: "Selectionner",
+              description: "La creation initiale ouvre directement un dossier inscrit.",
+            },
+          },
         },
       }),
-    [scolariteSchema, classeOptions],
+    [classeOptions, scolariteSchema],
   );
-
-  /**
-   * -------------------------------------------------------
-   * 3) ÉTAPE TUTEUR PRINCIPAL
-   * -------------------------------------------------------
-   */
 
   const tuteur1Schema = useMemo(
     () =>
-      {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return z.object({
+      z.object({
         nom: z.string().min(1, "Champ requis"),
         prenom: z.string().min(1, "Champ requis"),
         telephone: z.string().optional().nullable(),
-        email: z.string().regex(emailRegex, {
-          message: "Format d'email incorrect.",
-        }).optional().nullable(),
+        email: z
+          .string()
+          .optional()
+          .nullable()
+          .refine((value) => !value || emailRegex.test(value), {
+            message: "Format d'email incorrect.",
+          }),
         adresse: z.string().optional().nullable(),
         relation: z.string().min(1, "Champ requis"),
-        est_principal: z.string().default("true"),
-        autorise_recuperation: z.string().default("true"),
-      })
-      },
+        est_principal: z.boolean().default(true),
+        autorise_recuperation: z.boolean().default(true),
+      }),
     [],
   );
 
@@ -171,39 +276,70 @@ export default function InscriptionForm() {
       getFieldsFromZodObjectSchema(tuteur1Schema, {
         labelByField: {
           nom: "Nom",
-          prenom: "Prénom",
-          telephone: "Téléphone",
+          prenom: "Prenom",
+          telephone: "Telephone",
           email: "Email",
           adresse: "Adresse",
-          relation: "Relation avec l'élève",
+          relation: "Lien avec l'eleve",
           est_principal: "Tuteur principal",
-          autorise_recuperation: "Autorisé à récupérer l'élève",
+          autorise_recuperation: "Autorise a recuperer l'eleve",
         },
         metaByField: {
+          nom: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Nom du parent ou tuteur principal",
+            },
+          },
+          prenom: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Prenom du parent ou tuteur principal",
+            },
+          },
+          telephone: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Numero prefere pour les appels",
+            },
+          },
+          email: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "exemple@domaine.com",
+            },
+          },
+          adresse: {
+            widget: "textarea",
+            fieldProps: {
+              className: "md:col-span-2",
+              placeholder: "Adresse du parent ou tuteur principal",
+            },
+          },
           relation: {
             relation: {
               options: [
-                { value: "Père", label: "Père" },
-                { value: "Mère", label: "Mère" },
+                { value: "Pere", label: "Pere" },
+                { value: "Mere", label: "Mere" },
                 { value: "Tuteur", label: "Tuteur" },
                 { value: "Autre", label: "Autre" },
               ],
             },
+            fieldProps: {
+              className: "md:col-span-1",
+              emptyLabel: "Selectionner",
+            },
           },
           est_principal: {
-            relation: {
-              options: [
-                { value: "true", label: "Oui" },
-                { value: "false", label: "Non" },
-              ],
+            fieldProps: {
+              className: "md:col-span-1",
+              description: "Activez ce champ pour definir le contact principal du dossier.",
             },
           },
           autorise_recuperation: {
-            relation: {
-              options: [
-                { value: "true", label: "Oui" },
-                { value: "false", label: "Non" },
-              ],
+            fieldProps: {
+              className: "md:col-span-2",
+              description: "Autorise ce tuteur a recuperer l'eleve a la sortie.",
             },
           },
         },
@@ -211,29 +347,24 @@ export default function InscriptionForm() {
     [tuteur1Schema],
   );
 
-  /**
-   * -------------------------------------------------------
-   * 3) ÉTAPE TUTEUR PRINCIPAL
-   * -------------------------------------------------------
-   */
-
   const tuteur2Schema = useMemo(
     () =>
-      {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return z.object({
+      z.object({
         nom: z.string().optional().nullable(),
         prenom: z.string().optional().nullable(),
         telephone: z.string().optional().nullable(),
-        email: z.string().regex(emailRegex, {
-          message: "Format d'email incorrect.",
-        }).optional().nullable(),
+        email: z
+          .string()
+          .optional()
+          .nullable()
+          .refine((value) => !value || emailRegex.test(value), {
+            message: "Format d'email incorrect.",
+          }),
         adresse: z.string().optional().nullable(),
         relation: z.string().optional().nullable(),
-        est_principal: z.string().default("true"),
-        autorise_recuperation: z.string().default("true"),
-      })
-      },
+        est_principal: z.boolean().default(false),
+        autorise_recuperation: z.boolean().default(true),
+      }),
     [],
   );
 
@@ -242,39 +373,69 @@ export default function InscriptionForm() {
       getFieldsFromZodObjectSchema(tuteur2Schema, {
         labelByField: {
           nom: "Nom",
-          prenom: "Prénom",
-          telephone: "Téléphone",
+          prenom: "Prenom",
+          telephone: "Telephone",
           email: "Email",
           adresse: "Adresse",
-          relation: "Relation avec l'élève",
+          relation: "Lien avec l'eleve",
           est_principal: "Tuteur principal",
-          autorise_recuperation: "Autorisé à récupérer l'élève",
+          autorise_recuperation: "Autorise a recuperer l'eleve",
         },
         metaByField: {
+          nom: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Nom du second parent ou tuteur",
+            },
+          },
+          prenom: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Prenom du second parent ou tuteur",
+            },
+          },
+          telephone: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Numero secondaire",
+            },
+          },
+          email: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "exemple@domaine.com",
+            },
+          },
+          adresse: {
+            widget: "textarea",
+            fieldProps: {
+              className: "md:col-span-2",
+              placeholder: "Adresse si differente du premier tuteur",
+            },
+          },
           relation: {
             relation: {
               options: [
-                { value: "Père", label: "Père" },
-                { value: "Mère", label: "Mère" },
+                { value: "Pere", label: "Pere" },
+                { value: "Mere", label: "Mere" },
                 { value: "Tuteur", label: "Tuteur" },
                 { value: "Autre", label: "Autre" },
               ],
             },
+            fieldProps: {
+              className: "md:col-span-1",
+              emptyLabel: "Selectionner",
+            },
           },
           est_principal: {
-            relation: {
-              options: [
-                { value: "true", label: "Oui" },
-                { value: "false", label: "Non" },
-              ],
+            fieldProps: {
+              className: "md:col-span-1",
+              description: `Actuellement: ${parseBooleanLabel(false)} par defaut.`,
             },
           },
           autorise_recuperation: {
-            relation: {
-              options: [
-                { value: "true", label: "Oui" },
-                { value: "false", label: "Non" },
-              ],
+            fieldProps: {
+              className: "md:col-span-2",
             },
           },
         },
@@ -282,20 +443,33 @@ export default function InscriptionForm() {
     [tuteur2Schema],
   );
 
-  /**
-   * -------------------------------------------------------
-   * 4) ÉTAPE SERVICES
-   * -------------------------------------------------------
-   */
   const servicesSchema = useMemo(
     () =>
-      z.object({
-        transport_active: z.string().default("false"),
-        ligne_transport_id: z.string().optional().nullable(),
-        arret_transport_id: z.string().optional().nullable(),
-        cantine_active: z.string().default("false"),
-        formule_cantine_id: z.string().optional().nullable(),
-      }),
+      z
+        .object({
+          transport_active: z.boolean().default(false),
+          ligne_transport_id: z.string().optional().nullable(),
+          arret_transport_id: z.string().optional().nullable(),
+          cantine_active: z.boolean().default(false),
+          formule_cantine_id: z.string().optional().nullable(),
+        })
+        .superRefine((data, ctx) => {
+          if (data.transport_active && !data.ligne_transport_id) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["ligne_transport_id"],
+              message: "Selectionnez une ligne de transport.",
+            });
+          }
+
+          if (data.cantine_active && !data.formule_cantine_id) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["formule_cantine_id"],
+              message: "Selectionnez une formule de cantine.",
+            });
+          }
+        }),
     [],
   );
 
@@ -305,37 +479,55 @@ export default function InscriptionForm() {
         labelByField: {
           transport_active: "Activer le transport",
           ligne_transport_id: "Ligne de transport",
-          arret_transport_id: "Arrêt de transport",
+          arret_transport_id: "Arret de transport",
           cantine_active: "Activer la cantine",
-          formule_cantine_id: "Formule cantine",
+          formule_cantine_id: "Formule de cantine",
         },
         metaByField: {
           transport_active: {
-            relation: {
-              options: [
-                { value: "true", label: "Oui" },
-                { value: "false", label: "Non" },
-              ],
+            fieldProps: {
+              className: "md:col-span-2",
+              description: "Creera un abonnement transport pour l'annee scolaire active.",
+            },
+          },
+          ligne_transport_id: {
+            relation: { options: transportLineOptions },
+            fieldProps: {
+              className: "md:col-span-1",
+              emptyLabel: "Choisir une ligne",
+            },
+          },
+          arret_transport_id: {
+            relation: { options: transportStopOptions },
+            fieldProps: {
+              className: "md:col-span-1",
+              emptyLabel: "Choisir un arret",
+              description: "Optionnel si seul l'abonnement a la ligne doit etre ouvert.",
             },
           },
           cantine_active: {
-            relation: {
-              options: [
-                { value: "true", label: "Oui" },
-                { value: "false", label: "Non" },
-              ],
+            fieldProps: {
+              className: "md:col-span-2",
+              description: "Creera un abonnement cantine sur le dossier de l'eleve.",
+            },
+          },
+          formule_cantine_id: {
+            relation: { options: cantineFormulaOptions },
+            fieldProps: {
+              className: "md:col-span-2",
+              emptyLabel: "Choisir une formule",
             },
           },
         },
       }),
-    [servicesSchema],
+    [
+      cantineFormulaOptions,
+      servicesSchema,
+      transportLineOptions,
+      transportStopOptions,
+    ],
   );
 
-  /**
-   * -------------------------------------------------------
-   * 5) ÉTAPE PLAN FINANCIER
-   * -------------------------------------------------------
-   */
   const financeSchema = useMemo(
     () =>
       z.object({
@@ -355,7 +547,7 @@ export default function InscriptionForm() {
       getFieldsFromZodObjectSchema(financeSchema, {
         labelByField: {
           frais_inscription: "Frais d'inscription",
-          frais_scolarite: "Frais de scolarité",
+          frais_scolarite: "Frais de scolarite",
           frais_transport: "Frais de transport",
           frais_cantine: "Frais de cantine",
           remise_type: "Type de remise",
@@ -363,6 +555,30 @@ export default function InscriptionForm() {
           devise: "Devise",
         },
         metaByField: {
+          frais_inscription: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "0",
+            },
+          },
+          frais_scolarite: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "0",
+            },
+          },
+          frais_transport: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "0",
+            },
+          },
+          frais_cantine: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "0",
+            },
+          },
           remise_type: {
             relation: {
               options: [
@@ -370,6 +586,17 @@ export default function InscriptionForm() {
                 { value: "PERCENT", label: "Pourcentage" },
                 { value: "FIXED", label: "Montant fixe" },
               ],
+            },
+            fieldProps: {
+              className: "md:col-span-1",
+              emptyLabel: "Choisir",
+            },
+          },
+          remise_valeur: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "0",
+              description: "Utilise pour calculer le montant net de la facture initiale.",
             },
           },
           devise: {
@@ -380,23 +607,22 @@ export default function InscriptionForm() {
                 { value: "USD", label: "USD" },
               ],
             },
+            fieldProps: {
+              className: "md:col-span-2",
+              emptyLabel: "Choisir une devise",
+            },
           },
         },
       }),
     [financeSchema],
   );
 
-  /**
-   * -------------------------------------------------------
-   * 6) ÉTAPE ÉCHÉANCIER
-   * -------------------------------------------------------
-   */
   const echeancierSchema = useMemo(
     () =>
       z.object({
         mode_paiement: z.string().min(1, "Champ requis"),
         nombre_tranches: z.coerce.number().min(1).default(1),
-        premiere_echeance: z.string().min(1, "Champ requis"),
+        premiere_echeance: z.coerce.date(),
         notes: z.string().optional().nullable(),
       }),
     [],
@@ -408,8 +634,8 @@ export default function InscriptionForm() {
         labelByField: {
           mode_paiement: "Mode de paiement",
           nombre_tranches: "Nombre de tranches",
-          premiere_echeance: "Première échéance",
-          notes: "Notes",
+          premiere_echeance: "Premiere echeance",
+          notes: "Notes administratives",
         },
         metaByField: {
           mode_paiement: {
@@ -420,90 +646,146 @@ export default function InscriptionForm() {
                 { value: "MENSUEL", label: "Mensuel" },
               ],
             },
+            fieldProps: {
+              className: "md:col-span-1",
+              emptyLabel: "Choisir un mode",
+            },
           },
-          premiere_echeance: { dateMode: "date" },
+          nombre_tranches: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "1",
+            },
+          },
+          premiere_echeance: {
+            dateMode: "date",
+            fieldProps: {
+              className: "md:col-span-1",
+              description: "Sera reprise comme premiere echeance du plan financier.",
+            },
+          },
+          notes: {
+            widget: "textarea",
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "Consignes, engagements, informations utiles...",
+            },
+          },
         },
       }),
     [echeancierSchema],
   );
 
   const steps: WizardStep[] = useMemo(
-    () =>
-      [
-        {
-          key: "eleve",
-          title: "Informations élève",
-          desc: "Identité et informations personnelles",
-          schema: eleveSchema,
-          fields: eleveFields,
-          labelMessage: "Élève",
+    () => [
+      {
+        key: "eleve",
+        title: "Fiche eleve",
+        desc: "Identite, adresse et contact d'urgence du dossier.",
+        schema: eleveSchema,
+        fields: eleveFields,
+        labelMessage: "Eleve",
+        icon: <FiUser />,
+      },
+      {
+        key: "scolarite",
+        title: "Affectation scolaire",
+        desc: "Classe, code eleve et dates de reference de l'inscription.",
+        schema: scolariteSchema,
+        fields: scolariteFields,
+        initialValues: scolariteInitialData ?? undefined,
+        labelMessage: "Scolarite",
+        icon: <FiBookOpen />,
+      },
+      {
+        key: "tuteur1",
+        title: "Parent ou tuteur principal",
+        desc: "Responsable legal principal a rattacher immediatement.",
+        schema: tuteur1Schema,
+        fields: tuteur1Fields,
+        initialValues: {
+          est_principal: true,
+          autorise_recuperation: true,
         },
-        {
-          key: "scolarite",
-          title: "Scolarité",
-          desc: "Affectation scolaire de l'élève",
-          schema: scolariteSchema,
-          fields: scolariteFields,
-          initialValues: scolariteInitialData,
-          labelMessage: "Scolarité",
+        labelMessage: "Tuteur principal",
+        icon: <FiShield />,
+      },
+      {
+        key: "tuteur2",
+        title: "Second parent ou tuteur",
+        desc: "Contact secondaire optionnel pour le suivi familial.",
+        schema: tuteur2Schema,
+        fields: tuteur2Fields,
+        initialValues: {
+          est_principal: false,
+          autorise_recuperation: true,
         },
-        {
-          key: "tuteur1",
-          title: "Tuteur principal / Parent 1",
-          desc: "Responsable légal principal",
-          schema: tuteur1Schema,
-          fields: tuteur1Fields,
-          labelMessage: "Tuteur",
+        labelMessage: "Tuteur secondaire",
+        icon: <FiUsers />,
+      },
+      {
+        key: "services",
+        title: "Services annexes",
+        desc: "Transport et cantine a ouvrir des l'inscription si besoin.",
+        schema: servicesSchema,
+        fields: servicesFields,
+        initialValues: {
+          transport_active: false,
+          cantine_active: false,
         },
-        {
-          key: "tuteur2",
-          title: "Tuteur / Parent 2",
-          desc: "Responsable légal",
-          schema: tuteur2Schema,
-          fields: tuteur2Fields,
-          labelMessage: "Tuteur",
+        labelMessage: "Services",
+        icon: <FiTruck />,
+      },
+      {
+        key: "finance",
+        title: "Montants et remise",
+        desc: "Montants de depart utilises pour la facture initiale.",
+        schema: financeSchema,
+        fields: financeFields,
+        initialValues: {
+          frais_inscription: 0,
+          frais_scolarite: 0,
+          frais_transport: 0,
+          frais_cantine: 0,
+          remise_type: "AUCUNE",
+          remise_valeur: 0,
+          devise: "MGA",
         },
-        {
-          key: "services",
-          title: "Services",
-          desc: "Transport et cantine",
-          schema: servicesSchema,
-          fields: servicesFields,
-          labelMessage: "Services",
+        labelMessage: "Finance",
+        icon: <FiCreditCard />,
+      },
+      {
+        key: "echeancier",
+        title: "Plan de paiement",
+        desc: "Mode de reglement, premiere echeance et notes de suivi.",
+        schema: echeancierSchema,
+        fields: echeancierFields,
+        initialValues: {
+          mode_paiement: "COMPTANT",
+          nombre_tranches: 1,
+          premiere_echeance: new Date().toISOString().slice(0, 10),
+          notes: "",
         },
-        {
-          key: "finance",
-          title: "Plan financier",
-          desc: "Frais, remises et devise",
-          schema: financeSchema,
-          fields: financeFields,
-          labelMessage: "Finance",
-        },
-        {
-          key: "echeancier",
-          title: "Échéancier",
-          desc: "Mode de paiement et première échéance",
-          schema: echeancierSchema,
-          fields: echeancierFields,
-          labelMessage: "Échéancier",
-        },
-      ] as WizardStep[],
+        labelMessage: "Echeancier",
+        icon: <FiMapPin />,
+      },
+    ],
     [
-      eleveSchema,
+      echeancierFields,
+      echeancierSchema,
       eleveFields,
-      scolariteSchema,
+      eleveSchema,
+      financeFields,
+      financeSchema,
       scolariteFields,
       scolariteInitialData,
-      tuteur1Schema,
-      tuteur1Fields,
-      tuteur2Schema,
-      tuteur2Fields,
-      servicesSchema,
+      scolariteSchema,
       servicesFields,
-      financeSchema,
-      financeFields,
-      echeancierSchema,
-      echeancierFields,
+      servicesSchema,
+      tuteur1Fields,
+      tuteur1Schema,
+      tuteur2Fields,
+      tuteur2Schema,
     ],
   );
 
@@ -512,47 +794,113 @@ export default function InscriptionForm() {
       setLoading(true);
 
       if (!etablissement_id) {
-        info("Établissement introuvable, veuillez vous reconnecter.", "error");
+        info("Etablissement introuvable, veuillez vous reconnecter.", "error");
         return;
       }
 
       if (!anneeScolaireId) {
-        info("Année scolaire non chargée. Rechargez la page.", "error");
+        info("Annee scolaire non chargee. Rechargez la page.", "error");
         return;
       }
 
       const scolarite = finalData.scolarite ?? {};
       if (!scolarite.classe_id) {
-        info("Merci de sélectionner une classe.", "warning");
+        info("Merci de selectionner une classe.", "warning");
         return;
       }
+
+      const eleve = finalData.eleve ?? {};
+      const contactUrgenceNom = normalizeOptionalString(eleve.contact_urgence_nom);
+      const contactUrgenceTelephone = normalizeOptionalString(
+        eleve.contact_urgence_telephone,
+      );
+      const contactUrgenceRelation = normalizeOptionalString(
+        eleve.contact_urgence_relation,
+      );
+
+      const contactUrgence =
+        contactUrgenceNom || contactUrgenceTelephone || contactUrgenceRelation
+          ? {
+              nom: contactUrgenceNom,
+              telephone: contactUrgenceTelephone,
+              relation: contactUrgenceRelation,
+            }
+          : null;
 
       const payload = {
         etablissement_id,
         annee_scolaire_id: anneeScolaireId,
-        eleve: finalData.eleve ?? {},
+        eleve: {
+          prenom: eleve.prenom,
+          nom: eleve.nom,
+          date_naissance: eleve.date_naissance ?? null,
+          genre: normalizeOptionalString(eleve.genre),
+          adresse: normalizeOptionalString(eleve.adresse),
+          contact_urgence_json: contactUrgence,
+        },
         scolarite: {
           ...scolarite,
-          statut_inscription: (scolarite.statut_inscription ?? "INSCRIT") as StatutInscription,
+          statut_inscription: (scolarite.statut_inscription ??
+            "INSCRIT") as StatutInscription,
         },
         tuteurs: [finalData.tuteur1, finalData.tuteur2]
           .filter(Boolean)
-          .filter((t: any) => t && (t.nom || t.prenom))
+          .filter(
+            (t: any) =>
+              t &&
+              (normalizeOptionalString(t.nom) ||
+                normalizeOptionalString(t.prenom) ||
+                normalizeOptionalString(t.telephone) ||
+                normalizeOptionalString(t.email)),
+          )
           .map((t: any) => ({
-            ...t,
-            est_principal: t.est_principal === "true" || t.est_principal === true,
-            autorise_recuperation: t.autorise_recuperation === "true" || t.autorise_recuperation === true,
+            nom: normalizeOptionalString(t.nom),
+            prenom: normalizeOptionalString(t.prenom),
+            telephone: normalizeOptionalString(t.telephone),
+            email: normalizeOptionalString(t.email),
+            adresse: normalizeOptionalString(t.adresse),
+            relation: normalizeOptionalString(t.relation),
+            est_principal: Boolean(t.est_principal),
+            autorise_recuperation: Boolean(t.autorise_recuperation),
           })),
+        services: {
+          transport_active: Boolean(finalData.services?.transport_active),
+          ligne_transport_id: normalizeOptionalString(
+            finalData.services?.ligne_transport_id,
+          ),
+          arret_transport_id: normalizeOptionalString(
+            finalData.services?.arret_transport_id,
+          ),
+          cantine_active: Boolean(finalData.services?.cantine_active),
+          formule_cantine_id: normalizeOptionalString(
+            finalData.services?.formule_cantine_id,
+          ),
+        },
+        finance: {
+          frais_inscription: Number(finalData.finance?.frais_inscription ?? 0),
+          frais_scolarite: Number(finalData.finance?.frais_scolarite ?? 0),
+          frais_transport: Number(finalData.finance?.frais_transport ?? 0),
+          frais_cantine: Number(finalData.finance?.frais_cantine ?? 0),
+          remise_type: finalData.finance?.remise_type ?? "AUCUNE",
+          remise_valeur: Number(finalData.finance?.remise_valeur ?? 0),
+          devise: finalData.finance?.devise ?? "MGA",
+        },
+        echeancier: {
+          mode_paiement: finalData.echeancier?.mode_paiement ?? "COMPTANT",
+          nombre_tranches: Number(finalData.echeancier?.nombre_tranches ?? 1),
+          premiere_echeance: finalData.echeancier?.premiere_echeance,
+          notes: normalizeOptionalString(finalData.echeancier?.notes),
+        },
       };
 
       const result = await onCreateInscriptionFull(payload);
       if (!result?.status?.success) {
-        throw new Error("Création de l'inscription impossible");
+        throw new Error("Creation de l'inscription impossible");
       }
 
-      info("Élève inscrit avec succès.", "success");
+      info("Eleve inscrit avec succes.", "success");
     } catch (error) {
-      console.error("🚨 handleFinish inscription:", error);
+      console.error("Erreur finalisation inscription :", error);
       info("Impossible de finaliser l'inscription.", "error");
     } finally {
       setLoading(false);
@@ -561,10 +909,11 @@ export default function InscriptionForm() {
 
   return (
     <MultiStepFormWizard
-      title="Inscrire un élève"
-      subtitle="Complétez les étapes de l'inscription, de la fiche élève jusqu'au plan financier."
+      title="Inscrire un eleve"
+      subtitle="Construisez un dossier complet et propre, depuis la fiche eleve jusqu'aux services et au plan financier."
       steps={steps}
       onFinish={handleFinish}
+      submitHint="Chaque etape enregistre des informations utiles au dossier eleve. La derniere validation cree l'inscription, les rattachements et la base du suivi financier."
     />
   );
 }

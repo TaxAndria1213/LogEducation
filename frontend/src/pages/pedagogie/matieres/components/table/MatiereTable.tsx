@@ -1,11 +1,13 @@
-import React from "react";
+﻿import React from "react";
 import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
 import {
   DataTable,
   type DataTableHandle,
 } from "../../../../../shared/table/DataTable";
-import type { Matiere } from "../../../../../types/models";
-import MatiereService from "../../../../../services/matiere.service";
+import MatiereService, {
+  getMatiereDisplayLabel,
+  type MatiereWithRelations,
+} from "../../../../../services/matiere.service";
 import { useAuth } from "../../../../../auth/AuthContext";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
 
@@ -14,7 +16,7 @@ export default function MatiereTable() {
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new MatiereService(), []);
 
-  const columns: ColumnDef<Matiere>[] = [
+  const columns: ColumnDef<MatiereWithRelations>[] = [
     {
       key: "code",
       header: "Code",
@@ -25,20 +27,30 @@ export default function MatiereTable() {
     {
       key: "nom",
       header: "Nom",
-      accessor: "nom",
+      render: (row) => getMatiereDisplayLabel(row),
       sortable: true,
       sortKey: "nom",
     },
     {
       key: "departement",
-      header: "Département",
+      header: "Departement",
       render: (row) => row.departement?.nom ?? "-",
       sortable: true,
       sortKey: "departement.nom",
     },
     {
+      key: "cours_count",
+      header: "Cours",
+      render: (row) => String(row.cours?.length ?? 0),
+    },
+    {
+      key: "programmes_count",
+      header: "Programmes",
+      render: (row) => String(row.lignesProgramme?.length ?? 0),
+    },
+    {
       key: "created_at",
-      header: "Créé le",
+      header: "Cree le",
       render: (row) =>
         formatDateWithLocalTimezone(row.created_at.toString()).date,
       sortable: true,
@@ -46,7 +58,7 @@ export default function MatiereTable() {
     },
   ];
 
-  const actions: RowAction<Matiere>[] = [
+  const actions: RowAction<MatiereWithRelations>[] = [
     {
       label: "Voir",
       variant: "secondary",
@@ -55,7 +67,11 @@ export default function MatiereTable() {
     {
       label: "Supprimer",
       variant: "danger",
-      confirm: { title: "Suppression", message: "Supprimer cette matière ?" },
+      confirm: {
+        title: "Suppression",
+        message:
+          "Supprimer cette matiere ? La suppression sera refusee si elle est encore utilisee.",
+      },
       onClick: async (row) => {
         await service.delete(row.id);
         tableRef.current?.refresh();
@@ -64,7 +80,7 @@ export default function MatiereTable() {
   ];
 
   return (
-    <DataTable<Matiere>
+    <DataTable<MatiereWithRelations>
       ref={tableRef}
       service={service}
       columns={columns}
@@ -73,17 +89,36 @@ export default function MatiereTable() {
       initialQuery={{
         page: 1,
         take: 10,
-        includeSpec: { departement: true },
+        includeSpec: {
+          departement: true,
+          cours: {
+            select: { id: true },
+          },
+          lignesProgramme: {
+            select: { id: true },
+          },
+        },
         where: etablissement_id ? { etablissement_id } : {},
+        orderBy: [{ nom: "asc" }],
       }}
       showSearch
-      onSearchBuildWhere={(text) => ({
-        OR: [
-          { code: { contains: text } },
-          { nom: { contains: text } },
-        ],
-        ...(etablissement_id ? { etablissement_id } : {}),
-      })}
+      onSearchBuildWhere={(text) => {
+        const searchFilters = {
+          OR: [
+            { code: { contains: text } },
+            { nom: { contains: text } },
+            { departement: { nom: { contains: text } } },
+          ],
+        };
+
+        if (!etablissement_id) {
+          return searchFilters;
+        }
+
+        return {
+          AND: [searchFilters, { etablissement_id }],
+        };
+      }}
     />
   );
 }

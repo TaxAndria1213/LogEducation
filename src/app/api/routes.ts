@@ -1,4 +1,4 @@
-import { Application, Router } from "express";
+﻿import { Application, Router } from "express";
 import UserApp from "../modules/user/application/user.app";
 import EtablissementApp from "../modules/etablissement/application/etablissement.app";
 import RolesApp from "../modules/roles/application/roles.app";
@@ -31,20 +31,26 @@ import RegleNoteApp from "../modules/regle_note/application/regle_note.app";
 import EmploiDuTempsApp from "../modules/emploi_du_temps/application/emploi_du_temps.app";
 import EvenementCalendrierApp from "../modules/evenement_calendrier/application/evenement_calendrier.app";
 import CreneauHoraireApp from "../modules/creneau_horaire/application/creneau_horaire.app";
+import LigneTransportApp from "../modules/ligne_transport/application/ligne_transport.app";
+import ArretTransportApp from "../modules/arret_transport/application/arret_transport.app";
+import FormuleCantineApp from "../modules/formule_cantine/application/formule_cantine.app";
+import SessionAppelApp from "../modules/session_appel/application/session_appel.app";
+import PresenceEleveApp from "../modules/presence_eleve/application/presence_eleve.app";
+import MotifAbsenceApp from "../modules/motif_absence/application/motif_absence.app";
+import JustificatifAbsenceApp from "../modules/justificatif_absence/application/justificatif_absence.app";
+import PresencePersonnelApp from "../modules/presence_personnel/application/presence_personnel.app";
 
 export class ApiRoutes {
   public app: Application;
   private router: Router;
 
-  //utilisateur
   private user: UserApp;
   private auth: AuthApp;
   private roles: RolesApp;
   private rolesUser: RoleUserApp;
   private profile: ProfileApp;
   private permission: PermissionApp;
-  
-  //Etablissement
+
   private etablissement: EtablissementApp;
   private site: SiteApp;
   private salle: SalleApp;
@@ -52,7 +58,6 @@ export class ApiRoutes {
   private periode: PeriodeApp;
   private referenciel: ReferencielApp;
 
-  //scolarité
   private inscription: InscriptionApp;
   private classe: ClasseApp;
   private niveau: NiveauApp;
@@ -62,7 +67,7 @@ export class ApiRoutes {
   private personnel: PersonnelApp;
   private enseignant: EnseignantApp;
   private departement: DepartementApp;
-  //pédagogie
+
   private matiere: MatiereApp;
   private programme: ProgrammeApp;
   private cours: CoursApp;
@@ -73,7 +78,15 @@ export class ApiRoutes {
   private emploiDuTemps: EmploiDuTempsApp;
   private evenementCalendrier: EvenementCalendrierApp;
   private creneauHoraire: CreneauHoraireApp;
+  private ligneTransport: LigneTransportApp;
+  private arretTransport: ArretTransportApp;
+  private formuleCantine: FormuleCantineApp;
 
+  private sessionAppel: SessionAppelApp;
+  private presenceEleve: PresenceEleveApp;
+  private motifAbsence: MotifAbsenceApp;
+  private justificatifAbsence: JustificatifAbsenceApp;
+  private presencePersonnel: PresencePersonnelApp;
 
   constructor(app: Application) {
     this.app = app;
@@ -109,56 +122,65 @@ export class ApiRoutes {
     this.emploiDuTemps = new EmploiDuTempsApp(app);
     this.evenementCalendrier = new EvenementCalendrierApp(app);
     this.creneauHoraire = new CreneauHoraireApp(app);
+    this.ligneTransport = new LigneTransportApp(app);
+    this.arretTransport = new ArretTransportApp(app);
+    this.formuleCantine = new FormuleCantineApp(app);
+    this.sessionAppel = new SessionAppelApp(app);
+    this.presenceEleve = new PresenceEleveApp(app);
+    this.motifAbsence = new MotifAbsenceApp(app);
+    this.justificatifAbsence = new JustificatifAbsenceApp(app);
+    this.presencePersonnel = new PresencePersonnelApp(app);
     this.routes();
   }
 
   public routes(): Router {
-    this.router.use(tenantMiddleware); // Appliquer le middleware tenant à toutes les routes suivantes
-    
-    //Utilisateur
-    this.router.use('/auth', this.auth.routes());
-    this.router.use('/roles', this.roles.routes());
-    this.router.use('/user', this.user.routes());
-    this.router.use('/roles_user', this.rolesUser.routes());
-    this.router.use('/profile', this.profile.routes());
-    this.router.use('/permission', this.permission.routes());
-    
-    //Etablissement
-    this.router.use('/etablissement', this.etablissement.routes());
-    this.router.use('/site', this.site.routes());
-    this.router.use('/salle', this.salle.routes());
-    this.router.use('/annee-scolaire', this.anneeScolaire.routes());
-    this.router.use('/periode', this.periode.routes());
-    this.router.use('/referenciel', this.referenciel.routes());
+    this.router.use(tenantMiddleware);
 
-    //scolarité
-    this.router.use('/inscription', this.inscription.routes());
-    this.router.use('/classe', this.classe.routes());
-    this.router.use('/niveau-scolaire', this.niveau.routes());
-    this.router.use('/parent-tuteur', this.parentTuteur.routes());
-    this.router.use('/identifiantEleve', this.identifiantEleve.routes());
-    this.router.use('/eleve', this.eleve.routes());
+    this.router.use("/auth", this.auth.routes());
+    this.router.use("/roles", this.roles.routes());
+    this.router.use("/user", this.user.routes());
+    this.router.use("/roles_user", this.rolesUser.routes());
+    this.router.use("/profile", this.profile.routes());
+    this.router.use("/permission", this.permission.routes());
 
-    //personnel
-    this.router.use('/personnel', this.personnel.routes());
-    this.router.use('/enseignant', this.enseignant.routes());
-    this.router.use('/departement', this.departement.routes());
+    this.router.use("/etablissement", this.etablissement.routes());
+    this.router.use("/site", this.site.routes());
+    this.router.use("/salle", this.salle.routes());
+    this.router.use("/annee-scolaire", this.anneeScolaire.routes());
+    this.router.use("/periode", this.periode.routes());
+    this.router.use("/referenciel", this.referenciel.routes());
 
-    //pédagogie
-    this.router.use('/matiere', this.matiere.routes());
-    this.router.use('/programme', this.programme.routes());
-    this.router.use('/cours', this.cours.routes());
-    this.router.use('/evaluation', this.evaluation.routes());
-    this.router.use('/note', this.note.routes());
-    this.router.use('/bulletin', this.bulletin.routes());
-    this.router.use('/regle-note', this.regleNote.routes());
-    this.router.use('/emploi-du-temps', this.emploiDuTemps.routes());
-    this.router.use('/evenement-calendrier', this.evenementCalendrier.routes());
-    this.router.use('/creneau-horaire', this.creneauHoraire.routes());
+    this.router.use("/inscription", this.inscription.routes());
+    this.router.use("/classe", this.classe.routes());
+    this.router.use("/niveau-scolaire", this.niveau.routes());
+    this.router.use("/parent-tuteur", this.parentTuteur.routes());
+    this.router.use("/identifiantEleve", this.identifiantEleve.routes());
+    this.router.use("/eleve", this.eleve.routes());
+
+    this.router.use("/personnel", this.personnel.routes());
+    this.router.use("/enseignant", this.enseignant.routes());
+    this.router.use("/departement", this.departement.routes());
+
+    this.router.use("/matiere", this.matiere.routes());
+    this.router.use("/programme", this.programme.routes());
+    this.router.use("/cours", this.cours.routes());
+    this.router.use("/evaluation", this.evaluation.routes());
+    this.router.use("/note", this.note.routes());
+    this.router.use("/bulletin", this.bulletin.routes());
+    this.router.use("/regle-note", this.regleNote.routes());
+    this.router.use("/emploi-du-temps", this.emploiDuTemps.routes());
+    this.router.use("/evenement-calendrier", this.evenementCalendrier.routes());
+    this.router.use("/creneau-horaire", this.creneauHoraire.routes());
+    this.router.use("/ligne-transport", this.ligneTransport.routes());
+    this.router.use("/arret-transport", this.arretTransport.routes());
+    this.router.use("/formule-cantine", this.formuleCantine.routes());
+
+    this.router.use("/session-appel", this.sessionAppel.routes());
+    this.router.use("/presence-eleve", this.presenceEleve.routes());
+    this.router.use("/motif-absence", this.motifAbsence.routes());
+    this.router.use("/justificatif-absence", this.justificatifAbsence.routes());
+    this.router.use("/presence-personnel", this.presencePersonnel.routes());
 
     return this.router;
   }
 }
-
-
-

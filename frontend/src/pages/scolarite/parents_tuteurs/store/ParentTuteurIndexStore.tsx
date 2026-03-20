@@ -3,20 +3,34 @@ import NotFound from "../../../NotFound";
 import type { JSX } from "react";
 import ParentTuteurList from "../components/table/ParentTuteurTable";
 import ParentTuteurForm from "../components/form/ParentTuteurForm";
+import ParentTuteurOverview from "../components/dashboard/ParentTuteurOverview";
 
-type menuItemToComponentType = {
+type MenuItemToComponent = {
   id: string;
   component: JSX.Element;
+  renderState: number;
 };
 
-const renderList: menuItemToComponentType[] = [
+const renderList: MenuItemToComponent[] = [
+  {
+    id: "dashboard",
+    component: <ParentTuteurOverview />,
+    renderState: 0,
+  },
   {
     id: "add",
     component: <ParentTuteurForm />,
+    renderState: 3,
   },
   {
     id: "list",
     component: <ParentTuteurList />,
+    renderState: 1,
+  },
+  {
+    id: "parametre",
+    component: <ParentTuteurOverview mode="settings" />,
+    renderState: 2,
   },
 ];
 
@@ -32,15 +46,17 @@ type State = {
 export const useParentTuteurStore = create<State>((set) => {
   return {
     menuListIsVisible: false,
-    renderedComponent: <NotFound />,
+    renderedComponent: <ParentTuteurOverview />,
     renderState: 0,
     setRenderState: (value: number) => set({ renderState: value }),
     setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),
     setRenderedComponent: (value: string) => {
-      if (renderList.find((item) => item.id === value) !== undefined) {
+      const item = renderList.find((entry) => entry.id === value);
+
+      if (item !== undefined) {
         set({
-          renderedComponent: renderList.find((item) => item.id === value)!
-            .component,
+          renderedComponent: item.component,
+          renderState: item.renderState,
         });
       } else {
         set({ renderedComponent: <NotFound />, renderState: -1 });

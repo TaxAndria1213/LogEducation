@@ -3,20 +3,34 @@ import NotFound from "../../../NotFound";
 import type { JSX } from "react";
 import IdentifiantEleveList from "../components/table/IdEleveTable";
 import IdentifiantEleveForm from "../components/form/IdEleveForm";
+import IdentifiantEleveOverview from "../components/dashboard/IdentifiantEleveOverview";
 
-type menuItemToComponentType = {
+type MenuItemToComponent = {
   id: string;
   component: JSX.Element;
+  renderState: number;
 };
 
-const renderList: menuItemToComponentType[] = [
+const renderList: MenuItemToComponent[] = [
+  {
+    id: "dashboard",
+    component: <IdentifiantEleveOverview />,
+    renderState: 0,
+  },
   {
     id: "add",
     component: <IdentifiantEleveForm />,
+    renderState: 3,
   },
   {
     id: "list",
     component: <IdentifiantEleveList />,
+    renderState: 1,
+  },
+  {
+    id: "parametre",
+    component: <IdentifiantEleveOverview mode="settings" />,
+    renderState: 2,
   },
 ];
 
@@ -32,15 +46,17 @@ type State = {
 export const useIdentifiantEleveStore = create<State>((set) => {
   return {
     menuListIsVisible: false,
-    renderedComponent: <NotFound />,
+    renderedComponent: <IdentifiantEleveOverview />,
     renderState: 0,
     setRenderState: (value: number) => set({ renderState: value }),
     setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),
     setRenderedComponent: (value: string) => {
-      if (renderList.find((item) => item.id === value) !== undefined) {
+      const item = renderList.find((entry) => entry.id === value);
+
+      if (item !== undefined) {
         set({
-          renderedComponent: renderList.find((item) => item.id === value)!
-            .component,
+          renderedComponent: item.component,
+          renderState: item.renderState,
         });
       } else {
         set({ renderedComponent: <NotFound />, renderState: -1 });

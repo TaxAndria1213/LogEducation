@@ -225,7 +225,7 @@ export interface UtilisateurRole {
 /**
  * *
  *  * =========================
- *  * 3) SCOLARITÉ
+ *  * 3) SCOLARITÃ‰
  *  * =========================
  */
 export interface Eleve {
@@ -361,7 +361,7 @@ export interface Personnel {
   etablissement?: Etablissement;
   utilisateur?: Utilisateur | null;
   enseignant?: Enseignant | null;
-  presences?: PresencePersonnel | null;
+  presences?: PresencePersonnel[];
   Emprunt?: Emprunt[];
 }
 
@@ -394,7 +394,7 @@ export interface Departement {
 /**
  * *
  *  * =========================
- *  * 5) PÉDAGOGIE
+ *  * 5) PÃ‰DAGOGIE
  *  * =========================
  */
 export interface Matiere {
@@ -599,7 +599,7 @@ export interface EvenementCalendrier {
 /**
  * *
  *  * =========================
- *  * 7) PRÉSENCES
+ *  * 7) PRÃ‰SENCES
  *  * =========================
  */
 export interface SessionAppel {
@@ -659,7 +659,7 @@ export interface JustificatifAbsence {
 export interface PresencePersonnel {
   id: string;
   personnel_id: string;
-  date: Date | null;
+  date: Date;
   statut: string | null;
   note: string | null;
   created_at: Date;
@@ -870,7 +870,7 @@ export interface Remise {
 /**
  * *
  *  * =========================
- *  * 11) BIBLIOTHÈQUE
+ *  * 11) BIBLIOTHÃˆQUE
  *  * =========================
  */
 export interface RessourceBibliotheque {
@@ -1009,7 +1009,7 @@ export interface LienFichier {
 /**
  * *
  *  * =========================
- *  * 14) AUDIT & INTÉGRATIONS
+ *  * 14) AUDIT & INTÃ‰GRATIONS
  *  * =========================
  */
 export interface JournalAudit {

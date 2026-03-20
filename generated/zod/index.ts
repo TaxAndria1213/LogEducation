@@ -602,7 +602,7 @@ export type UtilisateurRole = z.infer<typeof UtilisateurRoleSchema>
 /**
  * *
  * * =========================
- * * 3) SCOLARITÉ
+ * * 3) SCOLARITÃ‰
  * * =========================
  */
 export const EleveSchema = z.object({
@@ -778,7 +778,7 @@ export type Departement = z.infer<typeof DepartementSchema>
 /**
  * *
  * * =========================
- * * 5) PÉDAGOGIE
+ * * 5) PÃ‰DAGOGIE
  * * =========================
  */
 export const MatiereSchema = z.object({
@@ -1017,7 +1017,7 @@ export type EvenementCalendrier = z.infer<typeof EvenementCalendrierSchema>
 /**
  * *
  * * =========================
- * * 7) PRÉSENCES
+ * * 7) PRÃ‰SENCES
  * * =========================
  */
 export const SessionAppelSchema = z.object({
@@ -1092,7 +1092,7 @@ export type JustificatifAbsence = z.infer<typeof JustificatifAbsenceSchema>
 export const PresencePersonnelSchema = z.object({
   id: z.uuid(),
   personnel_id: z.string(),
-  date: z.coerce.date().nullable(),
+  date: z.coerce.date(),
   statut: z.string().nullable(),
   note: z.string().nullable(),
   created_at: z.coerce.date(),
@@ -1367,7 +1367,7 @@ export type Remise = z.infer<typeof RemiseSchema>
 /**
  * *
  * * =========================
- * * 11) BIBLIOTHÈQUE
+ * * 11) BIBLIOTHÃˆQUE
  * * =========================
  */
 export const RessourceBibliothequeSchema = z.object({
@@ -1540,7 +1540,7 @@ export type LienFichier = z.infer<typeof LienFichierSchema>
 /**
  * *
  * * =========================
- * * 14) AUDIT & INTÉGRATIONS
+ * * 14) AUDIT & INTÃ‰GRATIONS
  * * =========================
  */
 export const JournalAuditSchema = z.object({
@@ -2432,7 +2432,7 @@ export const PersonnelIncludeSchema: z.ZodType<Prisma.PersonnelInclude> = z.obje
   etablissement: z.union([z.boolean(),z.lazy(() => EtablissementArgsSchema)]).optional(),
   utilisateur: z.union([z.boolean(),z.lazy(() => UtilisateurArgsSchema)]).optional(),
   enseignant: z.union([z.boolean(),z.lazy(() => EnseignantArgsSchema)]).optional(),
-  presences: z.union([z.boolean(),z.lazy(() => PresencePersonnelArgsSchema)]).optional(),
+  presences: z.union([z.boolean(),z.lazy(() => PresencePersonnelFindManyArgsSchema)]).optional(),
   Emprunt: z.union([z.boolean(),z.lazy(() => EmpruntFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => PersonnelCountOutputTypeArgsSchema)]).optional(),
 }).strict();
@@ -2447,6 +2447,7 @@ export const PersonnelCountOutputTypeArgsSchema: z.ZodType<Prisma.PersonnelCount
 }).strict();
 
 export const PersonnelCountOutputTypeSelectSchema: z.ZodType<Prisma.PersonnelCountOutputTypeSelect> = z.object({
+  presences: z.boolean().optional(),
   Emprunt: z.boolean().optional(),
 }).strict();
 
@@ -2463,7 +2464,7 @@ export const PersonnelSelectSchema: z.ZodType<Prisma.PersonnelSelect> = z.object
   etablissement: z.union([z.boolean(),z.lazy(() => EtablissementArgsSchema)]).optional(),
   utilisateur: z.union([z.boolean(),z.lazy(() => UtilisateurArgsSchema)]).optional(),
   enseignant: z.union([z.boolean(),z.lazy(() => EnseignantArgsSchema)]).optional(),
-  presences: z.union([z.boolean(),z.lazy(() => PresencePersonnelArgsSchema)]).optional(),
+  presences: z.union([z.boolean(),z.lazy(() => PresencePersonnelFindManyArgsSchema)]).optional(),
   Emprunt: z.union([z.boolean(),z.lazy(() => EmpruntFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => PersonnelCountOutputTypeArgsSchema)]).optional(),
 }).strict()
@@ -5658,7 +5659,7 @@ export const PersonnelWhereInputSchema: z.ZodType<Prisma.PersonnelWhereInput> = 
   etablissement: z.union([ z.lazy(() => EtablissementScalarRelationFilterSchema), z.lazy(() => EtablissementWhereInputSchema) ]).optional(),
   utilisateur: z.union([ z.lazy(() => UtilisateurNullableScalarRelationFilterSchema), z.lazy(() => UtilisateurWhereInputSchema) ]).optional().nullable(),
   enseignant: z.union([ z.lazy(() => EnseignantNullableScalarRelationFilterSchema), z.lazy(() => EnseignantWhereInputSchema) ]).optional().nullable(),
-  presences: z.union([ z.lazy(() => PresencePersonnelNullableScalarRelationFilterSchema), z.lazy(() => PresencePersonnelWhereInputSchema) ]).optional().nullable(),
+  presences: z.lazy(() => PresencePersonnelListRelationFilterSchema).optional(),
   Emprunt: z.lazy(() => EmpruntListRelationFilterSchema).optional(),
 });
 
@@ -5675,7 +5676,7 @@ export const PersonnelOrderByWithRelationInputSchema: z.ZodType<Prisma.Personnel
   etablissement: z.lazy(() => EtablissementOrderByWithRelationInputSchema).optional(),
   utilisateur: z.lazy(() => UtilisateurOrderByWithRelationInputSchema).optional(),
   enseignant: z.lazy(() => EnseignantOrderByWithRelationInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelOrderByWithRelationInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelOrderByRelationAggregateInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntOrderByRelationAggregateInputSchema).optional(),
   _relevance: z.lazy(() => PersonnelOrderByRelevanceInputSchema).optional(),
 });
@@ -5699,7 +5700,7 @@ export const PersonnelWhereUniqueInputSchema: z.ZodType<Prisma.PersonnelWhereUni
   etablissement: z.union([ z.lazy(() => EtablissementScalarRelationFilterSchema), z.lazy(() => EtablissementWhereInputSchema) ]).optional(),
   utilisateur: z.union([ z.lazy(() => UtilisateurNullableScalarRelationFilterSchema), z.lazy(() => UtilisateurWhereInputSchema) ]).optional().nullable(),
   enseignant: z.union([ z.lazy(() => EnseignantNullableScalarRelationFilterSchema), z.lazy(() => EnseignantWhereInputSchema) ]).optional().nullable(),
-  presences: z.union([ z.lazy(() => PresencePersonnelNullableScalarRelationFilterSchema), z.lazy(() => PresencePersonnelWhereInputSchema) ]).optional().nullable(),
+  presences: z.lazy(() => PresencePersonnelListRelationFilterSchema).optional(),
   Emprunt: z.lazy(() => EmpruntListRelationFilterSchema).optional(),
 }));
 
@@ -7039,11 +7040,21 @@ export const SessionAppelOrderByWithRelationInputSchema: z.ZodType<Prisma.Sessio
   _relevance: z.lazy(() => SessionAppelOrderByRelevanceInputSchema).optional(),
 });
 
-export const SessionAppelWhereUniqueInputSchema: z.ZodType<Prisma.SessionAppelWhereUniqueInput> = z.object({
-  id: z.uuid(),
-})
+export const SessionAppelWhereUniqueInputSchema: z.ZodType<Prisma.SessionAppelWhereUniqueInput> = z.union([
+  z.object({
+    id: z.uuid(),
+    classe_id_date_creneau_horaire_id: z.lazy(() => SessionAppelClasse_idDateCreneau_horaire_idCompoundUniqueInputSchema),
+  }),
+  z.object({
+    id: z.uuid(),
+  }),
+  z.object({
+    classe_id_date_creneau_horaire_id: z.lazy(() => SessionAppelClasse_idDateCreneau_horaire_idCompoundUniqueInputSchema),
+  }),
+])
 .and(z.strictObject({
   id: z.uuid().optional(),
+  classe_id_date_creneau_horaire_id: z.lazy(() => SessionAppelClasse_idDateCreneau_horaire_idCompoundUniqueInputSchema).optional(),
   AND: z.union([ z.lazy(() => SessionAppelWhereInputSchema), z.lazy(() => SessionAppelWhereInputSchema).array() ]).optional(),
   OR: z.lazy(() => SessionAppelWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => SessionAppelWhereInputSchema), z.lazy(() => SessionAppelWhereInputSchema).array() ]).optional(),
@@ -7201,11 +7212,21 @@ export const MotifAbsenceOrderByWithRelationInputSchema: z.ZodType<Prisma.MotifA
   _relevance: z.lazy(() => MotifAbsenceOrderByRelevanceInputSchema).optional(),
 });
 
-export const MotifAbsenceWhereUniqueInputSchema: z.ZodType<Prisma.MotifAbsenceWhereUniqueInput> = z.object({
-  id: z.uuid(),
-})
+export const MotifAbsenceWhereUniqueInputSchema: z.ZodType<Prisma.MotifAbsenceWhereUniqueInput> = z.union([
+  z.object({
+    id: z.uuid(),
+    etablissement_id_nom: z.lazy(() => MotifAbsenceEtablissement_idNomCompoundUniqueInputSchema),
+  }),
+  z.object({
+    id: z.uuid(),
+  }),
+  z.object({
+    etablissement_id_nom: z.lazy(() => MotifAbsenceEtablissement_idNomCompoundUniqueInputSchema),
+  }),
+])
 .and(z.strictObject({
   id: z.uuid().optional(),
+  etablissement_id_nom: z.lazy(() => MotifAbsenceEtablissement_idNomCompoundUniqueInputSchema).optional(),
   AND: z.union([ z.lazy(() => MotifAbsenceWhereInputSchema), z.lazy(() => MotifAbsenceWhereInputSchema).array() ]).optional(),
   OR: z.lazy(() => MotifAbsenceWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => MotifAbsenceWhereInputSchema), z.lazy(() => MotifAbsenceWhereInputSchema).array() ]).optional(),
@@ -7339,7 +7360,7 @@ export const PresencePersonnelWhereInputSchema: z.ZodType<Prisma.PresencePersonn
   NOT: z.union([ z.lazy(() => PresencePersonnelWhereInputSchema), z.lazy(() => PresencePersonnelWhereInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   personnel_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
-  date: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  date: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   statut: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   note: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   created_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
@@ -7350,7 +7371,7 @@ export const PresencePersonnelWhereInputSchema: z.ZodType<Prisma.PresencePersonn
 export const PresencePersonnelOrderByWithRelationInputSchema: z.ZodType<Prisma.PresencePersonnelOrderByWithRelationInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   personnel_id: z.lazy(() => SortOrderSchema).optional(),
-  date: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  date: z.lazy(() => SortOrderSchema).optional(),
   statut: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   note: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   created_at: z.lazy(() => SortOrderSchema).optional(),
@@ -7362,22 +7383,23 @@ export const PresencePersonnelOrderByWithRelationInputSchema: z.ZodType<Prisma.P
 export const PresencePersonnelWhereUniqueInputSchema: z.ZodType<Prisma.PresencePersonnelWhereUniqueInput> = z.union([
   z.object({
     id: z.uuid(),
-    personnel_id: z.string(),
+    personnel_id_date: z.lazy(() => PresencePersonnelPersonnel_idDateCompoundUniqueInputSchema),
   }),
   z.object({
     id: z.uuid(),
   }),
   z.object({
-    personnel_id: z.string(),
+    personnel_id_date: z.lazy(() => PresencePersonnelPersonnel_idDateCompoundUniqueInputSchema),
   }),
 ])
 .and(z.strictObject({
   id: z.uuid().optional(),
-  personnel_id: z.string().optional(),
+  personnel_id_date: z.lazy(() => PresencePersonnelPersonnel_idDateCompoundUniqueInputSchema).optional(),
   AND: z.union([ z.lazy(() => PresencePersonnelWhereInputSchema), z.lazy(() => PresencePersonnelWhereInputSchema).array() ]).optional(),
   OR: z.lazy(() => PresencePersonnelWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => PresencePersonnelWhereInputSchema), z.lazy(() => PresencePersonnelWhereInputSchema).array() ]).optional(),
-  date: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  personnel_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  date: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   statut: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   note: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
   created_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
@@ -7388,7 +7410,7 @@ export const PresencePersonnelWhereUniqueInputSchema: z.ZodType<Prisma.PresenceP
 export const PresencePersonnelOrderByWithAggregationInputSchema: z.ZodType<Prisma.PresencePersonnelOrderByWithAggregationInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   personnel_id: z.lazy(() => SortOrderSchema).optional(),
-  date: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  date: z.lazy(() => SortOrderSchema).optional(),
   statut: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   note: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
   created_at: z.lazy(() => SortOrderSchema).optional(),
@@ -7404,7 +7426,7 @@ export const PresencePersonnelScalarWhereWithAggregatesInputSchema: z.ZodType<Pr
   NOT: z.union([ z.lazy(() => PresencePersonnelScalarWhereWithAggregatesInputSchema), z.lazy(() => PresencePersonnelScalarWhereWithAggregatesInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   personnel_id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
-  date: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
+  date: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
   statut: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   note: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   created_at: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
@@ -11156,7 +11178,7 @@ export const PersonnelCreateInputSchema: z.ZodType<Prisma.PersonnelCreateInput> 
   etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutPersonnelInputSchema),
   utilisateur: z.lazy(() => UtilisateurCreateNestedOneWithoutPersonnelInputSchema).optional(),
   enseignant: z.lazy(() => EnseignantCreateNestedOneWithoutPersonnelInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelCreateNestedOneWithoutPersonnelInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelCreateNestedManyWithoutPersonnelInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntCreateNestedManyWithoutPersonnelInputSchema).optional(),
 });
 
@@ -11171,7 +11193,7 @@ export const PersonnelUncheckedCreateInputSchema: z.ZodType<Prisma.PersonnelUnch
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   enseignant: z.lazy(() => EnseignantUncheckedCreateNestedOneWithoutPersonnelInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUncheckedCreateNestedOneWithoutPersonnelInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUncheckedCreateNestedManyWithoutPersonnelInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutPersonnelInputSchema).optional(),
 });
 
@@ -11186,7 +11208,7 @@ export const PersonnelUpdateInputSchema: z.ZodType<Prisma.PersonnelUpdateInput> 
   etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutPersonnelNestedInputSchema).optional(),
   utilisateur: z.lazy(() => UtilisateurUpdateOneWithoutPersonnelNestedInputSchema).optional(),
   enseignant: z.lazy(() => EnseignantUpdateOneWithoutPersonnelNestedInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUpdateOneWithoutPersonnelNestedInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUpdateManyWithoutPersonnelNestedInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUpdateManyWithoutPersonnelNestedInputSchema).optional(),
 });
 
@@ -11201,7 +11223,7 @@ export const PersonnelUncheckedUpdateInputSchema: z.ZodType<Prisma.PersonnelUnch
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   enseignant: z.lazy(() => EnseignantUncheckedUpdateOneWithoutPersonnelNestedInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUncheckedUpdateOneWithoutPersonnelNestedInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUncheckedUpdateManyWithoutPersonnelNestedInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUncheckedUpdateManyWithoutPersonnelNestedInputSchema).optional(),
 });
 
@@ -12753,7 +12775,7 @@ export const JustificatifAbsenceUncheckedUpdateManyInputSchema: z.ZodType<Prisma
 
 export const PresencePersonnelCreateInputSchema: z.ZodType<Prisma.PresencePersonnelCreateInput> = z.strictObject({
   id: z.uuid().optional(),
-  date: z.coerce.date().optional().nullable(),
+  date: z.coerce.date(),
   statut: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
   created_at: z.coerce.date().optional(),
@@ -12764,7 +12786,7 @@ export const PresencePersonnelCreateInputSchema: z.ZodType<Prisma.PresencePerson
 export const PresencePersonnelUncheckedCreateInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedCreateInput> = z.strictObject({
   id: z.uuid().optional(),
   personnel_id: z.string(),
-  date: z.coerce.date().optional().nullable(),
+  date: z.coerce.date(),
   statut: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
   created_at: z.coerce.date().optional(),
@@ -12773,7 +12795,7 @@ export const PresencePersonnelUncheckedCreateInputSchema: z.ZodType<Prisma.Prese
 
 export const PresencePersonnelUpdateInputSchema: z.ZodType<Prisma.PresencePersonnelUpdateInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  date: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  date: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   note: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
@@ -12784,7 +12806,7 @@ export const PresencePersonnelUpdateInputSchema: z.ZodType<Prisma.PresencePerson
 export const PresencePersonnelUncheckedUpdateInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedUpdateInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   personnel_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  date: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  date: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   note: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
@@ -12794,7 +12816,7 @@ export const PresencePersonnelUncheckedUpdateInputSchema: z.ZodType<Prisma.Prese
 export const PresencePersonnelCreateManyInputSchema: z.ZodType<Prisma.PresencePersonnelCreateManyInput> = z.strictObject({
   id: z.uuid().optional(),
   personnel_id: z.string(),
-  date: z.coerce.date().optional().nullable(),
+  date: z.coerce.date(),
   statut: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
   created_at: z.coerce.date().optional(),
@@ -12803,7 +12825,7 @@ export const PresencePersonnelCreateManyInputSchema: z.ZodType<Prisma.PresencePe
 
 export const PresencePersonnelUpdateManyMutationInputSchema: z.ZodType<Prisma.PresencePersonnelUpdateManyMutationInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  date: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  date: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   note: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
@@ -12813,7 +12835,7 @@ export const PresencePersonnelUpdateManyMutationInputSchema: z.ZodType<Prisma.Pr
 export const PresencePersonnelUncheckedUpdateManyInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedUpdateManyInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   personnel_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  date: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  date: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   note: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
@@ -16453,9 +16475,14 @@ export const IdentifiantEleveMinOrderByAggregateInputSchema: z.ZodType<Prisma.Id
   updated_at: z.lazy(() => SortOrderSchema).optional(),
 });
 
-export const PresencePersonnelNullableScalarRelationFilterSchema: z.ZodType<Prisma.PresencePersonnelNullableScalarRelationFilter> = z.strictObject({
-  is: z.lazy(() => PresencePersonnelWhereInputSchema).optional().nullable(),
-  isNot: z.lazy(() => PresencePersonnelWhereInputSchema).optional().nullable(),
+export const PresencePersonnelListRelationFilterSchema: z.ZodType<Prisma.PresencePersonnelListRelationFilter> = z.strictObject({
+  every: z.lazy(() => PresencePersonnelWhereInputSchema).optional(),
+  some: z.lazy(() => PresencePersonnelWhereInputSchema).optional(),
+  none: z.lazy(() => PresencePersonnelWhereInputSchema).optional(),
+});
+
+export const PresencePersonnelOrderByRelationAggregateInputSchema: z.ZodType<Prisma.PresencePersonnelOrderByRelationAggregateInput> = z.strictObject({
+  _count: z.lazy(() => SortOrderSchema).optional(),
 });
 
 export const PersonnelOrderByRelevanceInputSchema: z.ZodType<Prisma.PersonnelOrderByRelevanceInput> = z.strictObject({
@@ -17403,6 +17430,12 @@ export const SessionAppelOrderByRelevanceInputSchema: z.ZodType<Prisma.SessionAp
   search: z.string(),
 });
 
+export const SessionAppelClasse_idDateCreneau_horaire_idCompoundUniqueInputSchema: z.ZodType<Prisma.SessionAppelClasse_idDateCreneau_horaire_idCompoundUniqueInput> = z.strictObject({
+  classe_id: z.string(),
+  date: z.coerce.date(),
+  creneau_horaire_id: z.string(),
+});
+
 export const SessionAppelCountOrderByAggregateInputSchema: z.ZodType<Prisma.SessionAppelCountOrderByAggregateInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   classe_id: z.lazy(() => SortOrderSchema).optional(),
@@ -17516,6 +17549,11 @@ export const MotifAbsenceOrderByRelevanceInputSchema: z.ZodType<Prisma.MotifAbse
   search: z.string(),
 });
 
+export const MotifAbsenceEtablissement_idNomCompoundUniqueInputSchema: z.ZodType<Prisma.MotifAbsenceEtablissement_idNomCompoundUniqueInput> = z.strictObject({
+  etablissement_id: z.string(),
+  nom: z.string(),
+});
+
 export const MotifAbsenceCountOrderByAggregateInputSchema: z.ZodType<Prisma.MotifAbsenceCountOrderByAggregateInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   etablissement_id: z.lazy(() => SortOrderSchema).optional(),
@@ -17600,6 +17638,11 @@ export const PresencePersonnelOrderByRelevanceInputSchema: z.ZodType<Prisma.Pres
   fields: z.union([ z.lazy(() => PresencePersonnelOrderByRelevanceFieldEnumSchema), z.lazy(() => PresencePersonnelOrderByRelevanceFieldEnumSchema).array() ]),
   sort: z.lazy(() => SortOrderSchema),
   search: z.string(),
+});
+
+export const PresencePersonnelPersonnel_idDateCompoundUniqueInputSchema: z.ZodType<Prisma.PresencePersonnelPersonnel_idDateCompoundUniqueInput> = z.strictObject({
+  personnel_id: z.string(),
+  date: z.coerce.date(),
 });
 
 export const PresencePersonnelCountOrderByAggregateInputSchema: z.ZodType<Prisma.PresencePersonnelCountOrderByAggregateInput> = z.strictObject({
@@ -22674,10 +22717,11 @@ export const EnseignantCreateNestedOneWithoutPersonnelInputSchema: z.ZodType<Pri
   connect: z.lazy(() => EnseignantWhereUniqueInputSchema).optional(),
 });
 
-export const PresencePersonnelCreateNestedOneWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelCreateNestedOneWithoutPersonnelInput> = z.strictObject({
-  create: z.union([ z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema) ]).optional(),
-  connectOrCreate: z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema).optional(),
-  connect: z.lazy(() => PresencePersonnelWhereUniqueInputSchema).optional(),
+export const PresencePersonnelCreateNestedManyWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelCreateNestedManyWithoutPersonnelInput> = z.strictObject({
+  create: z.union([ z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema).array(), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => PresencePersonnelCreateManyPersonnelInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => PresencePersonnelWhereUniqueInputSchema), z.lazy(() => PresencePersonnelWhereUniqueInputSchema).array() ]).optional(),
 });
 
 export const EmpruntCreateNestedManyWithoutPersonnelInputSchema: z.ZodType<Prisma.EmpruntCreateNestedManyWithoutPersonnelInput> = z.strictObject({
@@ -22693,10 +22737,11 @@ export const EnseignantUncheckedCreateNestedOneWithoutPersonnelInputSchema: z.Zo
   connect: z.lazy(() => EnseignantWhereUniqueInputSchema).optional(),
 });
 
-export const PresencePersonnelUncheckedCreateNestedOneWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedCreateNestedOneWithoutPersonnelInput> = z.strictObject({
-  create: z.union([ z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema) ]).optional(),
-  connectOrCreate: z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema).optional(),
-  connect: z.lazy(() => PresencePersonnelWhereUniqueInputSchema).optional(),
+export const PresencePersonnelUncheckedCreateNestedManyWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedCreateNestedManyWithoutPersonnelInput> = z.strictObject({
+  create: z.union([ z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema).array(), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => PresencePersonnelCreateManyPersonnelInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => PresencePersonnelWhereUniqueInputSchema), z.lazy(() => PresencePersonnelWhereUniqueInputSchema).array() ]).optional(),
 });
 
 export const EmpruntUncheckedCreateNestedManyWithoutPersonnelInputSchema: z.ZodType<Prisma.EmpruntUncheckedCreateNestedManyWithoutPersonnelInput> = z.strictObject({
@@ -22734,14 +22779,18 @@ export const EnseignantUpdateOneWithoutPersonnelNestedInputSchema: z.ZodType<Pri
   update: z.union([ z.lazy(() => EnseignantUpdateToOneWithWhereWithoutPersonnelInputSchema), z.lazy(() => EnseignantUpdateWithoutPersonnelInputSchema), z.lazy(() => EnseignantUncheckedUpdateWithoutPersonnelInputSchema) ]).optional(),
 });
 
-export const PresencePersonnelUpdateOneWithoutPersonnelNestedInputSchema: z.ZodType<Prisma.PresencePersonnelUpdateOneWithoutPersonnelNestedInput> = z.strictObject({
-  create: z.union([ z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema) ]).optional(),
-  connectOrCreate: z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema).optional(),
-  upsert: z.lazy(() => PresencePersonnelUpsertWithoutPersonnelInputSchema).optional(),
-  disconnect: z.union([ z.boolean(),z.lazy(() => PresencePersonnelWhereInputSchema) ]).optional(),
-  delete: z.union([ z.boolean(),z.lazy(() => PresencePersonnelWhereInputSchema) ]).optional(),
-  connect: z.lazy(() => PresencePersonnelWhereUniqueInputSchema).optional(),
-  update: z.union([ z.lazy(() => PresencePersonnelUpdateToOneWithWhereWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUpdateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedUpdateWithoutPersonnelInputSchema) ]).optional(),
+export const PresencePersonnelUpdateManyWithoutPersonnelNestedInputSchema: z.ZodType<Prisma.PresencePersonnelUpdateManyWithoutPersonnelNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema).array(), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => PresencePersonnelUpsertWithWhereUniqueWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUpsertWithWhereUniqueWithoutPersonnelInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => PresencePersonnelCreateManyPersonnelInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => PresencePersonnelWhereUniqueInputSchema), z.lazy(() => PresencePersonnelWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => PresencePersonnelWhereUniqueInputSchema), z.lazy(() => PresencePersonnelWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => PresencePersonnelWhereUniqueInputSchema), z.lazy(() => PresencePersonnelWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => PresencePersonnelWhereUniqueInputSchema), z.lazy(() => PresencePersonnelWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => PresencePersonnelUpdateWithWhereUniqueWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUpdateWithWhereUniqueWithoutPersonnelInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => PresencePersonnelUpdateManyWithWhereWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUpdateManyWithWhereWithoutPersonnelInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => PresencePersonnelScalarWhereInputSchema), z.lazy(() => PresencePersonnelScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const EmpruntUpdateManyWithoutPersonnelNestedInputSchema: z.ZodType<Prisma.EmpruntUpdateManyWithoutPersonnelNestedInput> = z.strictObject({
@@ -22768,14 +22817,18 @@ export const EnseignantUncheckedUpdateOneWithoutPersonnelNestedInputSchema: z.Zo
   update: z.union([ z.lazy(() => EnseignantUpdateToOneWithWhereWithoutPersonnelInputSchema), z.lazy(() => EnseignantUpdateWithoutPersonnelInputSchema), z.lazy(() => EnseignantUncheckedUpdateWithoutPersonnelInputSchema) ]).optional(),
 });
 
-export const PresencePersonnelUncheckedUpdateOneWithoutPersonnelNestedInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedUpdateOneWithoutPersonnelNestedInput> = z.strictObject({
-  create: z.union([ z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema) ]).optional(),
-  connectOrCreate: z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema).optional(),
-  upsert: z.lazy(() => PresencePersonnelUpsertWithoutPersonnelInputSchema).optional(),
-  disconnect: z.union([ z.boolean(),z.lazy(() => PresencePersonnelWhereInputSchema) ]).optional(),
-  delete: z.union([ z.boolean(),z.lazy(() => PresencePersonnelWhereInputSchema) ]).optional(),
-  connect: z.lazy(() => PresencePersonnelWhereUniqueInputSchema).optional(),
-  update: z.union([ z.lazy(() => PresencePersonnelUpdateToOneWithWhereWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUpdateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedUpdateWithoutPersonnelInputSchema) ]).optional(),
+export const PresencePersonnelUncheckedUpdateManyWithoutPersonnelNestedInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedUpdateManyWithoutPersonnelNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema).array(), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => PresencePersonnelUpsertWithWhereUniqueWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUpsertWithWhereUniqueWithoutPersonnelInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => PresencePersonnelCreateManyPersonnelInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => PresencePersonnelWhereUniqueInputSchema), z.lazy(() => PresencePersonnelWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => PresencePersonnelWhereUniqueInputSchema), z.lazy(() => PresencePersonnelWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => PresencePersonnelWhereUniqueInputSchema), z.lazy(() => PresencePersonnelWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => PresencePersonnelWhereUniqueInputSchema), z.lazy(() => PresencePersonnelWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => PresencePersonnelUpdateWithWhereUniqueWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUpdateWithWhereUniqueWithoutPersonnelInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => PresencePersonnelUpdateManyWithWhereWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUpdateManyWithWhereWithoutPersonnelInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => PresencePersonnelScalarWhereInputSchema), z.lazy(() => PresencePersonnelScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const EmpruntUncheckedUpdateManyWithoutPersonnelNestedInputSchema: z.ZodType<Prisma.EmpruntUncheckedUpdateManyWithoutPersonnelNestedInput> = z.strictObject({
@@ -26036,7 +26089,7 @@ export const PersonnelCreateWithoutEtablissementInputSchema: z.ZodType<Prisma.Pe
   updated_at: z.coerce.date().optional(),
   utilisateur: z.lazy(() => UtilisateurCreateNestedOneWithoutPersonnelInputSchema).optional(),
   enseignant: z.lazy(() => EnseignantCreateNestedOneWithoutPersonnelInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelCreateNestedOneWithoutPersonnelInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelCreateNestedManyWithoutPersonnelInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntCreateNestedManyWithoutPersonnelInputSchema).optional(),
 });
 
@@ -26050,7 +26103,7 @@ export const PersonnelUncheckedCreateWithoutEtablissementInputSchema: z.ZodType<
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   enseignant: z.lazy(() => EnseignantUncheckedCreateNestedOneWithoutPersonnelInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUncheckedCreateNestedOneWithoutPersonnelInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUncheckedCreateNestedManyWithoutPersonnelInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutPersonnelInputSchema).optional(),
 });
 
@@ -29482,7 +29535,7 @@ export const PersonnelCreateWithoutUtilisateurInputSchema: z.ZodType<Prisma.Pers
   updated_at: z.coerce.date().optional(),
   etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutPersonnelInputSchema),
   enseignant: z.lazy(() => EnseignantCreateNestedOneWithoutPersonnelInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelCreateNestedOneWithoutPersonnelInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelCreateNestedManyWithoutPersonnelInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntCreateNestedManyWithoutPersonnelInputSchema).optional(),
 });
 
@@ -29496,7 +29549,7 @@ export const PersonnelUncheckedCreateWithoutUtilisateurInputSchema: z.ZodType<Pr
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   enseignant: z.lazy(() => EnseignantUncheckedCreateNestedOneWithoutPersonnelInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUncheckedCreateNestedOneWithoutPersonnelInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUncheckedCreateNestedManyWithoutPersonnelInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutPersonnelInputSchema).optional(),
 });
 
@@ -33677,7 +33730,7 @@ export const EnseignantCreateOrConnectWithoutPersonnelInputSchema: z.ZodType<Pri
 
 export const PresencePersonnelCreateWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelCreateWithoutPersonnelInput> = z.strictObject({
   id: z.uuid().optional(),
-  date: z.coerce.date().optional().nullable(),
+  date: z.coerce.date(),
   statut: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
   created_at: z.coerce.date().optional(),
@@ -33686,7 +33739,7 @@ export const PresencePersonnelCreateWithoutPersonnelInputSchema: z.ZodType<Prism
 
 export const PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedCreateWithoutPersonnelInput> = z.strictObject({
   id: z.uuid().optional(),
-  date: z.coerce.date().optional().nullable(),
+  date: z.coerce.date(),
   statut: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
   created_at: z.coerce.date().optional(),
@@ -33696,6 +33749,11 @@ export const PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema: z.ZodT
 export const PresencePersonnelCreateOrConnectWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelCreateOrConnectWithoutPersonnelInput> = z.strictObject({
   where: z.lazy(() => PresencePersonnelWhereUniqueInputSchema),
   create: z.union([ z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema) ]),
+});
+
+export const PresencePersonnelCreateManyPersonnelInputEnvelopeSchema: z.ZodType<Prisma.PresencePersonnelCreateManyPersonnelInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => PresencePersonnelCreateManyPersonnelInputSchema), z.lazy(() => PresencePersonnelCreateManyPersonnelInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
 });
 
 export const EmpruntCreateWithoutPersonnelInputSchema: z.ZodType<Prisma.EmpruntCreateWithoutPersonnelInput> = z.strictObject({
@@ -33905,33 +33963,33 @@ export const EnseignantUncheckedUpdateWithoutPersonnelInputSchema: z.ZodType<Pri
   classesPrincipales: z.lazy(() => ClasseUncheckedUpdateManyWithoutEnseignant_principalNestedInputSchema).optional(),
 });
 
-export const PresencePersonnelUpsertWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUpsertWithoutPersonnelInput> = z.strictObject({
+export const PresencePersonnelUpsertWithWhereUniqueWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUpsertWithWhereUniqueWithoutPersonnelInput> = z.strictObject({
+  where: z.lazy(() => PresencePersonnelWhereUniqueInputSchema),
   update: z.union([ z.lazy(() => PresencePersonnelUpdateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedUpdateWithoutPersonnelInputSchema) ]),
   create: z.union([ z.lazy(() => PresencePersonnelCreateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedCreateWithoutPersonnelInputSchema) ]),
-  where: z.lazy(() => PresencePersonnelWhereInputSchema).optional(),
 });
 
-export const PresencePersonnelUpdateToOneWithWhereWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUpdateToOneWithWhereWithoutPersonnelInput> = z.strictObject({
-  where: z.lazy(() => PresencePersonnelWhereInputSchema).optional(),
+export const PresencePersonnelUpdateWithWhereUniqueWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUpdateWithWhereUniqueWithoutPersonnelInput> = z.strictObject({
+  where: z.lazy(() => PresencePersonnelWhereUniqueInputSchema),
   data: z.union([ z.lazy(() => PresencePersonnelUpdateWithoutPersonnelInputSchema), z.lazy(() => PresencePersonnelUncheckedUpdateWithoutPersonnelInputSchema) ]),
 });
 
-export const PresencePersonnelUpdateWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUpdateWithoutPersonnelInput> = z.strictObject({
-  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  date: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  note: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+export const PresencePersonnelUpdateManyWithWhereWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUpdateManyWithWhereWithoutPersonnelInput> = z.strictObject({
+  where: z.lazy(() => PresencePersonnelScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => PresencePersonnelUpdateManyMutationInputSchema), z.lazy(() => PresencePersonnelUncheckedUpdateManyWithoutPersonnelInputSchema) ]),
 });
 
-export const PresencePersonnelUncheckedUpdateWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedUpdateWithoutPersonnelInput> = z.strictObject({
-  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  date: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  note: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
-  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+export const PresencePersonnelScalarWhereInputSchema: z.ZodType<Prisma.PresencePersonnelScalarWhereInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => PresencePersonnelScalarWhereInputSchema), z.lazy(() => PresencePersonnelScalarWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => PresencePersonnelScalarWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => PresencePersonnelScalarWhereInputSchema), z.lazy(() => PresencePersonnelScalarWhereInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  personnel_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  date: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  statut: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  note: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  created_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  updated_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
 });
 
 export const EmpruntUpsertWithWhereUniqueWithoutPersonnelInputSchema: z.ZodType<Prisma.EmpruntUpsertWithWhereUniqueWithoutPersonnelInput> = z.strictObject({
@@ -33960,7 +34018,7 @@ export const PersonnelCreateWithoutEnseignantInputSchema: z.ZodType<Prisma.Perso
   updated_at: z.coerce.date().optional(),
   etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutPersonnelInputSchema),
   utilisateur: z.lazy(() => UtilisateurCreateNestedOneWithoutPersonnelInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelCreateNestedOneWithoutPersonnelInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelCreateNestedManyWithoutPersonnelInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntCreateNestedManyWithoutPersonnelInputSchema).optional(),
 });
 
@@ -33974,7 +34032,7 @@ export const PersonnelUncheckedCreateWithoutEnseignantInputSchema: z.ZodType<Pri
   poste: z.string().optional().nullable(),
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
-  presences: z.lazy(() => PresencePersonnelUncheckedCreateNestedOneWithoutPersonnelInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUncheckedCreateNestedManyWithoutPersonnelInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutPersonnelInputSchema).optional(),
 });
 
@@ -34217,7 +34275,7 @@ export const PersonnelUpdateWithoutEnseignantInputSchema: z.ZodType<Prisma.Perso
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutPersonnelNestedInputSchema).optional(),
   utilisateur: z.lazy(() => UtilisateurUpdateOneWithoutPersonnelNestedInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUpdateOneWithoutPersonnelNestedInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUpdateManyWithoutPersonnelNestedInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUpdateManyWithoutPersonnelNestedInputSchema).optional(),
 });
 
@@ -34231,7 +34289,7 @@ export const PersonnelUncheckedUpdateWithoutEnseignantInputSchema: z.ZodType<Pri
   poste: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
-  presences: z.lazy(() => PresencePersonnelUncheckedUpdateOneWithoutPersonnelNestedInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUncheckedUpdateManyWithoutPersonnelNestedInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUncheckedUpdateManyWithoutPersonnelNestedInputSchema).optional(),
 });
 
@@ -41358,7 +41416,7 @@ export const PersonnelCreateWithoutEmpruntInputSchema: z.ZodType<Prisma.Personne
   etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutPersonnelInputSchema),
   utilisateur: z.lazy(() => UtilisateurCreateNestedOneWithoutPersonnelInputSchema).optional(),
   enseignant: z.lazy(() => EnseignantCreateNestedOneWithoutPersonnelInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelCreateNestedOneWithoutPersonnelInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelCreateNestedManyWithoutPersonnelInputSchema).optional(),
 });
 
 export const PersonnelUncheckedCreateWithoutEmpruntInputSchema: z.ZodType<Prisma.PersonnelUncheckedCreateWithoutEmpruntInput> = z.strictObject({
@@ -41372,7 +41430,7 @@ export const PersonnelUncheckedCreateWithoutEmpruntInputSchema: z.ZodType<Prisma
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   enseignant: z.lazy(() => EnseignantUncheckedCreateNestedOneWithoutPersonnelInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUncheckedCreateNestedOneWithoutPersonnelInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUncheckedCreateNestedManyWithoutPersonnelInputSchema).optional(),
 });
 
 export const PersonnelCreateOrConnectWithoutEmpruntInputSchema: z.ZodType<Prisma.PersonnelCreateOrConnectWithoutEmpruntInput> = z.strictObject({
@@ -41500,7 +41558,7 @@ export const PersonnelUpdateWithoutEmpruntInputSchema: z.ZodType<Prisma.Personne
   etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutPersonnelNestedInputSchema).optional(),
   utilisateur: z.lazy(() => UtilisateurUpdateOneWithoutPersonnelNestedInputSchema).optional(),
   enseignant: z.lazy(() => EnseignantUpdateOneWithoutPersonnelNestedInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUpdateOneWithoutPersonnelNestedInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUpdateManyWithoutPersonnelNestedInputSchema).optional(),
 });
 
 export const PersonnelUncheckedUpdateWithoutEmpruntInputSchema: z.ZodType<Prisma.PersonnelUncheckedUpdateWithoutEmpruntInput> = z.strictObject({
@@ -41514,7 +41572,7 @@ export const PersonnelUncheckedUpdateWithoutEmpruntInputSchema: z.ZodType<Prisma
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   enseignant: z.lazy(() => EnseignantUncheckedUpdateOneWithoutPersonnelNestedInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUncheckedUpdateOneWithoutPersonnelNestedInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUncheckedUpdateManyWithoutPersonnelNestedInputSchema).optional(),
 });
 
 export const ArretTransportCreateWithoutLigneInputSchema: z.ZodType<Prisma.ArretTransportCreateWithoutLigneInput> = z.strictObject({
@@ -43874,7 +43932,7 @@ export const PersonnelUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.Pe
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   utilisateur: z.lazy(() => UtilisateurUpdateOneWithoutPersonnelNestedInputSchema).optional(),
   enseignant: z.lazy(() => EnseignantUpdateOneWithoutPersonnelNestedInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUpdateOneWithoutPersonnelNestedInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUpdateManyWithoutPersonnelNestedInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUpdateManyWithoutPersonnelNestedInputSchema).optional(),
 });
 
@@ -43888,7 +43946,7 @@ export const PersonnelUncheckedUpdateWithoutEtablissementInputSchema: z.ZodType<
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   enseignant: z.lazy(() => EnseignantUncheckedUpdateOneWithoutPersonnelNestedInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUncheckedUpdateOneWithoutPersonnelNestedInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUncheckedUpdateManyWithoutPersonnelNestedInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUncheckedUpdateManyWithoutPersonnelNestedInputSchema).optional(),
 });
 
@@ -45618,7 +45676,7 @@ export const PersonnelUpdateWithoutUtilisateurInputSchema: z.ZodType<Prisma.Pers
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutPersonnelNestedInputSchema).optional(),
   enseignant: z.lazy(() => EnseignantUpdateOneWithoutPersonnelNestedInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUpdateOneWithoutPersonnelNestedInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUpdateManyWithoutPersonnelNestedInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUpdateManyWithoutPersonnelNestedInputSchema).optional(),
 });
 
@@ -45632,7 +45690,7 @@ export const PersonnelUncheckedUpdateWithoutUtilisateurInputSchema: z.ZodType<Pr
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   enseignant: z.lazy(() => EnseignantUncheckedUpdateOneWithoutPersonnelNestedInputSchema).optional(),
-  presences: z.lazy(() => PresencePersonnelUncheckedUpdateOneWithoutPersonnelNestedInputSchema).optional(),
+  presences: z.lazy(() => PresencePersonnelUncheckedUpdateManyWithoutPersonnelNestedInputSchema).optional(),
   Emprunt: z.lazy(() => EmpruntUncheckedUpdateManyWithoutPersonnelNestedInputSchema).optional(),
 });
 
@@ -46669,6 +46727,15 @@ export const EmploiDuTempsUncheckedUpdateManyWithoutClasseInputSchema: z.ZodType
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
+export const PresencePersonnelCreateManyPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelCreateManyPersonnelInput> = z.strictObject({
+  id: z.uuid().optional(),
+  date: z.coerce.date(),
+  statut: z.string().optional().nullable(),
+  note: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
 export const EmpruntCreateManyPersonnelInputSchema: z.ZodType<Prisma.EmpruntCreateManyPersonnelInput> = z.strictObject({
   id: z.uuid().optional(),
   ressource_bibliotheque_id: z.string(),
@@ -46679,6 +46746,33 @@ export const EmpruntCreateManyPersonnelInputSchema: z.ZodType<Prisma.EmpruntCrea
   statut: z.string().optional().nullable(),
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
+});
+
+export const PresencePersonnelUpdateWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUpdateWithoutPersonnelInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  date: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  note: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const PresencePersonnelUncheckedUpdateWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedUpdateWithoutPersonnelInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  date: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  note: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const PresencePersonnelUncheckedUpdateManyWithoutPersonnelInputSchema: z.ZodType<Prisma.PresencePersonnelUncheckedUpdateManyWithoutPersonnelInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  date: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  note: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
 export const EmpruntUpdateWithoutPersonnelInputSchema: z.ZodType<Prisma.EmpruntUpdateWithoutPersonnelInput> = z.strictObject({

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, useState, type ReactNode } from "react";
+import { FiArrowLeft, FiCheck, FiChevronRight } from "react-icons/fi";
 import { Form } from "../Form";
 
 type StepKey = string;
@@ -12,6 +13,7 @@ export type WizardStep = {
   fields: any[];
   initialValues?: Record<string, any>;
   labelMessage?: string;
+  icon?: ReactNode;
 };
 
 type WizardData = Record<string, any>;
@@ -27,9 +29,43 @@ type MultiStepFormWizardProps = {
   submitHint?: ReactNode;
 };
 
+function getPreviewValue(data: Record<string, any> | undefined) {
+  if (!data) return "";
+
+  const preferredKeys = [
+    "prenom",
+    "nom",
+    "code_eleve",
+    "classe_id",
+    "mode_paiement",
+    "relation",
+  ];
+
+  const values: string[] = [];
+
+  for (const key of preferredKeys) {
+    const value = data[key];
+    if (typeof value === "string" && value.trim()) {
+      values.push(value.trim());
+    }
+  }
+
+  if (values.length > 0) {
+    return values.slice(0, 2).join(" · ");
+  }
+
+  for (const value of Object.values(data)) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+    if (typeof value === "boolean") return value ? "Oui" : "Non";
+  }
+
+  return "";
+}
+
 export function MultiStepFormWizard({
-  title = "Formulaire multi-étapes",
-  subtitle = "Complétez les étapes. Vous pouvez revenir en arrière à tout moment.",
+  title = "Formulaire multi-etapes",
+  subtitle = "Completez les etapes. Vous pouvez revenir en arriere a tout moment.",
   steps,
   onFinish,
   onStepChange,
@@ -45,7 +81,6 @@ export function MultiStepFormWizard({
     () => ((step + 1) / steps.length) * 100,
     [step, steps.length],
   );
-
   const current = steps[step];
 
   const canJumpTo = (s: number) => s <= step || !!completed[s];
@@ -64,8 +99,7 @@ export function MultiStepFormWizard({
   };
 
   const handleStepSubmit = async (data: any) => {
-    const currentKey = current.key;
-    const updatedData = { ...allData, [currentKey]: data };
+    const updatedData = { ...allData, [current.key]: data };
 
     setAllData(updatedData);
     setCompleted((prev) => ({ ...prev, [step]: true }));
@@ -80,287 +114,180 @@ export function MultiStepFormWizard({
     await onFinish(updatedData);
   };
 
-  const StepDot = ({
-    index,
-    title,
-    desc,
-  }: {
-    index: number;
-    title: string;
-    desc?: string;
-  }) => {
-    const isActive = step === index;
-    const isDone = !!completed[index];
-    const enabled = canJumpTo(index);
-
-    return (
-      <button
-        type="button"
-        onClick={() => jumpTo(index)}
-        disabled={!enabled}
-        style={{
-          all: "unset",
-          cursor: enabled ? "pointer" : "not-allowed",
-          opacity: enabled ? 1 : 0.5,
-          display: "grid",
-          gridTemplateColumns: "24px 1fr",
-          gap: 10,
-          alignItems: "start",
-          padding: "10px 12px",
-          borderRadius: 10,
-          border: isActive
-            ? "1px solid rgba(59,130,246,.6)"
-            : "1px solid rgba(0,0,0,.08)",
-          background: isActive ? "rgba(59,130,246,.06)" : "white",
-        }}
-        aria-current={isActive ? "step" : undefined}
-      >
-        <div
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 999,
-            display: "grid",
-            placeItems: "center",
-            border: isActive
-              ? "2px solid rgba(59,130,246,1)"
-              : "2px solid rgba(0,0,0,.15)",
-            background: isDone ? "rgba(34,197,94,.12)" : "transparent",
-            fontSize: 12,
-            fontWeight: 700,
-          }}
-        >
-          {isDone ? "✓" : index + 1}
-        </div>
-
-        <div style={{ display: "grid", gap: 2 }}>
-          <div style={{ lineHeight: 1.1 }}>{title}</div>
-          {desc && <div style={{ fontSize: 12, opacity: 0.7 }}>{desc}</div>}
-        </div>
-      </button>
-    );
-  };
-
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: "28px 18px 28px",
-          display: "grid",
-          gridTemplateColumns: "320px 1fr",
-          gap: 18,
-        }}
-      >
-        <aside
-          style={{
-            position: "sticky",
-            top: 18,
-            alignSelf: "start",
-            border: "1px solid rgba(0,0,0,.08)",
-            borderRadius: 14,
-            background: "white",
-            padding: 14,
-            display: "grid",
-            gap: 12,
-          }}
-        >
-          <div style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontSize: 16 }}>{title}</div>
-            <div style={{ fontSize: 12, opacity: 0.7 }}>{subtitle}</div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),_transparent_34%),linear-gradient(180deg,_#f8fbff_0%,_#ffffff_34%)]">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+        <aside className="space-y-5 rounded-[30px] border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+          <div className="space-y-3">
+            <span className="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+              Inscription guidee
+            </span>
+            <div>
+              <h2 className="text-2xl font-semibold text-slate-900">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{subtitle}</p>
+            </div>
           </div>
 
-          <div style={{ display: "grid", gap: 6 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: 12,
-                opacity: 0.7,
-              }}
-            >
+          <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
               <span>Progression</span>
               <span>{Math.round(progress)}%</span>
             </div>
-            <div
-              style={{
-                height: 8,
-                borderRadius: 999,
-                background: "rgba(0,0,0,.08)",
-                overflow: "hidden",
-              }}
-            >
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
               <div
-                style={{
-                  height: "100%",
-                  width: `${progress}%`,
-                  background: "rgba(59,130,246,1)",
-                }}
+                className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-400 transition-all"
+                style={{ width: `${progress}%` }}
               />
             </div>
           </div>
 
-          <div style={{ display: "grid", gap: 10 }}>
-            {steps.map((item, index) => (
-              <StepDot
-                key={item.key}
-                index={index}
-                title={item.title}
-                desc={item.desc}
-              />
-            ))}
+          <div className="space-y-3">
+            {steps.map((item, index) => {
+              const isActive = step === index;
+              const isDone = !!completed[index];
+              const enabled = canJumpTo(index);
+              const preview = getPreviewValue(allData[item.key]);
+
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => jumpTo(index)}
+                  disabled={!enabled}
+                  className={`w-full rounded-[24px] border p-4 text-left transition ${
+                    isActive
+                      ? "border-sky-300 bg-sky-50 shadow-sm"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  } ${enabled ? "" : "cursor-not-allowed opacity-50"}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
+                        isDone
+                          ? "bg-emerald-100 text-emerald-700"
+                          : isActive
+                            ? "bg-sky-100 text-sky-700"
+                            : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {isDone ? <FiCheck /> : item.icon ?? index + 1}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                        <FiChevronRight
+                          className={isActive ? "text-sky-600" : "text-slate-300"}
+                        />
+                      </div>
+                      {item.desc ? (
+                        <p className="mt-1 text-xs leading-5 text-slate-500">{item.desc}</p>
+                      ) : null}
+                      {preview ? (
+                        <p className="mt-3 truncate text-xs font-medium text-slate-600">
+                          {preview}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
-          <div
-            style={{
-              borderTop: "1px solid rgba(0,0,0,.08)",
-              paddingTop: 10,
-              display: "grid",
-              gap: 8,
-            }}
-          >
-            <div style={{ fontWeight: 700, fontSize: 13 }}>Résumé</div>
-            <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.4 }}>
+          <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Resume
+            </p>
+            <div className="mt-3 space-y-2 text-sm text-slate-600">
               {steps.map((item, index) => (
-                <div key={item.key}>
-                  {completed[index]
-                    ? `✓ ${item.title} renseigné`
-                    : `• ${item.title} à compléter`}
+                <div key={item.key} className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] ${
+                      completed[index]
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-slate-200 text-slate-600"
+                    }`}
+                  >
+                    {completed[index] ? <FiCheck /> : index + 1}
+                  </span>
+                  <span>
+                    {completed[index]
+                      ? `${item.title} renseigne`
+                      : `${item.title} a completer`}
+                  </span>
                 </div>
               ))}
             </div>
 
-            {Object.keys(completed).length > 0 && (
+            {Object.keys(completed).length > 0 ? (
               <button
                 type="button"
                 onClick={resetAll}
-                className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-3 rounded"
-                style={{ justifySelf: "start", fontSize: 13 }}
+                className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
               >
-                Réinitialiser
+                Reinitialiser
               </button>
-            )}
+            ) : null}
           </div>
         </aside>
 
-        <main
-          style={{
-            border: "1px solid rgba(0,0,0,.08)",
-            borderRadius: 14,
-            background: "white",
-            padding: 18,
-            // display: "grid",
-            gap: 14,
-          }}
-        >
-          <header style={{ display: "grid", gap: 6 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 10,
-                alignItems: "center",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 18 }}>{current.title}</div>
-                {current.desc && (
-                  <div style={{ fontSize: 12, opacity: 0.7 }}>
-                    {current.desc}
-                  </div>
-                )}
+        <main className="rounded-[32px] border border-slate-200 bg-white/95 p-6 shadow-sm backdrop-blur">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Etape {step + 1} sur {steps.length}
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                  {current.icon ?? step + 1}
+                </div>
+                <div>
+                  <h3 className="text-2xl font-semibold text-slate-900">{current.title}</h3>
+                  {current.desc ? (
+                    <p className="mt-1 text-sm leading-6 text-slate-500">{current.desc}</p>
+                  ) : null}
+                </div>
               </div>
-
-              <button
-                type="button"
-                onClick={goBack}
-                disabled={step === 0}
-                className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-3 rounded"
-                style={{ opacity: step === 0 ? 0.5 : 1 }}
-              >
-                ← Retour
-              </button>
             </div>
-          </header>
 
-          <div style={{marginTop: 18}}>
-            <Form
-              key={current.key}
-              schema={current.schema}
-              fields={current.fields}
-              initialValues={
-                allData[current.key] ?? current.initialValues ?? {}
-              }
-              dataOnly={handleStepSubmit}
-              labelMessage={current.labelMessage ?? current.title}
-            />
-          </div>
-        </main>
-      </div>
-
-      <div
-        style={{
-          // position: "fixed",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          borderTop: "1px solid rgba(0,0,0,.08)",
-          background: "rgba(255,255,255,.92)",
-          backdropFilter: "blur(8px)",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1100,
-            margin: "0 auto",
-            padding: "12px 18px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <div style={{ fontSize: 12, opacity: 0.75 }}>
-            Étape <b>{step + 1}</b> sur <b>{steps.length}</b>
-          </div>
-
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button
               type="button"
               onClick={goBack}
               disabled={step === 0}
-              className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-4 rounded"
-              style={{ opacity: step === 0 ? 0.5 : 1 }}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              <FiArrowLeft />
               Retour
             </button>
+          </div>
 
-            {footerRight}
+          <div className="mt-6 rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,_rgba(248,250,252,0.92),_rgba(255,255,255,0.96))] p-5 md:p-6">
+            <Form
+              key={current.key}
+              schema={current.schema}
+              fields={current.fields}
+              initialValues={allData[current.key] ?? current.initialValues ?? {}}
+              dataOnly={handleStepSubmit}
+              labelMessage={current.labelMessage ?? current.title}
+              submitLabel={
+                step === steps.length - 1 ? "Finaliser l'inscription" : "Enregistrer et continuer"
+              }
+              submitAlign="end"
+            />
+          </div>
 
-            <div
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                background: "rgba(59,130,246,.06)",
-                border: "1px solid rgba(59,130,246,.2)",
-                fontSize: 12,
-                opacity: 0.85,
-              }}
-            >
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+            <div className="text-sm text-slate-600">
               {submitHint ?? (
                 <>
-                  Cliquez sur <b>Enregistrer</b> pour passer à l’étape suivante.
+                  Enregistrez chaque etape pour conserver les donnees et passer a la
+                  suivante.
                 </>
               )}
             </div>
+            {footerRight}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );

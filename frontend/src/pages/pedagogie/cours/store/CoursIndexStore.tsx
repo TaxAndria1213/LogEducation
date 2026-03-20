@@ -1,14 +1,25 @@
-import { create } from "zustand";
+﻿import { create } from "zustand";
 import NotFound from "../../../NotFound";
 import type { JSX } from "react";
 import CoursList from "../components/table/CoursTable";
 import CoursForm from "../components/form/CoursForm";
+import CoursOverview from "../components/dashboard/CoursOverview";
 
-type menuItemToComponentType = { id: string; component: JSX.Element };
+type MenuItemToComponent = {
+  id: string;
+  component: JSX.Element;
+  renderState: number;
+};
 
-const renderList: menuItemToComponentType[] = [
-  { id: "add", component: <CoursForm /> },
-  { id: "list", component: <CoursList /> },
+const renderList: MenuItemToComponent[] = [
+  { id: "dashboard", component: <CoursOverview />, renderState: 0 },
+  { id: "add", component: <CoursForm />, renderState: 3 },
+  { id: "list", component: <CoursList />, renderState: 1 },
+  {
+    id: "parametre",
+    component: <CoursOverview mode="settings" />,
+    renderState: 2,
+  },
 ];
 
 type State = {
@@ -22,14 +33,19 @@ type State = {
 
 export const useCoursStore = create<State>((set) => ({
   menuListIsVisible: false,
-  renderedComponent: <NotFound />,
+  renderedComponent: <CoursOverview />,
   renderState: 0,
   setRenderState: (value: number) => set({ renderState: value }),
   setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),
   setRenderedComponent: (value: string) => {
     const found = renderList.find((item) => item.id === value);
-    if (found) set({ renderedComponent: found.component });
-    else set({ renderedComponent: <NotFound />, renderState: -1 });
+    if (found) {
+      set({
+        renderedComponent: found.component,
+        renderState: found.renderState,
+      });
+    } else {
+      set({ renderedComponent: <NotFound />, renderState: -1 });
+    }
   },
 }));
-

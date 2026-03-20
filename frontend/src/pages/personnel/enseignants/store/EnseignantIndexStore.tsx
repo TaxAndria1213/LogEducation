@@ -3,20 +3,34 @@ import NotFound from "../../../NotFound";
 import type { JSX } from "react";
 import EnseignantList from "../components/table/EnseignantsTable";
 import EnseignantForm from "../components/form/EnseignantForm";
+import EnseignantOverview from "../components/dashboard/EnseignantOverview";
 
-type menuItemToComponentType = {
+type MenuItemToComponent = {
   id: string;
   component: JSX.Element;
+  renderState: number;
 };
 
-const renderList: menuItemToComponentType[] = [
+const renderList: MenuItemToComponent[] = [
+  {
+    id: "dashboard",
+    component: <EnseignantOverview />,
+    renderState: 0,
+  },
   {
     id: "add",
     component: <EnseignantForm />,
+    renderState: 3,
   },
   {
     id: "list",
     component: <EnseignantList />,
+    renderState: 1,
+  },
+  {
+    id: "parametre",
+    component: <EnseignantOverview mode="settings" />,
+    renderState: 2,
   },
 ];
 
@@ -32,15 +46,17 @@ type State = {
 export const useEnseignantStore = create<State>((set) => {
   return {
     menuListIsVisible: false,
-    renderedComponent: <NotFound />,
+    renderedComponent: <EnseignantOverview />,
     renderState: 0,
     setRenderState: (value: number) => set({ renderState: value }),
     setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),
     setRenderedComponent: (value: string) => {
-      if (renderList.find((item) => item.id === value) !== undefined) {
+      const item = renderList.find((entry) => entry.id === value);
+
+      if (item !== undefined) {
         set({
-          renderedComponent: renderList.find((item) => item.id === value)!
-            .component,
+          renderedComponent: item.component,
+          renderState: item.renderState,
         });
       } else {
         set({ renderedComponent: <NotFound />, renderState: -1 });

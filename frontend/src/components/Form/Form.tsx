@@ -19,6 +19,8 @@ export function Form({
   labelMessage,
   dataOnly,
   initialValues,
+  submitLabel = "Enregistrer",
+  submitAlign = "start",
 }: {
   schema: any;
   fields: any[];
@@ -26,10 +28,12 @@ export function Form({
   labelMessage: string;
   dataOnly?: (data: FormValues) => void | Promise<void>;
   initialValues?: Partial<FormValues>;
+  submitLabel?: string;
+  submitAlign?: "start" | "end";
 }) {
   const [loading, setLoading] = useState(false);
+  const { info } = useInfo();
 
-  // ⚠️ important: stable reference, sinon RHF peut se réinitialiser
   const defaultValues = useMemo(() => {
     const autoDefaults = Object.fromEntries(
       fields.map((f: any) => [f.name, f.nullable ? null : undefined]),
@@ -40,9 +44,6 @@ export function Form({
       ...(initialValues ?? {}),
     };
   }, [fields, initialValues]);
-  console.log("🚀 ~ Form ~ defaultValues:", defaultValues);
-
-  const { info } = useInfo();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -53,30 +54,23 @@ export function Form({
   const onValid = async (data: FormValues) => {
     setLoading(true);
     try {
-      // ✅ mode "data only"
       if (dataOnly) {
         try {
           await dataOnly(data);
-          info(`${labelMessage} créé(e) avec succès !`, "success");
         } catch (error) {
           console.log(error);
-          info(`${labelMessage} non créé(e) !`, "error");
+          info(`${labelMessage} non cree(e) !`, "error");
         }
         return;
       }
 
-      // ✅ mode "service" (optionnel)
       if (!service) {
-        console.error(
-          "Form: service is null/undefined and no dataOnly provided.",
-        );
+        console.error("Form: service is null/undefined and no dataOnly provided.");
         return;
       }
 
-      const result = await service.create(data);
-      console.log("🚀 ~ onValid ~ result:", result);
-      info(`${labelMessage} créé(e) avec succès !`, "success");
-      // optionnel : reset après succès
+      await service.create(data);
+      info(`${labelMessage} cree(e) avec succes !`, "success");
       form.reset(defaultValues);
     } finally {
       setLoading(false);
@@ -91,30 +85,33 @@ export function Form({
   return (
     <form
       onSubmit={form.handleSubmit(onValid, onInvalid)}
-      style={{ display: "grid", gap: 12 }}
+      className="grid gap-6"
     >
-      {fields.map(({ name, label, Component, props, required }: any) => {
-        return (
-          <Component
-            key={String(name)}
-            control={form.control}
-            name={name}
-            label={label}
-            required={required}
-            {...(props ?? {})}
-          />
-        );
-      })}
+      <div className="grid gap-5 md:grid-cols-2">
+        {fields.map(({ name, label, Component, props, required }: any) => {
+          return (
+            <Component
+              key={String(name)}
+              control={form.control}
+              name={name}
+              label={label}
+              required={required}
+              {...(props ?? {})}
+            />
+          );
+        })}
+      </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center gap-2"
-        style={{ justifySelf: "start" }}
-      >
-        <span>Enregistrer</span>
-        {loading ? <Spin inline /> : null}
-      </button>
+      <div className={`flex ${submitAlign === "end" ? "justify-end" : "justify-start"}`}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          <span>{submitLabel}</span>
+          {loading ? <Spin inline /> : null}
+        </button>
+      </div>
     </form>
   );
 }

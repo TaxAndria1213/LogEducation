@@ -37,21 +37,29 @@ export function FieldWrapper({
   children,
 }: Props) {
   return (
-    <div className={className} style={{ display: "grid", gap: 6 }}>
+    <div className={className ?? "space-y-2"}>
       {label ? (
-        <label htmlFor={id} style={{ fontWeight: 600, fontSize: 14 }}>
-          {label} {required ? <span aria-hidden="true" style={{ color: "crimson" }}>*</span> : null}
+        <label
+          htmlFor={id}
+          className="flex items-center gap-1 text-sm font-semibold text-slate-800"
+        >
+          <span>{label}</span>
+          {required ? (
+            <span aria-hidden="true" className="text-rose-500">
+              *
+            </span>
+          ) : null}
         </label>
       ) : null}
 
       {children}
 
       {description ? (
-        <div style={{ fontSize: 12, opacity: 0.8 }}>{description}</div>
+        <div className="text-xs leading-5 text-slate-500">{description}</div>
       ) : null}
 
       {error ? (
-        <div role="alert" style={{ fontSize: 12, color: "crimson" }}>
+        <div role="alert" className="text-xs font-medium text-rose-600">
           {friendlyErrorMessage(error)}
         </div>
       ) : null}

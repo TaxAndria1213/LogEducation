@@ -3,20 +3,34 @@ import NotFound from "../../../NotFound";
 import type { JSX } from "react";
 import PersonnelList from "../components/table/PersonnelTable";
 import PersonnelForm from "../components/form/PersonnelForm";
+import PersonnelOverview from "../components/dashboard/PersonnelOverview";
 
-type menuItemToComponentType = {
+type MenuItemToComponent = {
   id: string;
   component: JSX.Element;
+  renderState: number;
 };
 
-const renderList: menuItemToComponentType[] = [
+const renderList: MenuItemToComponent[] = [
+  {
+    id: "dashboard",
+    component: <PersonnelOverview />,
+    renderState: 0,
+  },
   {
     id: "add",
     component: <PersonnelForm />,
+    renderState: 3,
   },
   {
     id: "list",
     component: <PersonnelList />,
+    renderState: 1,
+  },
+  {
+    id: "parametre",
+    component: <PersonnelOverview mode="settings" />,
+    renderState: 2,
   },
 ];
 
@@ -32,15 +46,17 @@ type State = {
 export const usePersonnelStore = create<State>((set) => {
   return {
     menuListIsVisible: false,
-    renderedComponent: <NotFound />,
+    renderedComponent: <PersonnelOverview />,
     renderState: 0,
     setRenderState: (value: number) => set({ renderState: value }),
     setMenuListIsVisible: (value: boolean) => set({ menuListIsVisible: value }),
     setRenderedComponent: (value: string) => {
-      if (renderList.find((item) => item.id === value) !== undefined) {
+      const item = renderList.find((entry) => entry.id === value);
+
+      if (item !== undefined) {
         set({
-          renderedComponent: renderList.find((item) => item.id === value)!
-            .component,
+          renderedComponent: item.component,
+          renderState: item.renderState,
         });
       } else {
         set({ renderedComponent: <NotFound />, renderState: -1 });

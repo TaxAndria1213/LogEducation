@@ -40,7 +40,7 @@ export default function RoleSettings() {
       <div className="grid gap-4 lg:grid-cols-3">
         <TipCard
           title="Nommage des roles"
-          description="Utilise des noms stables comme DIRECTION, ENSEIGNANT ou SECRETARIAT pour que les automatismes de creation sachent s'il faut generer un personnel ou un enseignant."
+          description="Utilise des noms stables comme DIRECTION, ENSEIGNANT ou SECRETARIAT pour garder des liens de creation lisibles et des affectations coherentes."
           icon={<FiUsers />}
         />
         <TipCard
@@ -50,7 +50,7 @@ export default function RoleSettings() {
         />
         <TipCard
           title="Creation specialisee"
-          description="Pour le role ENSEIGNANT, la creation depuis le lien peut maintenant aller jusqu'au profil enseignant apres la creation du personnel."
+          description="La creation depuis le lien genere maintenant toujours un personnel. Pour le role ENSEIGNANT, elle cree aussi le profil enseignant juste apres."
           icon={<FiLink />}
         />
       </div>

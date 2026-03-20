@@ -1,17 +1,21 @@
-import { create } from "zustand";
+﻿import { create } from "zustand";
 import type {
   Classe,
-  Cours,
   CreneauHoraire,
   Enseignant,
-  Matiere,
   Salle,
 } from "../../../types/models";
 import ClasseService from "../../../services/classe.service";
-import CoursService from "../../../services/cours.service";
+import CoursService, {
+  getCoursDisplayLabel,
+  type CoursWithRelations,
+} from "../../../services/cours.service";
 import CreneauHoraireService from "../../../services/creneauHoraire.service";
 import EnseignantService from "../../../services/enseignant.service";
-import MatiereService from "../../../services/matiere.service";
+import MatiereService, {
+  getMatiereDisplayLabel,
+  type MatiereWithRelations,
+} from "../../../services/matiere.service";
 import salleService from "../../../services/salle.service";
 import {
   PAUSE_COURSE_ID,
@@ -63,18 +67,44 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
       classeService.getAll({
         take: 5000,
         where: JSON.stringify({ etablissement_id }),
+        orderBy: JSON.stringify([{ nom: "asc" }]),
       }),
-      coursService.getAll({
+      coursService.getForEtablissement(etablissement_id, {
         take: 5000,
-        where: JSON.stringify({ etablissement_id }),
         includeSpec: JSON.stringify({
-          classe: true,
-          matiere: true,
+          annee: true,
+          classe: {
+            include: {
+              niveau: true,
+              site: true,
+            },
+          },
+          matiere: {
+            include: {
+              departement: true,
+            },
+          },
+          enseignant: {
+            include: {
+              personnel: {
+                include: {
+                  utilisateur: {
+                    include: {
+                      profil: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         }),
       }),
-      matiereService.getAll({
+      matiereService.getForEtablissement(etablissement_id, {
         take: 5000,
-        where: JSON.stringify({ etablissement_id }),
+        includeSpec: JSON.stringify({
+          departement: true,
+        }),
+        orderBy: JSON.stringify([{ nom: "asc" }]),
       }),
       enseignantService.getAll({
         take: 5000,
@@ -126,16 +156,16 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
               value: PAUSE_COURSE_ID,
               label: "Pause",
             },
-            ...coursResult.data.data.map((item: Cours) => ({
+            ...coursResult.data.data.map((item: CoursWithRelations) => ({
               value: item.id,
-              label: `${item.matiere?.nom ?? item.matiere_id} - ${item.classe?.nom ?? item.classe_id}`,
+              label: getCoursDisplayLabel(item),
             })),
           ]
         : [],
       matiereOptions: matiereResult?.status.success
-        ? matiereResult.data.data.map((item: Matiere) => ({
+        ? matiereResult.data.data.map((item: MatiereWithRelations) => ({
             value: item.id,
-            label: item.nom,
+            label: getMatiereDisplayLabel(item),
           }))
         : [],
       enseignantOptions: enseignantResult?.status.success

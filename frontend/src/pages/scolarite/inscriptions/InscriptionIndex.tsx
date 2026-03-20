@@ -92,17 +92,18 @@ function InscriptionsIndex() {
           <InscriptionDashboard
             onNouvelleInscription={() => {
               setRenderedComponent("add");
-              setRenderState(3);
             }}
             onReinscription={() => {
               setRenderedComponent("reinscription");
-              setRenderState(3);
             }}
           />
         );
 
       case "list":
         return <InscriptionList />;
+
+      case "parametre":
+        return <InscriptionDashboard mode="settings" />;
 
       case "reinscription":
         return <ReinscriptionForm />;
@@ -113,7 +114,7 @@ function InscriptionsIndex() {
       default:
         return <NotFound />;
     }
-  }, [renderedComponent, setRenderedComponent, setRenderState]);
+  }, [renderedComponent, setRenderedComponent]);
 
   return (
     <ERPPage

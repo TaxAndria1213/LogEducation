@@ -13,14 +13,6 @@ import { styles } from "../../styles/styles";
 import type { WizardDataUserPersonnel } from "../../types/types";
 import type { Profil, Utilisateur } from "../../types/models";
 
-const PERSONNEL_ROLE_NAMES = new Set([
-  "DIRECTION",
-  "SECRETARIAT",
-  "ENSEIGNANT",
-  "COMPTABLE",
-  "SURVEILLANT",
-]);
-
 const steps = [
   { key: "utilisateur", title: "Utilisateur", desc: "Compte de connexion" },
   { key: "profil", title: "Profil", desc: "Informations personnelles" },
@@ -40,7 +32,7 @@ export default function CreateAccountFromLink() {
   const role_id = searchParams.get("role_id");
   const etablissement_id = searchParams.get("etablissement_id");
   const normalizedRoleName = roleName.trim().toUpperCase();
-  const shouldCreatePersonnel = PERSONNEL_ROLE_NAMES.has(normalizedRoleName);
+  const shouldCreatePersonnel = true;
   const shouldCreateEnseignant = normalizedRoleName === "ENSEIGNANT";
 
   useEffect(() => {
@@ -208,9 +200,7 @@ export default function CreateAccountFromLink() {
       setSubmitMessage(
         shouldCreateEnseignant
           ? "Compte, personnel et profil enseignant crees avec succes. Vous pouvez maintenant vous connecter."
-          : shouldCreatePersonnel
-            ? "Compte et personnel crees avec succes. Vous pouvez maintenant vous connecter."
-            : "Compte cree avec succes. Vous pouvez maintenant vous connecter.",
+          : "Compte et personnel crees avec succes. Vous pouvez maintenant vous connecter.",
       );
     } catch (error) {
       console.log("Erreur creation compte depuis lien :", error);

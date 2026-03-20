@@ -326,7 +326,7 @@ model UtilisateurRole {
 
 /**
  * =========================
- * 3) SCOLARITÉ
+ * 3) SCOLARITÃ‰
  * =========================
  */
 model Eleve {
@@ -385,7 +385,7 @@ model ParentTuteur {
 model EleveParentTuteur {
   eleve_id              String
   parent_tuteur_id      String
-  relation              String? // père/mère/tuteur
+  relation              String? // pÃ¨re/mÃ¨re/tuteur
   est_principal         Boolean @default(false)
   autorise_recuperation Boolean @default(true)
 
@@ -420,7 +420,7 @@ model Classe {
   niveau_scolaire_id      String
   site_id                 String?
   nom                     String // ex: 3A
-  enseignant_principal_id String? // référence vers Enseignant
+  enseignant_principal_id String? // rÃ©fÃ©rence vers Enseignant
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -503,7 +503,7 @@ model Personnel {
   etablissement Etablissement      @relation(fields: [etablissement_id], references: [id])
   utilisateur   Utilisateur?       @relation(fields: [utilisateur_id], references: [id])
   enseignant    Enseignant?
-  presences     PresencePersonnel?
+  presences     PresencePersonnel[]
   Emprunt       Emprunt[]
 
   @@index([etablissement_id])
@@ -548,7 +548,7 @@ model Departement {
 
 /**
  * =========================
- * 5) PÉDAGOGIE
+ * 5) PÃ‰DAGOGIE
  * =========================
  */
 model Matiere {
@@ -684,7 +684,7 @@ model Note {
   score         Float
   commentaire   String?
   note_le       DateTime?
-  note_par      String? // id utilisateur/enseignant, simplifié
+  note_par      String? // id utilisateur/enseignant, simplifiÃ©
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -821,7 +821,7 @@ model EvenementCalendrier {
 
 /**
  * =========================
- * 7) PRÉSENCES
+ * 7) PRÃ‰SENCES
  * =========================
  */
 model SessionAppel {
@@ -842,6 +842,8 @@ model SessionAppel {
   presences PresenceEleve[]
 
   @@index([classe_id])
+  @@index([date])
+  @@unique([classe_id, date, creneau_horaire_id])
   @@map("sessions_appel")
 }
 
@@ -875,6 +877,7 @@ model MotifAbsence {
   justificatifs JustificatifAbsence[]
 
   @@index([etablissement_id])
+  @@unique([etablissement_id, nom])
   @@map("motifs_absence")
 }
 
@@ -900,9 +903,9 @@ model JustificatifAbsence {
 }
 
 model PresencePersonnel {
-  id           String    @id @default(uuid())
-  personnel_id String    @unique
-  date         DateTime?
+  id           String   @id @default(uuid())
+  personnel_id String
+  date         DateTime
   statut       String?
   note         String?
 
@@ -911,6 +914,8 @@ model PresencePersonnel {
 
   personnel Personnel @relation(fields: [personnel_id], references: [id])
 
+  @@unique([personnel_id, date])
+  @@index([date])
   @@map("presences_personnel")
 }
 
@@ -1183,7 +1188,7 @@ model Remise {
 
 /**
  * =========================
- * 11) BIBLIOTHÈQUE
+ * 11) BIBLIOTHÃˆQUE
  * =========================
  */
 model RessourceBibliotheque {
@@ -1364,7 +1369,7 @@ model LienFichier {
 
 /**
  * =========================
- * 14) AUDIT & INTÉGRATIONS
+ * 14) AUDIT & INTÃ‰GRATIONS
  * =========================
  */
 model JournalAudit {
@@ -1421,3 +1426,4 @@ model JetonIntegration {
   @@index([etablissement_id])
   @@map("jetons_integrations")
 }
+

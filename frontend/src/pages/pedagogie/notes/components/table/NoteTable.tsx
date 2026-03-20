@@ -1,11 +1,16 @@
-import React from "react";
+﻿import React from "react";
 import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
 import {
   DataTable,
   type DataTableHandle,
 } from "../../../../../shared/table/DataTable";
-import type { Note } from "../../../../../types/models";
-import NoteService from "../../../../../services/note.service";
+import NoteService, {
+  getEleveDisplayLabel,
+  getNotePercentage,
+  getNoteSecondaryLabel,
+  type NoteWithRelations,
+} from "../../../../../services/note.service";
+import { getEvaluationDisplayLabel } from "../../../../../services/evaluation.service";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
 import { useAuth } from "../../../../../auth/AuthContext";
 
@@ -14,55 +19,60 @@ export default function NoteTable() {
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new NoteService(), []);
 
-  const columns: ColumnDef<Note>[] = [
+  const columns: ColumnDef<NoteWithRelations>[] = [
     {
       key: "eleve",
-      header: "élève",
-      render: (row) => row.eleve?.code_eleve ?? "-",
-      sortable: true,
+      header: "Eleve",
+      render: (row) => getEleveDisplayLabel(row.eleve),
+      sortable: false,
       sortKey: "eleve.code_eleve",
-    },
-    {
-      key: "matiere",
-      header: "Matière",
-      render: (row) => row.evaluation?.cours?.matiere?.code ?? "-",
-      sortable: true,
-      sortKey: "evaluation.cours.matiere.code",
-    },
-    {
-      key: "classe",
-      header: "Classe",
-      render: (row) => row.evaluation?.cours?.classe?.nom ?? "-",
-      sortable: true,
-      sortKey: "evaluation.cours.classe.nom",
-    },
-    {
-      key: "score",
-      header: "Score",
-      accessor: "score",
-      sortable: true,
-      sortKey: "score",
     },
     {
       key: "evaluation",
       header: "Evaluation",
-      render: (row) => row.evaluation?.titre ?? "-",
-      sortable: true,
+      render: (row) => (
+        <div>
+          <p className="font-medium text-slate-900">{getEvaluationDisplayLabel(row.evaluation)}</p>
+          <p className="text-xs text-slate-500">{getNoteSecondaryLabel(row) || "Aucun detail complementaire"}</p>
+        </div>
+      ),
+      sortable: false,
       sortKey: "evaluation.titre",
     },
     {
+      key: "score",
+      header: "Score",
+      render: (row) => {
+        const percentage = getNotePercentage(row);
+        return (
+          <div className="space-y-1 text-sm text-slate-700">
+            <p className="font-semibold text-slate-900">{row.score}/{row.evaluation?.note_max ?? "-"}</p>
+            <p className="text-xs text-slate-500">{percentage !== null ? `${percentage}%` : "Non calcule"}</p>
+          </div>
+        );
+      },
+      sortable: false,
+      sortKey: "score",
+    },
+    {
+      key: "commentaire",
+      header: "Commentaire",
+      render: (row) => row.commentaire?.trim() || "-",
+      sortable: false,
+    },
+    {
       key: "note_le",
-      header: "Noté le",
+      header: "Notee le",
       render: (row) =>
         row.note_le
-          ? formatDateWithLocalTimezone(row.note_le.toString()).date
+          ? formatDateWithLocalTimezone(row.note_le.toString()).dateHeure
           : "-",
-      sortable: true,
+      sortable: false,
       sortKey: "note_le",
     },
   ];
 
-  const actions: RowAction<Note>[] = [
+  const actions: RowAction<NoteWithRelations>[] = [
     {
       label: "Voir",
       variant: "secondary",
@@ -80,7 +90,7 @@ export default function NoteTable() {
   ];
 
   return (
-    <DataTable<Note>
+    <DataTable<NoteWithRelations>
       ref={tableRef}
       service={service}
       columns={columns}
@@ -89,33 +99,60 @@ export default function NoteTable() {
       initialQuery={{
         page: 1,
         take: 10,
-        where: {
-          eleve: {
-            etablissement_id: etablissement_id,
-          },
-        },
+        where: etablissement_id
+          ? {
+              eleve: {
+                etablissement_id,
+              },
+            }
+          : {},
         includeSpec: {
           evaluation: {
             include: {
+              periode: true,
               cours: {
                 include: {
+                  annee: true,
                   matiere: true,
                   classe: true,
                 },
               },
             },
           },
-          eleve: true,
+          eleve: {
+            include: {
+              utilisateur: {
+                include: {
+                  profil: true,
+                },
+              },
+            },
+          },
         },
       }}
       showSearch
       onSearchBuildWhere={(text) => ({
-        OR: [
-          { eleve: { code_eleve: { contains: text } } },
-          { evaluation: { titre: { contains: text } } },
-          { evaluation: { cours: { matiere: { code: { contains: text } } } } },
-          { evaluation: { cours: { classe: { nom: { contains: text } } } } },
-          
+        AND: [
+          ...(etablissement_id
+            ? [
+                {
+                  eleve: {
+                    etablissement_id,
+                  },
+                },
+              ]
+            : []),
+          {
+            OR: [
+              { eleve: { code_eleve: { contains: text } } },
+              { eleve: { utilisateur: { profil: { prenom: { contains: text } } } } },
+              { eleve: { utilisateur: { profil: { nom: { contains: text } } } } },
+              { evaluation: { titre: { contains: text } } },
+              { evaluation: { cours: { matiere: { nom: { contains: text } } } } },
+              { evaluation: { cours: { matiere: { code: { contains: text } } } } },
+              { evaluation: { cours: { classe: { nom: { contains: text } } } } },
+            ],
+          },
         ],
       })}
     />

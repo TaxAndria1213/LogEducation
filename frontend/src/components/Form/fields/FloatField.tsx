@@ -2,6 +2,7 @@ import { Controller, type FieldValues } from "react-hook-form";
 import { NumericFormat } from "react-number-format";
 import { FieldWrapper } from "./FieldWrapper";
 import type { BaseFieldProps } from "./types";
+import { getInputClassName } from "./inputStyles";
 
 export function FloatField<TFieldValues extends FieldValues>(
   props: BaseFieldProps<TFieldValues>
@@ -37,7 +38,7 @@ export function FloatField<TFieldValues extends FieldValues>(
             onValueChange={(values) => {
               field.onChange(values.floatValue ?? undefined);
             }}
-            style={{ padding: 10, border: "1px solid #ccc", borderRadius: 8 }}
+            className={getInputClassName(Boolean(fieldState.error))}
           />
         </FieldWrapper>
       )}

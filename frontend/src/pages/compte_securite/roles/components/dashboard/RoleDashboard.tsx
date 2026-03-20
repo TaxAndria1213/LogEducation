@@ -76,7 +76,8 @@ export default function RoleDashboard() {
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
           Pilote les roles de l'etablissement et les liens d'inscription associes
-          pour les profils comme enseignant, personnel administratif ou direction.
+          pour creer directement un personnel, avec un profil enseignant en plus
+          pour le role ENSEIGNANT.
         </p>
       </section>
 
@@ -91,7 +92,7 @@ export default function RoleDashboard() {
           title="Lien de creation"
           value={roles.length > 0 ? "Pret" : "A configurer"}
           icon={<FiCopy />}
-          description="Chaque role peut maintenant embarquer le contexte utile pour creer le bon type de compte."
+          description="Chaque lien embarque le contexte utile pour creer automatiquement un compte personnel rattache au bon role."
         />
         <StatCard
           title="Securite"

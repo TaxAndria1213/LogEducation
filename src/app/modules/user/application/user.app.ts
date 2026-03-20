@@ -21,14 +21,6 @@ type CreateAccountFromLinkPayload = {
   };
 };
 
-const PERSONNEL_ROLE_NAMES = new Set([
-  "DIRECTION",
-  "SECRETARIAT",
-  "ENSEIGNANT",
-  "COMPTABLE",
-  "SURVEILLANT",
-]);
-
 const prisma = new PrismaClient();
 
 class UserApp {
@@ -170,7 +162,7 @@ class UserApp {
         });
 
         const normalizedRoleName = role.nom.trim().toUpperCase();
-        const shouldCreatePersonnel = PERSONNEL_ROLE_NAMES.has(normalizedRoleName);
+        const shouldCreatePersonnel = true;
         const shouldCreateEnseignant = normalizedRoleName === "ENSEIGNANT";
 
         let createdPersonnel: { id: string; code_personnel: string | null } | null = null;
