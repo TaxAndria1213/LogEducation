@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { useAuth } from "../../../../auth/AuthContext";
 import Spin from "../../../../components/anim/Spin";
@@ -6,6 +6,10 @@ import { Form } from "../../../../components/Form/Form";
 import { getFieldsFromZodObjectSchema } from "../../../../components/Form/fields";
 import { EvenementCalendrierSchema } from "../../../../generated/zod";
 import EvenementCalendrierService from "../../../../services/evenementCalendrier.service";
+import ReferencielService, {
+  buildReferentialOptions,
+  type ReferentialCatalogItem,
+} from "../../../../services/referenciel.service";
 import { useEvenementCreateStore } from "../../store/EvenementCreateStore";
 import { useEvenementStore } from "../../store/EvenementIndexStore";
 import { EVENT_TYPE_OPTIONS, type EventFormInput } from "../../types";
@@ -23,6 +27,9 @@ function EventForm() {
   const getOptions = useEvenementCreateStore((state) => state.getOptions);
   const resetEditor = useEvenementCreateStore((state) => state.resetEditor);
   const setRenderedComponent = useEvenementStore((state) => state.setRenderedComponent);
+  const [referentialCatalog, setReferentialCatalog] = useState<
+    ReferentialCatalogItem[]
+  >([]);
 
   useEffect(() => {
     if (!etablissement_id) return;
@@ -41,6 +48,28 @@ function EventForm() {
     }
   }, [etablissement_id, initialValues?.etablissement_id, setInitialValues]);
 
+  useEffect(() => {
+    const loadReferentials = async () => {
+      const referencielService = new ReferencielService();
+      const result = await referencielService.getCatalog();
+      if (result?.status.success) {
+        setReferentialCatalog((result.data as ReferentialCatalogItem[]) ?? []);
+      }
+    };
+
+    void loadReferentials();
+  }, []);
+
+  const eventTypeOptions = useMemo(
+    () =>
+      buildReferentialOptions(
+        referentialCatalog,
+        "EVENEMENT_TYPE",
+        EVENT_TYPE_OPTIONS.map((option) => option.value),
+      ),
+    [referentialCatalog],
+  );
+
   const eventFields = useMemo(
     () =>
       getFieldsFromZodObjectSchema(EvenementCalendrierSchema, {
@@ -51,7 +80,7 @@ function EventForm() {
           fin: { dateMode: "datetime" },
           type: {
             relation: {
-              options: EVENT_TYPE_OPTIONS,
+              options: eventTypeOptions,
             },
           },
           description: { widget: "textarea" },
@@ -65,7 +94,7 @@ function EventForm() {
           description: "Description",
         },
       }),
-    [siteOptions],
+    [eventTypeOptions, siteOptions],
   );
 
   const eventSchema = useMemo(

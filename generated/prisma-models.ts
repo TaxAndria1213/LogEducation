@@ -568,7 +568,9 @@ export interface EmploiDuTemps {
   enseignant_id: string | null;
   salle_id: string | null;
   jour_semaine: number;
-  creneau_horaire_id: string;
+  heure_debut: string;
+  heure_fin: string;
+  creneau_horaire_id: string | null;
   effectif_du: Date | null;
   effectif_au: Date | null;
   created_at: Date;
@@ -578,7 +580,8 @@ export interface EmploiDuTemps {
   matiere?: Matiere | null;
   enseignant?: Enseignant | null;
   salle?: Salle | null;
-  creneau?: CreneauHoraire;
+  creneau?: CreneauHoraire | null;
+  sessionsAppel?: SessionAppel[];
 }
 
 export interface EvenementCalendrier {
@@ -605,6 +608,7 @@ export interface EvenementCalendrier {
 export interface SessionAppel {
   id: string;
   classe_id: string;
+  emploi_du_temps_id: string | null;
   date: Date;
   creneau_horaire_id: string;
   pris_par_enseignant_id: string | null;
@@ -612,6 +616,7 @@ export interface SessionAppel {
   created_at: Date;
   updated_at: Date;
   classe?: Classe;
+  emploi?: EmploiDuTemps | null;
   creneau?: CreneauHoraire;
   prisPar?: Enseignant | null;
   presences?: PresenceEleve[];

@@ -11,7 +11,6 @@ import { useAuth } from "../../../../hooks/useAuth";
 import { formatDateWithLocalTimezone } from "../../../../app/utils/functions";
 import anneeScolaireService from "../../../../services/anneeScolaire.service";
 import ClasseService from "../../../../services/classe.service";
-import CreneauHoraireService from "../../../../services/creneauHoraire.service";
 import EmploiDuTempsService, {
   EMPLOI_DU_TEMPS_INCLUDE_SPEC,
   EMPLOI_DU_TEMPS_ORDER_BY,
@@ -19,6 +18,7 @@ import EmploiDuTempsService, {
 } from "../../../../services/emploiDuTemps.service";
 import type { Classe, CreneauHoraire } from "../../../../types/models";
 import { useEmploiDuTempsDashboardStore } from "../../store/EmploiDuTempsDashboardStore";
+import { buildVirtualCreneaux } from "../../utils/virtualCreneaux";
 import ScheduleGridListView from "./ScheduleGridListView";
 import ScheduleKanbanView from "./ScheduleKanbanView";
 import { getScheduleScopeMeta } from "../../types";
@@ -113,9 +113,8 @@ export default function ScheduleList() {
 
       try {
         const classeService = new ClasseService();
-        const creneauService = new CreneauHoraireService();
 
-        const [year, classesResult, creneauxResult] = await Promise.all([
+        const [year, classesResult] = await Promise.all([
           anneeScolaireService.getCurrent(etablissement_id),
           classeService.getAll({
             take: 5000,
@@ -126,16 +125,11 @@ export default function ScheduleList() {
             }),
             orderBy: JSON.stringify([{ nom: "asc" }]),
           }),
-          creneauService.getAll({
-            take: 500,
-            where: JSON.stringify({ etablissement_id }),
-            orderBy: JSON.stringify([{ ordre: "asc" }, { heure_debut: "asc" }]),
-          }),
         ]);
 
         setCurrentYear((year as CurrentYear | null) ?? null);
         setClasses(classesResult?.status.success ? classesResult.data.data : []);
-        setCreneaux(creneauxResult?.status.success ? creneauxResult.data.data : []);
+        setCreneaux(buildVirtualCreneaux(etablissement_id));
       } catch {
         setCurrentYear(null);
         setClasses([]);

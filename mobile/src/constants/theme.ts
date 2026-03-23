@@ -1,0 +1,41 @@
+export const theme = {
+  colors: {
+    background: "#f3f7fb",
+    surface: "#ffffff",
+    surfaceMuted: "#eef4fb",
+    border: "#d7e2ef",
+    text: "#102033",
+    textMuted: "#5f7188",
+    primary: "#0f6cbd",
+    primarySoft: "#dfeefe",
+    success: "#0f9f6e",
+    warning: "#b7791f",
+    danger: "#c24141",
+    info: "#2563eb",
+    chip: "#edf2f7",
+    chipActive: "#102033",
+    chipActiveText: "#ffffff",
+  },
+  radius: {
+    sm: 10,
+    md: 16,
+    lg: 24,
+    pill: 999,
+  },
+  spacing: {
+    xs: 8,
+    sm: 12,
+    md: 16,
+    lg: 20,
+    xl: 24,
+  },
+  shadow: {
+    card: {
+      shadowColor: "#102033",
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 3,
+    },
+  },
+};

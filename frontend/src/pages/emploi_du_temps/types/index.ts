@@ -203,8 +203,8 @@ export function getScheduleRoomLabel(schedule?: ScheduleDisplayLike | null): str
 export function getScheduleDateWindowLabel(
   schedule: Pick<EmploiDuTemps, "effectif_du" | "effectif_au">,
 ): string {
-  const start = new Date(schedule.effectif_du);
-  const end = new Date(schedule.effectif_au);
+  const start = new Date(schedule.effectif_du as Date);
+  const end = new Date(schedule.effectif_au as Date);
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return "Fenetre non renseignee";
@@ -225,8 +225,8 @@ export function getScheduleScopeMeta(
   label: string;
   tone: string;
 } {
-  const start = new Date(schedule.effectif_du);
-  const end = new Date(schedule.effectif_au);
+  const start = new Date(schedule.effectif_du as Date);
+  const end = new Date(schedule.effectif_au as Date);
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return { label: "Non defini", tone: "bg-slate-100 text-slate-600" };

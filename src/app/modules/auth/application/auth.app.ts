@@ -31,6 +31,7 @@ class AuthApp {
     try {
       const body: Pick<Utilisateur, "email" | "mot_de_passe_hash"> = req.body;
       const resultUser: Utilisateur = await this.userModel.findByEmail(body.email as string);
+      console.log("🚀 ~ AuthApp ~ login ~ resultUser:", resultUser)
       if (!resultUser) {
         res.status(404).send({ message: "User not found" });
         throw new Error("User not found");

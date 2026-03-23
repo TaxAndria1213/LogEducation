@@ -1,5 +1,7 @@
-﻿ALTER TABLE `sessions_appel`
-  ADD INDEX `sessions_appel_date_idx`(`date`),
+ALTER TABLE `sessions_appel`
+  ADD INDEX `sessions_appel_date_idx`(`date`);
+
+ALTER TABLE `sessions_appel`
   ADD UNIQUE INDEX `sessions_appel_classe_id_date_creneau_horaire_id_key`(`classe_id`, `date`, `creneau_horaire_id`);
 
 ALTER TABLE `motifs_absence`

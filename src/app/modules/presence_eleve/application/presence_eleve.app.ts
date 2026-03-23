@@ -91,6 +91,13 @@ class PresenceEleveApp {
       session: {
         include: {
           classe: { include: { niveau: true, site: true, annee: true } },
+          emploi: {
+            include: {
+              cours: { include: { matiere: true } },
+              creneau: true,
+              salle: true,
+            },
+          },
           creneau: true,
         },
       },

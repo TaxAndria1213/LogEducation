@@ -18,6 +18,7 @@ class UserModel extends PrismaService {
                 etablissement: true,
             },
         });
+        console.log("🚀 ~ UserModel ~ findByEmail ~ res:", res)
         return res[0] as Utilisateur;
     }
 }

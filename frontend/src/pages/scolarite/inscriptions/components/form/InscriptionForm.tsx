@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FiBookOpen,
   FiCreditCard,
@@ -18,6 +18,10 @@ import {
 import { ProfilSchema } from "../../../../../generated/zod";
 import { useInfo } from "../../../../../hooks/useInfo";
 import { useAuth } from "../../../../../hooks/useAuth";
+import ReferencielService, {
+  buildReferentialOptions,
+  type ReferentialCatalogItem,
+} from "../../../../../services/referenciel.service";
 import type { StatutInscription } from "../../../../../types/models";
 import { useInscriptionCreateStore } from "../../store/InscriptionCreateStore";
 
@@ -71,12 +75,49 @@ export default function InscriptionForm() {
   const scolariteInitialData = useInscriptionCreateStore(
     (state) => state.scolariteInitialData,
   );
+  const [referentialCatalog, setReferentialCatalog] = useState<
+    ReferentialCatalogItem[]
+  >([]);
 
   useEffect(() => {
     if (etablissement_id) {
       void getInscriptionOptions(etablissement_id);
     }
   }, [etablissement_id, getInscriptionOptions]);
+
+  useEffect(() => {
+    const loadReferentials = async () => {
+      const referencielService = new ReferencielService();
+      const result = await referencielService.getCatalog();
+      if (result?.status.success) {
+        setReferentialCatalog((result.data as ReferentialCatalogItem[]) ?? []);
+      }
+    };
+
+    void loadReferentials();
+  }, []);
+
+  const genreOptions = useMemo(
+    () =>
+      buildReferentialOptions(referentialCatalog, "PROFILE_GENRE", [
+        "Homme",
+        "Femme",
+        "Autre",
+      ]),
+    [referentialCatalog],
+  );
+
+  const relationOptions = useMemo(
+    () =>
+      buildReferentialOptions(referentialCatalog, "SCOLARITE_RELATION", [
+        "Pere",
+        "Mere",
+        "Tuteur",
+        "Famille",
+        "Autre",
+      ]),
+    [referentialCatalog],
+  );
 
   const eleveSchema = useMemo(
     () =>
@@ -132,11 +173,7 @@ export default function InscriptionForm() {
           },
           genre: {
             relation: {
-              options: [
-                { value: "Homme", label: "Homme" },
-                { value: "Femme", label: "Femme" },
-                { value: "Autre", label: "Autre" },
-              ],
+              options: genreOptions,
             },
             fieldProps: {
               className: "md:col-span-1",
@@ -167,13 +204,7 @@ export default function InscriptionForm() {
           },
           contact_urgence_relation: {
             relation: {
-              options: [
-                { value: "Pere", label: "Pere" },
-                { value: "Mere", label: "Mere" },
-                { value: "Tuteur", label: "Tuteur" },
-                { value: "Famille", label: "Famille" },
-                { value: "Autre", label: "Autre" },
-              ],
+              options: relationOptions,
             },
             fieldProps: {
               className: "md:col-span-2",
@@ -182,7 +213,7 @@ export default function InscriptionForm() {
           },
         },
       }),
-    [eleveSchema],
+    [eleveSchema, genreOptions, relationOptions],
   );
 
   const scolariteSchema = useMemo(
@@ -318,12 +349,7 @@ export default function InscriptionForm() {
           },
           relation: {
             relation: {
-              options: [
-                { value: "Pere", label: "Pere" },
-                { value: "Mere", label: "Mere" },
-                { value: "Tuteur", label: "Tuteur" },
-                { value: "Autre", label: "Autre" },
-              ],
+              options: relationOptions,
             },
             fieldProps: {
               className: "md:col-span-1",
@@ -344,7 +370,7 @@ export default function InscriptionForm() {
           },
         },
       }),
-    [tuteur1Schema],
+    [relationOptions, tuteur1Schema],
   );
 
   const tuteur2Schema = useMemo(
@@ -415,12 +441,7 @@ export default function InscriptionForm() {
           },
           relation: {
             relation: {
-              options: [
-                { value: "Pere", label: "Pere" },
-                { value: "Mere", label: "Mere" },
-                { value: "Tuteur", label: "Tuteur" },
-                { value: "Autre", label: "Autre" },
-              ],
+              options: relationOptions,
             },
             fieldProps: {
               className: "md:col-span-1",
@@ -440,7 +461,7 @@ export default function InscriptionForm() {
           },
         },
       }),
-    [tuteur2Schema],
+    [relationOptions, tuteur2Schema],
   );
 
   const servicesSchema = useMemo(

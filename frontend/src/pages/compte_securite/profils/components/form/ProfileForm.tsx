@@ -1,8 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getFieldsFromZodObjectSchema } from "../../../../../components/Form/fields";
 import { Form } from "../../../../../components/Form/Form";
 import { ProfilSchema } from "../../../../../generated/zod";
 import ProfileService from "../../../../../services/profile.service";
+import ReferencielService, {
+  buildReferentialOptions,
+  type ReferentialCatalogItem,
+} from "../../../../../services/referenciel.service";
 import { useProfileCreateStore } from "../../store/ProfileCreateStore";
 import Spin from "../../../../../components/anim/Spin";
 import { useAuth } from "../../../../../auth/AuthContext";
@@ -19,10 +23,35 @@ function ProfileForm() {
   const getUtilisateurOptions = useProfileCreateStore(
     (state) => state.getUtilisateurOptions,
   );
+  const [referentialCatalog, setReferentialCatalog] = useState<
+    ReferentialCatalogItem[]
+  >([]);
 
   useEffect(() => {
     void getUtilisateurOptions(etablissement_id);
   }, [etablissement_id, getUtilisateurOptions]);
+
+  useEffect(() => {
+    const loadReferentials = async () => {
+      const referencielService = new ReferencielService();
+      const result = await referencielService.getCatalog();
+      if (result?.status.success) {
+        setReferentialCatalog((result.data as ReferentialCatalogItem[]) ?? []);
+      }
+    };
+
+    void loadReferentials();
+  }, []);
+
+  const genreOptions = useMemo(
+    () =>
+      buildReferentialOptions(referentialCatalog, "PROFILE_GENRE", [
+        "Homme",
+        "Femme",
+        "Autre",
+      ]),
+    [referentialCatalog],
+  );
 
   const profileFields = getFieldsFromZodObjectSchema(ProfilSchema, {
     omit: ["id", "created_at", "updated_at", "contact_urgence_json", "photo_url"],
@@ -35,10 +64,7 @@ function ProfileForm() {
       },
       genre: {
         relation: {
-          options: [
-            { value: "Homme", label: "Homme" },
-            { value: "Femme", label: "Femme" },
-          ],
+          options: genreOptions,
         },
       },
     },

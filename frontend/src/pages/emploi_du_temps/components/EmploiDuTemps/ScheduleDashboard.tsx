@@ -157,6 +157,64 @@ function getPlannerMergeSignature(cell?: {
   return `course:${cell?.cours_id ?? ""}:${cell?.salle_id ?? ""}`;
 }
 
+function toMinutes(value?: string | null) {
+  if (!value) return null;
+  const match = /^(\d{2}):(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  return Number.parseInt(match[1], 10) * 60 + Number.parseInt(match[2], 10);
+}
+
+function getCreneauDurationMinutes(creneau?: {
+  heure_debut?: string | null;
+  heure_fin?: string | null;
+} | null) {
+  const start = toMinutes(creneau?.heure_debut);
+  const end = toMinutes(creneau?.heure_fin);
+
+  if (start == null || end == null || end <= start) {
+    return 0;
+  }
+
+  return end - start;
+}
+
+function formatHoursFromMinutes(totalMinutes: number) {
+  const safeMinutes = Math.max(0, totalMinutes);
+
+  if (safeMinutes === 0) {
+    return "0 h";
+  }
+
+  const hours = safeMinutes / 60;
+
+  if (Number.isInteger(hours)) {
+    return `${hours} h`;
+  }
+
+  return `${hours.toFixed(1).replace(".", ",")} h`;
+}
+
+function timeRangesOverlap(
+  leftStart?: string | null,
+  leftEnd?: string | null,
+  rightStart?: number | null,
+  rightEnd?: number | null,
+) {
+  const leftStartMinutes = toMinutes(leftStart);
+  const leftEndMinutes = toMinutes(leftEnd);
+
+  if (
+    leftStartMinutes == null ||
+    leftEndMinutes == null ||
+    rightStart == null ||
+    rightEnd == null
+  ) {
+    return false;
+  }
+
+  return leftStartMinutes < rightEnd && rightStart < leftEndMinutes;
+}
+
 type PlanningDraftEntry = {
   key: string;
   classeId: string;
@@ -170,6 +228,8 @@ type PlanningDraftEntry = {
   dayLabel: string;
   creneauId: string;
   creneauLabel: string;
+  startMinutes: number;
+  endMinutes: number;
   start: Date;
   end: Date;
 };
@@ -378,9 +438,22 @@ export default function ScheduleDashboard() {
     [classes, selectedClasseId],
   );
 
-  const plannedSlots = useMemo(
-    () => Object.values(planner).filter((cell) => cell?.cours_id || cell?.isPause).length,
-    [planner],
+  const creneauDurationById = useMemo(
+    () =>
+      Object.fromEntries(
+        creneaux.map((creneau) => [creneau.id, getCreneauDurationMinutes(creneau)]),
+      ) as Record<string, number>,
+    [creneaux],
+  );
+
+  const plannedMinutes = useMemo(
+    () =>
+      Object.entries(planner).reduce((total, [key, cell]) => {
+        if (!cell?.cours_id && !cell?.isPause) return total;
+        const [, creneauId] = key.split("::");
+        return total + (creneauDurationById[creneauId] ?? 0);
+      }, 0),
+    [creneauDurationById, planner],
   );
 
   const assignedRooms = useMemo(() => {
@@ -527,18 +600,28 @@ export default function ScheduleDashboard() {
     };
   }, [currentYear?.date_debut, currentYear?.date_fin]);
 
-  const totalSlots = visibleDays.length * creneaux.length;
+  const totalMinutes = useMemo(
+    () =>
+      visibleDays.reduce(
+        (dayTotal) =>
+          dayTotal +
+          creneaux.reduce((slotTotal, creneau) => slotTotal + getCreneauDurationMinutes(creneau), 0),
+        0,
+      ),
+    [creneaux, visibleDays],
+  );
   const isGridRendered =
     Boolean(selectedClasseId) && (loadingPlanning || creneaux.length > 0);
   const isShortcutVisible = isGridRendered && (isGridHovered || isShortcutHovered);
 
-  const courseUsageById = useMemo(() => {
-    return Object.values(planner).reduce<Record<string, number>>((acc, cell) => {
+  const courseUsageMinutesById = useMemo(() => {
+    return Object.entries(planner).reduce<Record<string, number>>((acc, [key, cell]) => {
       if (!cell?.cours_id) return acc;
-      acc[cell.cours_id] = (acc[cell.cours_id] ?? 0) + 1;
+      const [, creneauId] = key.split("::");
+      acc[cell.cours_id] = (acc[cell.cours_id] ?? 0) + (creneauDurationById[creneauId] ?? 0);
       return acc;
     }, {});
-  }, [planner]);
+  }, [creneauDurationById, planner]);
 
   const selectedCourseByCell = useMemo(() => {
     return Object.fromEntries(
@@ -582,11 +665,11 @@ export default function ScheduleDashboard() {
     [creneaux],
   );
 
-  const plannedByDay = useMemo(() => {
+  const plannedMinutesByDay = useMemo(() => {
     return visibleDays.reduce<Record<number, number>>((acc, day) => {
       acc[day.value] = creneaux.reduce((count, creneau) => {
         const key = getPlannerCellKey(day.value, creneau.id);
-        return count + (planner[key]?.cours_id || planner[key]?.isPause ? 1 : 0);
+        return count + (planner[key]?.cours_id || planner[key]?.isPause ? getCreneauDurationMinutes(creneau) : 0);
       }, 0);
       return acc;
     }, {});
@@ -632,8 +715,18 @@ export default function ScheduleDashboard() {
       const creneau = creneauById[creneauId];
       const room = cell?.salle_id ? roomById[cell.salle_id] : undefined;
       const dayInfo = displayDays.find((item) => item.value === day);
+      const startMinutes = toMinutes(creneau?.heure_debut);
+      const endMinutes = toMinutes(creneau?.heure_fin);
 
-      if (!creneau || !dayInfo || dayInfo.isOutsideYear) return [];
+      if (
+        !creneau ||
+        !dayInfo ||
+        dayInfo.isOutsideYear ||
+        startMinutes == null ||
+        endMinutes == null
+      ) {
+        return [];
+      }
 
       return [
         {
@@ -651,6 +744,8 @@ export default function ScheduleDashboard() {
           dayLabel: dayInfo.label,
           creneauId,
           creneauLabel: `${creneau.heure_debut} - ${creneau.heure_fin}`,
+          startMinutes,
+          endMinutes,
           start: activeWindow.start,
           end: activeWindow.end,
         } satisfies PlanningDraftEntry,
@@ -665,7 +760,16 @@ export default function ScheduleDashboard() {
       const overlappingEntries = relatedEntries.filter((entry) => {
         if (entriesToReplaceIds.has(entry.id)) return false;
         if (entry.jour_semaine !== draft.jour) return false;
-        if (entry.creneau_horaire_id !== draft.creneauId) return false;
+        if (
+          !timeRangesOverlap(
+            entry.heure_debut ?? entry.creneau?.heure_debut,
+            entry.heure_fin ?? entry.creneau?.heure_fin,
+            draft.startMinutes,
+            draft.endMinutes,
+          )
+        ) {
+          return false;
+        }
         return datesOverlap(entry.effectif_du, entry.effectif_au, draft.start, draft.end);
       });
 
@@ -999,8 +1103,8 @@ export default function ScheduleDashboard() {
       return;
     }
 
-    if (plannedSlots === 0) {
-      info("Ajoute au moins un creneau avant de generer le PDF.", "warning");
+    if (plannedMinutes === 0) {
+      info("Ajoute au moins une heure avant de generer le PDF.", "warning");
       return;
     }
 
@@ -1269,7 +1373,7 @@ export default function ScheduleDashboard() {
                   type="button"
                   onClick={handleGeneratePdf}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 px-3 py-3 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={!selectedClasseId || loadingPlanning || saving || plannedSlots === 0}
+                  disabled={!selectedClasseId || loadingPlanning || saving || plannedMinutes === 0}
                 >
                   <FiDownload />
                   Exporter PDF
@@ -1278,7 +1382,7 @@ export default function ScheduleDashboard() {
                   type="button"
                   onClick={clearPlanner}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={loadingPlanning || saving || plannedSlots === 0}
+                  disabled={loadingPlanning || saving || plannedMinutes === 0}
                 >
                   <FiTrash2 />
                   Vider la grille
@@ -1309,10 +1413,10 @@ export default function ScheduleDashboard() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={<FiLayers />}
-          label="Creneaux planifies"
-          value={`${plannedSlots}/${totalSlots || 0}`}
+          label="Heures planifiees"
+          value={`${formatHoursFromMinutes(plannedMinutes)} / ${formatHoursFromMinutes(totalMinutes)}`}
           accent="bg-emerald-100 text-emerald-700"
-          helper="Vue immediate du remplissage de la semaine type."
+          helper="Vue immediate du volume horaire couvert sur la periode."
         />
         <StatCard
           icon={<FiBookOpen />}
@@ -1323,10 +1427,10 @@ export default function ScheduleDashboard() {
         />
         <StatCard
           icon={<FiClock />}
-          label="Cours sans creneau"
+          label="Cours sans horaire"
           value={unplannedCourses}
           accent="bg-amber-100 text-amber-700"
-          helper="Cours encore absents de la planification."
+          helper="Cours encore absents de la planification horaire."
         />
         <StatCard
           icon={<FiUsers />}
@@ -1403,7 +1507,7 @@ export default function ScheduleDashboard() {
               />
             ) : (
               courses.map((course) => {
-                const usage = courseUsageById[course.id] ?? 0;
+                const usageMinutes = courseUsageMinutesById[course.id] ?? 0;
 
                 return (
                   <div
@@ -1426,12 +1530,12 @@ export default function ScheduleDashboard() {
                       </div>
                       <span
                         className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                          usage > 0
+                          usageMinutes > 0
                             ? "bg-emerald-100 text-emerald-700"
                             : "bg-amber-100 text-amber-700"
                         }`}
                       >
-                        {usage > 0 ? `${usage} creneau(x)` : "A placer"}
+                        {usageMinutes > 0 ? formatHoursFromMinutes(usageMinutes) : "A placer"}
                       </span>
                     </div>
                   </div>
@@ -1549,7 +1653,9 @@ export default function ScheduleDashboard() {
                           {day.helper ? ` (${day.helper})` : ""}:{" "}
                           {day.isOutsideYear
                             ? "hors annee"
-                            : `${plannedByDay[day.value] ?? 0}/${creneaux.length}`}
+                            : `${formatHoursFromMinutes(plannedMinutesByDay[day.value] ?? 0)} / ${formatHoursFromMinutes(
+                                creneaux.reduce((total, item) => total + getCreneauDurationMinutes(item), 0),
+                              )}`}
                         </div>
                       ))}
                     </div>
@@ -1744,7 +1850,7 @@ export default function ScheduleDashboard() {
                   Couverture de grille
                 </p>
                 <p className="mt-1 text-2xl font-semibold text-slate-900">
-                  {totalSlots === 0 ? "0%" : `${Math.round((plannedSlots / totalSlots) * 100)}%`}
+                  {totalMinutes === 0 ? "0%" : `${Math.round((plannedMinutes / totalMinutes) * 100)}%`}
                 </p>
               </div>
               <div className="rounded-2xl bg-slate-50 px-4 py-3">
@@ -1803,7 +1909,7 @@ export default function ScheduleDashboard() {
                 />
               ) : (
                 courses.map((course) => {
-                  const usage = courseUsageById[course.id] ?? 0;
+                  const usageMinutes = courseUsageMinutesById[course.id] ?? 0;
 
                   return (
                     <div
@@ -1826,12 +1932,12 @@ export default function ScheduleDashboard() {
                         </div>
                         <span
                           className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                            usage > 0
+                            usageMinutes > 0
                               ? "bg-emerald-100 text-emerald-700"
                               : "bg-amber-100 text-amber-700"
                           }`}
                         >
-                          {usage > 0 ? `${usage} creneau(x)` : "A placer"}
+                          {usageMinutes > 0 ? formatHoursFromMinutes(usageMinutes) : "A placer"}
                         </span>
                       </div>
                     </div>

@@ -10,6 +10,15 @@ export type SessionAppelWithRelations = SessionAppel & {
     site?: { id: string; nom: string } | null;
     annee?: { id: string; nom: string; date_debut: Date | string; date_fin: Date | string } | null;
   }) | null;
+  emploi?: {
+    id: string;
+    heure_debut?: string | null;
+    heure_fin?: string | null;
+    cours?: {
+      id: string;
+      matiere?: { id: string; nom?: string | null } | null;
+    } | null;
+  } | null;
   creneau?: CreneauHoraire | null;
   prisPar?: EnseignantWithRelations | null;
   presences?: Array<PresenceEleve & {
@@ -44,7 +53,9 @@ export function getSessionAppelDisplayLabel(session?: Partial<SessionAppelWithRe
   if (!session) return "Session d'appel non renseignee";
 
   const classe = getClasseDisplayLabel(session.classe);
-  const creneau = session.creneau?.nom?.trim() ?? "Creneau";
+  const creneau = session.emploi?.heure_debut && session.emploi?.heure_fin
+    ? `${session.emploi.heure_debut} - ${session.emploi.heure_fin}`
+    : session.creneau?.nom?.trim() ?? "Creneau";
   const date = session.date ? new Intl.DateTimeFormat("fr-FR", {
     day: "2-digit",
     month: "short",

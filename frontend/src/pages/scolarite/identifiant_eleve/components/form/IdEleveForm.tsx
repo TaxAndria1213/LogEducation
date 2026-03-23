@@ -1,53 +1,117 @@
-import { getFieldsFromZodObjectSchema } from "../../../../../components/Form/fields";
-import { Form } from "../../../../../components/Form/Form";
-import { IdentifiantEleveSchema } from "../../../../../generated/zod";
-import IdentifiantEleveService from "../../../../../services/identifiantEleve.service";
-import { useIdentifiantEleveCreateStore } from "../../store/IdEleveCreateStore";
+import { useEffect, useMemo, useState } from "react";
 import Spin from "../../../../../components/anim/Spin";
+import { Form } from "../../../../../components/Form/Form";
+import { getFieldsFromZodObjectSchema } from "../../../../../components/Form/fields";
 import { useAuth } from "../../../../../auth/AuthContext";
+import { IdentifiantEleveSchema } from "../../../../../generated/zod";
+import EleveService from "../../../../../services/eleve.service";
+import IdentifiantEleveService from "../../../../../services/identifiantEleve.service";
+import ReferencielService, {
+  buildReferentialOptions,
+  type ReferentialCatalogItem,
+} from "../../../../../services/referenciel.service";
 import type { IdentifiantEleve } from "../../../../../types/models";
-import { useEffect } from "react";
+import { useIdentifiantEleveCreateStore } from "../../store/IdEleveCreateStore";
 
 function IdentifiantEleveForm() {
   const { etablissement_id } = useAuth();
-  console.log("🚀 ~ IdentifiantEleveForm ~ etablissement_id:", etablissement_id);
   const service = new IdentifiantEleveService();
   const loading = useIdentifiantEleveCreateStore((state) => state.loading);
-  const etablissementOptions = useIdentifiantEleveCreateStore(
-    (state) => state.etablissementOptions,
-  );
-
   const initialData = useIdentifiantEleveCreateStore((state) => state.initialData);
-
   const setInitialData = useIdentifiantEleveCreateStore((state) => state.setInitialData);
-
-  const getEtablissementOptions = useIdentifiantEleveCreateStore(
-    (state) => state.getEtablissementOptions,
-  );
+  const [eleveOptions, setEleveOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  const [referentialCatalog, setReferentialCatalog] = useState<
+    ReferentialCatalogItem[]
+  >([]);
 
   useEffect(() => {
-    getEtablissementOptions();
     if (etablissement_id) {
       setInitialData({});
     }
-  }, [getEtablissementOptions, etablissement_id, setInitialData]);
+  }, [etablissement_id, setInitialData]);
 
   useEffect(() => {
-    console.log(etablissementOptions);
-  }, [etablissementOptions]);
+    const load = async () => {
+      if (!etablissement_id) return;
 
-  const identifiantEleveFields = getFieldsFromZodObjectSchema(IdentifiantEleveSchema, {
-    omit: ["id", "created_at", "updated_at"],
+      const eleveService = new EleveService();
+      const referencielService = new ReferencielService();
 
-    metaByField: {
-      created_at: { dateMode: "datetime" },
-      updated_at: { dateMode: "datetime" },
+      const [eleveResult, referentielResult] = await Promise.all([
+        eleveService.getAll({
+          take: 500,
+          where: JSON.stringify({ etablissement_id }),
+          includeSpec: JSON.stringify({
+            utilisateur: { include: { profil: true } },
+          }),
+        }),
+        referencielService.getCatalog(),
+      ]);
+
+      setEleveOptions(
+        eleveResult?.status.success
+          ? eleveResult.data.data.map((item: any) => ({
+              value: item.id,
+              label:
+                item.utilisateur?.profil?.prenom && item.utilisateur?.profil?.nom
+                  ? `${item.utilisateur.profil.prenom} ${item.utilisateur.profil.nom}`
+                  : item.code_eleve ?? item.id,
+            }))
+          : [],
+      );
+
+      setReferentialCatalog(
+        referentielResult?.status.success
+          ? ((referentielResult.data as ReferentialCatalogItem[]) ?? [])
+          : [],
+      );
+    };
+
+    void load();
+  }, [etablissement_id]);
+
+  const typeOptions = useMemo(
+    () =>
+      buildReferentialOptions(referentialCatalog, "IDENTIFIANT_ELEVE_TYPE", [
+        "CARTE_SCOLAIRE",
+        "MATRICULE",
+        "CIN",
+        "ACTE_NAISSANCE",
+      ]),
+    [referentialCatalog],
+  );
+
+  const identifiantEleveFields = getFieldsFromZodObjectSchema(
+    IdentifiantEleveSchema,
+    {
+      omit: ["id", "created_at", "updated_at"],
+      metaByField: {
+        created_at: { dateMode: "datetime" },
+        updated_at: { dateMode: "datetime" },
+        eleve_id: {
+          relation: {
+            options: eleveOptions,
+          },
+        },
+        type: {
+          relation: {
+            options: typeOptions,
+          },
+        },
+        delivre_le: { dateMode: "date" },
+        expire_le: { dateMode: "date" },
+      },
+      labelByField: {
+        eleve_id: "Eleve",
+        type: "Type",
+        valeur: "Valeur",
+        delivre_le: "Delivre le",
+        expire_le: "Expire le",
+      },
     },
-
-    labelByField: {
-      nom: "Nom",
-    },
-  });
+  );
 
   const identifiantEleveSchema = IdentifiantEleveSchema.omit({
     id: true,

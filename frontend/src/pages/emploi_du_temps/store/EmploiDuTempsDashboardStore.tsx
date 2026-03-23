@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
 import anneeScolaireService from "../../../services/anneeScolaire.service";
 import ClasseService from "../../../services/classe.service";
@@ -69,6 +70,7 @@ type State = {
   classes: Classe[];
   courses: CourseRecord[];
   creneaux: CreneauHoraire[];
+  persistedCreneaux: CreneauHoraire[];
   salles: RoomRecord[];
   allEntries: ScheduleRow[];
   relatedEntries: ScheduleRow[];
@@ -153,6 +155,13 @@ function formatTime(totalMinutes: number): string {
   return `${hours}:${minutes}`;
 }
 
+function toMinutes(value?: string | null): number | null {
+  if (!value) return null;
+  const match = /^(\d{2}):(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  return Number.parseInt(match[1], 10) * 60 + Number.parseInt(match[2], 10);
+}
+
 function buildDefaultCreneaux(etablissementId: string): CreneauHoraire[] {
   const createdAt = new Date();
   const creneaux: CreneauHoraire[] = [];
@@ -175,42 +184,26 @@ function buildDefaultCreneaux(etablissementId: string): CreneauHoraire[] {
   return creneaux;
 }
 
-function mergeCreneauxWithDefaults(
-  etablissementId: string,
-  persistedCreneaux: CreneauHoraire[],
-): CreneauHoraire[] {
-  const persistedByWindow = new Map(
-    persistedCreneaux.map((creneau) => [
-      `${creneau.heure_debut}-${creneau.heure_fin}`,
-      creneau,
-    ]),
-  );
+function sortRowsByDayAndTime(left: ScheduleRow, right: ScheduleRow) {
+  if (left.jour_semaine !== right.jour_semaine) {
+    return left.jour_semaine - right.jour_semaine;
+  }
 
-  const defaults = buildDefaultCreneaux(etablissementId).map((creneau) => {
-    return (
-      persistedByWindow.get(`${creneau.heure_debut}-${creneau.heure_fin}`) ?? creneau
-    );
-  });
+  const leftStart = toMinutes(left.heure_debut ?? left.creneau?.heure_debut) ?? Number.MAX_SAFE_INTEGER;
+  const rightStart = toMinutes(right.heure_debut ?? right.creneau?.heure_debut) ?? Number.MAX_SAFE_INTEGER;
 
-  const extraPersisted = persistedCreneaux.filter(
-    (creneau) =>
-      !defaults.some(
-        (defaultCreneau) =>
-          defaultCreneau.heure_debut === creneau.heure_debut &&
-          defaultCreneau.heure_fin === creneau.heure_fin,
-      ),
-  );
+  if (leftStart !== rightStart) {
+    return leftStart - rightStart;
+  }
 
-  return [...defaults, ...extraPersisted].sort((left, right) => {
-    const leftOrder = left.ordre ?? Number.MAX_SAFE_INTEGER;
-    const rightOrder = right.ordre ?? Number.MAX_SAFE_INTEGER;
-    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
-    return left.heure_debut.localeCompare(right.heure_debut);
-  });
-}
+  const leftEnd = toMinutes(left.heure_fin ?? left.creneau?.heure_fin) ?? Number.MAX_SAFE_INTEGER;
+  const rightEnd = toMinutes(right.heure_fin ?? right.creneau?.heure_fin) ?? Number.MAX_SAFE_INTEGER;
 
-function isVirtualCreneauId(creneauId: string): boolean {
-  return creneauId.startsWith(VIRTUAL_CRENEAU_PREFIX);
+  if (leftEnd !== rightEnd) {
+    return leftEnd - rightEnd;
+  }
+
+  return String(left.created_at).localeCompare(String(right.created_at));
 }
 
 function normalizeToWeekMonday(value?: Date | string | null): string {
@@ -233,9 +226,33 @@ function isSameDay(left?: Date | string | null, right?: Date | string | null) {
 }
 
 function getRangeDurationInDays(row: Pick<ScheduleRow, "effectif_du" | "effectif_au">) {
-  const start = startOfDay(row.effectif_du);
-  const end = endOfDay(row.effectif_au);
+  const start = startOfDay(row.effectif_du as Date);
+  const end = endOfDay(row.effectif_au as Date);
   return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000));
+}
+
+function getCoveredVirtualCreneauIds(
+  row: ScheduleRow,
+  virtualCreneaux: CreneauHoraire[],
+): string[] {
+  const rowStart = toMinutes(row.heure_debut ?? row.creneau?.heure_debut);
+  const rowEnd = toMinutes(row.heure_fin ?? row.creneau?.heure_fin);
+
+  if (rowStart == null || rowEnd == null) {
+    return virtualCreneaux.some((item) => item.id === row.creneau_horaire_id)
+      ? [row.creneau_horaire_id]
+      : [];
+  }
+
+  return virtualCreneaux
+    .filter((creneau) => {
+      const start = toMinutes(creneau.heure_debut);
+      const end = toMinutes(creneau.heure_fin);
+
+      if (start == null || end == null) return false;
+      return start < rowEnd && end > rowStart;
+    })
+    .map((creneau) => creneau.id);
 }
 
 function getSpecificWeekWindow(specificWeekStart: string): PlanningWindow | null {
@@ -316,8 +333,8 @@ function getRequestErrorMessage(error: unknown, fallback: string) {
 }
 
 function overlapsWindow(row: ScheduleRow, window: PlanningWindow) {
-  const start = startOfDay(row.effectif_du);
-  const end = endOfDay(row.effectif_au);
+  const start = startOfDay(row.effectif_du as Date);
+  const end = endOfDay(row.effectif_au as Date);
   return start <= window.end && end >= window.start;
 }
 
@@ -325,16 +342,30 @@ function matchesExactWindow(row: ScheduleRow, window: PlanningWindow) {
   return isSameDay(row.effectif_du, window.start) && isSameDay(row.effectif_au, window.end);
 }
 
-function mapRowsToPlanner(rows: ScheduleRow[]): Record<string, PlannerCellDraft> {
-  return rows.reduce<Record<string, PlannerCellDraft>>((acc, row) => {
-    acc[getPlannerCellKey(row.jour_semaine, row.creneau_horaire_id)] = {
-      cours_id: row.cours_id ?? undefined,
-      salle_id: row.salle_id ?? undefined,
-      sourceId: row.id,
-      isPause: !row.cours_id,
-    };
-    return acc;
-  }, {});
+function mapRowsToPlanner(
+  rows: ScheduleRow[],
+  virtualCreneaux: CreneauHoraire[],
+): Record<string, PlannerCellDraft> {
+  const planner: Record<string, PlannerCellDraft> = {};
+
+  [...rows]
+    .sort(sortRowsByDayAndTime)
+    .forEach((row) => {
+      getCoveredVirtualCreneauIds(row, virtualCreneaux).forEach((creneauId) => {
+        const key = getPlannerCellKey(row.jour_semaine, creneauId);
+
+        if (!planner[key]) {
+          planner[key] = {
+            cours_id: row.cours_id ?? undefined,
+            salle_id: row.salle_id ?? undefined,
+            sourceId: row.id,
+            isPause: !row.cours_id,
+          };
+        }
+      });
+    });
+
+  return planner;
 }
 
 function filterPlanningEntries(
@@ -354,46 +385,29 @@ function filterPlanningEntries(
           isSameDay(row.effectif_du, currentYear.date_debut) &&
           isSameDay(row.effectif_au, currentYear.date_fin),
       )
-      .sort((left, right) => {
-        if (left.jour_semaine !== right.jour_semaine) {
-          return left.jour_semaine - right.jour_semaine;
-        }
-        return left.creneau_horaire_id.localeCompare(right.creneau_horaire_id);
-      });
+      .sort(sortRowsByDayAndTime);
   }
 
   const selectedWindow = getSpecificWeekWindow(specificWeekStart);
   const effectiveWindow = getPlanningWindow("specific_week", currentYear, specificWeekStart);
   if (!selectedWindow || !effectiveWindow) return [];
 
-  const filtered = rows.filter((row) => overlapsWindow(row, selectedWindow));
-  const bestByCell = new Map<string, ScheduleRow>();
+  return rows
+    .filter((row) => overlapsWindow(row, selectedWindow))
+    .sort((left, right) => {
+      if (left.jour_semaine !== right.jour_semaine) {
+        return left.jour_semaine - right.jour_semaine;
+      }
 
-  for (const row of filtered.sort((left, right) => {
-    const leftExact = matchesExactWindow(left, effectiveWindow) ? 1 : 0;
-    const rightExact = matchesExactWindow(right, effectiveWindow) ? 1 : 0;
-    if (leftExact !== rightExact) return rightExact - leftExact;
+      const leftExact = matchesExactWindow(left, effectiveWindow) ? 1 : 0;
+      const rightExact = matchesExactWindow(right, effectiveWindow) ? 1 : 0;
+      if (leftExact !== rightExact) return rightExact - leftExact;
 
-    const durationDelta = getRangeDurationInDays(left) - getRangeDurationInDays(right);
-    if (durationDelta !== 0) return durationDelta;
+      const durationDelta = getRangeDurationInDays(left) - getRangeDurationInDays(right);
+      if (durationDelta !== 0) return durationDelta;
 
-    const startDelta = startOfDay(left.effectif_du).getTime() - startOfDay(right.effectif_du).getTime();
-    if (startDelta !== 0) return startDelta;
-
-    return left.created_at.toString().localeCompare(right.created_at.toString());
-  })) {
-    const key = getPlannerCellKey(row.jour_semaine, row.creneau_horaire_id);
-    if (!bestByCell.has(key)) {
-      bestByCell.set(key, row);
-    }
-  }
-
-  return Array.from(bestByCell.values()).sort((left, right) => {
-    if (left.jour_semaine !== right.jour_semaine) {
-      return left.jour_semaine - right.jour_semaine;
-    }
-    return left.creneau_horaire_id.localeCompare(right.creneau_horaire_id);
-  });
+      return sortRowsByDayAndTime(left, right);
+    });
 }
 
 function getInheritedSpecificWeekEntries(
@@ -405,34 +419,21 @@ function getInheritedSpecificWeekEntries(
   const effectiveWindow = getPlanningWindow("specific_week", currentYear, specificWeekStart);
   if (!selectedWindow || !effectiveWindow || !rows.length) return [];
 
-  const filtered = rows.filter(
-    (row) =>
-      overlapsWindow(row, selectedWindow) && !matchesExactWindow(row, effectiveWindow),
-  );
-  const bestByCell = new Map<string, ScheduleRow>();
+  return rows
+    .filter(
+      (row) =>
+        overlapsWindow(row, selectedWindow) && !matchesExactWindow(row, effectiveWindow),
+    )
+    .sort((left, right) => {
+      if (left.jour_semaine !== right.jour_semaine) {
+        return left.jour_semaine - right.jour_semaine;
+      }
 
-  for (const row of filtered.sort((left, right) => {
-    const durationDelta = getRangeDurationInDays(left) - getRangeDurationInDays(right);
-    if (durationDelta !== 0) return durationDelta;
+      const durationDelta = getRangeDurationInDays(left) - getRangeDurationInDays(right);
+      if (durationDelta !== 0) return durationDelta;
 
-    const startDelta =
-      startOfDay(left.effectif_du).getTime() - startOfDay(right.effectif_du).getTime();
-    if (startDelta !== 0) return startDelta;
-
-    return left.created_at.toString().localeCompare(right.created_at.toString());
-  })) {
-    const key = getPlannerCellKey(row.jour_semaine, row.creneau_horaire_id);
-    if (!bestByCell.has(key)) {
-      bestByCell.set(key, row);
-    }
-  }
-
-  return Array.from(bestByCell.values()).sort((left, right) => {
-    if (left.jour_semaine !== right.jour_semaine) {
-      return left.jour_semaine - right.jour_semaine;
-    }
-    return left.creneau_horaire_id.localeCompare(right.creneau_horaire_id);
-  });
+      return sortRowsByDayAndTime(left, right);
+    });
 }
 
 function getEntriesToDelete(
@@ -469,64 +470,114 @@ function getScheduleRowSignature(row: ScheduleRow) {
   });
 }
 
+function buildPlannerBlocks(
+  planner: Record<string, PlannerCellDraft>,
+  creneaux: CreneauHoraire[],
+) {
+  const blocks: Array<{
+    day: number;
+    cell: PlannerCellDraft;
+    start: string;
+    end: string;
+    order: number;
+  }> = [];
+
+  for (let day = 1; day <= 7; day += 1) {
+    let index = 0;
+
+    while (index < creneaux.length) {
+      const startCreneau = creneaux[index];
+      const startKey = getPlannerCellKey(day, startCreneau.id);
+      const cell = planner[startKey];
+      const signature = getPlannerCellSignature(cell);
+
+      if (!signature) {
+        index += 1;
+        continue;
+      }
+
+      let endIndex = index;
+
+      while (endIndex + 1 < creneaux.length) {
+        const nextCreneau = creneaux[endIndex + 1];
+        const nextKey = getPlannerCellKey(day, nextCreneau.id);
+
+        if (getPlannerCellSignature(planner[nextKey]) !== signature) {
+          break;
+        }
+
+        endIndex += 1;
+      }
+
+      blocks.push({
+        day,
+        cell: cell as PlannerCellDraft,
+        start: startCreneau.heure_debut,
+        end: creneaux[endIndex]?.heure_fin ?? startCreneau.heure_fin,
+        order: startCreneau.ordre ?? index + 1,
+      });
+
+      index = endIndex + 1;
+    }
+  }
+
+  return blocks;
+}
+
 async function ensurePersistedCreneaux(
   etablissementId: string,
-  creneaux: CreneauHoraire[],
-  usedCreneauIds: string[],
+  persistedCreneaux: CreneauHoraire[],
+  intervals: Array<{
+    start: string;
+    end: string;
+    order: number;
+  }>,
 ) {
   const creneauService = new CreneauHoraireService();
-  const nextCreneaux = [...creneaux];
+  const nextCreneaux = [...persistedCreneaux];
   const idMap: Record<string, string> = {};
+  const existingByWindow = new Map(
+    nextCreneaux.map((creneau) => [`${creneau.heure_debut}-${creneau.heure_fin}`, creneau]),
+  );
 
-  for (const creneauId of Array.from(new Set(usedCreneauIds))) {
-    const creneau = nextCreneaux.find((item) => item.id === creneauId);
+  for (const interval of Array.from(
+    new Map(intervals.map((item) => [`${item.start}-${item.end}`, item])).values(),
+  )) {
+    const windowKey = `${interval.start}-${interval.end}`;
+    const existing = existingByWindow.get(windowKey);
 
-    if (!creneau) {
-      return {
-        success: false,
-        message: "Un creneau selectionne est introuvable dans la grille.",
-        creneaux: nextCreneaux,
-        idMap,
-      };
-    }
-
-    if (!isVirtualCreneauId(creneauId)) {
-      idMap[creneauId] = creneauId;
+    if (existing) {
+      idMap[windowKey] = existing.id;
       continue;
     }
 
     const result = await creneauService.create({
       etablissement_id: etablissementId,
-      nom: creneau.nom,
-      heure_debut: creneau.heure_debut,
-      heure_fin: creneau.heure_fin,
-      ordre: creneau.ordre,
+      nom: `${interval.start} - ${interval.end}`,
+      heure_debut: interval.start,
+      heure_fin: interval.end,
+      ordre: interval.order,
     });
 
     if (!result?.status?.success || !result.data) {
       return {
         success: false,
         message: "Impossible d'enregistrer les creneaux utilises dans la base.",
-        creneaux: nextCreneaux,
+        persistedCreneaux: nextCreneaux,
         idMap,
       };
     }
 
     const persistedCreneau = result.data as CreneauHoraire;
-    idMap[creneauId] = persistedCreneau.id;
-
-    const currentIndex = nextCreneaux.findIndex((item) => item.id === creneauId);
-    if (currentIndex >= 0) {
-      nextCreneaux[currentIndex] = persistedCreneau;
-    } else {
-      nextCreneaux.push(persistedCreneau);
-    }
+    idMap[windowKey] = persistedCreneau.id;
+    existingByWindow.set(windowKey, persistedCreneau);
+    nextCreneaux.push(persistedCreneau);
   }
 
   return {
     success: true,
     message: "",
-    creneaux: nextCreneaux,
+    persistedCreneaux: nextCreneaux,
     idMap,
   };
 }
@@ -541,6 +592,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
   classes: [],
   courses: [],
   creneaux: [],
+  persistedCreneaux: [],
   salles: [],
   allEntries: [],
   relatedEntries: [],
@@ -573,6 +625,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
           existingEntries: [],
           planner: {},
           creneaux: [],
+          persistedCreneaux: [],
           salles: [],
           selectedClasseId: "",
           error:
@@ -617,7 +670,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
       const persistedCreneaux = creneauxResult?.status.success
         ? creneauxResult.data.data
         : [];
-      const creneaux = mergeCreneauxWithDefaults(etablissementId, persistedCreneaux);
+      const creneaux = buildDefaultCreneaux(etablissementId);
       const salles = sallesResult?.status.success ? sallesResult.data.data : [];
 
       const selectedClasseId =
@@ -629,6 +682,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
         currentYear,
         classes,
         creneaux,
+        persistedCreneaux,
         salles,
         selectedClasseId,
         specificWeekStart:
@@ -769,13 +823,14 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
         planningMode,
         specificWeekStart,
       );
+      const virtualCreneaux = get().creneaux;
 
       set({
         courses,
         allEntries,
         relatedEntries,
         existingEntries,
-        planner: mapRowsToPlanner(existingEntries),
+        planner: mapRowsToPlanner(existingEntries, virtualCreneaux),
         error: null,
       });
     } catch {
@@ -850,7 +905,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
 
   resetFromExisting: () =>
     set((state) => ({
-      planner: mapRowsToPlanner(state.existingEntries),
+      planner: mapRowsToPlanner(state.existingEntries, state.creneaux),
     })),
 
   savePlanning: async () => {
@@ -864,6 +919,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
       specificWeekStart,
       allEntries,
       creneaux,
+      persistedCreneaux,
     } = get();
 
     if (!currentYear) {
@@ -916,13 +972,40 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
         planningMode === "specific_week"
           ? mapRowsToPlanner(
               getInheritedSpecificWeekEntries(allEntries, currentYear, specificWeekStart),
+              creneaux,
             )
           : {};
 
+      const plannerToPersist = usedPlannerEntries.reduce<Record<string, PlannerCellDraft>>(
+        (acc, [key, cell]) => {
+          if (!cell?.cours_id && !cell?.isPause) return acc;
+
+          if (planningMode === "specific_week") {
+            const inheritedCell = inheritedSpecificWeekPlanner[key];
+            const nextSignature = getPlannerCellSignature(cell);
+            const inheritedSignature = getPlannerCellSignature(inheritedCell);
+
+            if (nextSignature === inheritedSignature) {
+              return acc;
+            }
+          }
+
+          acc[key] = cell;
+          return acc;
+        },
+        {},
+      );
+
+      const plannerBlocks = buildPlannerBlocks(plannerToPersist, creneaux);
+
       const persistedCreneauxResult = await ensurePersistedCreneaux(
         etablissementId,
-        creneaux,
-        usedPlannerEntries.map(([key]) => key.split("::")[1]).filter(Boolean),
+        persistedCreneaux,
+        plannerBlocks.map((block) => ({
+          start: block.start,
+          end: block.end,
+          order: block.order,
+        })),
       );
 
       if (!persistedCreneauxResult.success) {
@@ -933,39 +1016,25 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
         };
       }
 
-      const entries = usedPlannerEntries.flatMap(([key, cell]) => {
-        if (!cell?.cours_id && !cell?.isPause) return [];
-
-        if (planningMode === "specific_week") {
-          const inheritedCell = inheritedSpecificWeekPlanner[key];
-          const nextSignature = getPlannerCellSignature(cell);
-          const inheritedSignature = getPlannerCellSignature(inheritedCell);
-
-          if (nextSignature === inheritedSignature) {
-            return [];
-          }
-        }
-
-        const [dayPart, creneauId] = key.split("::");
-        const day = Number.parseInt(dayPart, 10);
-        const course = cell?.cours_id
-          ? courses.find((item) => item.id === cell.cours_id)
+      const entries = plannerBlocks.map((block) => {
+        const course = block.cell?.cours_id
+          ? courses.find((item) => item.id === block.cell.cours_id)
           : undefined;
+        const intervalKey = `${block.start}-${block.end}`;
 
-        return [
-          {
-            classe_id: selectedClasseId,
-            cours_id: cell.isPause ? null : cell.cours_id ?? null,
-            matiere_id: course?.matiere_id ?? null,
-            enseignant_id: course?.enseignant_id ?? null,
-            salle_id: cell.isPause ? null : cell.salle_id ?? null,
-            jour_semaine: day,
-            creneau_horaire_id:
-              persistedCreneauxResult.idMap[creneauId] ?? creneauId,
-            effectif_du: window.start,
-            effectif_au: window.end,
-          } satisfies Omit<EmploiDuTemps, "id" | "created_at" | "updated_at">,
-        ];
+        return {
+          classe_id: selectedClasseId,
+          cours_id: block.cell.isPause ? null : block.cell.cours_id ?? null,
+          matiere_id: course?.matiere_id ?? null,
+          enseignant_id: course?.enseignant_id ?? null,
+          salle_id: block.cell.isPause ? null : block.cell.salle_id ?? null,
+          jour_semaine: block.day,
+          heure_debut: block.start,
+          heure_fin: block.end,
+          creneau_horaire_id: persistedCreneauxResult.idMap[intervalKey],
+          effectif_du: window.start,
+          effectif_au: window.end,
+        } satisfies Omit<EmploiDuTemps, "id" | "created_at" | "updated_at">;
       });
 
       const entriesToDelete = getEntriesToDelete(
@@ -1002,8 +1071,8 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
           "recurrent",
           specificWeekStart,
         );
-        const recurrentPlanner = mapRowsToPlanner(recurrentEntries);
-        const redundantSpecificEntries = refreshedEntries.filter((row) => {
+        const recurrentPlanner = mapRowsToPlanner(recurrentEntries, creneaux);
+        const redundantSpecificEntries = refreshedEntries.filter((row: any) => {
           if (
             matchesExactWindow(row, {
               start: startOfDay(currentYear.date_debut),
@@ -1013,17 +1082,23 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
             return false;
           }
 
-          const annualSignature =
-            recurrentPlanner[getPlannerCellKey(row.jour_semaine, row.creneau_horaire_id)];
+          const coveredKeys = getCoveredVirtualCreneauIds(row, creneaux);
 
-          if (!annualSignature) return false;
+          if (coveredKeys.length === 0) return false;
 
-          return getPlannerCellSignature(annualSignature) === getScheduleRowSignature(row);
+          return coveredKeys.every((creneauId) => {
+            const annualSignature =
+              recurrentPlanner[getPlannerCellKey(row.jour_semaine, creneauId)];
+
+            if (!annualSignature) return false;
+
+            return getPlannerCellSignature(annualSignature) === getScheduleRowSignature(row);
+          });
         });
 
         if (redundantSpecificEntries.length > 0) {
           await Promise.all(
-            redundantSpecificEntries.map((row) => emploiDuTempsService.delete(row.id)),
+            redundantSpecificEntries.map((row: any) => emploiDuTempsService.delete(row.id)),
           );
 
           const cleaned = await emploiDuTempsService.getClassePlanning(selectedClasseId);
@@ -1079,11 +1154,11 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
       );
 
       set({
-        creneaux: persistedCreneauxResult.creneaux,
+        persistedCreneaux: persistedCreneauxResult.persistedCreneaux,
         allEntries: refreshedEntries,
         relatedEntries: nextRelatedEntries,
         existingEntries: filteredEntries,
-        planner: mapRowsToPlanner(filteredEntries),
+        planner: mapRowsToPlanner(filteredEntries, creneaux),
       });
 
       const createdCount = entries.length;

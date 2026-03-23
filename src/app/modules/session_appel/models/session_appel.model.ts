@@ -3,7 +3,7 @@
 class SessionAppelModel extends PrismaService {
   constructor() {
     super("sessionAppel", {
-      sessionAppel: ["classe", "creneau", "prisPar", "presences", "presences.eleve"],
+      sessionAppel: ["classe", "emploi", "creneau", "prisPar", "presences", "presences.eleve"],
     });
   }
 }

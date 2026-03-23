@@ -92,8 +92,9 @@ export const EMPLOI_DU_TEMPS_INCLUDE_SPEC = {
 
 export const EMPLOI_DU_TEMPS_ORDER_BY = [
   { jour_semaine: "asc" },
+  { heure_debut: "asc" },
+  { heure_fin: "asc" },
   { creneau: { ordre: "asc" } },
-  { creneau: { heure_debut: "asc" } },
 ] as const;
 
 function parseObjectParam(value: unknown): Record<string, unknown> | undefined {

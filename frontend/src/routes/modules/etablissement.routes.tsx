@@ -2,6 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import AnneeScolaireIndex from "../../pages/etablissement/anneeScolaire/AnneeScolaireIndex";
 import PeriodeIndex from "../../pages/etablissement/periodes/PeriodeIndex";
 import ProfileEtablissementIndex from "../../pages/etablissement/profileEtablissement/ProfileEtablissementIndex";
+import ReferentielsIndex from "../../pages/etablissement/referentiels/ReferentielsIndex";
 import SalleIndex from "../../pages/etablissement/salles/SalleIndex";
 import SitesIndex from "../../pages/etablissement/sites/SitesIndex";
 import type { menu } from "../../types/types";
@@ -46,6 +47,7 @@ export const etablissement: menu = {
       key: "referentiels",
       name: "Référentiels",
       path: "/etablissement/referentiels",
+      elements: <ReferentielsIndex />,
     },
   ],
 };

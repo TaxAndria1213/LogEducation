@@ -7,7 +7,19 @@ import { prisma } from "../../../service/prisma";
 
 type PlanningPolicyMode = "recurrent" | "specific_week";
 
-type EmploiDuTempsPayload = Omit<EmploiDuTemps, "id" | "created_at" | "updated_at">;
+type EmploiDuTempsPayload = {
+    classe_id: string;
+    cours_id: string | null;
+    matiere_id: string | null;
+    enseignant_id: string | null;
+    salle_id: string | null;
+    jour_semaine: number;
+    heure_debut: string;
+    heure_fin: string;
+    creneau_horaire_id: string | null;
+    effectif_du: Date | null;
+    effectif_au: Date | null;
+};
 
 type ReplaceClassePlanningBody = {
     classe_id?: string;
@@ -145,10 +157,42 @@ function toOptionalString(value: unknown): string | null {
     return trimmed.length ? trimmed : null;
 }
 
-function buildPlanningKey(entry: Pick<EmploiDuTempsPayload, "jour_semaine" | "creneau_horaire_id" | "effectif_du" | "effectif_au">): string {
+function normalizeTimeValue(value: unknown): string | null {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return /^(\d{2}):(\d{2})$/.test(trimmed) ? trimmed : null;
+}
+
+function toMinutes(value: string | null | undefined): number | null {
+    if (!value) return null;
+    const match = /^(\d{2}):(\d{2})$/.exec(value.trim());
+    if (!match) return null;
+    return Number.parseInt(match[1], 10) * 60 + Number.parseInt(match[2], 10);
+}
+
+function timeRangesOverlap(
+    leftStart: string | null | undefined,
+    leftEnd: string | null | undefined,
+    rightStart: string | null | undefined,
+    rightEnd: string | null | undefined,
+): boolean {
+    const startA = toMinutes(leftStart);
+    const endA = toMinutes(leftEnd);
+    const startB = toMinutes(rightStart);
+    const endB = toMinutes(rightEnd);
+
+    if (startA == null || endA == null || startB == null || endB == null) {
+        return false;
+    }
+
+    return startA < endB && startB < endA;
+}
+
+function buildPlanningKey(entry: Pick<EmploiDuTempsPayload, "jour_semaine" | "heure_debut" | "heure_fin" | "effectif_du" | "effectif_au">): string {
     return [
         entry.jour_semaine,
-        entry.creneau_horaire_id,
+        entry.heure_debut,
+        entry.heure_fin,
         toDayStart(entry.effectif_du)?.toISOString() ?? "none",
         toDayEnd(entry.effectif_au)?.toISOString() ?? "none",
     ].join("::");
@@ -299,6 +343,108 @@ class EmploiDuTempsApp {
         }
     }
 
+    private async resolveOrCreateCreneauHoraire(
+        etablissementId: string,
+        heureDebut: string,
+        heureFin: string,
+        suggestedOrder?: number | null,
+    ) {
+        const existing = await prisma.creneauHoraire.findFirst({
+            where: {
+                etablissement_id: etablissementId,
+                heure_debut: heureDebut,
+                heure_fin: heureFin,
+            },
+        });
+
+        if (existing) {
+            return existing;
+        }
+
+        return prisma.creneauHoraire.create({
+            data: {
+                etablissement_id: etablissementId,
+                nom: `${heureDebut} - ${heureFin}`,
+                heure_debut: heureDebut,
+                heure_fin: heureFin,
+                ordre: suggestedOrder ?? null,
+            },
+        });
+    }
+
+    private async resolveTimeWindow(
+        body: Partial<EmploiDuTemps>,
+        classe: ClasseWithYear,
+    ): Promise<{
+        heureDebut: string;
+        heureFin: string;
+        creneauHoraireId: string | null;
+    }> {
+        const providedCreneauId = toOptionalString(body.creneau_horaire_id);
+        const providedStart = normalizeTimeValue((body as Partial<EmploiDuTempsPayload>).heure_debut);
+        const providedEnd = normalizeTimeValue((body as Partial<EmploiDuTempsPayload>).heure_fin);
+
+        let heureDebut = providedStart;
+        let heureFin = providedEnd;
+        let creneauHoraireId = providedCreneauId;
+        let creneau: {
+            id: string;
+            etablissement_id: string;
+            heure_debut: string;
+            heure_fin: string;
+            ordre: number | null;
+        } | null = null;
+
+        if (providedCreneauId) {
+            creneau = await prisma.creneauHoraire.findUnique({
+                where: { id: providedCreneauId },
+                select: {
+                    id: true,
+                    etablissement_id: true,
+                    heure_debut: true,
+                    heure_fin: true,
+                    ordre: true,
+                },
+            });
+
+            if (!creneau || creneau.etablissement_id !== classe.etablissement_id) {
+                throw new Error("Le creneau horaire selectionne ne correspond pas a l'etablissement de la classe.");
+            }
+
+            heureDebut = heureDebut ?? creneau.heure_debut;
+            heureFin = heureFin ?? creneau.heure_fin;
+        }
+
+        if (!heureDebut || !heureFin) {
+            throw new Error("L'horaire de debut et de fin est obligatoire pour enregistrer une seance.");
+        }
+
+        const startMinutes = toMinutes(heureDebut);
+        const endMinutes = toMinutes(heureFin);
+        if (startMinutes == null || endMinutes == null || endMinutes <= startMinutes) {
+            throw new Error("L'heure de fin doit etre strictement apres l'heure de debut.");
+        }
+
+        if (creneau && (creneau.heure_debut !== heureDebut || creneau.heure_fin !== heureFin)) {
+            throw new Error("Les heures renseignees ne correspondent pas au creneau selectionne.");
+        }
+
+        const persistedCreneau = await this.resolveOrCreateCreneauHoraire(
+            classe.etablissement_id,
+            heureDebut,
+            heureFin,
+            creneau?.ordre ?? null,
+        );
+
+        creneauHoraireId = persistedCreneau.id;
+
+        return {
+            heureDebut,
+            heureFin,
+            creneauHoraireId,
+        };
+    }
+
     private async normalizeEntry(
         body: Partial<EmploiDuTemps>,
         options?: {
@@ -321,12 +467,9 @@ class EmploiDuTempsApp {
             throw new Error("Le jour de semaine doit etre un entier compris entre 1 et 7.");
         }
 
-        const creneauHoraireId = toOptionalString(body.creneau_horaire_id);
-        if (!creneauHoraireId) {
-            throw new Error("Le creneau horaire est obligatoire.");
-        }
-
         const classe = options?.classe ?? await this.getClasseWithYear(classeId);
+        const { heureDebut, heureFin, creneauHoraireId } = await this.resolveTimeWindow(body, classe);
+
         await this.validateWindow({
             classe_id: classe.id,
             cours_id: null,
@@ -334,18 +477,12 @@ class EmploiDuTempsApp {
             enseignant_id: null,
             salle_id: null,
             jour_semaine: jourSemaine,
+            heure_debut: heureDebut,
+            heure_fin: heureFin,
             creneau_horaire_id: creneauHoraireId,
             effectif_du: parseDateValue(body.effectif_du),
             effectif_au: parseDateValue(body.effectif_au),
         }, classe);
-
-        const creneau = await prisma.creneauHoraire.findUnique({
-            where: { id: creneauHoraireId },
-        });
-
-        if (!creneau || creneau.etablissement_id !== classe.etablissement_id) {
-            throw new Error("Le creneau horaire selectionne ne correspond pas a l'etablissement de la classe.");
-        }
 
         const coursId = toOptionalString(body.cours_id);
         const salleId = toOptionalString(body.salle_id);
@@ -405,6 +542,8 @@ class EmploiDuTempsApp {
             enseignant_id: enseignantId,
             salle_id: salleId,
             jour_semaine: jourSemaine,
+            heure_debut: heureDebut,
+            heure_fin: heureFin,
             creneau_horaire_id: creneauHoraireId,
             effectif_du: toDayStart(body.effectif_du) ?? null,
             effectif_au: toDayEnd(body.effectif_au) ?? null,
@@ -434,7 +573,6 @@ class EmploiDuTempsApp {
         const conditions: Prisma.EmploiDuTempsWhereInput[] = [
             {
                 jour_semaine: data.jour_semaine,
-                creneau_horaire_id: data.creneau_horaire_id,
                 effectif_du: {
                     lte: toDayEnd(data.effectif_au) ?? undefined,
                 },
@@ -458,10 +596,22 @@ class EmploiDuTempsApp {
             },
             include: {
                 classe: true,
+                creneau: true,
             },
         });
 
         for (const entry of overlappingEntries) {
+            if (
+                !timeRangesOverlap(
+                    data.heure_debut,
+                    data.heure_fin,
+                    entry.heure_debut ?? entry.creneau?.heure_debut,
+                    entry.heure_fin ?? entry.creneau?.heure_fin,
+                )
+            ) {
+                continue;
+            }
+
             if (entry.classe_id === data.classe_id) {
                 throw new Error(
                     `La classe ${entry.classe?.nom ?? ""} possede deja une ligne sur ce jour et ce creneau pour une periode qui se chevauche.`,

@@ -7,6 +7,7 @@ import { prisma } from "../../../service/prisma";
 import SessionAppelModel from "../models/session_appel.model";
 
 type SessionAppelPayload = {
+  emploi_du_temps_id: string;
   classe_id: string;
   date: Date;
   creneau_horaire_id: string;
@@ -20,9 +21,14 @@ function parseDate(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function toDayStart(value: Date): Date {
+  const date = new Date(value.getTime());
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 function getDateBounds(value: Date) {
-  const start = new Date(value);
-  start.setHours(0, 0, 0, 0);
+  const start = toDayStart(value);
   const end = new Date(value);
   end.setHours(23, 59, 59, 999);
   return { start, end };
@@ -57,7 +63,13 @@ class SessionAppelApp {
       queryWhere.classe !== null &&
       typeof (queryWhere.classe as { etablissement_id?: unknown }).etablissement_id === "string"
         ? ((queryWhere.classe as { etablissement_id: string }).etablissement_id).trim()
-        : undefined;
+        : typeof queryWhere?.emploi === "object" &&
+            queryWhere.emploi !== null &&
+            typeof (queryWhere.emploi as { classe?: { etablissement_id?: unknown } }).classe === "object" &&
+            (queryWhere.emploi as { classe?: { etablissement_id?: unknown } }).classe !== null &&
+            typeof ((queryWhere.emploi as { classe: { etablissement_id?: unknown } }).classe.etablissement_id) === "string"
+          ? ((queryWhere.emploi as { classe: { etablissement_id: string } }).classe.etablissement_id).trim()
+          : undefined;
 
     const tenantCandidates = [requestTenant, queryTenant].filter(
       (value): value is string => Boolean(value),
@@ -75,6 +87,9 @@ class SessionAppelApp {
   }
 
   private normalizePayload(raw: Partial<SessionAppel>): SessionAppelPayload {
+    const emploi_du_temps_id = typeof (raw as Partial<SessionAppel & { emploi_du_temps_id?: string }>).emploi_du_temps_id === "string"
+      ? (raw as Partial<SessionAppel & { emploi_du_temps_id?: string }>).emploi_du_temps_id!.trim()
+      : "";
     const classe_id = typeof raw.classe_id === "string" ? raw.classe_id.trim() : "";
     const creneau_horaire_id = typeof raw.creneau_horaire_id === "string" ? raw.creneau_horaire_id.trim() : "";
     const date = parseDate(raw.date);
@@ -83,13 +98,15 @@ class SessionAppelApp {
       : null;
     const prisLe = parseDate(raw.pris_le) ?? null;
 
-    if (!classe_id) throw new Error("La classe est requise.");
-    if (!creneau_horaire_id) throw new Error("Le creneau horaire est requis.");
     if (!date) throw new Error("La date de la session est invalide.");
+    if (!emploi_du_temps_id && (!classe_id || !creneau_horaire_id)) {
+      throw new Error("La seance d'emploi du temps est requise pour ouvrir une session d'appel.");
+    }
 
     return {
+      emploi_du_temps_id,
       classe_id,
-      date,
+      date: toDayStart(date),
       creneau_horaire_id,
       pris_par_enseignant_id: prisPar,
       pris_le: prisLe,
@@ -109,6 +126,43 @@ class SessionAppelApp {
           niveau: true,
           site: true,
           annee: true,
+        },
+      },
+      emploi: {
+        include: {
+          classe: {
+            include: {
+              niveau: true,
+              site: true,
+              annee: true,
+            },
+          },
+          cours: {
+            include: {
+              matiere: true,
+              enseignant: {
+                include: {
+                  personnel: {
+                    include: {
+                      utilisateur: { include: { profil: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          matiere: true,
+          enseignant: {
+            include: {
+              personnel: {
+                include: {
+                  utilisateur: { include: { profil: true } },
+                },
+              },
+            },
+          },
+          salle: true,
+          creneau: true,
         },
       },
       creneau: true,
@@ -137,21 +191,77 @@ class SessionAppelApp {
     return prisma.sessionAppel.findFirst({
       where: {
         id,
-        classe: { etablissement_id: tenantId },
+        OR: [
+          { classe: { etablissement_id: tenantId } },
+          { emploi: { classe: { etablissement_id: tenantId } } },
+        ],
       },
       include: this.getInclude(),
     });
   }
 
+  private async resolveEmploiDuTemps(payload: SessionAppelPayload, tenantId: string) {
+    const weekday = (() => {
+      const day = payload.date.getDay();
+      return day === 0 ? 7 : day;
+    })();
+    const { start, end } = getDateBounds(payload.date);
+
+    const emploi = payload.emploi_du_temps_id
+      ? await prisma.emploiDuTemps.findFirst({
+          where: {
+            id: payload.emploi_du_temps_id,
+            classe: { etablissement_id: tenantId },
+          },
+          include: {
+            classe: { include: { annee: true } },
+            creneau: true,
+          },
+        })
+      : await prisma.emploiDuTemps.findFirst({
+          where: {
+            classe_id: payload.classe_id,
+            creneau_horaire_id: payload.creneau_horaire_id,
+            jour_semaine: weekday,
+            classe: { etablissement_id: tenantId },
+            effectif_du: { lte: end },
+            effectif_au: { gte: start },
+          },
+          include: {
+            classe: { include: { annee: true } },
+            creneau: true,
+          },
+          orderBy: [
+            { effectif_du: "desc" },
+            { created_at: "asc" },
+          ],
+        });
+
+    if (!emploi) {
+      throw new Error("Aucune seance d'emploi du temps correspondante n'a ete trouvee pour cette date.");
+    }
+
+    if (payload.date < emploi.classe.annee.date_debut || payload.date > emploi.classe.annee.date_fin) {
+      throw new Error("La date de session doit rester dans l'annee scolaire de la classe.");
+    }
+
+    if (emploi.jour_semaine !== weekday) {
+      throw new Error("La seance selectionnee ne correspond pas au jour de la session.");
+    }
+
+    if (
+      (emploi.effectif_du && payload.date < toDayStart(emploi.effectif_du)) ||
+      (emploi.effectif_au && payload.date > toDayStart(emploi.effectif_au))
+    ) {
+      throw new Error("La date de session sort de la fenetre active de la seance.");
+    }
+
+    return emploi;
+  }
+
   private async validateReferences(payload: SessionAppelPayload, tenantId: string) {
-    const [classe, creneau, enseignant] = await Promise.all([
-      prisma.classe.findFirst({
-        where: { id: payload.classe_id, etablissement_id: tenantId },
-        include: { annee: true },
-      }),
-      prisma.creneauHoraire.findFirst({
-        where: { id: payload.creneau_horaire_id, etablissement_id: tenantId },
-      }),
+    const [emploi, enseignant] = await Promise.all([
+      this.resolveEmploiDuTemps(payload, tenantId),
       payload.pris_par_enseignant_id
         ? prisma.enseignant.findFirst({
             where: {
@@ -162,34 +272,33 @@ class SessionAppelApp {
         : Promise.resolve(null),
     ]);
 
-    if (!classe) throw new Error("La classe selectionnee n'appartient pas a l'etablissement actif.");
-    if (!creneau) throw new Error("Le creneau selectionne n'appartient pas a l'etablissement actif.");
     if (payload.pris_par_enseignant_id && !enseignant) {
       throw new Error("L'enseignant qui prend l'appel n'appartient pas a l'etablissement actif.");
     }
 
-    const date = payload.date;
-    if (date < classe.annee.date_debut || date > classe.annee.date_fin) {
-      throw new Error("La date de session doit rester dans l'annee scolaire de la classe.");
-    }
-
-    return { classe };
+    return {
+      emploi,
+      payload: {
+        ...payload,
+        emploi_du_temps_id: emploi.id,
+        classe_id: emploi.classe_id,
+        creneau_horaire_id: emploi.creneau_horaire_id ?? emploi.creneau?.id ?? "",
+      },
+    };
   }
 
   private async ensureUniqueSession(payload: SessionAppelPayload, excludeId?: string) {
-    const { start, end } = getDateBounds(payload.date);
     const existing = await prisma.sessionAppel.findFirst({
       where: {
-        classe_id: payload.classe_id,
-        creneau_horaire_id: payload.creneau_horaire_id,
-        date: { gte: start, lte: end },
+        emploi_du_temps_id: payload.emploi_du_temps_id,
+        date: payload.date,
         ...(excludeId ? { id: { not: excludeId } } : {}),
       },
       select: { id: true },
     });
 
     if (existing) {
-      throw new Error("Une session d'appel existe deja pour cette classe, cette date et ce creneau.");
+      throw new Error("Une session d'appel existe deja pour cette seance et cette date.");
     }
   }
 
@@ -240,8 +349,8 @@ class SessionAppelApp {
   private async create(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
       const tenantId = this.resolveTenantId(req);
-      const payload = this.normalizePayload(req.body);
-      await this.validateReferences(payload, tenantId);
+      const normalizedPayload = this.normalizePayload(req.body);
+      const { payload } = await this.validateReferences(normalizedPayload, tenantId);
       await this.ensureUniqueSession(payload);
 
       const result = await prisma.sessionAppel.create({
@@ -309,8 +418,8 @@ class SessionAppelApp {
       const existing = await this.getScopedSession(req.params.id, tenantId);
       if (!existing) throw new Error("Session d'appel introuvable pour cet etablissement.");
 
-      const payload = this.normalizePayload({ ...existing, ...(req.body as Partial<SessionAppel>) });
-      await this.validateReferences(payload, tenantId);
+      const normalizedPayload = this.normalizePayload({ ...existing, ...(req.body as Partial<SessionAppel>) });
+      const { payload } = await this.validateReferences(normalizedPayload, tenantId);
       await this.ensureUniqueSession(payload, req.params.id);
 
       await prisma.sessionAppel.update({ where: { id: req.params.id }, data: payload });

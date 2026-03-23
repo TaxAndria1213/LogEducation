@@ -781,7 +781,9 @@ model EmploiDuTemps {
   enseignant_id      String?
   salle_id           String?
   jour_semaine       Int // 1-7
-  creneau_horaire_id String
+  heure_debut        String // "08:30"
+  heure_fin          String // "11:30"
+  creneau_horaire_id String?
   effectif_du        DateTime?
   effectif_au        DateTime?
 
@@ -793,7 +795,8 @@ model EmploiDuTemps {
   matiere    Matiere?       @relation(fields: [matiere_id], references: [id])
   enseignant Enseignant?    @relation(fields: [enseignant_id], references: [id])
   salle      Salle?         @relation(fields: [salle_id], references: [id])
-  creneau    CreneauHoraire @relation(fields: [creneau_horaire_id], references: [id])
+  creneau    CreneauHoraire? @relation(fields: [creneau_horaire_id], references: [id])
+  sessionsAppel SessionAppel[]
 
   @@index([classe_id])
   @@map("emploi_du_temps")
@@ -827,6 +830,7 @@ model EvenementCalendrier {
 model SessionAppel {
   id                     String    @id @default(uuid())
   classe_id              String
+  emploi_du_temps_id     String?
   date                   DateTime
   creneau_horaire_id     String
   pris_par_enseignant_id String?
@@ -836,13 +840,16 @@ model SessionAppel {
   updated_at DateTime @updatedAt
 
   classe  Classe         @relation(fields: [classe_id], references: [id])
+  emploi  EmploiDuTemps? @relation(fields: [emploi_du_temps_id], references: [id])
   creneau CreneauHoraire @relation(fields: [creneau_horaire_id], references: [id])
   prisPar Enseignant?    @relation(fields: [pris_par_enseignant_id], references: [id])
 
   presences PresenceEleve[]
 
   @@index([classe_id])
+  @@index([emploi_du_temps_id])
   @@index([date])
+  @@unique([emploi_du_temps_id, date])
   @@unique([classe_id, date, creneau_horaire_id])
   @@map("sessions_appel")
 }

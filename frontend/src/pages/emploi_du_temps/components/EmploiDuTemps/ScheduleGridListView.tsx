@@ -11,6 +11,10 @@ import {
   getWeekdayLabel,
   WEEKDAY_OPTIONS,
 } from "../../types";
+import {
+  getCoveredVirtualCreneauIds,
+  toMinutes,
+} from "../../utils/virtualCreneaux";
 
 type Props = {
   rows: EmploiDuTempsWithRelations[];
@@ -48,6 +52,31 @@ function sortCreneaux(left: CreneauHoraire, right: CreneauHoraire) {
   return (left.heure_debut ?? "99:99").localeCompare(right.heure_debut ?? "99:99");
 }
 
+function sortRowsByDayAndTime(
+  left: EmploiDuTempsWithRelations,
+  right: EmploiDuTempsWithRelations,
+) {
+  if (left.jour_semaine !== right.jour_semaine) {
+    return left.jour_semaine - right.jour_semaine;
+  }
+
+  const leftStart = toMinutes(left.heure_debut ?? left.creneau?.heure_debut) ?? Number.MAX_SAFE_INTEGER;
+  const rightStart = toMinutes(right.heure_debut ?? right.creneau?.heure_debut) ?? Number.MAX_SAFE_INTEGER;
+
+  if (leftStart !== rightStart) {
+    return leftStart - rightStart;
+  }
+
+  const leftEnd = toMinutes(left.heure_fin ?? left.creneau?.heure_fin) ?? Number.MAX_SAFE_INTEGER;
+  const rightEnd = toMinutes(right.heure_fin ?? right.creneau?.heure_fin) ?? Number.MAX_SAFE_INTEGER;
+
+  if (leftEnd !== rightEnd) {
+    return leftEnd - rightEnd;
+  }
+
+  return String(left.created_at).localeCompare(String(right.created_at));
+}
+
 function getMergeSignature(row?: EmploiDuTempsWithRelations | null) {
   if (!row) return null;
 
@@ -64,8 +93,13 @@ function buildMergedCells(
   creneaux: CreneauHoraire[],
 ): MergeInfo {
   const bySlot = new Map<string, EmploiDuTempsWithRelations>();
-  rows.forEach((row) => {
-    bySlot.set(getRowKey(row.jour_semaine, row.creneau_horaire_id), row);
+  [...rows].sort(sortRowsByDayAndTime).forEach((row) => {
+    getCoveredVirtualCreneauIds(row, creneaux).forEach((creneauId) => {
+      const key = getRowKey(row.jour_semaine, creneauId);
+      if (!bySlot.has(key)) {
+        bySlot.set(key, row);
+      }
+    });
   });
 
   const hiddenKeys = new Set<string>();
@@ -127,8 +161,13 @@ function GroupGrid({
   onDelete: (row: EmploiDuTempsWithRelations) => Promise<void>;
 }) {
   const bySlot = new Map<string, EmploiDuTempsWithRelations>();
-  rows.forEach((row) => {
-    bySlot.set(getRowKey(row.jour_semaine, row.creneau_horaire_id), row);
+  [...rows].sort(sortRowsByDayAndTime).forEach((row) => {
+    getCoveredVirtualCreneauIds(row, creneaux).forEach((creneauId) => {
+      const key = getRowKey(row.jour_semaine, creneauId);
+      if (!bySlot.has(key)) {
+        bySlot.set(key, row);
+      }
+    });
   });
 
   const merged = buildMergedCells(rows, creneaux);
@@ -138,10 +177,12 @@ function GroupGrid({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h4 className="text-base font-semibold text-slate-900">{title}</h4>
-          <p className="text-sm text-slate-500">{rows.length} ligne(s) affichee(s) dans la grille.</p>
+          <p className="text-sm text-slate-500">
+            Projection en grille `30 min` avec fusion automatique identique au dashboard.
+          </p>
         </div>
         <div className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-          Fusion automatique des matieres contigues
+          Grille virtuelle 30 min
         </div>
       </div>
 
@@ -203,7 +244,7 @@ function GroupGrid({
                               <p className="line-clamp-3 text-sm font-semibold text-slate-900">
                                 {getScheduleSubjectLabel(row)}
                               </p>
-                              <p className="text-[11px] font-medium text-slate-500">
+                              <p className="max-w-full line-clamp-2 break-words text-[11px] font-medium text-slate-500">
                                 {getTeacherDisplayLabel(row.enseignant)}
                               </p>
                               <div className="flex flex-wrap items-center justify-center gap-1.5">

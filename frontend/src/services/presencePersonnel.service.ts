@@ -46,15 +46,22 @@ export function getPersonnelDisplayLabel(personnel?: Partial<PersonnelWithRelati
 }
 
 export function getPresencePersonnelStatusMeta(statut?: string | null) {
-  switch ((statut ?? "").toUpperCase()) {
+  const normalized = (statut ?? "").trim();
+
+  switch (normalized.toUpperCase()) {
     case "ABSENT":
       return { label: "Absent", tone: "bg-rose-100 text-rose-700" };
     case "RETARD":
       return { label: "Retard", tone: "bg-amber-100 text-amber-700" };
     case "CONGE":
       return { label: "Conge", tone: "bg-sky-100 text-sky-700" };
-    default:
+    case "PRESENT":
       return { label: "Present", tone: "bg-emerald-100 text-emerald-700" };
+    default:
+      return {
+        label: normalized || "Present",
+        tone: "bg-slate-200 text-slate-700",
+      };
   }
 }
 

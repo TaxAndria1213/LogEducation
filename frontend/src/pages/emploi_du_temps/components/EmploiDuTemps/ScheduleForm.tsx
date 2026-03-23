@@ -30,7 +30,7 @@ function ScheduleForm() {
   const scheduleFields = useMemo<DynamicField[]>(
     () =>
       getFieldsFromZodObjectSchema(EmploiDuTempsSchema, {
-        omit: ["id", "created_at", "updated_at", "matiere_id", "enseignant_id"],
+        omit: ["id", "created_at", "updated_at", "matiere_id", "enseignant_id", "heure_debut", "heure_fin"],
         metaByField: {
           classe_id: { relation: { options: classeOptions } },
           cours_id: { relation: { options: coursOptions } },
@@ -71,6 +71,8 @@ function ScheduleForm() {
     updated_at: true,
     matiere_id: true,
     enseignant_id: true,
+    heure_debut: true,
+    heure_fin: true,
   });
 
   return (

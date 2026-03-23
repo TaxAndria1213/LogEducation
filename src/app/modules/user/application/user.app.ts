@@ -21,6 +21,39 @@ type CreateAccountFromLinkPayload = {
   };
 };
 
+function parseScopeObject(rawScope: unknown): Record<string, unknown> | null {
+  if (!rawScope) return null;
+
+  if (typeof rawScope === "string") {
+    try {
+      const parsed = JSON.parse(rawScope);
+      return parsed && typeof parsed === "object"
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return typeof rawScope === "object"
+    ? (rawScope as Record<string, unknown>)
+    : null;
+}
+
+function resolveSystemRoleName(
+  roleName?: string | null,
+  scope?: unknown,
+): string | null {
+  const scopeObject = parseScopeObject(scope);
+  const template =
+    typeof scopeObject?.role_template === "string"
+      ? scopeObject.role_template.trim().toUpperCase()
+      : "";
+  const normalizedRoleName = roleName?.trim().toUpperCase() ?? "";
+
+  return template || normalizedRoleName || null;
+}
+
 const prisma = new PrismaClient();
 
 class UserApp {
@@ -122,7 +155,7 @@ class UserApp {
       const result = await prisma.$transaction(async (tx) => {
         const role = await tx.role.findUnique({
           where: { id: roleId },
-          select: { id: true, nom: true, etablissement_id: true },
+          select: { id: true, nom: true, etablissement_id: true, scope_json: true },
         });
 
         if (!role) {
@@ -161,7 +194,7 @@ class UserApp {
           },
         });
 
-        const normalizedRoleName = role.nom.trim().toUpperCase();
+        const normalizedRoleName = resolveSystemRoleName(role.nom, role.scope_json);
         const shouldCreatePersonnel = true;
         const shouldCreateEnseignant = normalizedRoleName === "ENSEIGNANT";
 
@@ -226,6 +259,7 @@ class UserApp {
     } catch (error) {
       const message = this.getCreationErrorMessage(error);
       Response.error(res, message, 400, error as Error);
+      next(error);
       return;
     }
   }
