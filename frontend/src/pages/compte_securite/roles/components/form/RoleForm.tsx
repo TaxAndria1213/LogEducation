@@ -127,6 +127,18 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       { code: "DI.RECOMPENSES.*", label: "Recompenses", description: "Encouragements et valorisation du comportement." },
     ],
   },
+  {
+    key: "finance",
+    title: "Finance",
+    description: "Tarifs, facturation et suivi financier.",
+    items: [
+      { code: "FIN.CATALOGUEFRAIS.*", label: "Catalogue de frais", description: "Tarifs et frais reutilisables de l'etablissement." },
+      { code: "FIN.REMISES.*", label: "Remises", description: "Reductions en pourcentage ou montant fixe." },
+      { code: "FIN.FACTURES.*", label: "Factures", description: "Emission, detail et suivi des factures eleves." },
+      { code: "FIN.PAIEMENTS.*", label: "Paiements", description: "Encaissements, references et suivi des reglements." },
+      { code: "FIN.PLANSPAIEMENT.*", label: "Plans de paiement", description: "Echeanciers et tranches de paiement par eleve." },
+    ],
+  },
 ];
 
 const ROLE_TEMPLATES: RoleTemplate[] = [
@@ -135,14 +147,14 @@ const ROLE_TEMPLATES: RoleTemplate[] = [
     label: "Administrateur",
     suggestedName: "Administrateur",
     description: "Acces total aux modules et a l'administration globale.",
-    permissions: ["ADM.*", "ET.*", "CS.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*"],
+    permissions: ["ADM.*", "ET.*", "CS.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*"],
   },
   {
     key: "DIRECTION",
     label: "Direction",
     suggestedName: "Direction",
     description: "Pilotage transverse de l'etablissement sans administration pure.",
-    permissions: ["ET.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*"],
+    permissions: ["ET.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*"],
   },
   {
     key: "SECRETARIAT",
@@ -163,7 +175,7 @@ const ROLE_TEMPLATES: RoleTemplate[] = [
     label: "Comptable",
     suggestedName: "Comptable",
     description: "Acces restreint aux donnees utiles pour le suivi administratif et financier.",
-    permissions: ["ET.*", "SC.*"],
+    permissions: ["ET.*", "SC.*", "FIN.*"],
   },
   {
     key: "SURVEILLANT",

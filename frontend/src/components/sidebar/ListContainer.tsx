@@ -13,33 +13,29 @@ function ListContainer({ components, selected, setSelected, onItemClick }: Props
   const s = styles;
 
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1.5">
       {components &&
         components.map((Component, index) => {
-          if(!Component) return null
+          if (!Component) return null;
+
+          const active = selected === index;
+          const hovered = hover.state && hover.id === index;
+
           return (
             <div
               onMouseEnter={() => setHover({ id: index, state: true })}
               onMouseLeave={() => setHover({ id: -1, state: false })}
               onClick={() => {
-                if (setSelected) {
-                  setSelected(index);
-                }
-                if (onItemClick) {
-                  onItemClick();
-                }
+                setSelected?.(index);
+                onItemClick?.();
               }}
               key={index}
               style={{
-                backgroundColor:
-                  hover && hover.id === index
-                    ? s.color.hoverColor
-                    : selected === index
-                      ? s.color.hoverColor
-                      : "",
-                color: index === selected ? s.color.primary : "",
+                backgroundColor: hovered || active ? s.color.hoverColor : "",
+                color: active ? s.color.primary : "",
+                borderColor: active ? `${s.color.primary}20` : "transparent",
               }}
-              className={`cursor-pointer text-[12px] rounded`}
+              className="cursor-pointer rounded-2xl border px-1 py-1 text-[12px] transition-all duration-150"
             >
               {Component}
             </div>

@@ -24,7 +24,8 @@ type Props<T> = {
 };
 
 function ActionButton<T>({ action, row }: { action: RowAction<T>; row: T }) {
-  const onClick = async () => {
+  const onClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     if (action.confirm) {
       const ok = window.confirm(
         `${action.confirm.title ? action.confirm.title + "\n\n" : ""}${action.confirm.message ?? "Confirmer ?"}`,

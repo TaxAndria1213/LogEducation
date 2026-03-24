@@ -5,10 +5,11 @@ type Props = {
 };
 
 function Page({ children }: Props) {
-
-  return <div className="bg-white p-6 h-[100%] overflow-auto rounded font-sans">
-    {children}
-  </div>;
+  return (
+    <div className="relative min-h-full rounded-[28px] border border-slate-200 bg-white/95 p-6 shadow-sm font-sans backdrop-blur">
+      {children}
+    </div>
+  );
 }
 
 export default Page;

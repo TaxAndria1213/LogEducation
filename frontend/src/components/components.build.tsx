@@ -39,6 +39,11 @@ import { presencePersonnelComponents } from "../pages/presences/presences_person
 import { incidentDisciplinaireComponents } from "../pages/discipline/incidents/components/CI.incident";
 import { sanctionDisciplinaireComponents } from "../pages/discipline/sanctions/components/CI.sanction";
 import { recompenseComponents } from "../pages/discipline/recompenses/components/CI.recompense";
+import { catalogueFraisComponents } from "../pages/finance/catalogue_frais/components/CI.catalogueFrais";
+import { remiseComponents } from "../pages/finance/remises/components/CI.remise";
+import { factureComponents } from "../pages/finance/factures/components/CI.facture";
+import { paiementComponents } from "../pages/finance/paiements/components/CI.paiement";
+import { planPaiementComponents } from "../pages/finance/plans_paiement/components/CI.planPaiement";
 import {
   extractPermissionCodes,
   permissionMatches,
@@ -95,6 +100,11 @@ const components: ComponentIdentifierType[] = [
   ...incidentDisciplinaireComponents,
   ...sanctionDisciplinaireComponents,
   ...recompenseComponents,
+  ...catalogueFraisComponents,
+  ...remiseComponents,
+  ...factureComponents,
+  ...paiementComponents,
+  ...planPaiementComponents,
 ];
 
 /**

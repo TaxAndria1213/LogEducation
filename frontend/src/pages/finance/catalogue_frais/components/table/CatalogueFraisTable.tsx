@@ -1,0 +1,39 @@
+import React from "react";
+import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
+import { DataTable, type DataTableHandle } from "../../../../../shared/table/DataTable";
+import { useAuth } from "../../../../../auth/AuthContext";
+import CatalogueFraisService, {
+  getCatalogueFraisDisplayLabel,
+  getCatalogueFraisSecondaryLabel,
+  type CatalogueFraisWithRelations,
+} from "../../../../../services/catalogueFrais.service";
+
+export default function CatalogueFraisTable() {
+  const { etablissement_id } = useAuth();
+  const tableRef = React.useRef<DataTableHandle>(null);
+  const service = React.useMemo(() => new CatalogueFraisService(), []);
+
+  const columns: ColumnDef<CatalogueFraisWithRelations>[] = [
+    { key: "frais", header: "Frais", render: (row) => <div><p className="font-medium text-slate-900">{getCatalogueFraisDisplayLabel(row)}</p><p className="text-xs text-slate-500">{getCatalogueFraisSecondaryLabel(row)}</p></div>, sortable: false, sortKey: "nom" },
+    { key: "montant", header: "Montant", render: (row) => `${Number(row.montant ?? 0).toLocaleString("fr-FR")} ${row.devise ?? "MGA"}`, sortable: false, sortKey: "montant" },
+    { key: "periodicite", header: "Periodicite", render: (row) => row.est_recurrent ? row.periodicite ?? "Recurrent" : "Ponctuel", sortable: false, sortKey: "periodicite" },
+    { key: "usage", header: "Usage", render: (row) => row._count?.lignesFacture ?? 0, sortable: false },
+  ];
+
+  const actions: RowAction<CatalogueFraisWithRelations>[] = [
+    { label: "Supprimer", variant: "danger", confirm: { title: "Suppression", message: "Supprimer ce frais catalogue ?" }, onClick: async (row) => { await service.delete(row.id); tableRef.current?.refresh(); } },
+  ];
+
+  return (
+    <DataTable<CatalogueFraisWithRelations>
+      ref={tableRef}
+      service={service}
+      columns={columns}
+      actions={actions}
+      getRowId={(row) => row.id}
+      initialQuery={{ page: 1, take: 10, where: etablissement_id ? { etablissement_id } : {}, includeSpec: { niveau: true, _count: { select: { lignesFacture: true } } } }}
+      showSearch
+      onSearchBuildWhere={(text) => ({ AND: [...(etablissement_id ? [{ etablissement_id }] : []), { OR: [{ nom: { contains: text } }, { description: { contains: text } }, { devise: { contains: text } }, { periodicite: { contains: text } }] }] })}
+    />
+  );
+}

@@ -14,6 +14,8 @@ export type StatutPresence = "PRESENT" | "ABSENT" | "RETARD" | "EXCUSE";
 
 export type StatutFacture = "BROUILLON" | "EMISE" | "PARTIELLE" | "PAYEE" | "ANNULEE" | "EN_RETARD";
 
+export type StatutEcheancePaiement = "A_VENIR" | "PARTIELLE" | "PAYEE" | "ANNULEE" | "EN_RETARD";
+
 export type TypeCanal = "EMAIL" | "SMS" | "APP";
 
 export type TypeEvaluation = "DEVOIR" | "EXAMEN" | "ORAL" | "AUTRE";
@@ -92,6 +94,7 @@ export interface AnneeScolaire {
   cours?: Cours[];
   factures?: Facture[];
   plansPaiement?: PlanPaiementEleve[];
+  echeancesPaiement?: EcheancePaiement[];
   abonnementsTransport?: AbonnementTransport[];
   abonnementsCantine?: AbonnementCantine[];
 }
@@ -225,7 +228,7 @@ export interface UtilisateurRole {
 /**
  * *
  *  * =========================
- *  * 3) SCOLARITÉ
+ *  * 3) SCOLARITÃ‰
  *  * =========================
  */
 export interface Eleve {
@@ -250,6 +253,7 @@ export interface Eleve {
   bulletins?: Bulletin[];
   factures?: Facture[];
   plansPaiement?: PlanPaiementEleve[];
+  echeancesPaiement?: EcheancePaiement[];
   abonnementsTransport?: AbonnementTransport[];
   abonnementsCantine?: AbonnementCantine[];
   emprunts?: Emprunt[];
@@ -290,6 +294,7 @@ export interface NiveauScolaire {
   etablissement?: Etablissement;
   classes?: Classe[];
   programmes?: Programme[];
+  catalogueFrais?: CatalogueFrais[];
 }
 
 export interface Classe {
@@ -361,7 +366,7 @@ export interface Personnel {
   etablissement?: Etablissement;
   utilisateur?: Utilisateur | null;
   enseignant?: Enseignant | null;
-  presences?: PresencePersonnel | null;
+  presences?: PresencePersonnel[];
   Emprunt?: Emprunt[];
 }
 
@@ -394,7 +399,7 @@ export interface Departement {
 /**
  * *
  *  * =========================
- *  * 5) PÉDAGOGIE
+ *  * 5) PÃ‰DAGOGIE
  *  * =========================
  */
 export interface Matiere {
@@ -602,7 +607,7 @@ export interface EvenementCalendrier {
 /**
  * *
  *  * =========================
- *  * 7) PRÉSENCES
+ *  * 7) PRÃ‰SENCES
  *  * =========================
  */
 export interface SessionAppel {
@@ -664,7 +669,7 @@ export interface JustificatifAbsence {
 export interface PresencePersonnel {
   id: string;
   personnel_id: string;
-  date: Date | null;
+  date: Date;
   statut: string | null;
   note: string | null;
   created_at: Date;
@@ -790,6 +795,7 @@ export interface Notification {
 export interface CatalogueFrais {
   id: string;
   etablissement_id: string;
+  niveau_scolaire_id: string | null;
   nom: string;
   description: string | null;
   montant: Decimal;
@@ -799,6 +805,7 @@ export interface CatalogueFrais {
   created_at: Date;
   updated_at: Date;
   etablissement?: Etablissement;
+  niveau?: NiveauScolaire | null;
   lignesFacture?: FactureLigne[];
 }
 
@@ -811,6 +818,7 @@ export interface PlanPaiementEleve {
   updated_at: Date;
   eleve?: Eleve;
   annee?: AnneeScolaire;
+  echeances?: EcheancePaiement[];
 }
 
 export interface Facture {
@@ -831,6 +839,7 @@ export interface Facture {
   annee?: AnneeScolaire;
   lignes?: FactureLigne[];
   paiements?: Paiement[];
+  echeances?: EcheancePaiement[];
 }
 
 export interface FactureLigne {
@@ -858,6 +867,42 @@ export interface Paiement {
   created_at: Date;
   updated_at: Date;
   facture?: Facture;
+  affectations?: PaiementEcheanceAffectation[];
+}
+
+export interface EcheancePaiement {
+  id: string;
+  plan_paiement_id: string | null;
+  facture_id: string | null;
+  eleve_id: string;
+  annee_scolaire_id: string;
+  ordre: number;
+  libelle: string | null;
+  date_echeance: Date;
+  montant_prevu: Decimal;
+  montant_regle: Decimal;
+  montant_restant: Decimal;
+  statut: StatutEcheancePaiement;
+  devise: string;
+  notes: string | null;
+  created_at: Date;
+  updated_at: Date;
+  planPaiement?: PlanPaiementEleve | null;
+  facture?: Facture | null;
+  eleve?: Eleve;
+  annee?: AnneeScolaire;
+  affectations?: PaiementEcheanceAffectation[];
+}
+
+export interface PaiementEcheanceAffectation {
+  id: string;
+  paiement_id: string;
+  echeance_paiement_id: string;
+  montant: Decimal;
+  created_at: Date;
+  updated_at: Date;
+  paiement?: Paiement;
+  echeance?: EcheancePaiement;
 }
 
 export interface Remise {
@@ -875,7 +920,7 @@ export interface Remise {
 /**
  * *
  *  * =========================
- *  * 11) BIBLIOTHÈQUE
+ *  * 11) BIBLIOTHÃˆQUE
  *  * =========================
  */
 export interface RessourceBibliotheque {
@@ -1014,7 +1059,7 @@ export interface LienFichier {
 /**
  * *
  *  * =========================
- *  * 14) AUDIT & INTÉGRATIONS
+ *  * 14) AUDIT & INTÃ‰GRATIONS
  *  * =========================
  */
 export interface JournalAudit {

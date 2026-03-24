@@ -84,6 +84,13 @@ export const REFERENTIAL_CATALOG: ReferentialCategoryDefinition[] = [
     defaultValues: ["PRESENT", "ABSENT", "RETARD", "CONGE"],
   },
   {
+    code: "FINANCE_DEVISE",
+    titre: "Devises financieres",
+    description: "Devises proposees pour le catalogue de frais et la facturation.",
+    fieldTargets: ["catalogue_frais.devise", "finance.devise"],
+    defaultValues: ["MGA", "EUR", "USD"],
+  },
+  {
     code: "DISCIPLINE_INCIDENT_STATUT",
     titre: "Statuts des incidents disciplinaires",
     description:

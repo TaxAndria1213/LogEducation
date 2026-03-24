@@ -72,9 +72,14 @@ export default function InscriptionForm() {
   const cantineFormulaOptions = useInscriptionCreateStore(
     (state) => state.cantineFormulaOptions,
   );
+  const catalogueFraisOptions = useInscriptionCreateStore(
+    (state) => state.catalogueFraisOptions,
+  );
+  const remiseOptions = useInscriptionCreateStore((state) => state.remiseOptions);
   const scolariteInitialData = useInscriptionCreateStore(
     (state) => state.scolariteInitialData,
   );
+  const [selectedNiveauId, setSelectedNiveauId] = useState<string | null>(null);
   const [referentialCatalog, setReferentialCatalog] = useState<
     ReferentialCatalogItem[]
   >([]);
@@ -552,52 +557,93 @@ export default function InscriptionForm() {
   const financeSchema = useMemo(
     () =>
       z.object({
-        frais_inscription: z.coerce.number().min(0).default(0),
-        frais_scolarite: z.coerce.number().min(0).default(0),
-        frais_transport: z.coerce.number().min(0).default(0),
-        frais_cantine: z.coerce.number().min(0).default(0),
+        catalogue_frais_inscription_id: z.string().optional().nullable(),
+        catalogue_frais_scolarite_id: z.string().optional().nullable(),
+        catalogue_frais_transport_id: z.string().optional().nullable(),
+        catalogue_frais_cantine_id: z.string().optional().nullable(),
+        remise_id: z.string().optional().nullable(),
         remise_type: z.string().default("AUCUNE"),
         remise_valeur: z.coerce.number().min(0).default(0),
-        devise: z.string().default("MGA"),
       }),
     [],
   );
+
+  const filteredCatalogueFraisOptions = useMemo(() => {
+    if (!selectedNiveauId) return [];
+    return catalogueFraisOptions.filter(
+      (option) => option.niveau_scolaire_id === selectedNiveauId,
+    );
+  }, [catalogueFraisOptions, selectedNiveauId]);
 
   const financeFields = useMemo(
     () =>
       getFieldsFromZodObjectSchema(financeSchema, {
         labelByField: {
-          frais_inscription: "Frais d'inscription",
-          frais_scolarite: "Frais de scolarite",
-          frais_transport: "Frais de transport",
-          frais_cantine: "Frais de cantine",
+          catalogue_frais_inscription_id: "Frais d'inscription",
+          catalogue_frais_scolarite_id: "Frais de scolarite",
+          catalogue_frais_transport_id: "Frais de transport",
+          catalogue_frais_cantine_id: "Frais de cantine",
+          remise_id: "Remise preconfiguree",
           remise_type: "Type de remise",
           remise_valeur: "Valeur de la remise",
-          devise: "Devise",
         },
         metaByField: {
-          frais_inscription: {
+          catalogue_frais_inscription_id: {
+            relation: {
+              options: filteredCatalogueFraisOptions,
+            },
             fieldProps: {
               className: "md:col-span-1",
-              placeholder: "0",
+              emptyLabel: "Selectionner un frais",
+              description: selectedNiveauId
+                ? "Tarif catalogue du niveau selectionne applique a l'ouverture du dossier."
+                : "Choisissez d'abord la classe pour charger les frais du bon niveau.",
             },
           },
-          frais_scolarite: {
+          catalogue_frais_scolarite_id: {
+            relation: {
+              options: filteredCatalogueFraisOptions,
+            },
             fieldProps: {
               className: "md:col-span-1",
-              placeholder: "0",
+              emptyLabel: "Selectionner un frais",
+              description: selectedNiveauId
+                ? "Tarif standard de scolarite du niveau selectionne."
+                : "Choisissez d'abord la classe pour charger les frais du bon niveau.",
             },
           },
-          frais_transport: {
+          catalogue_frais_transport_id: {
+            relation: {
+              options: filteredCatalogueFraisOptions,
+            },
             fieldProps: {
               className: "md:col-span-1",
-              placeholder: "0",
+              emptyLabel: "Selectionner un frais",
+              description: selectedNiveauId
+                ? "Frais de transport du niveau selectionne, si le service doit etre facture."
+                : "Choisissez d'abord la classe pour charger les frais du bon niveau.",
             },
           },
-          frais_cantine: {
+          catalogue_frais_cantine_id: {
+            relation: {
+              options: filteredCatalogueFraisOptions,
+            },
             fieldProps: {
               className: "md:col-span-1",
-              placeholder: "0",
+              emptyLabel: "Selectionner un frais",
+              description: selectedNiveauId
+                ? "Frais de cantine du niveau selectionne, si la cantine est facturee."
+                : "Choisissez d'abord la classe pour charger les frais du bon niveau.",
+            },
+          },
+          remise_id: {
+            relation: {
+              options: [{ value: "", label: "Aucune remise" }, ...remiseOptions],
+            },
+            fieldProps: {
+              className: "md:col-span-1",
+              emptyLabel: "Choisir",
+              description: "Si une remise finance existe deja, elle prime sur la saisie manuelle.",
             },
           },
           remise_type: {
@@ -617,35 +663,33 @@ export default function InscriptionForm() {
             fieldProps: {
               className: "md:col-span-1",
               placeholder: "0",
-              description: "Utilise pour calculer le montant net de la facture initiale.",
-            },
-          },
-          devise: {
-            relation: {
-              options: [
-                { value: "MGA", label: "MGA" },
-                { value: "EUR", label: "EUR" },
-                { value: "USD", label: "USD" },
-              ],
-            },
-            fieldProps: {
-              className: "md:col-span-2",
-              emptyLabel: "Choisir une devise",
+              description: "Utilise seulement si aucune remise preconfiguree n'est selectionnee.",
             },
           },
         },
       }),
-    [financeSchema],
+    [filteredCatalogueFraisOptions, financeSchema, remiseOptions, selectedNiveauId],
   );
 
   const echeancierSchema = useMemo(
     () =>
-      z.object({
-        mode_paiement: z.string().min(1, "Champ requis"),
-        nombre_tranches: z.coerce.number().min(1).default(1),
-        premiere_echeance: z.coerce.date(),
-        notes: z.string().optional().nullable(),
-      }),
+      z
+        .object({
+          mode_paiement: z.string().min(1, "Champ requis"),
+          nombre_tranches: z.coerce.number().min(1).default(1),
+          premiere_echeance: z.coerce.date(),
+          notes: z.string().optional().nullable(),
+        })
+        .superRefine((data, ctx) => {
+          const mode = (data.mode_paiement ?? "").toUpperCase();
+          if (mode === "COMPTANT" && Number(data.nombre_tranches ?? 1) !== 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["nombre_tranches"],
+              message: "Le mode comptant utilise une seule tranche.",
+            });
+          }
+        }),
     [],
   );
 
@@ -663,19 +707,20 @@ export default function InscriptionForm() {
             relation: {
               options: [
                 { value: "COMPTANT", label: "Comptant" },
-                { value: "TRANCHES", label: "En tranches" },
-                { value: "MENSUEL", label: "Mensuel" },
+                { value: "ECHELONNE", label: "Echelonne" },
               ],
             },
             fieldProps: {
               className: "md:col-span-1",
               emptyLabel: "Choisir un mode",
+              description: "Comptant = reglement immediat. Echelonne = creation de plusieurs echeances.",
             },
           },
           nombre_tranches: {
             fieldProps: {
               className: "md:col-span-1",
               placeholder: "1",
+              description: "Utilise pour construire les echeances reelles du dossier financier.",
             },
           },
           premiere_echeance: {
@@ -760,17 +805,17 @@ export default function InscriptionForm() {
       {
         key: "finance",
         title: "Montants et remise",
-        desc: "Montants de depart utilises pour la facture initiale.",
+        desc: "Selection des frais catalogue et de la remise a appliquer au dossier.",
         schema: financeSchema,
         fields: financeFields,
         initialValues: {
-          frais_inscription: 0,
-          frais_scolarite: 0,
-          frais_transport: 0,
-          frais_cantine: 0,
+          catalogue_frais_inscription_id: "",
+          catalogue_frais_scolarite_id: "",
+          catalogue_frais_transport_id: "",
+          catalogue_frais_cantine_id: "",
+          remise_id: "",
           remise_type: "AUCUNE",
           remise_valeur: 0,
-          devise: "MGA",
         },
         labelMessage: "Finance",
         icon: <FiCreditCard />,
@@ -898,17 +943,28 @@ export default function InscriptionForm() {
           ),
         },
         finance: {
-          frais_inscription: Number(finalData.finance?.frais_inscription ?? 0),
-          frais_scolarite: Number(finalData.finance?.frais_scolarite ?? 0),
-          frais_transport: Number(finalData.finance?.frais_transport ?? 0),
-          frais_cantine: Number(finalData.finance?.frais_cantine ?? 0),
+          catalogue_frais_inscription_id: normalizeOptionalString(
+            finalData.finance?.catalogue_frais_inscription_id,
+          ),
+          catalogue_frais_scolarite_id: normalizeOptionalString(
+            finalData.finance?.catalogue_frais_scolarite_id,
+          ),
+          catalogue_frais_transport_id: normalizeOptionalString(
+            finalData.finance?.catalogue_frais_transport_id,
+          ),
+          catalogue_frais_cantine_id: normalizeOptionalString(
+            finalData.finance?.catalogue_frais_cantine_id,
+          ),
+          remise_id: normalizeOptionalString(finalData.finance?.remise_id),
           remise_type: finalData.finance?.remise_type ?? "AUCUNE",
           remise_valeur: Number(finalData.finance?.remise_valeur ?? 0),
-          devise: finalData.finance?.devise ?? "MGA",
         },
         echeancier: {
           mode_paiement: finalData.echeancier?.mode_paiement ?? "COMPTANT",
-          nombre_tranches: Number(finalData.echeancier?.nombre_tranches ?? 1),
+          nombre_tranches:
+            (finalData.echeancier?.mode_paiement ?? "COMPTANT") === "COMPTANT"
+              ? 1
+              : Math.max(1, Number(finalData.echeancier?.nombre_tranches ?? 1)),
           premiere_echeance: finalData.echeancier?.premiere_echeance,
           notes: normalizeOptionalString(finalData.echeancier?.notes),
         },
@@ -934,6 +990,11 @@ export default function InscriptionForm() {
       subtitle="Construisez un dossier complet et propre, depuis la fiche eleve jusqu'aux services et au plan financier."
       steps={steps}
       onFinish={handleFinish}
+      onStepChange={(_, allData) => {
+        const selectedClasseId = allData?.scolarite?.classe_id;
+        const selectedClasse = classeOptions.find((item) => item.value === selectedClasseId);
+        setSelectedNiveauId(selectedClasse?.niveau_scolaire_id ?? null);
+      }}
       submitHint="Chaque etape enregistre des informations utiles au dossier eleve. La derniere validation cree l'inscription, les rattachements et la base du suivi financier."
     />
   );

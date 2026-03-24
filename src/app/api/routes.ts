@@ -42,6 +42,11 @@ import PresencePersonnelApp from "../modules/presence_personnel/application/pres
 import IncidentDisciplinaireApp from "../modules/incident_disciplinaire/application/incident_disciplinaire.app";
 import SanctionDisciplinaireApp from "../modules/sanction_disciplinaire/application/sanction_disciplinaire.app";
 import RecompenseApp from "../modules/recompense/application/recompense.app";
+import CatalogueFraisApp from "../modules/catalogue_frais/application/catalogue_frais.app";
+import RemiseApp from "../modules/remise/application/remise.app";
+import FactureApp from "../modules/facture/application/facture.app";
+import PaiementApp from "../modules/paiement/application/paiement.app";
+import PlanPaiementEleveApp from "../modules/plan_paiement_eleve/application/plan_paiement_eleve.app";
 
 export class ApiRoutes {
   public app: Application;
@@ -93,6 +98,11 @@ export class ApiRoutes {
   private incidentDisciplinaire: IncidentDisciplinaireApp;
   private sanctionDisciplinaire: SanctionDisciplinaireApp;
   private recompense: RecompenseApp;
+  private catalogueFrais: CatalogueFraisApp;
+  private remise: RemiseApp;
+  private factureFinance: FactureApp;
+  private paiementFinance: PaiementApp;
+  private planPaiementFinance: PlanPaiementEleveApp;
 
   constructor(app: Application) {
     this.app = app;
@@ -139,6 +149,11 @@ export class ApiRoutes {
     this.incidentDisciplinaire = new IncidentDisciplinaireApp(app);
     this.sanctionDisciplinaire = new SanctionDisciplinaireApp(app);
     this.recompense = new RecompenseApp(app);
+    this.catalogueFrais = new CatalogueFraisApp(app);
+    this.remise = new RemiseApp(app);
+    this.factureFinance = new FactureApp(app);
+    this.paiementFinance = new PaiementApp(app);
+    this.planPaiementFinance = new PlanPaiementEleveApp(app);
     this.routes();
   }
 
@@ -192,6 +207,11 @@ export class ApiRoutes {
     this.router.use("/incident-disciplinaire", this.incidentDisciplinaire.routes());
     this.router.use("/sanction-disciplinaire", this.sanctionDisciplinaire.routes());
     this.router.use("/recompense", this.recompense.routes());
+    this.router.use("/catalogue-frais", this.catalogueFrais.routes());
+    this.router.use("/remise", this.remise.routes());
+    this.router.use("/facture", this.factureFinance.routes());
+    this.router.use("/paiement", this.paiementFinance.routes());
+    this.router.use("/plan-paiement-eleve", this.planPaiementFinance.routes());
 
     return this.router;
   }

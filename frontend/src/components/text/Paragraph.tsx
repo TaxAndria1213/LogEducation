@@ -4,7 +4,9 @@ type props = {
 function Paragraph({description}: props) {
   return (
     <div>
-          <p className="text-gray-500 text-[12px]">{description}</p>
+      <p className="max-w-3xl text-[12px] leading-5 text-slate-500 md:text-[13px]">
+        {description}
+      </p>
     </div>
   )
 }

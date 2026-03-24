@@ -5,17 +5,21 @@ import { formatDateWithLocalTimezone } from "../../../../app/utils/functions";
 import type {
   AnneeScolaire,
   ArretTransport,
+  CatalogueFrais,
   Classe,
   FormuleCantine,
   LigneTransport,
+  Remise,
 } from "../../../../types/models";
 import type { InscriptionScolarite } from "../../../../types/form";
 import AnneeScolaireService from "../../../../services/anneeScolaire.service";
 import ArretTransportService from "../../../../services/arretTransport.service";
 import ClasseService from "../../../../services/classe.service";
+import CatalogueFraisService from "../../../../services/catalogueFrais.service";
 import FormuleCantineService from "../../../../services/formuleCantine.service";
 import InscriptionService from "../../../../services/inscription.service";
 import LigneTransportService from "../../../../services/ligneTransport.service";
+import RemiseService from "../../../../services/remise.service";
 
 export type InscriptionCreateInput = Partial<Inscription>;
 type Option = { value: string; label: string };
@@ -32,10 +36,25 @@ type State = {
   service: InscriptionService;
 
   scolariteInitialData: Partial<InscriptionScolarite> | null;
-  classeOptions: Option[];
+  classeOptions: Array<Option & { niveau_scolaire_id?: string | null }>;
   transportLineOptions: Option[];
   transportStopOptions: Option[];
   cantineFormulaOptions: Option[];
+  catalogueFraisOptions: Array<
+    Option & {
+      montant: number;
+      devise: string;
+      est_recurrent?: boolean;
+      periodicite?: string | null;
+      niveau_scolaire_id?: string | null;
+    }
+  >;
+  remiseOptions: Array<
+    Option & {
+      type: string;
+      valeur: number;
+    }
+  >;
   anneeScolaireId: string | null;
 
   onCreate: (inscription: InscriptionCreateInput) => Promise<any>;
@@ -56,6 +75,8 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
   transportLineOptions: [],
   transportStopOptions: [],
   cantineFormulaOptions: [],
+  catalogueFraisOptions: [],
+  remiseOptions: [],
   anneeScolaireId: null,
 
   setLoading: (loading: boolean) => set({ loading }),
@@ -76,6 +97,8 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
           transportLineOptions: [],
           transportStopOptions: [],
           cantineFormulaOptions: [],
+          catalogueFraisOptions: [],
+          remiseOptions: [],
         });
         throw new Error("Aucune annee scolaire active n'est disponible.");
       }
@@ -97,8 +120,10 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
       const ligneTransportService = new LigneTransportService();
       const arretTransportService = new ArretTransportService();
       const formuleCantineService = new FormuleCantineService();
+      const catalogueFraisService = new CatalogueFraisService();
+      const remiseService = new RemiseService();
 
-      const [classes, lignes, arrets, formules] = await Promise.all([
+      const [classes, lignes, arrets, formules, catalogueFrais, remises] = await Promise.all([
         classeService.getAll({
           take: 1000,
           where: JSON.stringify({
@@ -130,6 +155,15 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
           where: JSON.stringify({ etablissement_id }),
           orderBy: JSON.stringify([{ nom: "asc" }]),
         }),
+        catalogueFraisService.getForEtablissement(etablissement_id, {
+          take: 1000,
+          includeSpec: JSON.stringify({ niveau: true }),
+          orderBy: JSON.stringify([{ nom: "asc" }]),
+        }),
+        remiseService.getForEtablissement(etablissement_id, {
+          take: 1000,
+          orderBy: JSON.stringify([{ nom: "asc" }]),
+        }),
       ]);
 
       const classeOptions =
@@ -141,7 +175,8 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
               value: classe.id,
               label: [classe.nom, classe.niveau?.nom, classe.site?.nom]
                 .filter(Boolean)
-                .join(" · "),
+                .join(" - "),
+              niveau_scolaire_id: classe.niveau_scolaire_id ?? null,
             }))
           : [];
 
@@ -162,7 +197,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
                 },
               ) => ({
                 value: arret.id,
-                label: [arret.ligne?.nom, arret.nom].filter(Boolean).join(" · "),
+                label: [arret.ligne?.nom, arret.nom].filter(Boolean).join(" - "),
               }),
             )
           : [];
@@ -175,12 +210,48 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
             }))
           : [];
 
+      const catalogueFraisOptions =
+        catalogueFrais?.status.success
+          ? catalogueFrais.data.data.map((frais: CatalogueFrais & {
+              niveau?: { nom?: string | null } | null;
+            }) => ({
+              value: frais.id,
+              label: [
+                frais.nom,
+                frais.niveau?.nom ? `Niveau ${frais.niveau.nom}` : null,
+                `${Number(frais.montant ?? 0).toLocaleString("fr-FR")} ${frais.devise ?? "MGA"}`,
+              ]
+                .filter(Boolean)
+                .join(" - "),
+              montant: Number(frais.montant ?? 0),
+              devise: frais.devise ?? "MGA",
+              est_recurrent: Boolean(frais.est_recurrent),
+              periodicite: frais.periodicite ?? null,
+              niveau_scolaire_id: frais.niveau_scolaire_id ?? null,
+            }))
+          : [];
+
+      const remiseOptions =
+        remises?.status.success
+          ? remises.data.data.map((remise: Remise) => ({
+              value: remise.id,
+              label:
+                remise.type?.toUpperCase() === "PERCENT"
+                  ? `${remise.nom} - ${Number(remise.valeur ?? 0).toLocaleString("fr-FR")}%`
+                  : `${remise.nom} - ${Number(remise.valeur ?? 0).toLocaleString("fr-FR")}`,
+              type: remise.type ?? "FIXED",
+              valeur: Number(remise.valeur ?? 0),
+            }))
+          : [];
+
       const today = toDateOnlyString(new Date());
       set({
         classeOptions,
         transportLineOptions,
         transportStopOptions,
         cantineFormulaOptions,
+        catalogueFraisOptions,
+        remiseOptions,
         scolariteInitialData: {
           ...get().scolariteInitialData,
           code_eleve: code,
