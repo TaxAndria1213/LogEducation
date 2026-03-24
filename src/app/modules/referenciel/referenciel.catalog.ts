@@ -83,6 +83,42 @@ export const REFERENTIAL_CATALOG: ReferentialCategoryDefinition[] = [
     fieldTargets: ["presence_personnel.statut"],
     defaultValues: ["PRESENT", "ABSENT", "RETARD", "CONGE"],
   },
+  {
+    code: "DISCIPLINE_INCIDENT_STATUT",
+    titre: "Statuts des incidents disciplinaires",
+    description:
+      "Statuts proposes pour suivre l'avancement des incidents disciplinaires.",
+    fieldTargets: ["discipline.incident.statut"],
+    defaultValues: ["OUVERT", "EN_COURS", "RESOLU", "CLOS"],
+  },
+  {
+    code: "DISCIPLINE_SANCTION_TYPE",
+    titre: "Types de sanctions disciplinaires",
+    description:
+      "Types d'actions disciplinaires pouvant etre rattaches a un incident.",
+    fieldTargets: ["discipline.sanction.type_action"],
+    defaultValues: [
+      "Avertissement",
+      "Retenue",
+      "Convocation",
+      "Exclusion temporaire",
+      "Travail d'interet scolaire",
+    ],
+  },
+  {
+    code: "DISCIPLINE_RECOMPENSE_RAISON",
+    titre: "Motifs de recompense",
+    description:
+      "Motifs valorisables pour les encouragements et recompenses eleves.",
+    fieldTargets: ["discipline.recompense.raison"],
+    defaultValues: [
+      "Bon comportement",
+      "Esprit d'entraide",
+      "Participation active",
+      "Assiduite",
+      "Progression remarquable",
+    ],
+  },
 ];
 
 export const REFERENTIAL_CODES = new Set(

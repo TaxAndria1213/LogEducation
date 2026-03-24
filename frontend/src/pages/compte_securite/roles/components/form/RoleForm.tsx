@@ -117,6 +117,16 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       { code: "PR.PRESENCESPERSONNEL.*", label: "Presences personnel", description: "Suivi quotidien du personnel." },
     ],
   },
+  {
+    key: "discipline",
+    title: "Discipline",
+    description: "Incidents, sanctions et recompenses eleves.",
+    items: [
+      { code: "DI.INCIDENTS.*", label: "Incidents", description: "Signalement et suivi des incidents eleves." },
+      { code: "DI.SANCTIONS.*", label: "Sanctions", description: "Actions disciplinaires et decisions prises." },
+      { code: "DI.RECOMPENSES.*", label: "Recompenses", description: "Encouragements et valorisation du comportement." },
+    ],
+  },
 ];
 
 const ROLE_TEMPLATES: RoleTemplate[] = [
@@ -125,21 +135,21 @@ const ROLE_TEMPLATES: RoleTemplate[] = [
     label: "Administrateur",
     suggestedName: "Administrateur",
     description: "Acces total aux modules et a l'administration globale.",
-    permissions: ["ADM.*", "ET.*", "CS.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*"],
+    permissions: ["ADM.*", "ET.*", "CS.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*"],
   },
   {
     key: "DIRECTION",
     label: "Direction",
     suggestedName: "Direction",
     description: "Pilotage transverse de l'etablissement sans administration pure.",
-    permissions: ["ET.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*"],
+    permissions: ["ET.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*"],
   },
   {
     key: "SECRETARIAT",
     label: "Secretariat",
     suggestedName: "Secretariat",
     description: "Orientation administrative, eleves et suivi quotidien.",
-    permissions: ["ET.*", "SC.*", "PR.*"],
+    permissions: ["ET.*", "SC.*", "PR.*", "DI.*"],
   },
   {
     key: "ENSEIGNANT",
@@ -160,7 +170,7 @@ const ROLE_TEMPLATES: RoleTemplate[] = [
     label: "Surveillant",
     suggestedName: "Surveillant",
     description: "Controle terrain, appels et classes utiles au suivi.",
-    permissions: ["PR.*", "EDT.*", "SC.CLASSES.*", "SC.ELEVES.*"],
+    permissions: ["PR.*", "EDT.*", "SC.CLASSES.*", "SC.ELEVES.*", "DI.*"],
   },
   {
     key: "PARENT",

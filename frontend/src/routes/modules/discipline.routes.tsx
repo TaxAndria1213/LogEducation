@@ -1,5 +1,8 @@
 import { FiFlag } from "react-icons/fi";
 import type { menu } from "../../types/types";
+import IncidentsIndex from "../../pages/discipline/incidents/IncidentsIndex";
+import SanctionsIndex from "../../pages/discipline/sanctions/SanctionsIndex";
+import RecompensesIndex from "../../pages/discipline/recompenses/RecompensesIndex";
 
 export const discipline: menu = {
   key: "discipline",
@@ -10,16 +13,19 @@ export const discipline: menu = {
       key: "incidents",
       name: "Incidents",
       path: "/discipline/incidents",
+      elements: <IncidentsIndex />,
     },
     {
       key: "sanctions",
       name: "Sanctions",
       path: "/discipline/sanctions",
+      elements: <SanctionsIndex />,
     },
     {
       key: "recompenses",
-      name: "Récompenses",
+      name: "Recompenses",
       path: "/discipline/recompenses",
+      elements: <RecompensesIndex />,
     },
   ],
 };

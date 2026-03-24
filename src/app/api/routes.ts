@@ -39,6 +39,9 @@ import PresenceEleveApp from "../modules/presence_eleve/application/presence_ele
 import MotifAbsenceApp from "../modules/motif_absence/application/motif_absence.app";
 import JustificatifAbsenceApp from "../modules/justificatif_absence/application/justificatif_absence.app";
 import PresencePersonnelApp from "../modules/presence_personnel/application/presence_personnel.app";
+import IncidentDisciplinaireApp from "../modules/incident_disciplinaire/application/incident_disciplinaire.app";
+import SanctionDisciplinaireApp from "../modules/sanction_disciplinaire/application/sanction_disciplinaire.app";
+import RecompenseApp from "../modules/recompense/application/recompense.app";
 
 export class ApiRoutes {
   public app: Application;
@@ -87,6 +90,9 @@ export class ApiRoutes {
   private motifAbsence: MotifAbsenceApp;
   private justificatifAbsence: JustificatifAbsenceApp;
   private presencePersonnel: PresencePersonnelApp;
+  private incidentDisciplinaire: IncidentDisciplinaireApp;
+  private sanctionDisciplinaire: SanctionDisciplinaireApp;
+  private recompense: RecompenseApp;
 
   constructor(app: Application) {
     this.app = app;
@@ -130,6 +136,9 @@ export class ApiRoutes {
     this.motifAbsence = new MotifAbsenceApp(app);
     this.justificatifAbsence = new JustificatifAbsenceApp(app);
     this.presencePersonnel = new PresencePersonnelApp(app);
+    this.incidentDisciplinaire = new IncidentDisciplinaireApp(app);
+    this.sanctionDisciplinaire = new SanctionDisciplinaireApp(app);
+    this.recompense = new RecompenseApp(app);
     this.routes();
   }
 
@@ -180,6 +189,9 @@ export class ApiRoutes {
     this.router.use("/motif-absence", this.motifAbsence.routes());
     this.router.use("/justificatif-absence", this.justificatifAbsence.routes());
     this.router.use("/presence-personnel", this.presencePersonnel.routes());
+    this.router.use("/incident-disciplinaire", this.incidentDisciplinaire.routes());
+    this.router.use("/sanction-disciplinaire", this.sanctionDisciplinaire.routes());
+    this.router.use("/recompense", this.recompense.routes());
 
     return this.router;
   }

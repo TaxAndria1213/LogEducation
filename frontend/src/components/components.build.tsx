@@ -36,6 +36,9 @@ import { sessionAppelComponents } from "../pages/presences/sessions_appel/compon
 import { presenceEleveComponents } from "../pages/presences/presences_eleves/components/CI.presenceEleve";
 import { justificatifAbsenceComponents } from "../pages/presences/justificatifs/components/CI.justificatif";
 import { presencePersonnelComponents } from "../pages/presences/presences_personnel/components/CI.presencePersonnel";
+import { incidentDisciplinaireComponents } from "../pages/discipline/incidents/components/CI.incident";
+import { sanctionDisciplinaireComponents } from "../pages/discipline/sanctions/components/CI.sanction";
+import { recompenseComponents } from "../pages/discipline/recompenses/components/CI.recompense";
 import {
   extractPermissionCodes,
   permissionMatches,
@@ -89,6 +92,9 @@ const components: ComponentIdentifierType[] = [
   ...presenceEleveComponents,
   ...justificatifAbsenceComponents,
   ...presencePersonnelComponents,
+  ...incidentDisciplinaireComponents,
+  ...sanctionDisciplinaireComponents,
+  ...recompenseComponents,
 ];
 
 /**
