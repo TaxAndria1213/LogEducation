@@ -24,10 +24,11 @@ type FactureFormValues = {
   etablissement_id: string;
   eleve_id: string;
   annee_scolaire_id: string;
+  remise_id: string;
   numero_facture: string;
   date_emission: string;
   date_echeance: string;
-  statut: "BROUILLON" | "EMISE" | "ANNULEE";
+  statut: "BROUILLON" | "EMISE";
   devise: string;
   lignes: FactureLineForm[];
 };
@@ -44,18 +45,25 @@ const lineSchema = z.object({
   catalogue_frais_id: z.string().optional(),
   libelle: z.string().trim().min(1, "Le libelle de la ligne est requis."),
   quantite: z.coerce.number().int().min(1, "La quantite doit etre au moins 1."),
-  prix_unitaire: z.coerce.number().refine(Number.isFinite, "Le prix unitaire est invalide."),
-  montant: z.coerce.number().refine(Number.isFinite, "Le montant est invalide."),
+  prix_unitaire: z.coerce
+    .number()
+    .min(0, "Le prix unitaire ne peut pas etre negatif.")
+    .refine(Number.isFinite, "Le prix unitaire est invalide."),
+  montant: z.coerce
+    .number()
+    .min(0, "Le montant ne peut pas etre negatif.")
+    .refine(Number.isFinite, "Le montant est invalide."),
 });
 
 const factureSchema = z.object({
   etablissement_id: z.string().min(1, "L'etablissement est requis."),
   eleve_id: z.string().min(1, "L'eleve est requis."),
   annee_scolaire_id: z.string().min(1, "L'annee scolaire est requise."),
+  remise_id: z.string().optional(),
   numero_facture: z.string().trim().optional(),
   date_emission: z.string().min(1, "La date d'emission est requise."),
   date_echeance: z.string().optional(),
-  statut: z.enum(["BROUILLON", "EMISE", "ANNULEE"]),
+  statut: z.enum(["BROUILLON", "EMISE"]),
   devise: z.string().trim().min(1, "La devise est requise."),
   lignes: z.array(lineSchema).min(1, "Ajoute au moins une ligne de facture."),
 });
@@ -74,7 +82,6 @@ function toInputDate(value?: string | Date | null) {
 function normalizeEditableStatus(status?: string | null): FactureFormValues["statut"] {
   const normalized = (status ?? "").toUpperCase();
   if (normalized === "BROUILLON") return "BROUILLON";
-  if (normalized === "ANNULEE") return "ANNULEE";
   return "EMISE";
 }
 
@@ -92,6 +99,7 @@ export default function FactureForm({ mode = "create" }: Props) {
   const anneeScolaireOptions = useFactureCreateStore((state) => state.anneeScolaireOptions);
   const eleveOptions = useFactureCreateStore((state) => state.eleveOptions);
   const catalogueFraisOptions = useFactureCreateStore((state) => state.catalogueFraisOptions);
+  const remiseOptions = useFactureCreateStore((state) => state.remiseOptions);
   const getOptions = useFactureCreateStore((state) => state.getOptions);
 
   useEffect(() => {
@@ -106,6 +114,7 @@ export default function FactureForm({ mode = "create" }: Props) {
         selectedFacture?.etablissement_id ?? initialData?.etablissement_id ?? etablissement_id ?? "",
       eleve_id: selectedFacture?.eleve_id ?? "",
       annee_scolaire_id: selectedFacture?.annee_scolaire_id ?? initialData?.annee_scolaire_id ?? "",
+      remise_id: selectedFacture?.remise_id ?? initialData?.remise_id ?? "",
       numero_facture: mode === "edit" ? selectedFacture?.numero_facture ?? "" : "",
       date_emission: toInputDate(selectedFacture?.date_emission ?? new Date()),
       date_echeance: toInputDate(selectedFacture?.date_echeance),
@@ -150,9 +159,12 @@ export default function FactureForm({ mode = "create" }: Props) {
     return selectedEleve?.niveauxParAnnee?.[selectedAnneeId ?? ""] ?? null;
   }, [eleveOptions, selectedAnneeId, selectedEleveId]);
   const filteredCatalogueFraisOptions = useMemo(() => {
-    if (!selectedNiveauId) return [];
+    if (!selectedNiveauId) {
+      return catalogueFraisOptions.filter((option) => !option.niveau_scolaire_id);
+    }
     return catalogueFraisOptions.filter(
-      (option) => option.niveau_scolaire_id === selectedNiveauId,
+      (option) =>
+        option.niveau_scolaire_id === selectedNiveauId || !option.niveau_scolaire_id,
     );
   }, [catalogueFraisOptions, selectedNiveauId]);
   const total = useMemo(
@@ -164,6 +176,7 @@ export default function FactureForm({ mode = "create" }: Props) {
     try {
       const payload = {
         ...data,
+        remise_id: data.remise_id?.trim() || null,
         numero_facture: data.numero_facture?.trim() || undefined,
         date_echeance: data.date_echeance?.trim() ? data.date_echeance : null,
         lignes: data.lignes.map((line) => ({
@@ -224,7 +237,7 @@ export default function FactureForm({ mode = "create" }: Props) {
                 </p>
               </div>
 
-              <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
                 <Controller
                   control={control}
                   name="eleve_id"
@@ -274,6 +287,35 @@ export default function FactureForm({ mode = "create" }: Props) {
                       >
                         <option value="">Selectionner une annee</option>
                         {anneeScolaireOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </FieldWrapper>
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="remise_id"
+                  render={({ field, fieldState }) => (
+                    <FieldWrapper
+                      id="remise_id"
+                      label="Remise"
+                      error={fieldState.error?.message}
+                      description="Si une remise est selectionnee, le back ajoute automatiquement la ligne de remise et recalcule le total net."
+                    >
+                      <select
+                        id="remise_id"
+                        value={field.value ?? ""}
+                        onChange={(event) => field.onChange(event.target.value)}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        className={getInputClassName(Boolean(fieldState.error))}
+                      >
+                        <option value="">Aucune remise</option>
+                        {remiseOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -397,7 +439,6 @@ export default function FactureForm({ mode = "create" }: Props) {
                       >
                         <option value="EMISE">Emise</option>
                         <option value="BROUILLON">Brouillon</option>
-                        <option value="ANNULEE">Annulee</option>
                       </select>
                     </FieldWrapper>
                   )}

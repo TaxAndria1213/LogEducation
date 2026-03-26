@@ -3,7 +3,11 @@ import { PrismaClient, type Prisma, type StatutFacture } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
-import { ensureFactureEcheances, syncFactureStatusFromEcheances } from "../../finance_shared/utils/echeance_paiement";
+import {
+  applyCreditToFactureEcheances,
+  ensureFactureEcheances,
+  syncFactureStatusFromEcheances,
+} from "../../finance_shared/utils/echeance_paiement";
 import FactureModel from "../models/facture.model";
 
 type FactureLinePayload = {
@@ -19,6 +23,9 @@ type FacturePayload = {
   etablissement_id: string;
   eleve_id: string;
   annee_scolaire_id: string;
+  remise_id: string | null;
+  facture_origine_id: string | null;
+  nature: string;
   numero_facture: string;
   date_emission: Date;
   date_echeance: Date | null;
@@ -26,6 +33,26 @@ type FacturePayload = {
   total_montant: number;
   devise: string;
   lignes: FactureLinePayload[];
+};
+
+type ResolvedRemise = {
+  id: string;
+  nom: string;
+  type: string;
+  valeur: number;
+};
+
+type FactureOperationPayload = {
+  motif: string | null;
+  montant: number | null;
+};
+
+type OperationFinanciereDelegate = {
+  create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
+};
+
+type TransactionWithFinance = Prisma.TransactionClient & {
+  operationFinanciere: OperationFinanciereDelegate;
 };
 
 class FactureApp {
@@ -46,6 +73,8 @@ class FactureApp {
     this.router.post("/", this.create.bind(this));
     this.router.get("/", this.getAll.bind(this));
     this.router.get("/:id", this.getOne.bind(this));
+    this.router.post("/:id/cancel", this.cancel.bind(this));
+    this.router.post("/:id/avoir", this.createCreditNote.bind(this));
     this.router.delete("/:id", this.delete.bind(this));
     this.router.put("/:id", this.update.bind(this));
     return this.router;
@@ -88,6 +117,12 @@ class FactureApp {
     throw new Error("Une date de facture est invalide.");
   }
 
+  private normalizeText(value: unknown) {
+    if (typeof value !== "string") return null;
+    const normalized = value.trim().replace(/\s+/g, " ");
+    return normalized || null;
+  }
+
   private toNumber(value: unknown, fallback = 0) {
     const number = Number(value ?? fallback);
     if (!Number.isFinite(number)) throw new Error("Une valeur numerique de facture est invalide.");
@@ -118,6 +153,12 @@ class FactureApp {
 
     if (!Number.isFinite(prix_unitaire) || !Number.isFinite(montant)) {
       throw new Error(`Les montants de la ligne ${index + 1} sont invalides.`);
+    }
+
+    if (prix_unitaire < 0 || montant < 0) {
+      throw new Error(
+        `La ligne ${index + 1} ne peut pas porter de montant negatif hors remise calculee automatiquement.`,
+      );
     }
 
     return {
@@ -159,6 +200,27 @@ class FactureApp {
       },
     });
     return `FAC-${year}-${String(count + 1).padStart(4, "0")}`;
+  }
+
+  private async buildCreditNoteNumber(tenantId: string) {
+    const year = new Date().getFullYear();
+    const count = await this.prisma.facture.count({
+      where: {
+        etablissement_id: tenantId,
+        numero_facture: {
+          startsWith: `AV-${year}-`,
+        },
+      },
+    });
+    return `AV-${year}-${String(count + 1).padStart(4, "0")}`;
+  }
+
+  private getActivePaiements(paiements: Array<{ statut?: string | null; montant?: unknown }>) {
+    return paiements.filter((item) => (item.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE");
+  }
+
+  private sumPaiements(paiements: Array<{ montant?: unknown }>) {
+    return paiements.reduce((sum, item) => sum + Number(item.montant ?? 0), 0);
   }
 
   private async ensureEleveAndAnnee(
@@ -243,14 +305,87 @@ class FactureApp {
       where: {
         etablissement_id: tenantId,
         id: { in: ids },
-        niveau_scolaire_id: niveauId,
+        OR: [
+          { niveau_scolaire_id: niveauId },
+          { niveau_scolaire_id: null },
+        ],
       } as never,
       select: { id: true },
     });
 
     if (found.length !== ids.length) {
-      throw new Error("Une ligne reference un frais catalogue qui ne correspond pas au niveau scolaire de l'eleve.");
+      throw new Error("Une ligne reference un frais catalogue qui n'est pas applicable au niveau scolaire de l'eleve.");
     }
+  }
+
+  private async resolveRemise(
+    remiseId: string | null,
+    tenantId: string,
+  ): Promise<ResolvedRemise | null> {
+    if (!remiseId) return null;
+
+    const remise = await this.prisma.remise.findFirst({
+      where: {
+        id: remiseId,
+        etablissement_id: tenantId,
+      },
+      select: {
+        id: true,
+        nom: true,
+        type: true,
+        valeur: true,
+      },
+    });
+
+    if (!remise) {
+      throw new Error("La remise selectionnee n'appartient pas a cet etablissement.");
+    }
+
+    return {
+      id: remise.id,
+      nom: remise.nom,
+      type: remise.type,
+      valeur: this.toNumber(remise.valeur),
+    };
+  }
+
+  private computeDiscount(total: number, remiseType: string, remiseValeur: number): number {
+    if (total <= 0 || remiseValeur <= 0) return 0;
+
+    if (remiseType.toUpperCase() === "PERCENT") {
+      return this.toNumber(total * (remiseValeur / 100));
+    }
+
+    if (remiseType.toUpperCase() === "FIXED") {
+      return Math.min(total, this.toNumber(remiseValeur));
+    }
+
+    return 0;
+  }
+
+  private isGeneratedDiscountLine(line: FactureLinePayload) {
+    return !line.catalogue_frais_id && /^remise appliquee/i.test(line.libelle);
+  }
+
+  private applyDiscountToLines(lines: FactureLinePayload[], remise: ResolvedRemise | null) {
+    const baseLines = lines.filter((line) => !this.isGeneratedDiscountLine(line));
+    if (!remise) return baseLines;
+
+    const grossTotal = this.toNumber(baseLines.reduce((sum, line) => sum + line.montant, 0));
+    const discountAmount = this.computeDiscount(grossTotal, remise.type, remise.valeur);
+
+    if (discountAmount <= 0) return baseLines;
+
+    return [
+      ...baseLines,
+      {
+        libelle: `Remise appliquee - ${remise.nom}`,
+        quantite: 1,
+        prix_unitaire: this.toNumber(-discountAmount),
+        montant: this.toNumber(-discountAmount),
+        catalogue_frais_id: null,
+      },
+    ];
   }
 
   private async normalizePayload(
@@ -258,6 +393,34 @@ class FactureApp {
     tenantId: string,
     current?: Record<string, unknown>,
   ): Promise<FacturePayload> {
+    const requestedNature =
+      typeof raw.nature === "string" && raw.nature.trim() ? raw.nature.trim().toUpperCase() : null;
+    const currentNature =
+      typeof current?.nature === "string" && String(current.nature).trim()
+        ? String(current.nature).trim().toUpperCase()
+        : null;
+    if ((requestedNature && requestedNature !== "FACTURE") || currentNature === "AVOIR") {
+      throw new Error(
+        "Les avoirs doivent etre geres uniquement depuis l'operation dediee, pas depuis le CRUD facture.",
+      );
+    }
+
+    const rawFactureOrigine =
+      typeof raw.facture_origine_id === "string" && raw.facture_origine_id.trim()
+        ? raw.facture_origine_id.trim()
+        : raw.facture_origine_id === null
+          ? "__NULL__"
+          : null;
+    const currentFactureOrigine =
+      typeof current?.facture_origine_id === "string" && String(current.facture_origine_id).trim()
+        ? String(current.facture_origine_id).trim()
+        : null;
+    if (rawFactureOrigine !== null || currentFactureOrigine) {
+      throw new Error(
+        "Le lien vers une facture d'origine est reserve aux avoirs et ne peut pas etre modifie depuis ce formulaire.",
+      );
+    }
+
     const eleve_id =
       typeof raw.eleve_id === "string"
         ? raw.eleve_id.trim()
@@ -276,12 +439,44 @@ class FactureApp {
         : typeof current?.devise === "string" && String(current.devise).trim()
           ? String(current.devise).trim().toUpperCase()
           : "MGA";
+    const remise_id =
+      typeof raw.remise_id === "string" && raw.remise_id.trim()
+        ? raw.remise_id.trim()
+        : raw.remise_id === null
+          ? null
+          : typeof current?.remise_id === "string" && String(current.remise_id).trim()
+            ? String(current.remise_id).trim()
+            : null;
+    const facture_origine_id =
+      typeof raw.facture_origine_id === "string" && raw.facture_origine_id.trim()
+        ? raw.facture_origine_id.trim()
+        : raw.facture_origine_id === null
+          ? null
+          : typeof current?.facture_origine_id === "string" && String(current.facture_origine_id).trim()
+            ? String(current.facture_origine_id).trim()
+            : null;
+    const nature =
+      typeof raw.nature === "string" && raw.nature.trim()
+        ? raw.nature.trim().toUpperCase()
+        : typeof current?.nature === "string" && String(current.nature).trim()
+          ? String(current.nature).trim().toUpperCase()
+          : "FACTURE";
     const requestedStatus =
       typeof raw.statut === "string"
         ? raw.statut
         : typeof current?.statut === "string"
           ? String(current.statut)
           : undefined;
+    const normalizedRequestedStatus = (requestedStatus ?? "").trim().toUpperCase();
+    if (
+      normalizedRequestedStatus &&
+      normalizedRequestedStatus !== "BROUILLON" &&
+      normalizedRequestedStatus !== "EMISE"
+    ) {
+      throw new Error(
+        "Le CRUD facture n'autorise que les statuts BROUILLON ou EMISE. Utilise les operations dediees pour annuler.",
+      );
+    }
 
     const inputLines = Array.isArray(raw.lignes)
       ? raw.lignes
@@ -299,6 +494,7 @@ class FactureApp {
 
     await this.ensureEleveAndAnnee(eleve_id, annee_scolaire_id, tenantId);
     await this.validateCatalogueLinks(tenantId, eleve_id, annee_scolaire_id, lignes);
+    const remise = await this.resolveRemise(remise_id, tenantId);
 
     const numero_facture =
       typeof raw.numero_facture === "string" && raw.numero_facture.trim()
@@ -317,14 +513,14 @@ class FactureApp {
             ? this.parseDate(raw.date_echeance ?? current?.date_echeance)
             : null;
 
+    const normalizedLines = this.applyDiscountToLines(lignes, remise);
     const total_montant = this.toNumber(
-      lignes.reduce((sum, line) => sum + line.montant, 0),
+      normalizedLines.reduce((sum, line) => sum + line.montant, 0),
     );
 
     const paidAmount = Array.isArray(current?.paiements)
-      ? (current?.paiements as Array<{ montant?: unknown }>).reduce(
-          (sum, payment) => sum + this.toNumber(payment?.montant ?? 0),
-          0,
+      ? this.sumPaiements(
+          this.getActivePaiements(current?.paiements as Array<{ montant?: unknown; statut?: string | null }>),
         )
       : 0;
 
@@ -336,14 +532,34 @@ class FactureApp {
       etablissement_id: tenantId,
       eleve_id,
       annee_scolaire_id,
+      remise_id: remise?.id ?? null,
+      facture_origine_id,
+      nature,
       numero_facture,
       date_emission,
       date_echeance,
       statut,
       total_montant,
       devise,
-      lignes,
+      lignes: normalizedLines,
     };
+  }
+
+  private normalizeOperationPayload(raw: Record<string, unknown>): FactureOperationPayload {
+    const montantValue = raw.montant;
+    const montant =
+      montantValue === null || montantValue === undefined || montantValue === ""
+        ? null
+        : this.toNumber(montantValue);
+
+    return {
+      motif: this.normalizeText(raw.motif),
+      montant,
+    };
+  }
+
+  private getOperationFinanciereDelegate(tx: Prisma.TransactionClient) {
+    return (tx as unknown as TransactionWithFinance).operationFinanciere;
   }
 
   private buildScopedWhere(existingWhere: Record<string, unknown>, tenantId: string) {
@@ -364,6 +580,9 @@ class FactureApp {
         },
       },
       annee: true,
+      remise: true,
+      factureOrigine: true,
+      avoirs: true,
       lignes: {
         include: {
           frais: true,
@@ -376,6 +595,9 @@ class FactureApp {
         orderBy: [{ ordre: "asc" as const }, { date_echeance: "asc" as const }],
       },
       paiements: true,
+      operationsFinancieres: {
+        orderBy: [{ created_at: "desc" as const }],
+      },
     };
   }
 
@@ -397,13 +619,16 @@ class FactureApp {
             etablissement_id: data.etablissement_id,
             eleve_id: data.eleve_id,
             annee_scolaire_id: data.annee_scolaire_id,
+            remise_id: data.remise_id,
+            facture_origine_id: data.facture_origine_id,
+            nature: data.nature,
             numero_facture: data.numero_facture,
             date_emission: data.date_emission,
             date_echeance: data.date_echeance,
             statut: data.statut,
             total_montant: data.total_montant,
             devise: data.devise,
-          },
+          } as never,
         });
 
         if (data.lignes.length > 0) {
@@ -483,7 +708,7 @@ class FactureApp {
         throw new Error("Facture introuvable pour cet etablissement.");
       }
 
-      if ((existing.paiements?.length ?? 0) > 0) {
+      if (this.getActivePaiements(existing.paiements ?? []).length > 0) {
         throw new Error("Cette facture contient deja des paiements et ne peut pas etre supprimee.");
       }
 
@@ -513,7 +738,7 @@ class FactureApp {
         throw new Error("Facture introuvable pour cet etablissement.");
       }
 
-      if ((existing.paiements?.length ?? 0) > 0) {
+      if (this.getActivePaiements(existing.paiements ?? []).length > 0) {
         throw new Error("Cette facture contient deja des paiements et ne peut plus etre modifiee.");
       }
 
@@ -533,13 +758,16 @@ class FactureApp {
           data: {
             eleve_id: data.eleve_id,
             annee_scolaire_id: data.annee_scolaire_id,
+            remise_id: data.remise_id,
+            facture_origine_id: data.facture_origine_id,
+            nature: data.nature,
             numero_facture: data.numero_facture,
             date_emission: data.date_emission,
             date_echeance: data.date_echeance,
             statut: data.statut,
             total_montant: data.total_montant,
             devise: data.devise,
-          },
+          } as never,
         });
 
         await tx.factureLigne.deleteMany({
@@ -571,6 +799,172 @@ class FactureApp {
       Response.success(res, "Facture mise a jour avec succes.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de la facture", 400, error as Error);
+      next(error);
+    }
+  }
+
+  private async cancel(req: Request, res: R, next: NextFunction): Promise<void> {
+    try {
+      const tenantId = this.resolveTenantId(req);
+      const existing = await this.getScopedFacture(req.params.id, tenantId);
+
+      if (!existing) {
+        throw new Error("Facture introuvable pour cet etablissement.");
+      }
+
+      const activePayments = this.getActivePaiements(existing.paiements ?? []);
+      if (activePayments.length > 0) {
+        throw new Error("Cette facture comporte des paiements actifs. Annule ou rembourse d'abord les paiements.");
+      }
+
+      if ((existing.echeances ?? []).some((item) => item.plan_paiement_id)) {
+        throw new Error("Cette facture est rattachee a un plan de paiement. Traite-la depuis le plan de paiement.");
+      }
+
+      const payload = this.normalizeOperationPayload(req.body as Record<string, unknown>);
+
+      const result = await this.prisma.$transaction(async (tx) => {
+        await tx.facture.update({
+          where: { id: existing.id },
+          data: {
+            statut: "ANNULEE",
+          },
+        });
+
+        await tx.echeancePaiement.updateMany({
+          where: { facture_id: existing.id },
+          data: {
+            statut: "ANNULEE",
+            montant_restant: 0,
+          },
+        });
+
+        await this.getOperationFinanciereDelegate(tx).create({
+          data: {
+            etablissement_id: tenantId,
+            facture_id: existing.id,
+            cree_par_utilisateur_id: (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
+            type: "ANNULATION_FACTURE",
+            montant: existing.total_montant,
+            motif: payload.motif,
+            details_json: {
+              numero_facture: existing.numero_facture,
+              nature: (existing as { nature?: string | null }).nature ?? "FACTURE",
+            },
+          },
+        });
+
+        return tx.facture.findUnique({
+          where: { id: existing.id },
+          include: this.getInclude(),
+        });
+      });
+
+      Response.success(res, "Facture annulee avec succes.", result);
+    } catch (error) {
+      Response.error(res, "Erreur lors de l'annulation de la facture", 400, error as Error);
+      next(error);
+    }
+  }
+
+  private async createCreditNote(req: Request, res: R, next: NextFunction): Promise<void> {
+    try {
+      const tenantId = this.resolveTenantId(req);
+      const existing = await this.getScopedFacture(req.params.id, tenantId);
+
+      if (!existing) {
+        throw new Error("Facture introuvable pour cet etablissement.");
+      }
+
+      if ((existing.statut ?? "").toUpperCase() === "ANNULEE") {
+        throw new Error("Impossible de creer un avoir sur une facture deja annulee.");
+      }
+
+      const payload = this.normalizeOperationPayload(req.body as Record<string, unknown>);
+      const outstandingAmount =
+        (existing.echeances?.length ?? 0) > 0
+          ? Number(
+              existing.echeances?.reduce(
+                (sum, item) => sum + Math.max(0, Number(item.montant_restant ?? 0)),
+                0,
+              ) ?? 0,
+            )
+          : Math.max(
+              0,
+              Number(existing.total_montant ?? 0) -
+                this.sumPaiements(this.getActivePaiements(existing.paiements ?? [])),
+            );
+      const amount =
+        payload.montant ??
+        outstandingAmount ??
+        Number(existing.total_montant ?? 0);
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error("Le montant de l'avoir doit etre strictement positif.");
+      }
+
+      const creditNumber = await this.buildCreditNoteNumber(tenantId);
+
+      const result = await this.prisma.$transaction(async (tx) => {
+        const compensationAmount = Math.min(amount, outstandingAmount);
+        const avoir = await tx.facture.create({
+          data: {
+            etablissement_id: tenantId,
+            eleve_id: existing.eleve_id,
+            annee_scolaire_id: existing.annee_scolaire_id,
+            remise_id: null,
+            facture_origine_id: existing.id,
+            nature: "AVOIR",
+            numero_facture: creditNumber,
+            date_emission: new Date(),
+            date_echeance: new Date(),
+            statut: "PAYEE",
+            total_montant: -Math.abs(amount),
+            devise: existing.devise ?? "MGA",
+          } as never,
+        });
+
+        await tx.factureLigne.create({
+          data: {
+            facture_id: avoir.id,
+            catalogue_frais_id: null,
+            libelle: `Avoir pour ${existing.numero_facture}`,
+            quantite: 1,
+            prix_unitaire: -Math.abs(amount),
+            montant: -Math.abs(amount),
+          },
+        });
+
+        if (compensationAmount > 0) {
+          await applyCreditToFactureEcheances(tx, existing.id, compensationAmount);
+        }
+
+        await this.getOperationFinanciereDelegate(tx).create({
+          data: {
+            etablissement_id: tenantId,
+            facture_id: existing.id,
+            cree_par_utilisateur_id: (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
+            type: "AVOIR_FACTURE",
+            montant: amount,
+            motif: payload.motif,
+            details_json: {
+              facture_avoir_id: avoir.id,
+              numero_avoir: avoir.numero_facture,
+              montant_applique: compensationAmount,
+              montant_non_affecte: Math.max(0, amount - compensationAmount),
+            },
+          },
+        });
+
+        return tx.facture.findUnique({
+          where: { id: avoir.id },
+          include: this.getInclude(),
+        });
+      });
+
+      Response.success(res, "Avoir cree avec succes.", result);
+    } catch (error) {
+      Response.error(res, "Erreur lors de la creation de l'avoir", 400, error as Error);
       next(error);
     }
   }

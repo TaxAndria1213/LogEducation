@@ -58,6 +58,20 @@ type EnsureFactureArgs = {
   lines?: EcheanceInput[];
 };
 
+type FactureWithFinanceRelations = {
+  id: string;
+  statut: string;
+  devise: string;
+  eleve_id: string;
+  annee_scolaire_id: string;
+  date_echeance: Date | null;
+  date_emission: Date;
+  numero_facture: string;
+  total_montant: Prisma.Decimal | number;
+  paiements: Array<Paiement & { statut?: string | null }>;
+  echeances: EcheanceRecord[];
+};
+
 export function roundMoney(value: number) {
   return Math.round(value * 100) / 100;
 }
@@ -72,6 +86,10 @@ export function normalizeText(value: unknown) {
   if (typeof value !== "string") return null;
   const normalized = value.trim().replace(/\s+/g, " ");
   return normalized || null;
+}
+
+function getActivePaiements<T extends { statut?: string | null }>(paiements: T[]) {
+  return paiements.filter((item) => (item.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE");
 }
 
 export function normalizeDateOnly(value: string | Date) {
@@ -429,21 +447,21 @@ export async function upsertPlanEcheances(tx: DbClient, args: SyncPlanArgs) {
 }
 
 export async function ensureFactureEcheances(tx: DbClient, args: EnsureFactureArgs) {
-  const facture = await tx.facture.findUnique({
+  const facture = (await tx.facture.findUnique({
     where: { id: args.factureId },
     include: {
       echeances: {
         orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
       },
-      paiements: {
-        select: { id: true },
-      },
+      paiements: true,
     },
-  });
+  })) as FactureWithFinanceRelations | null;
 
   if (!facture) return;
 
-  if (facture.paiements.length > 0 && args.lines) {
+  const activePaiements = getActivePaiements(facture.paiements ?? []);
+
+  if (activePaiements.length > 0 && args.lines) {
     throw new Error("Impossible de reconfigurer les echeances d'une facture deja encaissee.");
   }
 
@@ -498,6 +516,78 @@ export async function ensureFactureEcheances(tx: DbClient, args: EnsureFactureAr
   }
 
   await syncFactureStatusFromEcheances(tx, facture.id);
+}
+
+export async function applyCreditToFactureEcheances(
+  tx: DbClient,
+  factureId: string,
+  creditAmount: number,
+) {
+  const normalizedCredit = roundMoney(Math.max(0, toMoney(creditAmount)));
+  if (normalizedCredit <= 0) return 0;
+
+  const loadFacture = async () =>
+    tx.facture.findUnique({
+      where: { id: factureId },
+      include: {
+        echeances: {
+          orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
+        },
+      },
+    });
+
+  let facture = await loadFacture();
+  if (!facture) return 0;
+
+  if ((facture.echeances?.length ?? 0) === 0) {
+    await ensureFactureEcheances(tx, { factureId });
+    facture = await loadFacture();
+    if (!facture) return 0;
+  }
+
+  let remaining = normalizedCredit;
+  const touchedPlanIds = new Set<string>();
+
+  for (const echeance of facture.echeances as EcheanceRecord[]) {
+    if (remaining <= 0) break;
+    if ((echeance.statut ?? "").toUpperCase() === "ANNULEE") continue;
+
+    const montantPrevu = roundMoney(toMoney(echeance.montant_prevu));
+    const montantRegle = roundMoney(toMoney(echeance.montant_regle));
+    const reducible = roundMoney(Math.max(0, montantPrevu - montantRegle));
+    if (reducible <= 0) continue;
+
+    const reduction = roundMoney(Math.min(reducible, remaining));
+    const nextMontantPrevu = roundMoney(Math.max(montantRegle, montantPrevu - reduction));
+    const nextMontantRestant = roundMoney(Math.max(0, nextMontantPrevu - montantRegle));
+
+    await tx.echeancePaiement.update({
+      where: { id: echeance.id },
+      data: {
+        montant_prevu: nextMontantPrevu,
+        montant_restant: nextMontantRestant,
+        statut: deriveEcheanceStatus(
+          nextMontantPrevu,
+          montantRegle,
+          echeance.date_echeance,
+          echeance.statut,
+        ),
+      },
+    });
+
+    if (echeance.plan_paiement_id) {
+      touchedPlanIds.add(echeance.plan_paiement_id);
+    }
+
+    remaining = roundMoney(Math.max(0, remaining - reduction));
+  }
+
+  for (const planId of touchedPlanIds) {
+    await syncPlanJsonFromEcheances(tx, planId);
+  }
+
+  await syncFactureStatusFromEcheances(tx, factureId);
+  return roundMoney(normalizedCredit - remaining);
 }
 
 export async function resolveLinkedFactureIdForPlan(tx: DbClient, planId: string) {
@@ -559,18 +649,20 @@ export async function resolveLinkedFactureIdForPlan(tx: DbClient, planId: string
   return null;
 }
 
-export async function allocatePaiementsToFactureEcheances(tx: DbClient, factureId: string) {
-  const facture = await tx.facture.findUnique({
+export async function allocatePaiementsToFactureEcheances(
+  tx: DbClient,
+  factureId: string,
+  paymentTargets?: Record<string, string[]>,
+) {
+  const facture = (await tx.facture.findUnique({
     where: { id: factureId },
     include: {
-      paiements: {
-        orderBy: [{ paye_le: "asc" }, { created_at: "asc" }],
-      },
+      paiements: true,
       echeances: {
         orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
       },
     },
-  });
+  })) as FactureWithFinanceRelations | null;
 
   if (!facture) return;
 
@@ -578,24 +670,49 @@ export async function allocatePaiementsToFactureEcheances(tx: DbClient, factureI
     await ensureFactureEcheances(tx, { factureId });
   }
 
-  const refreshed = await tx.facture.findUnique({
+  const refreshed = (await tx.facture.findUnique({
     where: { id: factureId },
     include: {
-      paiements: {
-        orderBy: [{ paye_le: "asc" }, { created_at: "asc" }],
-      },
+      paiements: true,
       echeances: {
         orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
       },
     },
-  });
+  })) as FactureWithFinanceRelations | null;
 
   if (!refreshed || refreshed.echeances.length === 0) {
     await syncFactureStatusFromEcheances(tx, factureId);
     return;
   }
 
-  const paiementIds = refreshed.paiements.map((item) => item.id);
+  const activePaiements = getActivePaiements(
+    [...(refreshed.paiements ?? [])].sort(
+      (left, right) =>
+        new Date(left.paye_le).getTime() - new Date(right.paye_le).getTime() ||
+        new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
+    ),
+  );
+
+  const paiementIds = activePaiements.map((item) => item.id);
+  const previousAffectations = paiementIds.length
+    ? await tx.paiementEcheanceAffectation.findMany({
+        where: {
+          paiement_id: { in: paiementIds },
+        },
+        include: {
+          echeance: true,
+        },
+      })
+    : [];
+
+  const previousTargetsByPayment = new Map<string, string[]>();
+  for (const affectation of previousAffectations) {
+    const key = affectation.paiement_id;
+    const current = previousTargetsByPayment.get(key) ?? [];
+    current.push(affectation.echeance_paiement_id);
+    previousTargetsByPayment.set(key, current);
+  }
+
   if (paiementIds.length > 0) {
     await tx.paiementEcheanceAffectation.deleteMany({
       where: {
@@ -625,9 +742,17 @@ export async function allocatePaiementsToFactureEcheances(tx: DbClient, factureI
 
   const allocations: Prisma.PaiementEcheanceAffectationCreateManyInput[] = [];
 
-  for (const paiement of refreshed.paiements as Paiement[]) {
+  for (const paiement of activePaiements as Paiement[]) {
     let remaining = toMoney(paiement.montant);
-    for (const echeance of localEcheances) {
+    const preferredIds = paymentTargets?.[paiement.id] ?? previousTargetsByPayment.get(paiement.id) ?? [];
+    const orderedEcheances = [
+      ...preferredIds
+        .map((id) => localEcheances.find((item) => item.id === id))
+        .filter((value): value is (typeof localEcheances)[number] => Boolean(value)),
+      ...localEcheances.filter((item) => !preferredIds.includes(item.id)),
+    ];
+
+    for (const echeance of orderedEcheances) {
       if (remaining <= 0) break;
       if (echeance.montant_restant <= 0) continue;
 

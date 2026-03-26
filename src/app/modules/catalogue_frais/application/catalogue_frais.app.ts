@@ -7,7 +7,7 @@ import CatalogueFraisModel from "../models/catalogue_frais.model";
 
 type CatalogueFraisPayload = {
   etablissement_id: string;
-  niveau_scolaire_id: string;
+  niveau_scolaire_id: string | null;
   nom: string;
   description: string | null;
   montant: number;
@@ -77,8 +77,8 @@ class CatalogueFraisApp {
     };
     const niveau_scolaire_id =
       typeof rawWithNiveau.niveau_scolaire_id === "string"
-        ? rawWithNiveau.niveau_scolaire_id.trim()
-        : "";
+        ? rawWithNiveau.niveau_scolaire_id.trim() || null
+        : null;
     const nom = typeof raw.nom === "string" ? raw.nom.trim().replace(/\s+/g, " ") : "";
     const description =
       typeof raw.description === "string" && raw.description.trim()
@@ -93,13 +93,8 @@ class CatalogueFraisApp {
         ? raw.periodicite.trim().toLowerCase()
         : null;
     const montant = Number(raw.montant ?? 0);
-
     if (!nom) {
       throw new Error("Le nom du frais est requis.");
-    }
-
-    if (!niveau_scolaire_id) {
-      throw new Error("Le niveau scolaire du frais est requis.");
     }
 
     if (!Number.isFinite(montant) || montant < 0) {
@@ -148,11 +143,17 @@ class CatalogueFraisApp {
     });
 
     if (duplicate) {
-      throw new Error("Un frais avec ce nom existe deja pour ce niveau dans cet etablissement.");
+      throw new Error(
+        data.niveau_scolaire_id
+          ? "Un frais avec ce nom existe deja pour ce niveau dans cet etablissement."
+          : "Un frais global avec ce nom existe deja dans cet etablissement.",
+      );
     }
   }
 
-  private async ensureScopedNiveau(niveauId: string, tenantId: string) {
+  private async ensureScopedNiveau(niveauId: string | null, tenantId: string) {
+    if (!niveauId) return;
+
     const niveau = await this.prisma.niveauScolaire.findFirst({
       where: {
         id: niveauId,

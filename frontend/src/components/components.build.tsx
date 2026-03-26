@@ -44,6 +44,9 @@ import { remiseComponents } from "../pages/finance/remises/components/CI.remise"
 import { factureComponents } from "../pages/finance/factures/components/CI.facture";
 import { paiementComponents } from "../pages/finance/paiements/components/CI.paiement";
 import { planPaiementComponents } from "../pages/finance/plans_paiement/components/CI.planPaiement";
+import { journalFinancierComponents } from "../pages/finance/journal_financier/components/CI.journalFinancier";
+import { ressourceBibliothequeComponents } from "../pages/bibliotheque/ressources/components/CI.ressourceBibliotheque";
+import { empruntBibliothequeComponents } from "../pages/bibliotheque/emprunts/components/CI.empruntBibliotheque";
 import {
   extractPermissionCodes,
   permissionMatches,
@@ -105,6 +108,9 @@ const components: ComponentIdentifierType[] = [
   ...factureComponents,
   ...paiementComponents,
   ...planPaiementComponents,
+  ...journalFinancierComponents,
+  ...ressourceBibliothequeComponents,
+  ...empruntBibliothequeComponents,
 ];
 
 /**

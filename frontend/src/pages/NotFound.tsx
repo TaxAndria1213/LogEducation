@@ -5,9 +5,6 @@ export default function NotFound() {
   const s = styles;
   return (
     <div className="flex flex-col items-center justify-center bg-gray-50 text-gray-800 p-4">
-      <h1 style={{
-        color: s.color.primary,
-      }} className="text-6xl font-extrabold  mb-4">Maintenance</h1>
       <h2 className="text-2xl font-semibold mb-2">Page en maintenance</h2>
       <p className="mb-8 text-gray-500 text-center max-w-md">
         Désolé, la page que vous essayez d'accéder est en cours de maintenance.

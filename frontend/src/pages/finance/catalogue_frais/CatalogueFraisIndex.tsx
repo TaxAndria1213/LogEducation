@@ -1,8 +1,8 @@
 import { useEffect, useState, type JSX } from "react";
 import ERPPage from "../../../components/page/ERPPage";
+import { getComponentById } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
-import { getComponentById } from "../../../components/components.build";
 import NotFound from "../../NotFound";
 import { useCatalogueFraisStore } from "./store/CatalogueFraisIndexStore";
 
@@ -14,16 +14,15 @@ export default function CatalogueFraisIndex() {
   const renderedElement = useCatalogueFraisStore((state) => state.renderedComponent);
   const setRenderState = useCatalogueFraisStore((state) => state.setRenderState);
   const setRenderedComponent = useCatalogueFraisStore((state) => state.setRenderedComponent);
-
-  useEffect(() => {
-    if (renderedElement) setRender(renderedElement);
-  }, [renderedElement]);
-
   const OptionButton = getComponentById("FIN.CATALOGUEFRAIS.MENUACTION");
   const DashboardButton = getComponentById("FIN.CATALOGUEFRAIS.MENUACTION.DASHBOARD");
   const ListButton = getComponentById("FIN.CATALOGUEFRAIS.MENUACTION.LIST");
   const ParametreButton = getComponentById("FIN.CATALOGUEFRAIS.MENUACTION.PARAMETRE");
   const AddButton = getComponentById("FIN.CATALOGUEFRAIS.MENUACTION.ADD");
+
+  useEffect(() => {
+    if (renderedElement) setRender(renderedElement);
+  }, [renderedElement]);
 
   return (
     <ERPPage
@@ -36,18 +35,18 @@ export default function CatalogueFraisIndex() {
         />,
       ]}
     >
-      <div className="flex">
-        <div className="flex-1">{render}</div>
+      <div className="flex items-start gap-4">
+        <div className="min-w-0 flex-1">{render}</div>
         <PageSidebarPopup open={menuListIsVisible} onClose={() => setMenuListIsVisible(false)}>
           <ListContainer
             onItemClick={() => setMenuListIsVisible(false)}
             selected={renderState}
             setSelected={setRenderState}
             components={[
-              <DashboardButton key="dashboard" onClick={() => setRenderedComponent("dashboard")} />,
-              <ListButton key="list" onClick={() => setRenderedComponent("list")} />,
-              <ParametreButton key="parametre" onClick={() => setRenderedComponent("parametre")} />,
-              <AddButton key="add" onClick={() => setRenderedComponent("add")} />,
+              <DashboardButton onClick={() => setRenderedComponent("dashboard")} />,
+              <ListButton onClick={() => setRenderedComponent("list")} />,
+              <ParametreButton onClick={() => setRenderedComponent("parametre")} />,
+              <AddButton onClick={() => setRenderedComponent("add")} />,
             ]}
           />
         </PageSidebarPopup>

@@ -20,6 +20,7 @@ import FormuleCantineService from "../../../../services/formuleCantine.service";
 import InscriptionService from "../../../../services/inscription.service";
 import LigneTransportService from "../../../../services/ligneTransport.service";
 import RemiseService from "../../../../services/remise.service";
+import ParentTuteurService from "../../../../services/parentTuteur.service";
 
 export type InscriptionCreateInput = Partial<Inscription>;
 type Option = { value: string; label: string };
@@ -55,6 +56,12 @@ type State = {
       valeur: number;
     }
   >;
+  parentTuteurOptions: Array<
+    Option & {
+      telephone?: string | null;
+      email?: string | null;
+    }
+  >;
   anneeScolaireId: string | null;
 
   onCreate: (inscription: InscriptionCreateInput) => Promise<any>;
@@ -77,6 +84,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
   cantineFormulaOptions: [],
   catalogueFraisOptions: [],
   remiseOptions: [],
+  parentTuteurOptions: [],
   anneeScolaireId: null,
 
   setLoading: (loading: boolean) => set({ loading }),
@@ -99,6 +107,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
           cantineFormulaOptions: [],
           catalogueFraisOptions: [],
           remiseOptions: [],
+          parentTuteurOptions: [],
         });
         throw new Error("Aucune annee scolaire active n'est disponible.");
       }
@@ -122,8 +131,9 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
       const formuleCantineService = new FormuleCantineService();
       const catalogueFraisService = new CatalogueFraisService();
       const remiseService = new RemiseService();
+      const parentTuteurService = new ParentTuteurService();
 
-      const [classes, lignes, arrets, formules, catalogueFrais, remises] = await Promise.all([
+      const [classes, lignes, arrets, formules, catalogueFrais, remises, parentsTuteurs] = await Promise.all([
         classeService.getAll({
           take: 1000,
           where: JSON.stringify({
@@ -163,6 +173,11 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
         remiseService.getForEtablissement(etablissement_id, {
           take: 1000,
           orderBy: JSON.stringify([{ nom: "asc" }]),
+        }),
+        parentTuteurService.getAll({
+          take: 1000,
+          where: JSON.stringify({ etablissement_id }),
+          orderBy: JSON.stringify([{ nom_complet: "asc" }]),
         }),
       ]);
 
@@ -244,6 +259,27 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
             }))
           : [];
 
+      const parentTuteurOptions =
+        parentsTuteurs?.status.success
+          ? parentsTuteurs.data.data.map((parent: {
+              id: string;
+              nom_complet?: string | null;
+              telephone?: string | null;
+              email?: string | null;
+            }) => ({
+              value: parent.id,
+              label: [
+                parent.nom_complet?.trim() || "Parent / tuteur",
+                parent.telephone?.trim() || null,
+                parent.email?.trim() || null,
+              ]
+                .filter(Boolean)
+                .join(" - "),
+              telephone: parent.telephone ?? null,
+              email: parent.email ?? null,
+            }))
+          : [];
+
       const today = toDateOnlyString(new Date());
       set({
         classeOptions,
@@ -252,6 +288,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
         cantineFormulaOptions,
         catalogueFraisOptions,
         remiseOptions,
+        parentTuteurOptions,
         scolariteInitialData: {
           ...get().scolariteInitialData,
           code_eleve: code,

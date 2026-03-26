@@ -1,16 +1,19 @@
 import Service from "../app/api/Service";
+import { Http } from "../app/api/Http";
 import type {
   AnneeScolaire,
   CatalogueFrais,
   Facture,
   FactureLigne,
   Paiement,
+  Remise,
 } from "../types/models";
 
 type QueryParams = Record<string, unknown>;
 
 export type FactureEcheance = {
   id: string;
+  plan_paiement_id?: string | null;
   ordre: number;
   libelle?: string | null;
   date_echeance: string | Date;
@@ -28,6 +31,8 @@ export type FactureEcheance = {
 };
 
 export type FactureWithRelations = Facture & {
+  nature?: string | null;
+  facture_origine_id?: string | null;
   eleve?: {
     id: string;
     code_eleve?: string | null;
@@ -39,13 +44,24 @@ export type FactureWithRelations = Facture & {
     } | null;
   } | null;
   annee?: Pick<AnneeScolaire, "id" | "nom"> | null;
+  remise?: Pick<Remise, "id" | "nom" | "type" | "valeur"> | null;
+  factureOrigine?: Pick<Facture, "id" | "numero_facture" | "statut" | "total_montant"> | null;
+  avoirs?: Array<Pick<Facture, "id" | "numero_facture" | "statut" | "total_montant" | "created_at">>;
   lignes?: Array<
     FactureLigne & {
       frais?: Pick<CatalogueFrais, "id" | "nom" | "devise"> | null;
     }
   >;
-  paiements?: Paiement[];
+  paiements?: Array<Paiement & { statut?: string | null }>;
   echeances?: FactureEcheance[];
+  operationsFinancieres?: Array<{
+    id: string;
+    type: string;
+    montant?: number | string | null;
+    motif?: string | null;
+    created_at?: string | Date;
+    details_json?: Record<string, unknown> | null;
+  }>;
 };
 
 function parseObjectParam(value: unknown): Record<string, unknown> | undefined {
@@ -78,6 +94,16 @@ export function getFactureStatusLabel(status?: string | null) {
       return "En retard";
     default:
       return status ?? "Statut inconnu";
+  }
+}
+
+export function getFactureNatureLabel(nature?: string | null) {
+  switch ((nature ?? "FACTURE").toUpperCase()) {
+    case "AVOIR":
+      return "Avoir";
+    case "FACTURE":
+    default:
+      return "Facture";
   }
 }
 
@@ -117,6 +143,14 @@ class FactureService extends Service {
           ? params.orderBy
           : JSON.stringify(params.orderBy ?? [{ date_emission: "desc" }, { created_at: "desc" }]),
     } as Record<string, string | number | Date | boolean>);
+  }
+
+  async cancel(id: string, payload: { motif?: string | null } = {}) {
+    return Http.post(["/api", this.url, id, "cancel"].join("/"), payload);
+  }
+
+  async createAvoir(id: string, payload: { motif?: string | null; montant?: number | null } = {}) {
+    return Http.post(["/api", this.url, id, "avoir"].join("/"), payload);
   }
 
   private buildScopedWhere(etablissementId: string, whereParam?: unknown) {

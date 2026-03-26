@@ -795,6 +795,7 @@ export interface CatalogueFrais {
   description: string | null;
   montant: Decimal;
   devise: string;
+  nombre_tranches: number;
   est_recurrent: boolean;
   periodicite: string | null;
   created_at: Date;
@@ -808,11 +809,13 @@ export interface PlanPaiementEleve {
   id: string;
   eleve_id: string;
   annee_scolaire_id: string;
+  remise_id: string | null;
   plan_json: JsonValue;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;
   annee?: AnneeScolaire;
+  remise?: Remise | null;
   echeances?: EcheancePaiement[];
 }
 
@@ -821,6 +824,7 @@ export interface Facture {
   etablissement_id: string;
   eleve_id: string;
   annee_scolaire_id: string;
+  remise_id: string | null;
   numero_facture: string;
   date_emission: Date;
   date_echeance: Date | null;
@@ -832,6 +836,7 @@ export interface Facture {
   etablissement?: Etablissement;
   eleve?: Eleve;
   annee?: AnneeScolaire;
+  remise?: Remise | null;
   lignes?: FactureLigne[];
   paiements?: Paiement[];
   echeances?: EcheancePaiement[];
@@ -910,6 +915,8 @@ export interface Remise {
   created_at: Date;
   updated_at: Date;
   etablissement?: Etablissement;
+  factures?: Facture[];
+  plansPaiement?: PlanPaiementEleve[];
 }
 
 /**

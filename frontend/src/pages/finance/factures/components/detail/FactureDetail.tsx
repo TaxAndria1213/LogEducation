@@ -1,10 +1,41 @@
-import { FiCalendar, FiCreditCard, FiEdit3, FiFileText, FiLayers, FiList, FiUser } from "react-icons/fi";
-import { useFactureStore } from "../../store/FactureIndexStore";
+import { useEffect, useMemo, useState } from "react";
+import {
+  FiBell,
+  FiCalendar,
+  FiCreditCard,
+  FiDownload,
+  FiEdit3,
+  FiFileText,
+  FiLayers,
+  FiList,
+  FiPrinter,
+  FiRefreshCcw,
+  FiSlash,
+  FiUser,
+} from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { useInfo } from "../../../../../hooks/useInfo";
+import FinanceRelanceService, {
+  type FinanceRelanceHistoryItem,
+} from "../../../../../services/financeRelance.service";
+import FactureService from "../../../../../services/facture.service";
 import {
   getFactureDisplayLabel,
+  getFactureNatureLabel,
   getFactureSecondaryLabel,
   getFactureStatusLabel,
+  type FactureWithRelations,
 } from "../../../../../services/facture.service";
+import { useFactureStore } from "../../store/FactureIndexStore";
+import {
+  getFinanceModulePath,
+  queueFinanceNavigationTarget,
+} from "../../../../finance/utils/crossNavigation";
+import {
+  buildFacturePdf,
+  downloadPdf,
+  previewPdf,
+} from "../../../../finance/utils/financePdf";
 
 function formatMoney(value: unknown, devise = "MGA") {
   const amount =
@@ -23,9 +54,105 @@ function formatDate(value?: string | Date | null) {
   return date.toLocaleDateString("fr-FR");
 }
 
+function getApiErrorMessage(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "data" in error.response &&
+    typeof error.response.data === "object" &&
+    error.response.data !== null &&
+    "message" in error.response.data &&
+    typeof error.response.data.message === "string"
+  ) {
+    return error.response.data.message;
+  }
+  return "Impossible de traiter la relance financiere.";
+}
+
 export default function FactureDetail() {
   const facture = useFactureStore((state) => state.selectedFacture);
+  const setSelectedFacture = useFactureStore((state) => state.setSelectedFacture);
   const setRenderedComponent = useFactureStore((state) => state.setRenderedComponent);
+  const navigate = useNavigate();
+  const { info } = useInfo();
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [relances, setRelances] = useState<FinanceRelanceHistoryItem[]>([]);
+  const [loadingRelances, setLoadingRelances] = useState(false);
+  const [sendingRelance, setSendingRelance] = useState(false);
+  const [processingAccountingAction, setProcessingAccountingAction] = useState(false);
+  const service = useMemo(() => new FactureService(), []);
+
+  const openInstallments = useMemo(
+    () =>
+      (facture?.echeances ?? []).filter((item) => {
+        const remaining =
+          typeof item.montant_restant === "number"
+            ? item.montant_restant
+            : Number(item.montant_restant ?? 0);
+        const status = (item.statut ?? "").toUpperCase();
+        return remaining > 0 && status !== "PAYEE" && status !== "ANNULEE";
+      }),
+    [facture?.echeances],
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    const loadDetail = async () => {
+      if (!facture?.id) return;
+      setLoadingDetail(true);
+
+      try {
+        const response = await service.get(facture.id);
+        if (!active) return;
+        setSelectedFacture(response.data as FactureWithRelations);
+      } catch {
+        // Leave the currently selected record visible if refresh fails.
+      } finally {
+        if (active) setLoadingDetail(false);
+      }
+    };
+
+    void loadDetail();
+
+    return () => {
+      active = false;
+    };
+  }, [facture?.id, service, setSelectedFacture]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadRelances = async () => {
+      if (!facture?.id) return;
+      setLoadingRelances(true);
+
+      try {
+        const service = new FinanceRelanceService();
+        const result = await service.getHistory({
+          facture_id: facture.id,
+          take: 20,
+        });
+
+        if (!active) return;
+        setRelances(Array.isArray(result.data) ? (result.data as FinanceRelanceHistoryItem[]) : []);
+      } catch {
+        if (!active) return;
+        setRelances([]);
+      } finally {
+        if (active) setLoadingRelances(false);
+      }
+    };
+
+    void loadRelances();
+
+    return () => {
+      active = false;
+    };
+  }, [facture?.id]);
 
   if (!facture) {
     return (
@@ -39,10 +166,136 @@ export default function FactureDetail() {
   }
 
   const canEdit = (facture.paiements?.length ?? 0) === 0;
-  const totalPaid = (facture.paiements ?? []).reduce((sum, item) => {
+  const activePaiements = (facture.paiements ?? []).filter(
+    (item) => (item.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE",
+  );
+  const totalPaid = activePaiements.reduce((sum, item) => {
     const amount = typeof item.montant === "number" ? item.montant : Number(item.montant ?? 0);
     return sum + (Number.isFinite(amount) ? amount : 0);
   }, 0);
+  const hasPlanLinkedEcheances = (facture.echeances ?? []).some((item) => item.plan_paiement_id);
+  const canCancel = activePaiements.length === 0 && !hasPlanLinkedEcheances && (facture.statut ?? "").toUpperCase() !== "ANNULEE";
+  const canCreateAvoir = (facture.statut ?? "").toUpperCase() !== "ANNULEE" && (facture.nature ?? "FACTURE").toUpperCase() !== "AVOIR";
+
+  const openPlan = (planId: string) => {
+    queueFinanceNavigationTarget({
+      module: "plans_paiement",
+      id: planId,
+      view: "detail",
+    });
+    navigate(getFinanceModulePath("plans_paiement"));
+  };
+
+  const openPaiement = (paiementId: string) => {
+    queueFinanceNavigationTarget({
+      module: "paiements",
+      id: paiementId,
+      view: "detail",
+    });
+    navigate(getFinanceModulePath("paiements"));
+  };
+
+  const handleDownloadPdf = () => {
+    const { doc, filename } = buildFacturePdf(facture);
+    downloadPdf(doc, filename);
+    info("Le PDF de la facture a ete genere.", "success");
+  };
+
+  const refreshFacture = async () => {
+    if (!facture?.id) return;
+    const response = await service.get(facture.id);
+    setSelectedFacture(response.data as FactureWithRelations);
+  };
+
+  const handleCancelFacture = async () => {
+    const motif = window.prompt("Motif d'annulation de la facture", "") ?? "";
+    if (motif === null) return;
+
+    try {
+      setProcessingAccountingAction(true);
+      await service.cancel(facture.id, { motif: motif.trim() || null });
+      await refreshFacture();
+      info("La facture a ete annulee.", "success");
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setProcessingAccountingAction(false);
+    }
+  };
+
+  const handleCreateAvoir = async () => {
+    const montantInput = window.prompt(
+      "Montant de l'avoir. Laisse vide pour utiliser le solde ouvert.",
+      "",
+    );
+
+    if (montantInput === null) return;
+
+    const trimmedAmount = montantInput.trim();
+    const montant =
+      trimmedAmount.length > 0
+        ? Number(trimmedAmount.replace(/\s+/g, "").replace(",", "."))
+        : null;
+
+    if (trimmedAmount.length > 0 && !Number.isFinite(montant)) {
+      info("Le montant saisi pour l'avoir est invalide.", "error");
+      return;
+    }
+
+    const motif = window.prompt("Motif de l'avoir", "") ?? "";
+
+    try {
+      setProcessingAccountingAction(true);
+      await service.createAvoir(facture.id, {
+        motif: motif.trim() || null,
+        montant,
+      });
+      await refreshFacture();
+      info("L'avoir comptable a ete cree.", "success");
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setProcessingAccountingAction(false);
+    }
+  };
+
+  const handlePrint = () => {
+    const { doc } = buildFacturePdf(facture);
+    const opened = previewPdf(doc, true);
+    if (!opened) {
+      info("Le navigateur a bloque l'aperçu d'impression. Le PDF a ete telecharge a la place.", "warning");
+      const fallback = buildFacturePdf(facture);
+      downloadPdf(fallback.doc, fallback.filename);
+      return;
+    }
+    info("Aperçu d'impression ouvert pour la facture.", "info");
+  };
+
+  const handleSendRelance = async () => {
+    if (openInstallments.length === 0) return;
+
+    try {
+      setSendingRelance(true);
+      const service = new FinanceRelanceService();
+      const result = await service.sendRelance({
+        facture_id: facture.id,
+      });
+      const sent = Array.isArray(result.data?.sent) ? (result.data.sent as FinanceRelanceHistoryItem[]) : [];
+
+      if (sent.length > 0) {
+        setRelances((current) => {
+          const deduped = new Map([...sent, ...current].map((item) => [item.id, item]));
+          return [...deduped.values()];
+        });
+      }
+
+      info("La relance financiere a ete envoyee depuis la facture.", "success");
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setSendingRelance(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -61,6 +314,22 @@ export default function FactureDetail() {
               <FiList />
               Retour liste
             </button>
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              <FiDownload />
+              PDF
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              <FiPrinter />
+              Imprimer
+            </button>
             {canEdit ? (
               <button
                 type="button"
@@ -69,6 +338,39 @@ export default function FactureDetail() {
               >
                 <FiEdit3 />
                 Modifier
+              </button>
+            ) : null}
+            {canCancel ? (
+              <button
+                type="button"
+                onClick={() => void handleCancelFacture()}
+                disabled={processingAccountingAction}
+                className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FiSlash />
+                Annuler
+              </button>
+            ) : null}
+            {canCreateAvoir ? (
+              <button
+                type="button"
+                onClick={() => void handleCreateAvoir()}
+                disabled={processingAccountingAction}
+                className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FiRefreshCcw />
+                Creer un avoir
+              </button>
+            ) : null}
+            {openInstallments.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => void handleSendRelance()}
+                disabled={sendingRelance}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FiBell />
+                {sendingRelance ? "Envoi..." : "Relancer les echeances ouvertes"}
               </button>
             ) : null}
           </div>
@@ -110,6 +412,12 @@ export default function FactureDetail() {
         </div>
       </section>
 
+      {loadingDetail ? (
+        <section className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-500 shadow-sm">
+          Actualisation du dossier financier...
+        </section>
+      ) : null}
+
       <section className="grid gap-4 xl:grid-cols-[1.15fr,0.85fr]">
         <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900">Lignes de facture</h3>
@@ -149,6 +457,15 @@ export default function FactureDetail() {
                       <p className="mt-1 text-xs text-slate-500">
                         Echeance {formatDate(echeance.date_echeance)} - {echeance.statut}
                       </p>
+                      {echeance.plan_paiement_id ? (
+                        <button
+                          type="button"
+                          onClick={() => openPlan(echeance.plan_paiement_id as string)}
+                          className="mt-3 inline-flex items-center rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+                        >
+                          Ouvrir le plan
+                        </button>
+                      ) : null}
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-slate-900">
@@ -192,6 +509,107 @@ export default function FactureDetail() {
                   <p className="mt-1 text-sm text-slate-900">{facture.paiements?.length ?? 0}</p>
                 </div>
               </div>
+              <div className="flex items-start gap-3">
+                <FiCreditCard className="mt-0.5 text-slate-400" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Nature</p>
+                  <p className="mt-1 text-sm text-slate-900">{getFactureNatureLabel(facture.nature)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <FiCreditCard className="mt-0.5 text-slate-400" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Remise</p>
+                  <p className="mt-1 text-sm text-slate-900">
+                    {facture.remise
+                      ? `${facture.remise.nom} (${facture.remise.type?.toUpperCase() === "PERCENT" ? `${Number(facture.remise.valeur ?? 0)}%` : Number(facture.remise.valeur ?? 0).toLocaleString("fr-FR")})`
+                      : "Aucune remise"}
+                  </p>
+                </div>
+              </div>
+              {facture.factureOrigine ? (
+                <div className="flex items-start gap-3">
+                  <FiRefreshCcw className="mt-0.5 text-slate-400" />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Facture d'origine</p>
+                    <p className="mt-1 text-sm text-slate-900">{facture.factureOrigine.numero_facture}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">Corrections comptables</h3>
+            <div className="mt-5 space-y-3">
+              {facture.operationsFinancieres?.map((operation) => (
+                <div key={operation.id} className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{operation.type.replace(/_/g, " ")}</p>
+                      <p className="mt-1 text-xs text-slate-500">{operation.motif || "Sans motif"}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {formatMoney(operation.montant ?? 0, facture.devise ?? "MGA")}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">{formatDate(operation.created_at)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(facture.operationsFinancieres?.length ?? 0) === 0 ? (
+                <p className="text-sm text-slate-500">Aucune correction comptable sur cette facture.</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">Avoirs lies</h3>
+            <div className="mt-5 space-y-3">
+              {facture.avoirs?.map((avoir) => (
+                <div key={avoir.id} className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{avoir.numero_facture}</p>
+                      <p className="mt-1 text-xs text-slate-500">{getFactureStatusLabel(avoir.statut)}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {formatMoney(avoir.total_montant, facture.devise ?? "MGA")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {(facture.avoirs?.length ?? 0) === 0 ? (
+                <p className="text-sm text-slate-500">Aucun avoir n'a encore ete cree pour cette facture.</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">Relances envoyees</h3>
+            <div className="mt-5 space-y-3">
+              {relances.map((relance) => (
+                <div key={relance.id} className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {relance.objet.replace(/^\[FINANCE_RELANCE\]\[[^\]]+\]\s*/, "")}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {relance.destinataires.map((destinataire) => destinataire.nom).join(", ") || "Aucun destinataire"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-slate-900">{formatDate(relance.envoye_le)}</p>
+                      <p className="mt-1 text-xs text-slate-500">{relance.echeance_ids.length} echeance(s)</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {!loadingRelances && relances.length === 0 ? (
+                <p className="text-sm text-slate-500">Aucune relance envoyee pour cette facture.</p>
+              ) : null}
             </div>
           </div>
 
@@ -206,12 +624,21 @@ export default function FactureDetail() {
                         {paiement.reference?.trim() || paiement.methode || "Paiement"}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
-                        {formatDate(paiement.paye_le)} - {paiement.methode || "Mode non renseigne"}
+                        {formatDate(paiement.paye_le)} - {paiement.methode || "Mode non renseigne"} - {(paiement.statut ?? "ENREGISTRE").replace(/_/g, " ")}
                       </p>
                     </div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {formatMoney(paiement.montant, facture.devise ?? "MGA")}
-                    </p>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {formatMoney(paiement.montant, facture.devise ?? "MGA")}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => openPaiement(paiement.id)}
+                        className="mt-3 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+                      >
+                        Ouvrir le paiement
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

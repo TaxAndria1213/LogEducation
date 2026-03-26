@@ -76,6 +76,9 @@ export default function InscriptionForm() {
     (state) => state.catalogueFraisOptions,
   );
   const remiseOptions = useInscriptionCreateStore((state) => state.remiseOptions);
+  const parentTuteurOptions = useInscriptionCreateStore(
+    (state) => state.parentTuteurOptions,
+  );
   const scolariteInitialData = useInscriptionCreateStore(
     (state) => state.scolariteInitialData,
   );
@@ -288,22 +291,43 @@ export default function InscriptionForm() {
 
   const tuteur1Schema = useMemo(
     () =>
-      z.object({
-        nom: z.string().min(1, "Champ requis"),
-        prenom: z.string().min(1, "Champ requis"),
-        telephone: z.string().optional().nullable(),
-        email: z
-          .string()
-          .optional()
-          .nullable()
-          .refine((value) => !value || emailRegex.test(value), {
-            message: "Format d'email incorrect.",
-          }),
-        adresse: z.string().optional().nullable(),
-        relation: z.string().min(1, "Champ requis"),
-        est_principal: z.boolean().default(true),
-        autorise_recuperation: z.boolean().default(true),
-      }),
+      z
+        .object({
+          parent_tuteur_id: z.string().optional().nullable(),
+          nom: z.string().optional().nullable(),
+          prenom: z.string().optional().nullable(),
+          telephone: z.string().optional().nullable(),
+          email: z
+            .string()
+            .optional()
+            .nullable()
+            .refine((value) => !value || emailRegex.test(value), {
+              message: "Format d'email incorrect.",
+            }),
+          adresse: z.string().optional().nullable(),
+          relation: z.string().min(1, "Champ requis"),
+          est_principal: z.boolean().default(true),
+          autorise_recuperation: z.boolean().default(true),
+        })
+        .superRefine((data, ctx) => {
+          if (normalizeOptionalString(data.parent_tuteur_id)) return;
+
+          if (!normalizeOptionalString(data.nom)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["nom"],
+              message: "Champ requis",
+            });
+          }
+
+          if (!normalizeOptionalString(data.prenom)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["prenom"],
+              message: "Champ requis",
+            });
+          }
+        }),
     [],
   );
 
@@ -311,6 +335,7 @@ export default function InscriptionForm() {
     () =>
       getFieldsFromZodObjectSchema(tuteur1Schema, {
         labelByField: {
+          parent_tuteur_id: "Parent existant",
           nom: "Nom",
           prenom: "Prenom",
           telephone: "Telephone",
@@ -321,10 +346,21 @@ export default function InscriptionForm() {
           autorise_recuperation: "Autorise a recuperer l'eleve",
         },
         metaByField: {
+          parent_tuteur_id: {
+            relation: {
+              options: [{ value: "", label: "Nouveau parent / tuteur" }, ...parentTuteurOptions],
+            },
+            fieldProps: {
+              className: "md:col-span-2",
+              emptyLabel: "Selectionner",
+              description: "Selectionne un parent deja enregistre pour rattacher automatiquement la fratrie.",
+            },
+          },
           nom: {
             fieldProps: {
               className: "md:col-span-1",
               placeholder: "Nom du parent ou tuteur principal",
+              description: "A remplir seulement si aucun parent existant n'est selectionne.",
             },
           },
           prenom: {
@@ -375,12 +411,13 @@ export default function InscriptionForm() {
           },
         },
       }),
-    [relationOptions, tuteur1Schema],
+    [parentTuteurOptions, relationOptions, tuteur1Schema],
   );
 
   const tuteur2Schema = useMemo(
     () =>
       z.object({
+        parent_tuteur_id: z.string().optional().nullable(),
         nom: z.string().optional().nullable(),
         prenom: z.string().optional().nullable(),
         telephone: z.string().optional().nullable(),
@@ -403,6 +440,7 @@ export default function InscriptionForm() {
     () =>
       getFieldsFromZodObjectSchema(tuteur2Schema, {
         labelByField: {
+          parent_tuteur_id: "Parent existant",
           nom: "Nom",
           prenom: "Prenom",
           telephone: "Telephone",
@@ -413,6 +451,16 @@ export default function InscriptionForm() {
           autorise_recuperation: "Autorise a recuperer l'eleve",
         },
         metaByField: {
+          parent_tuteur_id: {
+            relation: {
+              options: [{ value: "", label: "Aucun" }, ...parentTuteurOptions],
+            },
+            fieldProps: {
+              className: "md:col-span-2",
+              emptyLabel: "Selectionner",
+              description: "Pratique pour retrouver la meme mere, le meme pere ou un tuteur deja connu.",
+            },
+          },
           nom: {
             fieldProps: {
               className: "md:col-span-1",
@@ -466,7 +514,7 @@ export default function InscriptionForm() {
           },
         },
       }),
-    [relationOptions, tuteur2Schema],
+    [parentTuteurOptions, relationOptions, tuteur2Schema],
   );
 
   const servicesSchema = useMemo(
@@ -558,9 +606,13 @@ export default function InscriptionForm() {
     () =>
       z.object({
         catalogue_frais_inscription_id: z.string().optional().nullable(),
+        catalogue_frais_inscription_nombre_tranches: z.coerce.number().int().min(1).default(1),
         catalogue_frais_scolarite_id: z.string().optional().nullable(),
+        catalogue_frais_scolarite_nombre_tranches: z.coerce.number().int().min(1).default(1),
         catalogue_frais_transport_id: z.string().optional().nullable(),
+        catalogue_frais_transport_nombre_tranches: z.coerce.number().int().min(1).default(1),
         catalogue_frais_cantine_id: z.string().optional().nullable(),
+        catalogue_frais_cantine_nombre_tranches: z.coerce.number().int().min(1).default(1),
         remise_id: z.string().optional().nullable(),
         remise_type: z.string().default("AUCUNE"),
         remise_valeur: z.coerce.number().min(0).default(0),
@@ -569,9 +621,14 @@ export default function InscriptionForm() {
   );
 
   const filteredCatalogueFraisOptions = useMemo(() => {
-    if (!selectedNiveauId) return [];
+    if (!selectedNiveauId) {
+      return catalogueFraisOptions.filter(
+        (option) => !option.niveau_scolaire_id,
+      );
+    }
     return catalogueFraisOptions.filter(
-      (option) => option.niveau_scolaire_id === selectedNiveauId,
+      (option) =>
+        option.niveau_scolaire_id === selectedNiveauId || !option.niveau_scolaire_id,
     );
   }, [catalogueFraisOptions, selectedNiveauId]);
 
@@ -580,9 +637,13 @@ export default function InscriptionForm() {
       getFieldsFromZodObjectSchema(financeSchema, {
         labelByField: {
           catalogue_frais_inscription_id: "Frais d'inscription",
+          catalogue_frais_inscription_nombre_tranches: "Tranches inscription",
           catalogue_frais_scolarite_id: "Frais de scolarite",
+          catalogue_frais_scolarite_nombre_tranches: "Tranches scolarite",
           catalogue_frais_transport_id: "Frais de transport",
+          catalogue_frais_transport_nombre_tranches: "Tranches transport",
           catalogue_frais_cantine_id: "Frais de cantine",
+          catalogue_frais_cantine_nombre_tranches: "Tranches cantine",
           remise_id: "Remise preconfiguree",
           remise_type: "Type de remise",
           remise_valeur: "Valeur de la remise",
@@ -596,8 +657,15 @@ export default function InscriptionForm() {
               className: "md:col-span-1",
               emptyLabel: "Selectionner un frais",
               description: selectedNiveauId
-                ? "Tarif catalogue du niveau selectionne applique a l'ouverture du dossier."
-                : "Choisissez d'abord la classe pour charger les frais du bon niveau.",
+                ? "Tarif du niveau selectionne ou frais global applicable a toutes les classes."
+                : "Les frais globaux sont deja disponibles. Choisissez une classe pour ajouter aussi les frais du niveau.",
+            },
+          },
+          catalogue_frais_inscription_nombre_tranches: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "1",
+              description: "Ex: 1 ou 2 selon le choix du parent pour ce frais seulement.",
             },
           },
           catalogue_frais_scolarite_id: {
@@ -608,8 +676,15 @@ export default function InscriptionForm() {
               className: "md:col-span-1",
               emptyLabel: "Selectionner un frais",
               description: selectedNiveauId
-                ? "Tarif standard de scolarite du niveau selectionne."
-                : "Choisissez d'abord la classe pour charger les frais du bon niveau.",
+                ? "Tarif standard du niveau selectionne ou frais global."
+                : "Les frais globaux sont deja disponibles. Choisissez une classe pour ajouter aussi les frais du niveau.",
+            },
+          },
+          catalogue_frais_scolarite_nombre_tranches: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "1",
+              description: "Nombre de paiements uniquement pour les frais de scolarite.",
             },
           },
           catalogue_frais_transport_id: {
@@ -620,8 +695,15 @@ export default function InscriptionForm() {
               className: "md:col-span-1",
               emptyLabel: "Selectionner un frais",
               description: selectedNiveauId
-                ? "Frais de transport du niveau selectionne, si le service doit etre facture."
-                : "Choisissez d'abord la classe pour charger les frais du bon niveau.",
+                ? "Frais de transport du niveau selectionne ou frais global, si le service doit etre facture."
+                : "Les frais globaux sont deja disponibles. Choisissez une classe pour ajouter aussi les frais du niveau.",
+            },
+          },
+          catalogue_frais_transport_nombre_tranches: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "1",
+              description: "Nombre de paiements uniquement pour le transport.",
             },
           },
           catalogue_frais_cantine_id: {
@@ -632,8 +714,15 @@ export default function InscriptionForm() {
               className: "md:col-span-1",
               emptyLabel: "Selectionner un frais",
               description: selectedNiveauId
-                ? "Frais de cantine du niveau selectionne, si la cantine est facturee."
-                : "Choisissez d'abord la classe pour charger les frais du bon niveau.",
+                ? "Frais de cantine du niveau selectionne ou frais global, si la cantine est facturee."
+                : "Les frais globaux sont deja disponibles. Choisissez une classe pour ajouter aussi les frais du niveau.",
+            },
+          },
+          catalogue_frais_cantine_nombre_tranches: {
+            fieldProps: {
+              className: "md:col-span-1",
+              placeholder: "1",
+              description: "Nombre de paiements uniquement pour la cantine.",
             },
           },
           remise_id: {
@@ -673,23 +762,10 @@ export default function InscriptionForm() {
 
   const echeancierSchema = useMemo(
     () =>
-      z
-        .object({
-          mode_paiement: z.string().min(1, "Champ requis"),
-          nombre_tranches: z.coerce.number().min(1).default(1),
-          premiere_echeance: z.coerce.date(),
-          notes: z.string().optional().nullable(),
-        })
-        .superRefine((data, ctx) => {
-          const mode = (data.mode_paiement ?? "").toUpperCase();
-          if (mode === "COMPTANT" && Number(data.nombre_tranches ?? 1) !== 1) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: ["nombre_tranches"],
-              message: "Le mode comptant utilise une seule tranche.",
-            });
-          }
-        }),
+      z.object({
+        mode_paiement: z.string().min(1, "Champ requis"),
+        notes: z.string().optional().nullable(),
+      }),
     [],
   );
 
@@ -698,8 +774,6 @@ export default function InscriptionForm() {
       getFieldsFromZodObjectSchema(echeancierSchema, {
         labelByField: {
           mode_paiement: "Mode de paiement",
-          nombre_tranches: "Nombre de tranches",
-          premiere_echeance: "Premiere echeance",
           notes: "Notes administratives",
         },
         metaByField: {
@@ -711,30 +785,17 @@ export default function InscriptionForm() {
               ],
             },
             fieldProps: {
-              className: "md:col-span-1",
+              className: "md:col-span-2",
               emptyLabel: "Choisir un mode",
-              description: "Comptant = reglement immediat. Echelonne = creation de plusieurs echeances.",
-            },
-          },
-          nombre_tranches: {
-            fieldProps: {
-              className: "md:col-span-1",
-              placeholder: "1",
-              description: "Utilise pour construire les echeances reelles du dossier financier.",
-            },
-          },
-          premiere_echeance: {
-            dateMode: "date",
-            fieldProps: {
-              className: "md:col-span-1",
-              description: "Sera reprise comme premiere echeance du plan financier.",
+              description: "Comptant = reglement immediat. Echelonne = les tranches saisies sur chaque frais sont appliquees separement.",
             },
           },
           notes: {
             widget: "textarea",
             fieldProps: {
-              className: "md:col-span-1",
+              className: "md:col-span-2",
               placeholder: "Consignes, engagements, informations utiles...",
+              description: "Les echeances demarrent automatiquement au premier mois de l'annee scolaire de la classe choisie.",
             },
           },
         },
@@ -805,14 +866,18 @@ export default function InscriptionForm() {
       {
         key: "finance",
         title: "Montants et remise",
-        desc: "Selection des frais catalogue et de la remise a appliquer au dossier.",
+        desc: "Selection des frais catalogue, avec un nombre de tranches saisi separement pour chaque frais.",
         schema: financeSchema,
         fields: financeFields,
         initialValues: {
           catalogue_frais_inscription_id: "",
+          catalogue_frais_inscription_nombre_tranches: 1,
           catalogue_frais_scolarite_id: "",
+          catalogue_frais_scolarite_nombre_tranches: 1,
           catalogue_frais_transport_id: "",
+          catalogue_frais_transport_nombre_tranches: 1,
           catalogue_frais_cantine_id: "",
+          catalogue_frais_cantine_nombre_tranches: 1,
           remise_id: "",
           remise_type: "AUCUNE",
           remise_valeur: 0,
@@ -823,13 +888,11 @@ export default function InscriptionForm() {
       {
         key: "echeancier",
         title: "Plan de paiement",
-        desc: "Mode de reglement, premiere echeance et notes de suivi.",
+        desc: "Mode de reglement et generation automatique des echeances a partir des tranches renseignees sur chaque frais.",
         schema: echeancierSchema,
         fields: echeancierFields,
         initialValues: {
           mode_paiement: "COMPTANT",
-          nombre_tranches: 1,
-          premiere_echeance: new Date().toISOString().slice(0, 10),
           notes: "",
         },
         labelMessage: "Echeancier",
@@ -914,12 +977,14 @@ export default function InscriptionForm() {
           .filter(
             (t: any) =>
               t &&
-              (normalizeOptionalString(t.nom) ||
+              (normalizeOptionalString(t.parent_tuteur_id) ||
+                normalizeOptionalString(t.nom) ||
                 normalizeOptionalString(t.prenom) ||
                 normalizeOptionalString(t.telephone) ||
                 normalizeOptionalString(t.email)),
           )
           .map((t: any) => ({
+            parent_tuteur_id: normalizeOptionalString(t.parent_tuteur_id),
             nom: normalizeOptionalString(t.nom),
             prenom: normalizeOptionalString(t.prenom),
             telephone: normalizeOptionalString(t.telephone),
@@ -946,14 +1011,30 @@ export default function InscriptionForm() {
           catalogue_frais_inscription_id: normalizeOptionalString(
             finalData.finance?.catalogue_frais_inscription_id,
           ),
+          catalogue_frais_inscription_nombre_tranches: Math.max(
+            1,
+            Number(finalData.finance?.catalogue_frais_inscription_nombre_tranches ?? 1),
+          ),
           catalogue_frais_scolarite_id: normalizeOptionalString(
             finalData.finance?.catalogue_frais_scolarite_id,
+          ),
+          catalogue_frais_scolarite_nombre_tranches: Math.max(
+            1,
+            Number(finalData.finance?.catalogue_frais_scolarite_nombre_tranches ?? 1),
           ),
           catalogue_frais_transport_id: normalizeOptionalString(
             finalData.finance?.catalogue_frais_transport_id,
           ),
+          catalogue_frais_transport_nombre_tranches: Math.max(
+            1,
+            Number(finalData.finance?.catalogue_frais_transport_nombre_tranches ?? 1),
+          ),
           catalogue_frais_cantine_id: normalizeOptionalString(
             finalData.finance?.catalogue_frais_cantine_id,
+          ),
+          catalogue_frais_cantine_nombre_tranches: Math.max(
+            1,
+            Number(finalData.finance?.catalogue_frais_cantine_nombre_tranches ?? 1),
           ),
           remise_id: normalizeOptionalString(finalData.finance?.remise_id),
           remise_type: finalData.finance?.remise_type ?? "AUCUNE",
@@ -961,11 +1042,6 @@ export default function InscriptionForm() {
         },
         echeancier: {
           mode_paiement: finalData.echeancier?.mode_paiement ?? "COMPTANT",
-          nombre_tranches:
-            (finalData.echeancier?.mode_paiement ?? "COMPTANT") === "COMPTANT"
-              ? 1
-              : Math.max(1, Number(finalData.echeancier?.nombre_tranches ?? 1)),
-          premiere_echeance: finalData.echeancier?.premiere_echeance,
           notes: normalizeOptionalString(finalData.echeancier?.notes),
         },
       };

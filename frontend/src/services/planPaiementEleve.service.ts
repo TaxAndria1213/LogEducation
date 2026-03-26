@@ -1,5 +1,5 @@
 import Service from "../app/api/Service";
-import type { AnneeScolaire, Eleve, PlanPaiementEleve } from "../types/models";
+import type { AnneeScolaire, Eleve, PlanPaiementEleve, Remise } from "../types/models";
 
 type QueryParams = Record<string, unknown>;
 
@@ -27,6 +27,7 @@ export type PlanPaiementEleveWithRelations = PlanPaiementEleve & {
     } | null;
   }) | null;
   annee?: Pick<AnneeScolaire, "id" | "nom"> | null;
+  remise?: Pick<Remise, "id" | "nom" | "type" | "valeur"> | null;
   plan_json?: {
     mode_paiement?: string | null;
     nombre_tranches?: number | null;

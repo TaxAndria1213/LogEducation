@@ -4,6 +4,7 @@ import { DataTable, type DataTableHandle } from "../../../../../shared/table/Dat
 import { useAuth } from "../../../../../auth/AuthContext";
 import FactureService, {
   getFactureDisplayLabel,
+  getFactureNatureLabel,
   getFactureSecondaryLabel,
   getFactureStatusLabel,
   type FactureWithRelations,
@@ -48,7 +49,12 @@ export default function FactureTable() {
     {
       key: "statut",
       header: "Statut",
-      render: (row) => getFactureStatusLabel(row.statut),
+      render: (row) => (
+        <div>
+          <p className="font-medium text-slate-900">{getFactureStatusLabel(row.statut)}</p>
+          <p className="text-xs text-slate-500">{getFactureNatureLabel(row.nature)}</p>
+        </div>
+      ),
       sortable: false,
       sortKey: "statut",
     },
@@ -76,6 +82,48 @@ export default function FactureTable() {
       onClick: async (row) => {
         setSelectedFacture(row);
         setRenderedComponent("edit");
+      },
+    },
+    {
+      label: "Annuler",
+      variant: "danger",
+      show: (row) =>
+        (row.statut ?? "").toUpperCase() !== "ANNULEE" &&
+        (row.paiements?.filter((item) => (item.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE").length ?? 0) === 0 &&
+        !(row.echeances ?? []).some((item) => item.plan_paiement_id),
+      onClick: async (row) => {
+        const motif = window.prompt("Motif d'annulation de la facture", "") ?? "";
+        await service.cancel(row.id, { motif: motif.trim() || null });
+        tableRef.current?.refresh();
+      },
+    },
+    {
+      label: "Avoir",
+      variant: "secondary",
+      show: (row) => (row.statut ?? "").toUpperCase() !== "ANNULEE" && (row.nature ?? "FACTURE").toUpperCase() !== "AVOIR",
+      onClick: async (row) => {
+        const montantInput = window.prompt(
+          "Montant de l'avoir. Laisse vide pour solder le reste ouvert.",
+          "",
+        );
+        if (montantInput === null) return;
+
+        const trimmed = montantInput.trim();
+        const montant =
+          trimmed.length > 0
+            ? Number(trimmed.replace(/\s+/g, "").replace(",", "."))
+            : null;
+
+        if (trimmed.length > 0 && !Number.isFinite(montant)) {
+          throw new Error("Le montant de l'avoir est invalide.");
+        }
+
+        const motif = window.prompt("Motif de l'avoir", "") ?? "";
+        await service.createAvoir(row.id, {
+          motif: motif.trim() || null,
+          montant,
+        });
+        tableRef.current?.refresh();
       },
     },
     {
@@ -107,8 +155,12 @@ export default function FactureTable() {
         includeSpec: {
           eleve: { include: { utilisateur: { include: { profil: true } } } },
           annee: true,
+          remise: true,
+          factureOrigine: true,
+          avoirs: true,
           lignes: { include: { frais: true } },
           paiements: true,
+          operationsFinancieres: true,
           echeances: { include: { affectations: true }, orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }] },
         },
       }}

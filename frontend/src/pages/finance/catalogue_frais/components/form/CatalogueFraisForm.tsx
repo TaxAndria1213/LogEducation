@@ -61,7 +61,10 @@ function CatalogueFraisForm() {
       z
         .object({
           etablissement_id: z.string().min(1, "L'etablissement est requis."),
-          niveau_scolaire_id: z.string().min(1, "Le niveau scolaire est requis."),
+          niveau_scolaire_id: z.preprocess(
+            (value) => (typeof value === "string" && value.trim() === "" ? null : value),
+            z.string().nullable().optional(),
+          ),
           nom: z.string().trim().min(2, "Le nom du frais est requis.").max(120, "Nom trop long."),
           description: z.preprocess((value) => typeof value === "string" && value.trim() === "" ? null : value, z.string().max(240, "Description trop longue.").nullable().optional()),
           montant: z.coerce.number().min(0, "Le montant doit etre positif ou nul."),
@@ -86,12 +89,12 @@ function CatalogueFraisForm() {
     metaByField: {
       niveau_scolaire_id: {
         relation: {
-          options: niveauOptions,
+          options: [{ value: "", label: "Tous les niveaux / toutes les classes" }, ...niveauOptions],
         },
         fieldProps: {
           className: "md:col-span-1",
-          emptyLabel: "Choisir un niveau",
-          description: "Chaque frais est maintenant specifique a un niveau scolaire.",
+          emptyLabel: "Tous les niveaux / toutes les classes",
+          description: "Si aucun niveau n'est choisi, le frais devient global et peut etre utilise pour toutes les classes.",
         },
       },
       nom: {

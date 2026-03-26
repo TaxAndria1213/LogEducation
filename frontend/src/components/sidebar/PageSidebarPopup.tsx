@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 type Props = {
   open: boolean;
@@ -13,23 +14,18 @@ function PageSidebarPopup({
   children,
   title = "Actions",
 }: Props) {
-  const [shouldRender, setShouldRender] = useState(open);
-  const [isVisible, setIsVisible] = useState(false);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (open) {
-      setShouldRender(true);
-      const frame = window.requestAnimationFrame(() => setIsVisible(true));
-      return () => window.cancelAnimationFrame(frame);
-    }
-
-    setIsVisible(false);
-    const timeout = window.setTimeout(() => setShouldRender(false), 180);
-    return () => window.clearTimeout(timeout);
+    if (typeof document === "undefined") return;
+    const nextAnchor = document.querySelector(
+      "[data-erp-header-action-trigger='true']",
+    ) as HTMLElement | null;
+    setAnchor(nextAnchor);
   }, [open]);
 
   useEffect(() => {
-    if (!shouldRender) return;
+    if (!open) return;
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -37,30 +33,43 @@ function PageSidebarPopup({
       }
     };
 
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!anchor) return;
+      const target = event.target as Node | null;
+      if (!target) return;
+
+      const popupElement = anchor.querySelector("[data-erp-dropdown='true']");
+      if (!popupElement) return;
+
+      if (
+        popupElement.contains(target) ||
+        anchor.contains(target)
+      ) {
+        return;
+      }
+
+      onClose();
+    };
+
     window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [onClose, shouldRender]);
+    document.addEventListener("mousedown", handlePointerDown);
 
-  if (!shouldRender) return null;
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [anchor, onClose, open]);
 
-  return (
-    <div className="fixed inset-0 z-50">
-      <button
-        type="button"
-        aria-label="Fermer le menu"
-        onClick={onClose}
-        className="absolute inset-0 bg-transparent"
-      />
+  const content = useMemo(() => {
+    if (!open || !anchor) return null;
 
+    return (
       <div
-        className={`absolute right-4 top-[7.25rem] w-[min(22rem,calc(100vw-2rem))] origin-top-right transition-all duration-200 ease-out sm:right-6 ${
-          isVisible
-            ? "translate-y-0 scale-100 opacity-100"
-            : "-translate-y-2 scale-95 opacity-0"
-        }`}
-        style={{ left: "auto" }}
+        data-erp-dropdown="true"
+        className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] origin-top-right"
       >
         <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white/98 shadow-[0_24px_65px_-30px_rgba(15,23,42,0.45)] ring-1 ring-slate-950/5 backdrop-blur">
+          <div className="absolute -top-1.5 right-4 h-3 w-3 rotate-45 border-l border-t border-slate-200 bg-white/98" />
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
               {title}
@@ -71,8 +80,12 @@ function PageSidebarPopup({
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }, [anchor, children, open, title]);
+
+  if (!anchor || !content) return null;
+
+  return createPortal(content, anchor);
 }
 
 export default PageSidebarPopup;

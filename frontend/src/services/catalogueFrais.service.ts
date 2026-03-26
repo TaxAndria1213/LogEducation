@@ -45,7 +45,7 @@ export function getCatalogueFraisSecondaryLabel(record?: Partial<CatalogueFraisW
       ? `${amount.toLocaleString("fr-FR")} ${record.devise ?? "MGA"}`
       : record.devise ?? "MGA";
   return [
-    record.niveau?.nom ? `Niveau: ${record.niveau.nom}` : "",
+    record.niveau?.nom ? `Niveau: ${record.niveau.nom}` : "Global - toutes classes",
     amountLabel,
     record.est_recurrent ? `Recurrent${record.periodicite ? ` - ${record.periodicite}` : ""}` : "Ponctuel",
   ]

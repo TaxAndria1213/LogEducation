@@ -30,6 +30,10 @@ function getErrorMessage(error: unknown) {
   return "Impossible de charger les plans de paiement.";
 }
 
+function formatMoney(value: number, devise = "MGA") {
+  return `${value.toLocaleString("fr-FR")} ${devise}`;
+}
+
 export default function PlanPaiementOverview({ mode = "overview" }: Props) {
   const { etablissement_id } = useAuth();
   const [rows, setRows] = useState<PlanPaiementEleveWithRelations[]>([]);
@@ -83,6 +87,39 @@ export default function PlanPaiementOverview({ mode = "overview" }: Props) {
     () => rows.reduce((sum, item) => sum + getPlanPaiementRemainingAmount(item), 0),
     [rows],
   );
+  const openEcheances = useMemo(
+    () =>
+      rows.reduce((sum, item) => {
+        const count = getPlanPaiementEcheances(item).filter((echeance) => {
+          const remaining = Number(echeance.remaining_amount ?? echeance.montant ?? 0);
+          const statut = (echeance.statut ?? "").toUpperCase();
+          return remaining > 0 && statut !== "PAYEE" && statut !== "ANNULEE";
+        }).length;
+        return sum + count;
+      }, 0),
+    [rows],
+  );
+  const overdueEcheances = useMemo(
+    () =>
+      rows.reduce((sum, item) => {
+        const count = getPlanPaiementEcheances(item).filter(
+          (echeance) => (echeance.statut ?? "").toUpperCase() === "EN_RETARD",
+        ).length;
+        return sum + count;
+      }, 0),
+    [rows],
+  );
+  const recentRows = useMemo(
+    () =>
+      [...rows]
+        .sort(
+          (a, b) =>
+            new Date(b.updated_at ?? b.created_at ?? 0).getTime() -
+            new Date(a.updated_at ?? a.created_at ?? 0).getTime(),
+        )
+        .slice(0, 8),
+    [rows],
+  );
 
   return (
     <div className="space-y-6">
@@ -100,14 +137,15 @@ export default function PlanPaiementOverview({ mode = "overview" }: Props) {
         ) : null}
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500"><FiUsers /><span className="text-sm font-medium">Plans</span></div>
           <p className="mt-3 text-3xl font-semibold text-slate-900">{rows.length}</p>
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3 text-slate-500"><FiCalendar /><span className="text-sm font-medium">Echeances</span></div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{totalEcheances}</p>
+          <div className="flex items-center gap-3 text-slate-500"><FiCalendar /><span className="text-sm font-medium">Echeances ouvertes</span></div>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">{openEcheances}</p>
+          <p className="mt-2 text-xs text-slate-500">{totalEcheances} tranche(s) au total</p>
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500"><FiClock /><span className="text-sm font-medium">Echelonnes</span></div>
@@ -122,6 +160,11 @@ export default function PlanPaiementOverview({ mode = "overview" }: Props) {
           <p className="mt-3 text-3xl font-semibold text-slate-900">{montantRegle.toLocaleString("fr-FR")}</p>
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3 text-slate-500"><FiClock /><span className="text-sm font-medium">En retard</span></div>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">{overdueEcheances}</p>
+          <p className="mt-2 text-xs text-slate-500">{formatMoney(montantRestant)}</p>
+        </div>
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500"><FiClock /><span className="text-sm font-medium">Montant restant</span></div>
           <p className="mt-3 text-3xl font-semibold text-slate-900">{montantRestant.toLocaleString("fr-FR")}</p>
         </div>
@@ -130,13 +173,13 @@ export default function PlanPaiementOverview({ mode = "overview" }: Props) {
       <section className="grid gap-4 xl:grid-cols-[1.4fr,0.9fr]">
         <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900">Plans recents</h3>
-          <div className="mt-5 space-y-3">
-            {rows.slice(0, 6).map((item) => (
+          <div className="mt-5 max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+            {recentRows.map((item) => (
               <div key={item.id} className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
                 <p className="text-sm font-semibold text-slate-900">{getPlanPaiementDisplayLabel(item)}</p>
                 <p className="mt-1 text-xs text-slate-500">{getPlanPaiementSecondaryLabel(item)}</p>
                 <p className="mt-2 text-xs font-medium text-slate-700">
-                  Regle {getPlanPaiementPaidAmount(item).toLocaleString("fr-FR")} - Reste {getPlanPaiementRemainingAmount(item).toLocaleString("fr-FR")} {item.plan_json?.devise ?? "MGA"}
+                  Regle {formatMoney(getPlanPaiementPaidAmount(item), item.plan_json?.devise ?? "MGA")} - Reste {formatMoney(getPlanPaiementRemainingAmount(item), item.plan_json?.devise ?? "MGA")}
                 </p>
               </div>
             ))}
@@ -153,7 +196,7 @@ export default function PlanPaiementOverview({ mode = "overview" }: Props) {
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">Parametres</h3>
                 <p className="text-sm text-slate-500">
-                  Le plan est stocke dans un `plan_json` structure, compatible avec les flux d'inscription existants.
+                  Le reechelonnement modifie uniquement les tranches encore ouvertes. Les echeances reglees restent verrouillees pour proteger l'historique comptable.
                 </p>
               </div>
             </div>

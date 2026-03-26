@@ -46,6 +46,7 @@ export interface Etablissement {
   matieres?: Matiere[];
   canaux?: CanalCommunication[];
   catalogueFrais?: CatalogueFrais[];
+  facturationsRecurrentes?: FacturationRecurrenteExecution[];
   remises?: Remise[];
   fichiers?: Fichier[];
   journauxAudit?: JournalAudit[];
@@ -61,6 +62,7 @@ export interface Etablissement {
   Annonce?: Annonce[];
   Message?: Message[];
   Facture?: Facture[];
+  operationsFinancieres?: OperationFinanciere[];
 }
 
 export interface Site {
@@ -95,6 +97,7 @@ export interface AnneeScolaire {
   factures?: Facture[];
   plansPaiement?: PlanPaiementEleve[];
   echeancesPaiement?: EcheancePaiement[];
+  facturationsRecurrentes?: FacturationRecurrenteExecution[];
   abonnementsTransport?: AbonnementTransport[];
   abonnementsCantine?: AbonnementCantine[];
 }
@@ -166,6 +169,8 @@ export interface Utilisateur {
   notifications?: Notification[];
   fichiers?: Fichier[];
   journauxAudit?: JournalAudit[];
+  facturationsRecurrentes?: FacturationRecurrenteExecution[];
+  operationsFinancieres?: OperationFinanciere[];
   Eleve?: Eleve[];
   ParentTuteur?: ParentTuteur[];
   Personnel?: Personnel[];
@@ -254,6 +259,7 @@ export interface Eleve {
   factures?: Facture[];
   plansPaiement?: PlanPaiementEleve[];
   echeancesPaiement?: EcheancePaiement[];
+  facturationsRecurrentes?: FacturationRecurrenteExecution[];
   abonnementsTransport?: AbonnementTransport[];
   abonnementsCantine?: AbonnementCantine[];
   emprunts?: Emprunt[];
@@ -800,6 +806,7 @@ export interface CatalogueFrais {
   description: string | null;
   montant: Decimal;
   devise: string;
+  nombre_tranches: number;
   est_recurrent: boolean;
   periodicite: string | null;
   created_at: Date;
@@ -807,18 +814,44 @@ export interface CatalogueFrais {
   etablissement?: Etablissement;
   niveau?: NiveauScolaire | null;
   lignesFacture?: FactureLigne[];
+  executionsRecurrentes?: FacturationRecurrenteExecution[];
 }
 
 export interface PlanPaiementEleve {
   id: string;
   eleve_id: string;
   annee_scolaire_id: string;
+  remise_id: string | null;
   plan_json: JsonValue;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;
   annee?: AnneeScolaire;
+  remise?: Remise | null;
   echeances?: EcheancePaiement[];
+}
+
+export interface FacturationRecurrenteExecution {
+  id: string;
+  run_id: string;
+  etablissement_id: string;
+  catalogue_frais_id: string;
+  eleve_id: string;
+  annee_scolaire_id: string;
+  facture_id: string;
+  created_by_utilisateur_id: string | null;
+  periodicite: string;
+  cycle_key: string;
+  cycle_label: string;
+  date_reference: Date;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement;
+  catalogueFrais?: CatalogueFrais;
+  eleve?: Eleve;
+  annee?: AnneeScolaire;
+  facture?: Facture;
+  createur?: Utilisateur | null;
 }
 
 export interface Facture {
@@ -826,6 +859,9 @@ export interface Facture {
   etablissement_id: string;
   eleve_id: string;
   annee_scolaire_id: string;
+  remise_id: string | null;
+  facture_origine_id: string | null;
+  nature: string;
   numero_facture: string;
   date_emission: Date;
   date_echeance: Date | null;
@@ -837,9 +873,14 @@ export interface Facture {
   etablissement?: Etablissement;
   eleve?: Eleve;
   annee?: AnneeScolaire;
+  remise?: Remise | null;
+  factureOrigine?: Facture | null;
+  avoirs?: Facture[];
   lignes?: FactureLigne[];
   paiements?: Paiement[];
   echeances?: EcheancePaiement[];
+  executionsRecurrentes?: FacturationRecurrenteExecution[];
+  operationsFinancieres?: OperationFinanciere[];
 }
 
 export interface FactureLigne {
@@ -861,6 +902,7 @@ export interface Paiement {
   facture_id: string;
   paye_le: Date;
   montant: Decimal;
+  statut: string;
   methode: string | null;
   reference: string | null;
   recu_par: string | null;
@@ -868,6 +910,25 @@ export interface Paiement {
   updated_at: Date;
   facture?: Facture;
   affectations?: PaiementEcheanceAffectation[];
+  operationsFinancieres?: OperationFinanciere[];
+}
+
+export interface OperationFinanciere {
+  id: string;
+  etablissement_id: string;
+  facture_id: string | null;
+  paiement_id: string | null;
+  cree_par_utilisateur_id: string | null;
+  type: string;
+  montant: Decimal | null;
+  motif: string | null;
+  details_json: JsonValue | null;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement;
+  facture?: Facture | null;
+  paiement?: Paiement | null;
+  createur?: Utilisateur | null;
 }
 
 export interface EcheancePaiement {
@@ -915,6 +976,8 @@ export interface Remise {
   created_at: Date;
   updated_at: Date;
   etablissement?: Etablissement;
+  factures?: Facture[];
+  plansPaiement?: PlanPaiementEleve[];
 }
 
 /**

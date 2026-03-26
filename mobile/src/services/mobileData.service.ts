@@ -4,6 +4,7 @@ import {
   mergeScheduleRows,
 } from "@/services/mobileSchedule.service";
 import { getFirst, getRows } from "@/services/query.service";
+import { api } from "@/lib/api";
 import type {
   BulletinItem,
   EleveLite,
@@ -140,6 +141,22 @@ type RoleContext = {
   role: RoleName;
   userId: string;
   etablissementId: string;
+};
+
+type ParentFamilyFinanceSummary = {
+  id: string;
+  total_du: number;
+  total_en_retard: number;
+  nombre_enfants: number;
+  nombre_echeances_ouvertes: number;
+  enfants: Array<{
+    eleve_id: string;
+    nom_complet?: string | null;
+    sibling_rank?: number | null;
+    total_du: number;
+    total_en_retard: number;
+    nombre_echeances_ouvertes?: number;
+  }>;
 };
 
 function toContext(session: PersistedSession): RoleContext {
@@ -391,6 +408,11 @@ async function getParentRecord(context: RoleContext) {
   });
 }
 
+async function getParentFamilyFinance(parentId: string) {
+  const { data } = await api.get(`/api/parent-tuteur/family-finance/${parentId}`);
+  return (data?.data ?? null) as ParentFamilyFinanceSummary | null;
+}
+
 async function getTeacherRecord(context: RoleContext) {
   return getFirst<{ id: string }>("enseignant", {
     where: {
@@ -550,7 +572,7 @@ async function loadParentHome(context: RoleContext): Promise<HomeBundle> {
   const childIds = collectParentChildIds(parent);
   const classIds = collectParentClassIds(parent);
 
-  const [planning, bulletins, justificatifs] = await Promise.all([
+  const [planning, bulletins, justificatifs, familyFinance] = await Promise.all([
     classIds.length
       ? getRows<EmploiDuTempsItem>("emploi-du-temps", {
           take: 12,
@@ -584,21 +606,45 @@ async function loadParentHome(context: RoleContext): Promise<HomeBundle> {
           orderBy: [{ created_at: "desc" }],
         })
       : Promise.resolve([]),
+    parent?.id ? getParentFamilyFinance(parent.id) : Promise.resolve(null),
   ]);
 
   const metrics: FeedMetric[] = [
     { id: "children", label: "Enfants relies", value: String(childIds.length), tone: "primary" },
     { id: "bulletins", label: "Bulletins", value: String(bulletins.length), tone: "info" },
     { id: "justifs", label: "Justificatifs", value: String(justificatifs.length), tone: "warning" },
+    {
+      id: "due",
+      label: "Total du",
+      value: `${Math.round(Number(familyFinance?.total_du ?? 0)).toLocaleString("fr-FR")} MGA`,
+      tone: Number(familyFinance?.total_du ?? 0) > 0 ? "danger" : "success",
+    },
   ];
 
   return {
     heading: "Vue parent",
-    subtitle: "Suivi des enfants, resultats et justificatifs.",
+    subtitle: "Suivi des enfants, resultats, justificatifs et dettes famille.",
     metrics,
     quickActions: ROLE_QUICK_ACTIONS.PARENT,
     highlights: [
       ...getMergedScheduleFeedItems(planning).slice(0, 1),
+      ...(familyFinance?.enfants ?? [])
+        .filter((item) => item.total_du > 0)
+        .slice(0, 2)
+        .map((item) => ({
+          id: `family-due-${item.eleve_id}`,
+          title: item.nom_complet || "Dette eleve",
+          subtitle: item.sibling_rank ? `Fratrie rang ${item.sibling_rank}` : "Dette en cours",
+          meta: [
+            `${Math.round(item.total_du).toLocaleString("fr-FR")} MGA`,
+            item.total_en_retard > 0
+              ? `${Math.round(item.total_en_retard).toLocaleString("fr-FR")} MGA en retard`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" | "),
+          accent: item.total_en_retard > 0 ? ("danger" as const) : ("warning" as const),
+        })),
       ...bulletins.slice(0, 3).map(bulletinItemToFeed),
       ...justificatifs.slice(0, 2).map(justificatifItemToFeed),
     ],
@@ -988,21 +1034,40 @@ export async function loadOperationsBundle(session: PersistedSession): Promise<F
 
   if (context.role === "PARENT") {
     const parent = await getParentRecord(context);
+    const familyFinance = parent?.id ? await getParentFamilyFinance(parent.id) : null;
     const items =
-      parent?.eleves?.map((item) => ({
-        id: `${item.eleve_id}:${item.relation ?? "relation"}`,
-        title:
-          item.eleve?.utilisateur?.profil
-            ? formatPersonName(item.eleve.utilisateur.profil)
-            : item.eleve?.code_eleve?.trim() || "Enfant",
-        subtitle: item.relation?.trim() || "Lien familial",
-        meta: item.eleve?.inscriptions?.[0]?.classe?.nom?.trim() || "",
-        accent: item.est_principal ? ("primary" as const) : ("info" as const),
-      })) ?? [];
+      (familyFinance?.enfants?.length
+        ? familyFinance.enfants.map((item) => ({
+            id: `${item.eleve_id}:finance`,
+            title: item.nom_complet || "Enfant",
+            subtitle: item.sibling_rank ? `Fratrie rang ${item.sibling_rank}` : "Espace famille",
+            meta: [
+              `${Math.round(item.total_du).toLocaleString("fr-FR")} MGA dus`,
+              item.total_en_retard > 0
+                ? `${Math.round(item.total_en_retard).toLocaleString("fr-FR")} MGA en retard`
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" | "),
+            accent: item.total_en_retard > 0 ? ("danger" as const) : ("warning" as const),
+          }))
+        : parent?.eleves?.map((item) => ({
+            id: `${item.eleve_id}:${item.relation ?? "relation"}`,
+            title:
+              item.eleve?.utilisateur?.profil
+                ? formatPersonName(item.eleve.utilisateur.profil)
+                : item.eleve?.code_eleve?.trim() || "Enfant",
+            subtitle: item.relation?.trim() || "Lien familial",
+            meta: item.eleve?.inscriptions?.[0]?.classe?.nom?.trim() || "",
+            accent: item.est_principal ? ("primary" as const) : ("info" as const),
+          })) ?? []);
 
     return {
       title: "Espace famille",
-      subtitle: "Enfants rattaches au compte parent.",
+      subtitle:
+        familyFinance && familyFinance.total_du > 0
+          ? `Dettes consolidees famille: ${Math.round(familyFinance.total_du).toLocaleString("fr-FR")} MGA`
+          : "Enfants rattaches au compte parent.",
       items,
     };
   }

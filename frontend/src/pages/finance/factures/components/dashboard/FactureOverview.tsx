@@ -62,20 +62,44 @@ export default function FactureOverview({ mode = "overview" }: Props) {
     };
   }, [etablissement_id]);
 
-  const totalAmount = useMemo(
-    () => rows.reduce((sum, item) => sum + Number(item.total_montant ?? 0), 0),
+  const standardRows = useMemo(
+    () =>
+      rows.filter(
+        (item) =>
+          (item.nature ?? "FACTURE").toUpperCase() !== "AVOIR" &&
+          (item.statut ?? "").toUpperCase() !== "ANNULEE",
+      ),
     [rows],
+  );
+  const creditNotesCount = useMemo(
+    () => rows.filter((item) => (item.nature ?? "FACTURE").toUpperCase() === "AVOIR").length,
+    [rows],
+  );
+  const totalAmount = useMemo(
+    () => standardRows.reduce((sum, item) => sum + Number(item.total_montant ?? 0), 0),
+    [standardRows],
   );
   const overdueCount = useMemo(
-    () => rows.filter((item) => (item.statut ?? "").toUpperCase() === "EN_RETARD").length,
-    [rows],
+    () => standardRows.filter((item) => (item.statut ?? "").toUpperCase() === "EN_RETARD").length,
+    [standardRows],
   );
   const paidCount = useMemo(
-    () => rows.filter((item) => (item.statut ?? "").toUpperCase() === "PAYEE").length,
-    [rows],
+    () => standardRows.filter((item) => (item.statut ?? "").toUpperCase() === "PAYEE").length,
+    [standardRows],
   );
   const partialCount = useMemo(
-    () => rows.filter((item) => (item.statut ?? "").toUpperCase() === "PARTIELLE").length,
+    () => standardRows.filter((item) => (item.statut ?? "").toUpperCase() === "PARTIELLE").length,
+    [standardRows],
+  );
+  const recentRows = useMemo(
+    () =>
+      [...rows]
+        .sort(
+          (a, b) =>
+            new Date(b.date_emission ?? b.created_at ?? 0).getTime() -
+            new Date(a.date_emission ?? a.created_at ?? 0).getTime(),
+        )
+        .slice(0, 8),
     [rows],
   );
 
@@ -95,13 +119,13 @@ export default function FactureOverview({ mode = "overview" }: Props) {
         ) : null}
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiFileText />
-            <span className="text-sm font-medium">Factures</span>
+            <span className="text-sm font-medium">Factures actives</span>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{rows.length}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">{standardRows.length}</p>
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
@@ -124,6 +148,16 @@ export default function FactureOverview({ mode = "overview" }: Props) {
           </div>
           <p className="mt-3 text-3xl font-semibold text-slate-900">{overdueCount}</p>
         </div>
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3 text-slate-500">
+            <FiFileText />
+            <span className="text-sm font-medium">Avoirs</span>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">{creditNotesCount}</p>
+          <p className="mt-2 text-xs text-slate-500">
+            Total facture net: {totalAmount.toLocaleString("fr-FR")} MGA
+          </p>
+        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.4fr,0.9fr]">
@@ -136,16 +170,27 @@ export default function FactureOverview({ mode = "overview" }: Props) {
               </p>
             </div>
           </div>
-          <div className="mt-5 space-y-3">
-            {rows.slice(0, 6).map((item) => (
+          <div className="mt-5 max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+            {recentRows.map((item) => (
               <div key={item.id} className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-slate-900">
                     {getFactureDisplayLabel(item)}
                   </p>
-                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-                    {getFactureStatusLabel(item.statut)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                      {getFactureStatusLabel(item.statut)}
+                    </span>
+                    <span
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+                        (item.nature ?? "FACTURE").toUpperCase() === "AVOIR"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      {(item.nature ?? "FACTURE").toUpperCase() === "AVOIR" ? "Avoir" : "Facture"}
+                    </span>
+                  </div>
                 </div>
                 <p className="mt-1 text-xs text-slate-500">{getFactureSecondaryLabel(item)}</p>
               </div>
@@ -165,7 +210,7 @@ export default function FactureOverview({ mode = "overview" }: Props) {
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">Parametres</h3>
                 <p className="text-sm text-slate-500">
-                  Les statuts des factures sont derives automatiquement a partir des paiements et de l'echeance.
+                  Les statuts sont derives des paiements et des echeances. Les avoirs restent visibles a part pour ne pas brouiller la lecture des vraies factures.
                 </p>
               </div>
             </div>

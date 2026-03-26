@@ -144,6 +144,16 @@ class InscriptionApp {
             const factureDateEmission = scolarite?.date_inscription
                 ? new Date(scolarite.date_inscription)
                 : new Date();
+            const anneeScolaire = await this.prisma.anneeScolaire.findFirst({
+                where: {
+                    id: annee_scolaire_id,
+                    etablissement_id,
+                },
+                select: {
+                    id: true,
+                    date_debut: true,
+                },
+            });
             const classe = await this.prisma.classe.findFirst({
                 where: {
                     id: scolarite.classe_id,
@@ -159,43 +169,21 @@ class InscriptionApp {
             if (!classe) {
                 return Response.error(res, "La classe selectionnee n'appartient pas a cet etablissement ou a cette annee scolaire.", 400, new Error());
             }
+            if (!anneeScolaire) {
+                return Response.error(res, "L'annee scolaire selectionnee n'appartient pas a cet etablissement.", 400, new Error());
+            }
             const normalizedModePaiement = this.normalizeModePaiement(
                 this.toNullableString(echeancier?.mode_paiement),
             );
-            const factureDateEcheance = normalizedModePaiement === "COMPTANT"
-                ? factureDateEmission
-                : echeancier?.premiere_echeance
-                    ? new Date(echeancier.premiere_echeance)
-                    : null;
             const invoiceLines = await this.buildInvoiceLines(this.prisma, etablissement_id, classe.niveau_scolaire_id, finance, {
                 transportActive,
                 cantineActive,
             });
             const totalBrut = invoiceLines.reduce((sum, line) => sum + line.montant, 0);
-            const appliedRemise = await this.resolveFinanceRemise(this.prisma, etablissement_id, finance);
-            const remiseMontant = this.computeDiscount(
-                totalBrut,
-                appliedRemise?.type ?? finance?.remise_type ?? "AUCUNE",
-                appliedRemise?.valeur ?? this.toMoney(finance?.remise_valeur),
-            );
-            const finalInvoiceLines = this.applyDiscountToInvoiceLines(
-                invoiceLines,
-                remiseMontant,
-                appliedRemise?.nom ?? null,
-            );
-            const totalNet = this.roundMoney(
-                finalInvoiceLines.reduce((sum, line) => sum + line.montant, 0),
-            );
+            const schoolYearStartDate = this.getSchoolYearScheduleStartDate(anneeScolaire.date_debut);
             const invoiceDevise =
                 invoiceLines.find((line) => line.devise)?.devise ??
                 "MGA";
-            const hasFinancialFlow = finalInvoiceLines.length > 0;
-            const paymentSchedule = this.buildPaymentSchedule(
-                totalNet,
-                normalizedModePaiement,
-                Number(echeancier?.nombre_tranches ?? 1),
-                factureDateEcheance,
-            );
 
             const result = await this.prisma.$transaction(async (tx) => {
                 const userEleve = await tx.utilisateur.create({
@@ -240,60 +228,97 @@ class InscriptionApp {
                     },
                 });
 
+                const linkedParents: Array<{
+                    id: string;
+                    utilisateur_id: string | null;
+                    reused: boolean;
+                    nom_complet: string;
+                }> = [];
+
                 for (const t of tuteurs as any[]) {
-                    if (!t || !(t.nom || t.prenom || t.telephone || t.email)) continue;
+                    if (
+                        !t ||
+                        !(
+                            this.toNullableString(t.parent_tuteur_id) ||
+                            t.nom ||
+                            t.prenom ||
+                            t.telephone ||
+                            t.email
+                        )
+                    ) continue;
 
-                    const userTuteur = await tx.utilisateur.create({
-                        data: {
-                            etablissement_id,
-                            email: this.toNullableString(t.email),
-                            mot_de_passe_hash: await bcrypt.hash(passTuteur, 10),
-                            telephone: this.toNullableString(t.telephone),
-                            scope_json: {
-                                account: {
-                                    email: this.toNullableString(t.email),
-                                    password: passTuteur,
-                                },
-                                type: "tuteur",
-                            } as Prisma.InputJsonValue,
-                            statut: "ACTIF",
-                        },
+                    const parent = await this.findOrCreateParentTuteur(tx, {
+                        etablissement_id,
+                        raw: t,
+                        generatedPassword: passTuteur,
                     });
 
-                    await tx.profil.create({
-                        data: {
-                            utilisateur_id: userTuteur.id,
-                            prenom: t.prenom ?? "",
-                            nom: t.nom ?? "",
-                            date_naissance: null,
-                            genre: null,
-                            photo_url: null,
-                            adresse: this.toNullableString(t.adresse),
-                            contact_urgence_json: Prisma.JsonNull,
+                    await tx.eleveParentTuteur.upsert({
+                        where: {
+                            eleve_id_parent_tuteur_id: {
+                                eleve_id: eleveCreated.id,
+                                parent_tuteur_id: parent.id,
+                            },
                         },
-                    });
-
-                    const parent = await tx.parentTuteur.create({
-                        data: {
-                            etablissement_id,
-                            utilisateur_id: userTuteur.id,
-                            nom_complet: `${t.prenom ?? ""} ${t.nom ?? ""}`.trim(),
-                            telephone: this.toNullableString(t.telephone),
-                            email: this.toNullableString(t.email),
-                            adresse: this.toNullableString(t.adresse),
-                        },
-                    });
-
-                    await tx.eleveParentTuteur.create({
-                        data: {
+                        create: {
                             eleve_id: eleveCreated.id,
                             parent_tuteur_id: parent.id,
                             relation: this.toNullableString(t.relation),
                             est_principal: this.toBool(t.est_principal, false),
                             autorise_recuperation: this.toBool(t.autorise_recuperation, true),
                         },
+                        update: {
+                            relation: this.toNullableString(t.relation),
+                            est_principal: this.toBool(t.est_principal, false),
+                            autorise_recuperation: this.toBool(t.autorise_recuperation, true),
+                        },
                     });
+
+                    if (!linkedParents.some((item) => item.id === parent.id)) {
+                        linkedParents.push(parent);
+                    }
                 }
+
+                const fratrie = await this.computeSiblingContext(
+                    tx,
+                    linkedParents.map((item) => item.id),
+                    eleveCreated.id,
+                    annee_scolaire_id,
+                );
+                const appliedRemise = await this.resolveApplicableFinanceRemise(
+                    tx,
+                    etablissement_id,
+                    finance,
+                    fratrie.sibling_rank,
+                );
+                const remiseSourceKeys = appliedRemise?.apply_on_source_keys ?? null;
+                const remiseBase = this.computeDiscountBase(invoiceLines, remiseSourceKeys);
+                const remiseMontant = this.computeDiscount(
+                    remiseBase,
+                    appliedRemise?.type ?? finance?.remise_type ?? "AUCUNE",
+                    appliedRemise?.valeur ?? this.toMoney(finance?.remise_valeur),
+                );
+                const finalInvoiceLines = this.applyDiscountToInvoiceLines(
+                    invoiceLines,
+                    remiseMontant,
+                    appliedRemise?.nom ?? null,
+                    remiseSourceKeys,
+                );
+                const totalNet = this.roundMoney(
+                    finalInvoiceLines.reduce((sum, line) => sum + line.montant, 0),
+                );
+                const hasFinancialFlow = finalInvoiceLines.length > 0;
+                const paymentSchedule = this.buildPaymentSchedule(
+                    invoiceLines,
+                    remiseMontant,
+                    normalizedModePaiement,
+                    schoolYearStartDate,
+                    factureDateEmission,
+                    remiseSourceKeys,
+                );
+                const factureDateEcheance = paymentSchedule.length > 0
+                    ? new Date(paymentSchedule[0].date)
+                    : (normalizedModePaiement === "COMPTANT" ? factureDateEmission : schoolYearStartDate);
 
                 const inscription = await tx.inscription.create({
                     data: {
@@ -348,6 +373,7 @@ class InscriptionApp {
                             etablissement_id,
                             eleve_id: eleveCreated.id,
                             annee_scolaire_id,
+                            remise_id: appliedRemise?.id ?? null,
                             numero_facture: numeroFacture,
                             date_emission: factureDateEmission,
                             date_echeance: factureDateEcheance,
@@ -399,9 +425,13 @@ class InscriptionApp {
                         },
                         finance: {
                             catalogue_frais_inscription_id: this.toNullableString(finance?.catalogue_frais_inscription_id),
+                            catalogue_frais_inscription_nombre_tranches: this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_inscription_nombre_tranches),
                             catalogue_frais_scolarite_id: this.toNullableString(finance?.catalogue_frais_scolarite_id),
+                            catalogue_frais_scolarite_nombre_tranches: this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_scolarite_nombre_tranches),
                             catalogue_frais_transport_id: this.toNullableString(finance?.catalogue_frais_transport_id),
+                            catalogue_frais_transport_nombre_tranches: this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_transport_nombre_tranches),
                             catalogue_frais_cantine_id: this.toNullableString(finance?.catalogue_frais_cantine_id),
+                            catalogue_frais_cantine_nombre_tranches: this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_cantine_nombre_tranches),
                             remise_id: appliedRemise?.id ?? this.toNullableString(finance?.remise_id),
                             remise_nom: appliedRemise?.nom ?? null,
                             frais_inscription: this.extractFinanceLineAmount(invoiceLines, "catalogue_frais_inscription_id", finance),
@@ -411,15 +441,23 @@ class InscriptionApp {
                             remise_type: appliedRemise?.type ?? finance?.remise_type ?? "AUCUNE",
                             remise_valeur: appliedRemise?.valeur ?? this.toMoney(finance?.remise_valeur),
                             remise_montant: remiseMontant,
+                            remise_automatique_fratrie: appliedRemise?.automatique_fratrie ?? false,
+                            remise_source_fratrie: appliedRemise?.source_fratrie ?? false,
+                            fratrie_detectee: fratrie.detected,
+                            fratrie_rang: fratrie.sibling_rank,
+                            fratrie_nombre_autres_enfants: fratrie.sibling_count,
                             total_brut: totalBrut,
                             total_net: totalNet,
                             devise: invoiceDevise,
+                            annee_scolaire_debut: schoolYearStartDate.toISOString().slice(0, 10),
                         },
                         metadata: {
                             cree_depuis_inscription: true,
                             inscription_id: inscription.id,
                             facture_id: facture?.id ?? null,
                             paiement_initial_id: paiementInitial?.id ?? null,
+                            linked_parent_ids: linkedParents.map((item) => item.id),
+                            linked_parent_reused_ids: linkedParents.filter((item) => item.reused).map((item) => item.id),
                         },
                     };
 
@@ -427,6 +465,7 @@ class InscriptionApp {
                         data: {
                             eleve_id: eleveCreated.id,
                             annee_scolaire_id,
+                            remise_id: appliedRemise?.id ?? null,
                             plan_json: planJson as Prisma.InputJsonValue,
                         },
                     });
@@ -462,8 +501,12 @@ class InscriptionApp {
                             remise_montant: remiseMontant,
                             devise: invoiceDevise,
                             remise: appliedRemise,
+                            fratrie,
+                            linked_parents: linkedParents,
                         }
                         : null,
+                    fratrie,
+                    linked_parents: linkedParents,
                 };
             });
 
@@ -501,19 +544,10 @@ class InscriptionApp {
     private extractFinanceLineAmount(
         lines: Array<{ source_key: string; montant: number }>,
         sourceKey: string,
-        finance: any,
+        _finance: any,
     ): number {
         const found = lines.find((line) => line.source_key === sourceKey);
-        if (found) return found.montant;
-
-        const legacyMap: Record<string, string> = {
-            catalogue_frais_inscription_id: "frais_inscription",
-            catalogue_frais_scolarite_id: "frais_scolarite",
-            catalogue_frais_transport_id: "frais_transport",
-            catalogue_frais_cantine_id: "frais_cantine",
-        };
-
-        return this.toMoney(finance?.[legacyMap[sourceKey]]);
+        return found ? found.montant : 0;
     }
 
     private async buildInvoiceLines(
@@ -522,30 +556,30 @@ class InscriptionApp {
         niveauScolaireId: string,
         finance: any,
         servicesState: { transportActive: boolean; cantineActive: boolean },
-    ): Promise<Array<{ libelle: string; montant: number; catalogue_frais_id: string | null; source_key: string; devise?: string | null }>> {
+    ): Promise<Array<{ libelle: string; montant: number; catalogue_frais_id: string | null; source_key: string; devise?: string | null; nombre_tranches: number }>> {
         const definitions = [
             {
                 source_key: "catalogue_frais_inscription_id",
+                tranche_key: "catalogue_frais_inscription_nombre_tranches",
                 fallback_label: "Frais d'inscription",
-                legacy_amount_key: "frais_inscription",
                 enabled: true,
             },
             {
                 source_key: "catalogue_frais_scolarite_id",
+                tranche_key: "catalogue_frais_scolarite_nombre_tranches",
                 fallback_label: "Frais de scolarite",
-                legacy_amount_key: "frais_scolarite",
                 enabled: true,
             },
             {
                 source_key: "catalogue_frais_transport_id",
+                tranche_key: "catalogue_frais_transport_nombre_tranches",
                 fallback_label: "Frais de transport",
-                legacy_amount_key: "frais_transport",
                 enabled: servicesState.transportActive,
             },
             {
                 source_key: "catalogue_frais_cantine_id",
+                tranche_key: "catalogue_frais_cantine_nombre_tranches",
                 fallback_label: "Frais de cantine",
-                legacy_amount_key: "frais_cantine",
                 enabled: servicesState.cantineActive,
             },
         ] as const;
@@ -559,8 +593,11 @@ class InscriptionApp {
             const catalogueRows = await prisma.catalogueFrais.findMany({
                 where: {
                     etablissement_id: etablissementId,
-                    niveau_scolaire_id: niveauScolaireId,
                     id: { in: selectedIds },
+                    OR: [
+                        { niveau_scolaire_id: niveauScolaireId },
+                        { niveau_scolaire_id: null },
+                    ],
                 } as never,
                 select: {
                     id: true,
@@ -580,7 +617,7 @@ class InscriptionApp {
             }
 
             if (catalogueRows.length !== selectedIds.length) {
-                throw new Error("Un frais selectionne dans l'inscription ne correspond pas au niveau scolaire de la classe choisie.");
+                throw new Error("Un frais selectionne dans l'inscription n'est pas applicable a la classe choisie.");
             }
 
             const devises = Array.from(new Set(catalogueRows.map((item) => item.devise ?? "MGA")));
@@ -591,36 +628,32 @@ class InscriptionApp {
 
         return definitions
             .filter((definition) => definition.enabled)
-            .map((definition) => {
+            .flatMap((definition) => {
                 const selectedId = this.toNullableString(finance?.[definition.source_key]);
                 const catalogue = selectedId ? catalogueById.get(selectedId) : null;
+                const nombreTranches = this.resolveFinanceLineTrancheCount(finance?.[definition.tranche_key]);
 
-                if (catalogue) {
-                    return {
-                        source_key: definition.source_key,
-                        catalogue_frais_id: catalogue.id,
-                        libelle: catalogue.nom,
-                        montant: catalogue.montant,
-                        devise: catalogue.devise,
-                    };
+                if (!catalogue || catalogue.montant <= 0) {
+                    return [];
                 }
 
-                return {
+                return [{
                     source_key: definition.source_key,
-                    catalogue_frais_id: null,
-                    libelle: definition.fallback_label,
-                    montant: this.toMoney(finance?.[definition.legacy_amount_key]),
-                    devise: "MGA",
-                };
-            })
-            .filter((line) => line.montant > 0);
+                    catalogue_frais_id: catalogue.id,
+                    libelle: catalogue.nom,
+                    montant: catalogue.montant,
+                    devise: catalogue.devise,
+                    nombre_tranches: nombreTranches,
+                }];
+            });
     }
 
     private applyDiscountToInvoiceLines(
-        lines: Array<{ libelle: string; montant: number; catalogue_frais_id?: string | null; source_key?: string; devise?: string | null }>,
+        lines: Array<{ libelle: string; montant: number; catalogue_frais_id?: string | null; source_key?: string; devise?: string | null; nombre_tranches?: number }>,
         discountAmount: number,
         discountLabel?: string | null,
-    ): Array<{ libelle: string; montant: number; catalogue_frais_id?: string | null; source_key?: string; devise?: string | null }> {
+        applyOnSourceKeys?: string[] | null,
+    ): Array<{ libelle: string; montant: number; catalogue_frais_id?: string | null; source_key?: string; devise?: string | null; nombre_tranches?: number }> {
         if (discountAmount <= 0) return lines;
         return [
             ...lines,
@@ -628,7 +661,8 @@ class InscriptionApp {
                 libelle: discountLabel ? `Remise appliquee - ${discountLabel}` : "Remise appliquee",
                 montant: this.roundMoney(-discountAmount),
                 catalogue_frais_id: null,
-                source_key: "remise",
+                source_key: applyOnSourceKeys?.length ? `remise:${applyOnSourceKeys.join(",")}` : "remise",
+                nombre_tranches: 1,
             },
         ];
     }
@@ -639,46 +673,106 @@ class InscriptionApp {
         return "ECHELONNE";
     }
 
-    private buildPaymentSchedule(
-        totalNet: number,
-        modePaiement: string,
-        nombreTranches: number,
-        firstDueDate: Date | null,
-    ): Array<{ date: string; montant: number; statut: string; note: string | null; libelle: string | null }> {
-        const baseDate = firstDueDate ?? new Date();
-        const trancheCount = Math.max(1, modePaiement === "COMPTANT" ? 1 : Number(nombreTranches || 1));
-        const normalizedTotal = this.roundMoney(Math.max(0, totalNet));
+    private resolveFinanceLineTrancheCount(value: unknown): number {
+        const parsed = Number.parseInt(String(value ?? 1), 10);
+        if (!Number.isFinite(parsed) || parsed < 1) return 1;
+        return parsed;
+    }
 
-        if (trancheCount === 1) {
+    private getSchoolYearScheduleStartDate(dateDebut: Date) {
+        return new Date(new Date(dateDebut).toISOString().slice(0, 10));
+    }
+
+    private distributeDiscountAcrossCatalogueLines<T extends { montant: number }>(
+        lines: T[],
+        discountAmount: number,
+        applyOnSourceKeys?: string[] | null,
+    ): Array<T & { montant_net: number }> {
+        const normalizedDiscount = this.roundMoney(Math.max(0, discountAmount));
+        if (normalizedDiscount <= 0) {
+            return lines.map((line) => ({ ...line, montant_net: this.roundMoney(line.montant) }));
+        }
+
+        const eligibleLines = lines.filter((line) => this.isLineEligibleForDiscount(line as { source_key?: string | null }, applyOnSourceKeys));
+        const total = this.roundMoney(eligibleLines.reduce((sum, line) => sum + this.toMoney(line.montant), 0));
+        if (total <= 0) {
+            return lines.map((line) => ({ ...line, montant_net: this.roundMoney(line.montant) }));
+        }
+
+        let remainingDiscount = normalizedDiscount;
+        return lines.map((line, index) => {
+            const lineMontant = this.roundMoney(this.toMoney(line.montant));
+            if (!this.isLineEligibleForDiscount(line as { source_key?: string | null }, applyOnSourceKeys)) {
+                return {
+                    ...line,
+                    montant_net: lineMontant,
+                };
+            }
+            const lineDiscount = index === lines.length - 1
+                ? remainingDiscount
+                : this.roundMoney((lineMontant / total) * normalizedDiscount);
+            remainingDiscount = this.roundMoney(Math.max(0, remainingDiscount - lineDiscount));
+            return {
+                ...line,
+                montant_net: this.roundMoney(Math.max(0, lineMontant - lineDiscount)),
+            };
+        });
+    }
+
+    private buildPaymentSchedule(
+        lines: Array<{ libelle: string; montant: number; nombre_tranches: number; devise?: string | null }>,
+        discountAmount: number,
+        modePaiement: string,
+        schoolYearStartDate: Date,
+        immediateDueDate: Date,
+        applyOnSourceKeys?: string[] | null,
+    ): Array<{ date: string; montant: number; statut: string; note: string | null; libelle: string | null }> {
+        const normalizedLines = lines.filter((line) => this.toMoney(line.montant) > 0);
+        const normalizedTotal = this.roundMoney(
+            normalizedLines.reduce((sum, line) => sum + this.toMoney(line.montant), 0) - this.roundMoney(Math.max(0, discountAmount)),
+        );
+
+        if (modePaiement === "COMPTANT") {
             return [
                 {
-                    date: baseDate.toISOString().slice(0, 10),
+                    date: immediateDueDate.toISOString().slice(0, 10),
                     montant: normalizedTotal,
-                    statut: modePaiement === "COMPTANT" && normalizedTotal > 0 ? "PAYEE" : "A_VENIR",
-                    note: modePaiement === "COMPTANT" ? "Reglement comptant" : "Echeance unique",
-                    libelle: modePaiement === "COMPTANT" ? "Reglement comptant" : "Echeance unique",
+                    statut: normalizedTotal > 0 ? "PAYEE" : "A_VENIR",
+                    note: "Reglement comptant",
+                    libelle: "Reglement comptant",
                 },
             ];
         }
 
-        const baseAmount = this.roundMoney(normalizedTotal / trancheCount);
-        let remaining = normalizedTotal;
+        const linesWithNetAmount = this.distributeDiscountAcrossCatalogueLines(normalizedLines, discountAmount, applyOnSourceKeys);
+        const schedule: Array<{ date: string; montant: number; statut: string; note: string | null; libelle: string | null }> = [];
 
-        return Array.from({ length: trancheCount }).map((_, index) => {
-            const date = new Date(baseDate);
-            date.setMonth(date.getMonth() + index);
-            const montant =
-                index === trancheCount - 1 ? this.roundMoney(remaining) : baseAmount;
-            remaining = this.roundMoney(remaining - montant);
+        for (const line of linesWithNetAmount) {
+            const trancheCount = Math.max(1, Number(line.nombre_tranches || 1));
+            let remaining = this.roundMoney(line.montant_net);
+            const baseAmount = this.roundMoney(remaining / trancheCount);
 
-            return {
-                date: date.toISOString().slice(0, 10),
-                montant,
-                statut: "A_VENIR",
-                note: `Tranche ${index + 1}`,
-                libelle: `Tranche ${index + 1}`,
-            };
-        });
+            for (let index = 0; index < trancheCount; index += 1) {
+                const date = new Date(schoolYearStartDate);
+                date.setMonth(date.getMonth() + index);
+                const montant = index === trancheCount - 1
+                    ? this.roundMoney(remaining)
+                    : baseAmount;
+                remaining = this.roundMoney(Math.max(0, remaining - montant));
+
+                if (montant <= 0) continue;
+
+                schedule.push({
+                    date: date.toISOString().slice(0, 10),
+                    montant,
+                    statut: "A_VENIR",
+                    note: `${line.libelle} - tranche ${index + 1}/${trancheCount}`,
+                    libelle: `${line.libelle} - tranche ${index + 1}`,
+                });
+            }
+        }
+
+        return schedule;
     }
 
     private async resolveFinanceRemise(
@@ -757,6 +851,447 @@ class InscriptionApp {
         });
 
         return `FAC-${year}-${String(count + 1).padStart(4, "0")}`;
+    }
+
+    private computeDiscountBase(
+        lines: Array<{ montant: number; source_key?: string | null }>,
+        applyOnSourceKeys?: string[] | null,
+    ) {
+        return this.roundMoney(
+            lines
+                .filter((line) => this.isLineEligibleForDiscount(line, applyOnSourceKeys))
+                .reduce((sum, line) => sum + this.toMoney(line.montant), 0),
+        );
+    }
+
+    private isLineEligibleForDiscount(
+        line: { source_key?: string | null },
+        applyOnSourceKeys?: string[] | null,
+    ) {
+        if (!applyOnSourceKeys || applyOnSourceKeys.length === 0) return true;
+        return applyOnSourceKeys.includes((line.source_key ?? "").trim());
+    }
+
+    private parseSiblingRule(remise: {
+        id: string;
+        nom: string;
+        type: string;
+        valeur: number;
+        regles_json?: Prisma.JsonValue | null;
+    }, siblingRank: number) {
+        const rules =
+            remise.regles_json && typeof remise.regles_json === "object"
+                ? (remise.regles_json as Record<string, any>)
+                : null;
+        if (!rules) return null;
+
+        const markers = [
+            rules.type,
+            rules.kind,
+            rules.scope,
+            rules.mode,
+            rules.source,
+            rules.trigger,
+        ]
+            .map((value) => (typeof value === "string" ? value.trim().toUpperCase() : ""))
+            .filter(Boolean);
+
+        const fratrieMarked =
+            Boolean(rules.fratrie) ||
+            Boolean(rules.sibling) ||
+            markers.includes("FRATRIE") ||
+            markers.includes("SIBLING");
+
+        if (!fratrieMarked) return null;
+
+        const minimumChildren = Math.max(
+            2,
+            Number(
+                rules.minimum_children ??
+                rules.min_children ??
+                rules.minimum_siblings ??
+                rules.min_rank ??
+                2,
+            ) || 2,
+        );
+        if (siblingRank < minimumChildren) return null;
+
+        const sourceKeys = Array.isArray(rules.apply_on_source_keys)
+            ? rules.apply_on_source_keys.filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0)
+            : Array.isArray(rules.applyOnSourceKeys)
+                ? rules.applyOnSourceKeys.filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0)
+                : null;
+
+        const tiers = Array.isArray(rules.tiers)
+            ? rules.tiers
+            : Array.isArray(rules.rangs)
+                ? rules.rangs
+                : null;
+
+        let resolvedType = remise.type;
+        let resolvedValeur = this.toMoney(remise.valeur);
+
+        if (tiers && tiers.length > 0) {
+            const normalizedTiers = tiers
+                .map((tier: any) => ({
+                    minRank: Math.max(
+                        2,
+                        Number(
+                            tier?.rang_min ??
+                            tier?.min_rank ??
+                            tier?.rank ??
+                            tier?.rang ??
+                            2,
+                        ) || 2,
+                    ),
+                    type: typeof tier?.type === "string" ? tier.type.trim().toUpperCase() : remise.type,
+                    valeur: this.toMoney(tier?.valeur ?? remise.valeur),
+                }))
+                .filter((tier) => tier.valeur > 0)
+                .sort((left, right) => left.minRank - right.minRank);
+
+            const matchedTier = normalizedTiers
+                .filter((tier) => siblingRank >= tier.minRank)
+                .pop();
+
+            if (!matchedTier) return null;
+
+            resolvedType = matchedTier.type;
+            resolvedValeur = matchedTier.valeur;
+        }
+
+        return {
+            id: remise.id,
+            nom: remise.nom,
+            type: resolvedType,
+            valeur: resolvedValeur,
+            automatique_fratrie: true,
+            source_fratrie: true,
+            apply_on_source_keys: sourceKeys,
+        };
+    }
+
+    private extractRemiseApplySourceKeys(remise: { regles_json?: Prisma.JsonValue | null }) {
+        const rules =
+            remise.regles_json && typeof remise.regles_json === "object"
+                ? (remise.regles_json as Record<string, any>)
+                : null;
+        if (!rules) return null;
+        const sourceKeys = Array.isArray(rules.apply_on_source_keys)
+            ? rules.apply_on_source_keys
+            : Array.isArray(rules.applyOnSourceKeys)
+                ? rules.applyOnSourceKeys
+                : null;
+        if (!sourceKeys) return null;
+        return sourceKeys.filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0);
+    }
+
+    private async resolveApplicableFinanceRemise(
+        prisma: PrismaClient | Prisma.TransactionClient,
+        etablissementId: string,
+        finance: any,
+        siblingRank: number,
+    ): Promise<{
+        id: string;
+        nom: string;
+        type: string;
+        valeur: number;
+        automatique_fratrie?: boolean;
+        source_fratrie?: boolean;
+        apply_on_source_keys?: string[] | null;
+    } | null> {
+        const selected = await this.resolveFinanceRemise(prisma, etablissementId, finance);
+        if (selected) {
+            const selectedRaw = await prisma.remise.findFirst({
+                where: {
+                    id: selected.id,
+                    etablissement_id: etablissementId,
+                },
+                select: {
+                    id: true,
+                    nom: true,
+                    type: true,
+                    valeur: true,
+                    regles_json: true,
+                },
+            });
+            if (selectedRaw) {
+                const siblingRule = this.parseSiblingRule(selectedRaw, siblingRank);
+                if (siblingRule) return siblingRule;
+                return {
+                    ...selected,
+                    automatique_fratrie: false,
+                    source_fratrie: false,
+                    apply_on_source_keys: this.extractRemiseApplySourceKeys(selectedRaw),
+                };
+            }
+            return selected;
+        }
+
+        if (siblingRank < 2) return null;
+
+        const remises = await prisma.remise.findMany({
+            where: {
+                etablissement_id: etablissementId,
+            },
+            select: {
+                id: true,
+                nom: true,
+                type: true,
+                valeur: true,
+                regles_json: true,
+            },
+            orderBy: [{ created_at: "asc" }],
+        });
+
+        for (const remise of remises) {
+            const siblingRule = this.parseSiblingRule(remise, siblingRank);
+            if (siblingRule) return siblingRule;
+        }
+
+        return null;
+    }
+
+    private async findOrCreateParentTuteur(
+        tx: Prisma.TransactionClient,
+        payload: {
+            etablissement_id: string;
+            raw: any;
+            generatedPassword: string;
+        },
+    ) {
+        const fullName = `${payload.raw?.prenom ?? ""} ${payload.raw?.nom ?? ""}`.trim();
+        const email = this.toNullableString(payload.raw?.email);
+        const telephone = this.toNullableString(payload.raw?.telephone);
+        const explicitParentId = this.toNullableString(payload.raw?.parent_tuteur_id);
+
+        let existingParent = explicitParentId
+            ? await tx.parentTuteur.findFirst({
+                where: {
+                    id: explicitParentId,
+                    etablissement_id: payload.etablissement_id,
+                },
+                include: {
+                    utilisateur: {
+                        include: {
+                            profil: true,
+                        },
+                    },
+                },
+            })
+            : null;
+
+        if (!existingParent && (email || telephone)) {
+            existingParent = await tx.parentTuteur.findFirst({
+                where: {
+                    etablissement_id: payload.etablissement_id,
+                    OR: [
+                        ...(email ? [{ email }] : []),
+                        ...(telephone ? [{ telephone }] : []),
+                        ...(email ? [{ utilisateur: { is: { email } } }] : []),
+                        ...(telephone ? [{ utilisateur: { is: { telephone } } }] : []),
+                    ],
+                },
+                include: {
+                    utilisateur: {
+                        include: {
+                            profil: true,
+                        },
+                    },
+                },
+            });
+        }
+
+        if (existingParent) {
+            let utilisateurId = existingParent.utilisateur_id ?? null;
+            if (!utilisateurId && (email || telephone)) {
+                const user = await tx.utilisateur.create({
+                    data: {
+                        etablissement_id: payload.etablissement_id,
+                        email,
+                        telephone,
+                        mot_de_passe_hash: await bcrypt.hash(payload.generatedPassword, 10),
+                        scope_json: {
+                            account: {
+                                email,
+                                password: payload.generatedPassword,
+                            },
+                            type: "tuteur",
+                        } as Prisma.InputJsonValue,
+                        statut: "ACTIF",
+                    },
+                });
+
+                await tx.profil.create({
+                    data: {
+                        utilisateur_id: user.id,
+                        prenom: payload.raw?.prenom ?? "",
+                        nom: payload.raw?.nom ?? "",
+                        adresse: this.toNullableString(payload.raw?.adresse),
+                        date_naissance: null,
+                        genre: null,
+                        photo_url: null,
+                        contact_urgence_json: Prisma.JsonNull,
+                    },
+                });
+
+                utilisateurId = user.id;
+            } else if (utilisateurId) {
+                await tx.utilisateur.update({
+                    where: { id: utilisateurId },
+                    data: {
+                        email: email ?? existingParent.utilisateur?.email ?? existingParent.email,
+                        telephone: telephone ?? existingParent.utilisateur?.telephone ?? existingParent.telephone,
+                    },
+                });
+
+                if (existingParent.utilisateur?.profil) {
+                    await tx.profil.update({
+                        where: { utilisateur_id: utilisateurId },
+                        data: {
+                            prenom: this.toNullableString(payload.raw?.prenom) ?? existingParent.utilisateur.profil.prenom,
+                            nom: this.toNullableString(payload.raw?.nom) ?? existingParent.utilisateur.profil.nom,
+                            adresse: this.toNullableString(payload.raw?.adresse) ?? existingParent.utilisateur.profil.adresse,
+                        },
+                    });
+                }
+            }
+
+            const updatedParent = await tx.parentTuteur.update({
+                where: { id: existingParent.id },
+                data: {
+                    utilisateur_id: utilisateurId,
+                    nom_complet: fullName || existingParent.nom_complet,
+                    telephone: telephone ?? existingParent.telephone,
+                    email: email ?? existingParent.email,
+                    adresse: this.toNullableString(payload.raw?.adresse) ?? existingParent.adresse,
+                },
+            });
+
+            return {
+                id: updatedParent.id,
+                utilisateur_id: updatedParent.utilisateur_id ?? null,
+                reused: true,
+                nom_complet: updatedParent.nom_complet,
+            };
+        }
+
+        const userTuteur = await tx.utilisateur.create({
+            data: {
+                etablissement_id: payload.etablissement_id,
+                email,
+                mot_de_passe_hash: await bcrypt.hash(payload.generatedPassword, 10),
+                telephone,
+                scope_json: {
+                    account: {
+                        email,
+                        password: payload.generatedPassword,
+                    },
+                    type: "tuteur",
+                } as Prisma.InputJsonValue,
+                statut: "ACTIF",
+            },
+        });
+
+        await tx.profil.create({
+            data: {
+                utilisateur_id: userTuteur.id,
+                prenom: payload.raw?.prenom ?? "",
+                nom: payload.raw?.nom ?? "",
+                date_naissance: null,
+                genre: null,
+                photo_url: null,
+                adresse: this.toNullableString(payload.raw?.adresse),
+                contact_urgence_json: Prisma.JsonNull,
+            },
+        });
+
+        const parent = await tx.parentTuteur.create({
+            data: {
+                etablissement_id: payload.etablissement_id,
+                utilisateur_id: userTuteur.id,
+                nom_complet: fullName,
+                telephone,
+                email,
+                adresse: this.toNullableString(payload.raw?.adresse),
+            },
+        });
+
+        return {
+            id: parent.id,
+            utilisateur_id: parent.utilisateur_id ?? null,
+            reused: false,
+            nom_complet: parent.nom_complet,
+        };
+    }
+
+    private async computeSiblingContext(
+        tx: Prisma.TransactionClient,
+        parentIds: string[],
+        newEleveId: string,
+        anneeScolaireId: string,
+    ) {
+        if (parentIds.length === 0) {
+            return {
+                detected: false,
+                sibling_count: 0,
+                sibling_rank: 1,
+                siblings: [] as Array<Record<string, unknown>>,
+            };
+        }
+
+        const siblingLinks = await tx.eleveParentTuteur.findMany({
+            where: {
+                parent_tuteur_id: { in: parentIds },
+                eleve_id: { not: newEleveId },
+            },
+            include: {
+                eleve: {
+                    include: {
+                        utilisateur: {
+                            include: {
+                                profil: true,
+                            },
+                        },
+                        inscriptions: {
+                            where: {
+                                annee_scolaire_id: anneeScolaireId,
+                                statut: "INSCRIT",
+                            },
+                            include: {
+                                classe: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const siblingMap = new Map<string, Record<string, unknown>>();
+        for (const link of siblingLinks) {
+            if (!link.eleve || link.eleve.inscriptions.length === 0) continue;
+            const profil = link.eleve.utilisateur?.profil;
+            siblingMap.set(link.eleve_id, {
+                eleve_id: link.eleve_id,
+                code_eleve: link.eleve.code_eleve,
+                nom_complet: [profil?.prenom?.trim(), profil?.nom?.trim()].filter(Boolean).join(" ").trim() || link.eleve.code_eleve || link.eleve_id,
+                classe: link.eleve.inscriptions[0]?.classe?.nom ?? null,
+                date_inscription: link.eleve.inscriptions[0]?.date_inscription ?? null,
+            });
+        }
+
+        const siblings = [...siblingMap.values()].sort((left, right) => {
+            const leftDate = new Date(String(left.date_inscription ?? 0)).getTime();
+            const rightDate = new Date(String(right.date_inscription ?? 0)).getTime();
+            return leftDate - rightDate;
+        });
+
+        return {
+            detected: siblings.length > 0,
+            sibling_count: siblings.length,
+            sibling_rank: siblings.length + 1,
+            siblings,
+        };
     }
 }
 

@@ -12,6 +12,23 @@ export default function CatalogueFraisTable() {
   const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new CatalogueFraisService(), []);
+  const buildSearchWhere = React.useCallback(
+    (text: string) => {
+      const normalized = text.trim();
+      const maybeNumber = Number(normalized);
+      const orConditions: Array<Record<string, unknown>> = [
+        { nom: { contains: normalized } },
+        { description: { contains: normalized } },
+        { devise: { contains: normalized } },
+        { periodicite: { contains: normalized } },
+      ];
+
+      return {
+        AND: [...(etablissement_id ? [{ etablissement_id }] : []), { OR: orConditions }],
+      };
+    },
+    [etablissement_id],
+  );
 
   const columns: ColumnDef<CatalogueFraisWithRelations>[] = [
     { key: "frais", header: "Frais", render: (row) => <div><p className="font-medium text-slate-900">{getCatalogueFraisDisplayLabel(row)}</p><p className="text-xs text-slate-500">{getCatalogueFraisSecondaryLabel(row)}</p></div>, sortable: false, sortKey: "nom" },
@@ -33,7 +50,7 @@ export default function CatalogueFraisTable() {
       getRowId={(row) => row.id}
       initialQuery={{ page: 1, take: 10, where: etablissement_id ? { etablissement_id } : {}, includeSpec: { niveau: true, _count: { select: { lignesFacture: true } } } }}
       showSearch
-      onSearchBuildWhere={(text) => ({ AND: [...(etablissement_id ? [{ etablissement_id }] : []), { OR: [{ nom: { contains: text } }, { description: { contains: text } }, { devise: { contains: text } }, { periodicite: { contains: text } }] }] })}
+      onSearchBuildWhere={buildSearchWhere}
     />
   );
 }

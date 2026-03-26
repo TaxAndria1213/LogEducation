@@ -11,23 +11,31 @@ function FlyPopup({
   title?: string;
   children?: React.ReactNode;
 }) {
+  if (!isOpen) return null;
+
   return (
     <div
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-      className={`fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 ${isOpen ? "block" : "hidden"}`}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
-      <head className="fixed top-0 left-0 w-full h-full">
-        <Title1 title={title || ""}></Title1>
-        {/**icon de fermeture du popup */}
+      <button
+        type="button"
+        className="absolute inset-0 h-full w-full cursor-default"
+        aria-label="Fermer le popup"
+        onClick={() => setIsOpen(false)}
+      />
+
+      <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          {title ? <Title1 title={title} /> : <div />}
         <button
-          className="absolute top-4 right-4 text-white text-2xl font-bold"
+          type="button"
+          className="text-2xl font-bold text-slate-500 transition hover:text-slate-900"
           onClick={() => setIsOpen(false)}
         >
           &times;
         </button>
-      </head>
-
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-auto">
+        </div>
         {children}
       </div>
     </div>

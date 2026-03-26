@@ -10,11 +10,14 @@ import PlanPaiementEleveService, {
   getPlanPaiementSecondaryLabel,
   type PlanPaiementEleveWithRelations,
 } from "../../../../../services/planPaiementEleve.service";
+import { usePlanPaiementStore } from "../../store/PlanPaiementIndexStore";
 
 export default function PlanPaiementTable() {
   const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new PlanPaiementEleveService(), []);
+  const setSelectedPlanPaiement = usePlanPaiementStore((state) => state.setSelectedPlanPaiement);
+  const setRenderedComponent = usePlanPaiementStore((state) => state.setRenderedComponent);
 
   const columns: ColumnDef<PlanPaiementEleveWithRelations>[] = [
     {
@@ -58,6 +61,22 @@ export default function PlanPaiementTable() {
 
   const actions: RowAction<PlanPaiementEleveWithRelations>[] = [
     {
+      label: "Voir",
+      variant: "secondary",
+      onClick: async (row) => {
+        setSelectedPlanPaiement(row);
+        setRenderedComponent("detail");
+      },
+    },
+    {
+      label: "Modifier",
+      variant: "primary",
+      onClick: async (row) => {
+        setSelectedPlanPaiement(row);
+        setRenderedComponent("edit");
+      },
+    },
+    {
       label: "Supprimer",
       variant: "danger",
       confirm: { title: "Suppression", message: "Supprimer ce plan de paiement ?" },
@@ -82,9 +101,15 @@ export default function PlanPaiementTable() {
         includeSpec: {
           eleve: { include: { utilisateur: { include: { profil: true } } } },
           annee: true,
+          remise: true,
+          echeances: { orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }] },
         },
       }}
       showSearch
+      onRowClick={(row) => {
+        setSelectedPlanPaiement(row);
+        setRenderedComponent("detail");
+      }}
       onSearchBuildWhere={(text) => ({
         AND: [
           ...(etablissement_id ? [{ eleve: { is: { etablissement_id } } }] : []),

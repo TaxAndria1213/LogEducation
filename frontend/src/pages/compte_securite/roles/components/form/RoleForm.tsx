@@ -137,6 +137,16 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       { code: "FIN.FACTURES.*", label: "Factures", description: "Emission, detail et suivi des factures eleves." },
       { code: "FIN.PAIEMENTS.*", label: "Paiements", description: "Encaissements, references et suivi des reglements." },
       { code: "FIN.PLANSPAIEMENT.*", label: "Plans de paiement", description: "Echeanciers et tranches de paiement par eleve." },
+      { code: "FIN.JOURNALFINANCIER.*", label: "Journal financier", description: "Audit des operations comptables, annulations, remboursements et avoirs." },
+    ],
+  },
+  {
+    key: "bibliotheque",
+    title: "Bibliotheque",
+    description: "Ressources documentaires et circulation des emprunts.",
+    items: [
+      { code: "BI.RESSOURCES.*", label: "Ressources", description: "Catalogue des livres et materiels de bibliotheque." },
+      { code: "BI.EMPRUNTS.*", label: "Emprunts", description: "Prets, retours et suivi des retards." },
     ],
   },
 ];
@@ -147,21 +157,21 @@ const ROLE_TEMPLATES: RoleTemplate[] = [
     label: "Administrateur",
     suggestedName: "Administrateur",
     description: "Acces total aux modules et a l'administration globale.",
-    permissions: ["ADM.*", "ET.*", "CS.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*"],
+    permissions: ["ADM.*", "ET.*", "CS.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*", "BI.*"],
   },
   {
     key: "DIRECTION",
     label: "Direction",
     suggestedName: "Direction",
     description: "Pilotage transverse de l'etablissement sans administration pure.",
-    permissions: ["ET.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*"],
+    permissions: ["ET.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*", "BI.*"],
   },
   {
     key: "SECRETARIAT",
     label: "Secretariat",
     suggestedName: "Secretariat",
     description: "Orientation administrative, eleves et suivi quotidien.",
-    permissions: ["ET.*", "SC.*", "PR.*", "DI.*"],
+    permissions: ["ET.*", "SC.*", "PR.*", "DI.*", "BI.*"],
   },
   {
     key: "ENSEIGNANT",

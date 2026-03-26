@@ -47,6 +47,11 @@ import RemiseApp from "../modules/remise/application/remise.app";
 import FactureApp from "../modules/facture/application/facture.app";
 import PaiementApp from "../modules/paiement/application/paiement.app";
 import PlanPaiementEleveApp from "../modules/plan_paiement_eleve/application/plan_paiement_eleve.app";
+import FinanceRelanceApp from "../modules/finance_relance/application/finance_relance.app";
+import FacturationRecurrenteApp from "../modules/facturation_recurrente/application/facturation_recurrente.app";
+import OperationFinanciereApp from "../modules/operation_financiere/application/operation_financiere.app";
+import RessourceBibliothequeApp from "../modules/ressource_bibliotheque/application/ressource_bibliotheque.app";
+import EmpruntApp from "../modules/emprunt/application/emprunt.app";
 
 export class ApiRoutes {
   public app: Application;
@@ -103,6 +108,11 @@ export class ApiRoutes {
   private factureFinance: FactureApp;
   private paiementFinance: PaiementApp;
   private planPaiementFinance: PlanPaiementEleveApp;
+  private financeRelance: FinanceRelanceApp;
+  private facturationRecurrente: FacturationRecurrenteApp;
+  private operationFinanciere: OperationFinanciereApp;
+  private ressourceBibliotheque: RessourceBibliothequeApp;
+  private empruntBibliotheque: EmpruntApp;
 
   constructor(app: Application) {
     this.app = app;
@@ -154,6 +164,11 @@ export class ApiRoutes {
     this.factureFinance = new FactureApp(app);
     this.paiementFinance = new PaiementApp(app);
     this.planPaiementFinance = new PlanPaiementEleveApp(app);
+    this.financeRelance = new FinanceRelanceApp(app);
+    this.facturationRecurrente = new FacturationRecurrenteApp(app);
+    this.operationFinanciere = new OperationFinanciereApp(app);
+    this.ressourceBibliotheque = new RessourceBibliothequeApp(app);
+    this.empruntBibliotheque = new EmpruntApp(app);
     this.routes();
   }
 
@@ -212,6 +227,11 @@ export class ApiRoutes {
     this.router.use("/facture", this.factureFinance.routes());
     this.router.use("/paiement", this.paiementFinance.routes());
     this.router.use("/plan-paiement-eleve", this.planPaiementFinance.routes());
+    this.router.use("/finance-relance", this.financeRelance.routes());
+    this.router.use("/facturation-recurrente", this.facturationRecurrente.routes());
+    this.router.use("/operation-financiere", this.operationFinanciere.routes());
+    this.router.use("/ressource-bibliotheque", this.ressourceBibliotheque.routes());
+    this.router.use("/emprunt", this.empruntBibliotheque.routes());
 
     return this.router;
   }

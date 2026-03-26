@@ -28,11 +28,11 @@ export const menuItem = (
 ): CompFn =>
   withAccess(
     () => (
-      <div className="flex items-center py-0.5 px-2 gap-[5px]">
-        {Icon && <Icon />}
-        {label && <span>{label}</span>}
+      <div className="flex items-center gap-2 text-sm">
+        {Icon && <Icon className="shrink-0 text-[15px]" />}
+        {label && <span className="truncate font-medium">{label}</span>}
         {component}
       </div>
     ),
-    { display: "flex", alignItems: "center", gap: "5px" },
+    { display: "flex", alignItems: "center", width: "100%" },
   );

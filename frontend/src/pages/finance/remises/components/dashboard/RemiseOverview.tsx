@@ -53,7 +53,7 @@ export default function RemiseOverview({ mode = "overview" }: Props) {
       <section className="grid gap-4 xl:grid-cols-[1.4fr,0.9fr]">
         <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900">Apercu des remises</h3>
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 max-h-[28rem] space-y-3 overflow-y-auto pr-1">
             {rows.slice(0, 6).map((item) => <div key={item.id} className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4"><p className="text-sm font-semibold text-slate-900">{getRemiseDisplayLabel(item)}</p><p className="mt-1 text-xs text-slate-500">{getRemiseSecondaryLabel(item)}</p></div>)}
             {rows.length === 0 ? <p className="text-sm text-slate-500">Aucune remise enregistree.</p> : null}
           </div>

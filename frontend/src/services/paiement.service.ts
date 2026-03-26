@@ -1,4 +1,5 @@
 import Service from "../app/api/Service";
+import { Http } from "../app/api/Http";
 import type { Facture, Paiement } from "../types/models";
 import {
   getFactureDisplayLabel,
@@ -9,6 +10,7 @@ import {
 type QueryParams = Record<string, unknown>;
 
 export type PaiementWithRelations = Paiement & {
+  statut?: string | null;
   facture?: (Facture & {
     eleve?: {
       id: string;
@@ -35,17 +37,33 @@ export type PaiementWithRelations = Paiement & {
       statut: string;
       devise?: string | null;
     }> | null;
+    operationsFinancieres?: Array<{
+      id: string;
+      type: string;
+      montant?: number | string | null;
+      motif?: string | null;
+      created_at?: string | Date;
+    }> | null;
   }) | null;
   affectations?: Array<{
     id: string;
     montant: number;
     echeance?: {
       id: string;
+      plan_paiement_id?: string | null;
       ordre: number;
       libelle?: string | null;
       date_echeance: string | Date;
       statut: string;
     } | null;
+  }> | null;
+  operationsFinancieres?: Array<{
+    id: string;
+    type: string;
+    montant?: number | string | null;
+    motif?: string | null;
+    created_at?: string | Date;
+    details_json?: Record<string, unknown> | null;
   }> | null;
 };
 
@@ -76,6 +94,18 @@ export function getPaiementSecondaryLabel(record?: Partial<PaiementWithRelations
   return [factureLabel, eleveLabel, statut].filter(Boolean).join(" - ");
 }
 
+export function getPaiementStatusLabel(status?: string | null) {
+  switch ((status ?? "ENREGISTRE").toUpperCase()) {
+    case "ANNULE":
+      return "Annule";
+    case "REMBOURSE":
+      return "Rembourse";
+    case "ENREGISTRE":
+    default:
+      return "Enregistre";
+  }
+}
+
 class PaiementService extends Service {
   constructor() {
     super("paiement");
@@ -91,6 +121,14 @@ class PaiementService extends Service {
           ? params.orderBy
           : JSON.stringify(params.orderBy ?? [{ paye_le: "desc" }, { created_at: "desc" }]),
     } as Record<string, string | number | Date | boolean>);
+  }
+
+  async cancel(id: string, payload: { motif?: string | null } = {}) {
+    return Http.post(["/api", this.url, id, "cancel"].join("/"), payload);
+  }
+
+  async refund(id: string, payload: { motif?: string | null } = {}) {
+    return Http.post(["/api", this.url, id, "refund"].join("/"), payload);
   }
 
   private buildScopedWhere(etablissementId: string, whereParam?: unknown) {

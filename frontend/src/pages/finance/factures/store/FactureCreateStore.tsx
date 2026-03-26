@@ -7,6 +7,7 @@ import CatalogueFraisService, {
   getCatalogueFraisSecondaryLabel,
   type CatalogueFraisWithRelations,
 } from "../../../../services/catalogueFrais.service";
+import RemiseService from "../../../../services/remise.service";
 
 type Option = { value: string; label: string };
 type EleveOption = Option & {
@@ -25,10 +26,17 @@ type State = {
       niveau_scolaire_id?: string | null;
     }
   >;
+  remiseOptions: Array<
+    Option & {
+      type?: string | null;
+      valeur?: number;
+    }
+  >;
   initialData: {
     etablissement_id?: string;
     annee_scolaire_id?: string;
     devise?: string;
+    remise_id?: string;
     lignes?: Array<{
       catalogue_frais_id: string;
       libelle: string;
@@ -63,14 +71,16 @@ export const useFactureCreateStore = create<State>((set) => ({
   anneeScolaireOptions: [],
   eleveOptions: [],
   catalogueFraisOptions: [],
+  remiseOptions: [],
   initialData: null,
   getOptions: async (etablissement_id: string) => {
     set({ loading: true, errorMessage: "" });
     try {
       const eleveService = new EleveService();
       const catalogueFraisService = new CatalogueFraisService();
+      const remiseService = new RemiseService();
 
-      const [anneesResult, elevesResult, fraisResult, currentYear] = await Promise.all([
+      const [anneesResult, elevesResult, fraisResult, remisesResult, currentYear] = await Promise.all([
         AnneeScolaireService.getAll({
           take: 100,
           where: JSON.stringify({ etablissement_id }),
@@ -94,6 +104,10 @@ export const useFactureCreateStore = create<State>((set) => ({
           includeSpec: JSON.stringify({ niveau: true }),
           orderBy: JSON.stringify([{ nom: "asc" }]),
         }),
+        remiseService.getForEtablissement(etablissement_id, {
+          take: 1000,
+          orderBy: JSON.stringify([{ nom: "asc" }]),
+        }),
         AnneeScolaireService.getCurrent(etablissement_id),
       ]);
 
@@ -102,6 +116,7 @@ export const useFactureCreateStore = create<State>((set) => ({
           etablissement_id,
           annee_scolaire_id: currentYear?.id ?? "",
           devise: "MGA",
+          remise_id: "",
           lignes: [],
         },
       });
@@ -160,6 +175,22 @@ export const useFactureCreateStore = create<State>((set) => ({
             devise: item.devise ?? "MGA",
             niveau_scolaire_id: item.niveau_scolaire_id ?? null,
           })),
+        });
+      }
+
+      if (remisesResult?.status.success) {
+        set({
+          remiseOptions: remisesResult.data.data.map(
+            (item: { id: string; nom: string; type?: string | null; valeur?: number | string | null }) => ({
+              value: item.id,
+              label:
+                (item.type ?? "").toUpperCase() === "PERCENT"
+                  ? `${item.nom} - ${Number(item.valeur ?? 0).toLocaleString("fr-FR")}%`
+                  : `${item.nom} - ${Number(item.valeur ?? 0).toLocaleString("fr-FR")}`,
+              type: item.type ?? null,
+              valeur: Number(item.valeur ?? 0),
+            }),
+          ),
         });
       }
     } catch {

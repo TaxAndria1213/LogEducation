@@ -17,6 +17,7 @@ import {
 import PlanPaiementEleveModel from "../models/plan_paiement_eleve.model";
 
 type PaymentScheduleLine = {
+  echeance_paiement_id?: string | null;
   date: string;
   montant: number;
   statut?: string | null;
@@ -29,10 +30,12 @@ type PaymentScheduleLine = {
 type PlanPayload = {
   eleve_id: string;
   annee_scolaire_id: string;
+  remise_id: string | null;
   plan_json: {
     mode_paiement: string;
     nombre_tranches: number;
     devise: string;
+    remise_id: string | null;
     notes: string | null;
     echeances: PaymentScheduleLine[];
   };
@@ -88,6 +91,10 @@ class PlanPaiementEleveApp {
   }
 
   private normalizeLine(raw: Record<string, unknown>, index: number): PaymentScheduleLine {
+    const echeance_paiement_id =
+      typeof raw.echeance_paiement_id === "string" && raw.echeance_paiement_id.trim()
+        ? raw.echeance_paiement_id.trim()
+        : null;
     const date = typeof raw.date === "string" ? raw.date.trim() : "";
     const montant = roundMoney(Number(raw.montant ?? 0));
     const statut = normalizeText(raw.statut);
@@ -108,6 +115,7 @@ class PlanPaiementEleveApp {
     }
 
     return {
+      echeance_paiement_id,
       date: parsedDate.toISOString().slice(0, 10),
       montant,
       statut,
@@ -159,6 +167,26 @@ class PlanPaiementEleveApp {
     }
   }
 
+  private async resolveRemise(remiseId: string | null, tenantId: string) {
+    if (!remiseId) return null;
+
+    const remise = await this.prisma.remise.findFirst({
+      where: {
+        id: remiseId,
+        etablissement_id: tenantId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!remise) {
+      throw new Error("La remise selectionnee n'appartient pas a cet etablissement.");
+    }
+
+    return remise;
+  }
+
   private normalizePayload(
     raw: Record<string, unknown>,
     currentPlanJson?: Record<string, unknown> | null,
@@ -174,6 +202,14 @@ class PlanPaiementEleveApp {
       typeof raw.devise === "string" && raw.devise.trim()
         ? raw.devise.trim().toUpperCase()
         : "MGA";
+    const remise_id =
+      typeof raw.remise_id === "string" && raw.remise_id.trim()
+        ? raw.remise_id.trim()
+        : raw.remise_id === null
+          ? null
+          : currentPlanJson && typeof currentPlanJson.remise_id === "string" && currentPlanJson.remise_id.trim()
+            ? currentPlanJson.remise_id.trim()
+            : null;
     const notes = normalizeText(raw.notes);
     const rawEcheances = Array.isArray(raw.echeances) ? raw.echeances : [];
     const echeances = rawEcheances.map((item, index) =>
@@ -194,21 +230,23 @@ class PlanPaiementEleveApp {
 
     const extraKeys = currentPlanJson
       ? Object.fromEntries(
-          Object.entries(currentPlanJson).filter(
-            ([key]) =>
-              !["mode_paiement", "nombre_tranches", "devise", "notes", "echeances"].includes(key),
-          ),
-        )
+        Object.entries(currentPlanJson).filter(
+          ([key]) =>
+            !["mode_paiement", "nombre_tranches", "devise", "remise_id", "notes", "echeances"].includes(key),
+        ),
+      )
       : {};
 
     return {
       eleve_id,
       annee_scolaire_id,
+      remise_id,
       plan_json: {
         ...extraKeys,
         mode_paiement,
         nombre_tranches: echeances.length,
         devise,
+        remise_id,
         notes,
         echeances,
       },
@@ -238,6 +276,7 @@ class PlanPaiementEleveApp {
         },
       },
       annee: true,
+      remise: true,
       echeances: {
         include: {
           affectations: true,
@@ -257,6 +296,53 @@ class PlanPaiementEleveApp {
     });
   }
 
+  private assertLockedEcheancesIntegrity(
+    existingPlan: NonNullable<Awaited<ReturnType<PlanPaiementEleveApp["getScopedPlan"]>>>,
+    submittedLines: PaymentScheduleLine[],
+  ) {
+    const existingEcheances = Array.isArray(existingPlan.echeances) ? existingPlan.echeances : [];
+    const locked = existingEcheances.filter((item) => {
+      const paidAmount = toMoney(item.montant_regle);
+      const affectationCount = Array.isArray(item.affectations) ? item.affectations.length : 0;
+      const status = (item.statut ?? "").toUpperCase();
+      return paidAmount > 0 || affectationCount > 0 || status === "PARTIELLE" || status === "PAYEE";
+    });
+
+    if (locked.length === 0) return;
+
+    for (const echeance of locked) {
+      const byIdIndex = echeance.id
+        ? submittedLines.findIndex((line) => line.echeance_paiement_id === echeance.id)
+        : -1;
+      const fallbackIndex = Math.max(0, Number(echeance.ordre ?? 1) - 1);
+      const submittedIndex = byIdIndex >= 0 ? byIdIndex : fallbackIndex;
+      const submitted = submittedLines[submittedIndex];
+
+      if (!submitted) {
+        throw new Error(
+          `La tranche ${echeance.ordre} est deja encaissee et ne peut pas etre supprimee du plan.`,
+        );
+      }
+
+      if (byIdIndex >= 0 && byIdIndex + 1 !== echeance.ordre) {
+        throw new Error(
+          `La tranche ${echeance.ordre} est deja encaissee et ne peut pas etre deplacee dans l'echeancier.`,
+        );
+      }
+
+      const existingDate = new Date(echeance.date_echeance).toISOString().slice(0, 10);
+      const submittedDate = new Date(submitted.date).toISOString().slice(0, 10);
+      const existingAmount = roundMoney(toMoney(echeance.montant_prevu));
+      const submittedAmount = roundMoney(toMoney(submitted.montant));
+
+      if (existingDate !== submittedDate || existingAmount !== submittedAmount) {
+        throw new Error(
+          `La tranche ${echeance.ordre} est deja encaissee : sa date et son montant sont verrouilles.`,
+        );
+      }
+    }
+  }
+
   private async create(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
       const tenantId = this.resolveTenantId(req);
@@ -264,16 +350,26 @@ class PlanPaiementEleveApp {
 
       await this.ensureEleveAndAnnee(data.eleve_id, data.annee_scolaire_id, tenantId);
       await this.ensureUniquePlan(data.eleve_id, data.annee_scolaire_id);
+      await this.resolveRemise(data.remise_id, tenantId);
 
       const result = await this.prisma.$transaction(async (tx) => {
         const created = await tx.planPaiementEleve.create({
           data: {
             eleve_id: data.eleve_id,
             annee_scolaire_id: data.annee_scolaire_id,
+            remise_id: data.remise_id,
             plan_json: data.plan_json,
           },
         }) as PlanPaiementEleve;
         const linkedFactureId = await resolveLinkedFactureIdForPlan(tx, created.id);
+        if (linkedFactureId) {
+          await tx.facture.update({
+            where: { id: linkedFactureId },
+            data: {
+              remise_id: data.remise_id,
+            },
+          });
+        }
         await upsertPlanEcheances(tx, {
           planId: created.id,
           factureId: linkedFactureId,
@@ -350,6 +446,26 @@ class PlanPaiementEleveApp {
         throw new Error("Plan de paiement introuvable pour cet etablissement.");
       }
 
+      const hasLockedEcheances = (existing.echeances ?? []).some((item) => {
+        const paidAmount = toMoney(item.montant_regle);
+        const affectationCount = Array.isArray(item.affectations) ? item.affectations.length : 0;
+        const status = (item.statut ?? "").toUpperCase();
+        return paidAmount > 0 || affectationCount > 0 || status === "PARTIELLE" || status === "PAYEE";
+      });
+
+      if (hasLockedEcheances) {
+        throw new Error(
+          "Ce plan comporte deja des tranches encaissees. Il ne peut pas etre supprime.",
+        );
+      }
+
+      const hasLinkedFacture = (existing.echeances ?? []).some((item) => Boolean(item.facture_id));
+      if (hasLinkedFacture) {
+        throw new Error(
+          "Ce plan est deja rattache a une facture. Conserve-le ou traite le dossier depuis la facture liee.",
+        );
+      }
+
       const result = await this.planPaiement.delete(req.params.id);
       Response.success(res, "Plan de paiement supprime avec succes.", result);
     } catch (error) {
@@ -372,15 +488,29 @@ class PlanPaiementEleveApp {
         (existing.plan_json as Record<string, unknown> | null | undefined) ?? null,
       );
 
+      this.assertLockedEcheancesIntegrity(existing, data.plan_json.echeances);
+
       await this.ensureEleveAndAnnee(data.eleve_id, data.annee_scolaire_id, tenantId);
       await this.ensureUniquePlan(data.eleve_id, data.annee_scolaire_id, req.params.id);
+      await this.resolveRemise(data.remise_id, tenantId);
 
       const result = await this.prisma.$transaction(async (tx) => {
         await tx.planPaiementEleve.update({
           where: { id: req.params.id },
-          data,
+          data: {
+            ...data,
+            remise_id: data.remise_id,
+          },
         });
         const linkedFactureId = await resolveLinkedFactureIdForPlan(tx, req.params.id);
+        if (linkedFactureId) {
+          await tx.facture.update({
+            where: { id: linkedFactureId },
+            data: {
+              remise_id: data.remise_id,
+            },
+          });
+        }
         await upsertPlanEcheances(tx, {
           planId: req.params.id,
           factureId: linkedFactureId,

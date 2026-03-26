@@ -4,6 +4,7 @@ import { useAuth } from "../../../../../hooks/useAuth";
 import PaiementService, {
   getPaiementDisplayLabel,
   getPaiementSecondaryLabel,
+  getPaiementStatusLabel,
   type PaiementWithRelations,
 } from "../../../../../services/paiement.service";
 
@@ -25,6 +26,10 @@ function getErrorMessage(error: unknown) {
     return error.response.data.message;
   }
   return "Impossible de charger les paiements.";
+}
+
+function isActivePaiement(record?: Partial<PaiementWithRelations> | null) {
+  return (record?.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE";
 }
 
 export default function PaiementOverview({ mode = "overview" }: Props) {
@@ -63,16 +68,32 @@ export default function PaiementOverview({ mode = "overview" }: Props) {
     };
   }, [etablissement_id]);
 
+  const activeRows = useMemo(() => rows.filter((item) => isActivePaiement(item)), [rows]);
   const totalPaid = useMemo(
-    () => rows.reduce((sum, item) => sum + Number(item.montant ?? 0), 0),
-    [rows],
+    () => activeRows.reduce((sum, item) => sum + Number(item.montant ?? 0), 0),
+    [activeRows],
   );
   const cashCount = useMemo(
-    () => rows.filter((item) => (item.methode ?? "").toLowerCase() === "cash").length,
-    [rows],
+    () => activeRows.filter((item) => (item.methode ?? "").toLowerCase() === "cash").length,
+    [activeRows],
   );
   const referencedCount = useMemo(
     () => rows.filter((item) => Boolean(item.reference?.trim())).length,
+    [rows],
+  );
+  const reversedCount = useMemo(
+    () => rows.filter((item) => !isActivePaiement(item)).length,
+    [rows],
+  );
+  const recentRows = useMemo(
+    () =>
+      [...rows]
+        .sort(
+          (a, b) =>
+            new Date(b.paye_le ?? b.created_at ?? 0).getTime() -
+            new Date(a.paye_le ?? a.created_at ?? 0).getTime(),
+        )
+        .slice(0, 8),
     [rows],
   );
 
@@ -96,9 +117,9 @@ export default function PaiementOverview({ mode = "overview" }: Props) {
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiCreditCard />
-            <span className="text-sm font-medium">Paiements</span>
+            <span className="text-sm font-medium">Paiements actifs</span>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{rows.length}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">{activeRows.length}</p>
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
@@ -106,7 +127,7 @@ export default function PaiementOverview({ mode = "overview" }: Props) {
             <span className="text-sm font-medium">Montant encaisse</span>
           </div>
           <p className="mt-3 text-3xl font-semibold text-slate-900">
-            {totalPaid.toLocaleString("fr-FR")}
+            {totalPaid.toLocaleString("fr-FR")} MGA
           </p>
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -119,25 +140,37 @@ export default function PaiementOverview({ mode = "overview" }: Props) {
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiCreditCard />
-            <span className="text-sm font-medium">Cash</span>
+            <span className="text-sm font-medium">Annules / rembourses</span>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{cashCount}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">{reversedCount}</p>
+          <p className="mt-2 text-xs text-slate-500">{cashCount} encaissement(s) cash actif(s)</p>
         </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.4fr,0.9fr]">
         <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900">Paiements recents</h3>
-          <div className="mt-5 space-y-3">
-            {rows.slice(0, 6).map((item) => (
+          <div className="mt-5 max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+            {recentRows.map((item) => (
               <div key={item.id} className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-slate-900">
                     {getPaiementDisplayLabel(item)}
                   </p>
-                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-                    {Number(item.montant ?? 0).toLocaleString("fr-FR")} {item.facture?.devise ?? "MGA"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                      {Number(item.montant ?? 0).toLocaleString("fr-FR")} {item.facture?.devise ?? "MGA"}
+                    </span>
+                    <span
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+                        isActivePaiement(item)
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {getPaiementStatusLabel(item.statut)}
+                    </span>
+                  </div>
                 </div>
                 <p className="mt-1 text-xs text-slate-500">{getPaiementSecondaryLabel(item)}</p>
               </div>
@@ -157,7 +190,7 @@ export default function PaiementOverview({ mode = "overview" }: Props) {
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">Parametres</h3>
                 <p className="text-sm text-slate-500">
-                  Les paiements sont limites au solde restant et mettent a jour le statut de la facture associee.
+                  Les paiements actifs alimentent les echeances. Les annulations et remboursements restent visibles mais ne comptent plus dans l'encaissement.
                 </p>
               </div>
             </div>
