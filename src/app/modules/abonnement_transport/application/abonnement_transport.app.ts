@@ -15,6 +15,9 @@ type AbonnementTransportPayload = {
   ligne_transport_id: string;
   arret_transport_id: string | null;
   statut: string;
+  date_debut_service: Date | null;
+  date_fin_service: Date | null;
+  prorata_ratio: number | null;
 };
 
 type AbonnementTransportBillingPayload = {
@@ -24,6 +27,13 @@ type AbonnementTransportBillingPayload = {
   nombre_tranches: number;
   jour_paiement_mensuel: number | null;
   date_echeance: Date | null;
+};
+
+type ChangeTransportLinePayload = {
+  ligne_transport_id: string;
+  arret_transport_id: string | null;
+  date_effet: Date;
+  facturer_regularisation: boolean;
 };
 
 type AbonnementTransportScopedRecord = Awaited<ReturnType<AbonnementTransportApp["getScopedRecord"]>>;
@@ -46,6 +56,7 @@ class AbonnementTransportApp {
     this.router.post("/", this.create.bind(this));
     this.router.get("/", this.getAll.bind(this));
     this.router.get("/:id", this.getOne.bind(this));
+    this.router.post("/:id/change-line", this.changeLine.bind(this));
     this.router.delete("/:id", this.delete.bind(this));
     this.router.put("/:id", this.update.bind(this));
     return this.router;
@@ -121,14 +132,46 @@ class AbonnementTransportApp {
     const requestedStatus =
       typeof raw.statut === "string" && raw.statut.trim()
         ? raw.statut.trim().toUpperCase()
-        : "ACTIF";
-    const statut = ["ACTIF", "SUSPENDU", "INACTIF", "ANNULE", "RESILIE"].includes(requestedStatus)
+        : "EN_ATTENTE_VALIDATION_FINANCIERE";
+    const dateDebutRaw =
+      typeof (raw as Record<string, unknown>).date_debut_service === "string" &&
+      String((raw as Record<string, unknown>).date_debut_service).trim()
+        ? String((raw as Record<string, unknown>).date_debut_service).trim()
+        : null;
+    const dateFinRaw =
+      typeof (raw as Record<string, unknown>).date_fin_service === "string" &&
+      String((raw as Record<string, unknown>).date_fin_service).trim()
+        ? String((raw as Record<string, unknown>).date_fin_service).trim()
+        : null;
+    const date_debut_service = dateDebutRaw ? new Date(dateDebutRaw) : null;
+    const date_fin_service = dateFinRaw ? new Date(dateFinRaw) : null;
+    const statut = [
+      "EN_ATTENTE_VALIDATION_FINANCIERE",
+      "EN_ATTENTE_REGLEMENT",
+      "ACTIF",
+      "SUSPENDU",
+      "INACTIF",
+      "ANNULE",
+      "RESILIE",
+    ].includes(requestedStatus)
       ? requestedStatus
-      : "ACTIF";
+      : "EN_ATTENTE_VALIDATION_FINANCIERE";
 
     if (!eleve_id || !annee_scolaire_id || !ligne_transport_id) {
       throw new Error("L'eleve, l'annee scolaire et la ligne de transport sont requis.");
     }
+
+    if (date_debut_service && Number.isNaN(date_debut_service.getTime())) {
+      throw new Error("La date de debut du transport est invalide.");
+    }
+    if (date_fin_service && Number.isNaN(date_fin_service.getTime())) {
+      throw new Error("La date de fin du transport est invalide.");
+    }
+    if (date_debut_service && date_fin_service && date_fin_service < date_debut_service) {
+      throw new Error("La date de fin du transport doit etre posterieure a la date de debut.");
+    }
+
+    const prorata_ratio = this.computeProrataRatio(date_debut_service, date_fin_service);
 
     return {
       eleve_id,
@@ -136,6 +179,9 @@ class AbonnementTransportApp {
       ligne_transport_id,
       arret_transport_id,
       statut,
+      date_debut_service,
+      date_fin_service,
+      prorata_ratio,
     };
   }
 
@@ -178,6 +224,61 @@ class AbonnementTransportApp {
       jour_paiement_mensuel,
       date_echeance,
     };
+  }
+
+  private normalizeChangeLinePayload(raw: Record<string, unknown>): ChangeTransportLinePayload {
+    const ligne_transport_id =
+      typeof raw.ligne_transport_id === "string" && raw.ligne_transport_id.trim()
+        ? raw.ligne_transport_id.trim()
+        : "";
+    const arret_transport_id =
+      typeof raw.arret_transport_id === "string" && raw.arret_transport_id.trim()
+        ? raw.arret_transport_id.trim()
+        : null;
+    const dateEffetRaw =
+      typeof raw.date_effet === "string" && raw.date_effet.trim()
+        ? raw.date_effet.trim()
+        : "";
+    const date_effet = new Date(dateEffetRaw || new Date().toISOString());
+    if (!ligne_transport_id) {
+      throw new Error("La nouvelle ligne de transport est obligatoire.");
+    }
+    if (Number.isNaN(date_effet.getTime())) {
+      throw new Error("La date d'effet du changement de circuit est invalide.");
+    }
+
+    return {
+      ligne_transport_id,
+      arret_transport_id,
+      date_effet,
+      facturer_regularisation:
+        raw.facturer_regularisation === true ||
+        raw.facturer_regularisation === "true" ||
+        raw.facturer_regularisation === 1 ||
+        raw.facturer_regularisation === "1",
+    };
+  }
+
+  private daysInMonth(date: Date) {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+  }
+
+  private computeProrataRatio(startDate: Date | null, endDate: Date | null) {
+    if (!startDate && !endDate) return null;
+    const anchor = startDate ?? endDate ?? new Date();
+    const monthStart = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), 1));
+    const monthEnd = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), this.daysInMonth(anchor)));
+    const effectiveStart = startDate && startDate > monthStart ? startDate : monthStart;
+    const effectiveEnd = endDate && endDate < monthEnd ? endDate : monthEnd;
+    const diff = effectiveEnd.getTime() - effectiveStart.getTime();
+    if (diff < 0) return 0;
+    const activeDays = Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+    return Number((activeDays / this.daysInMonth(anchor)).toFixed(4));
+  }
+
+  private applyProrata(montant: number, ratio: number | null) {
+    if (ratio == null) return Number(montant.toFixed(2));
+    return Number((montant * Math.max(0, Math.min(1, ratio))).toFixed(2));
   }
 
   private buildScopedWhere(existingWhere: Record<string, unknown>, tenantId: string) {
@@ -244,8 +345,16 @@ class AbonnementTransportApp {
   private async attachFinanceMetadata<T extends { id: string }>(records: T[]) {
     if (records.length === 0) return records.map((item) => ({ ...item, facture_id: null, facture: null }));
     const ids = records.map((item) => item.id);
-    const rows = await this.prisma.$queryRaw<Array<{ id: string; facture_id: string | null }>>(
-      Prisma.sql`SELECT id, facture_id FROM abonnements_transport WHERE id IN (${Prisma.join(ids)})`,
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+        facture_id: string | null;
+        date_debut_service: Date | null;
+        date_fin_service: Date | null;
+        prorata_ratio: Prisma.Decimal | number | null;
+      }>
+    >(
+      Prisma.sql`SELECT id, facture_id, date_debut_service, date_fin_service, prorata_ratio FROM abonnements_transport WHERE id IN (${Prisma.join(ids)})`,
     );
     const factureIdByRecord = new Map(rows.map((item) => [item.id, item.facture_id ?? null]));
     const factureIds = rows
@@ -258,12 +367,17 @@ class AbonnementTransportApp {
         })
       : [];
     const facturesById = new Map(factures.map((item) => [item.id, item]));
+    const rowsById = new Map(rows.map((item) => [item.id, item]));
     return records.map((item) => {
       const facture_id = factureIdByRecord.get(item.id) ?? null;
+      const row = rowsById.get(item.id);
       return {
         ...item,
         facture_id,
         facture: facture_id ? facturesById.get(facture_id) ?? null : null,
+        date_debut_service: row?.date_debut_service ?? null,
+        date_fin_service: row?.date_fin_service ?? null,
+        prorata_ratio: row?.prorata_ratio != null ? Number(row.prorata_ratio) : null,
       };
     });
   }
@@ -349,6 +463,13 @@ class AbonnementTransportApp {
         where: { id: data.ligne_transport_id, etablissement_id: tenantId },
         select: { nom: true, catalogue_frais_id: true },
       });
+      const resolvedCatalogueFraisId = billing.catalogue_frais_id ?? ligne?.catalogue_frais_id ?? null;
+      const selectedCatalogue = resolvedCatalogueFraisId
+        ? await tx.catalogueFrais.findFirst({
+            where: { id: resolvedCatalogueFraisId, etablissement_id: tenantId },
+            select: { montant: true },
+          })
+        : null;
       const abonnement = await tx.abonnementTransport.create({
         data: {
           eleve_id: data.eleve_id,
@@ -359,9 +480,15 @@ class AbonnementTransportApp {
         },
       });
 
-      let factureId: string | null = null;
+      await tx.$executeRaw(
+        Prisma.sql`UPDATE abonnements_transport
+          SET date_debut_service = ${data.date_debut_service},
+              date_fin_service = ${data.date_fin_service},
+              prorata_ratio = ${data.prorata_ratio}
+          WHERE id = ${abonnement.id}`,
+      );
 
-      const resolvedCatalogueFraisId = billing.catalogue_frais_id ?? ligne?.catalogue_frais_id ?? null;
+      let factureId: string | null = null;
 
       if (billing.facturer_maintenant) {
         if (!resolvedCatalogueFraisId) {
@@ -380,6 +507,13 @@ class AbonnementTransportApp {
           jourPaiementMensuel: billing.jour_paiement_mensuel,
           createdByUtilisateurId: actorId,
           dateEcheance: billing.date_echeance,
+          montantOverride:
+            data.prorata_ratio != null && selectedCatalogue
+              ? this.applyProrata(
+                  Number(selectedCatalogue.montant ?? 0),
+                  data.prorata_ratio,
+                )
+              : null,
         });
         factureId = facture.id;
         await tx.$executeRaw(
@@ -397,18 +531,37 @@ class AbonnementTransportApp {
   private async create(req: Request, res: R, next: NextFunction) {
     try {
       const tenantId = await this.resolveTenantIdForWrite(req);
-      const data = this.normalizePayload(req.body);
-      const billing = this.normalizeBillingPayload(req.body as Record<string, unknown>);
+      const data = this.normalizePayload({
+        ...req.body,
+        statut: "EN_ATTENTE_VALIDATION_FINANCIERE",
+      });
       await this.ensureScopedRelations(data, tenantId);
-      const result = billing.facturer_maintenant
-        ? await this.createScopedSubscriptionWithOptionalBilling(
-            tenantId,
-            data,
-            billing,
-            (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
-          )
-        : await this.abonnementTransport.create(data);
-      Response.success(res, "Abonnement transport cree.", result);
+      const result = await this.prisma.$transaction(async (tx) => {
+        const abonnement = await tx.abonnementTransport.create({
+          data: {
+            eleve_id: data.eleve_id,
+            annee_scolaire_id: data.annee_scolaire_id,
+            ligne_transport_id: data.ligne_transport_id,
+            arret_transport_id: data.arret_transport_id,
+            statut: data.statut,
+          },
+        });
+
+        await tx.$executeRaw(
+          Prisma.sql`UPDATE abonnements_transport
+            SET date_debut_service = ${data.date_debut_service},
+                date_fin_service = ${data.date_fin_service},
+                prorata_ratio = ${data.prorata_ratio}
+            WHERE id = ${abonnement.id}`,
+        );
+
+        return abonnement;
+      });
+      Response.success(
+        res,
+        "Abonnement transport cree en attente de validation financiere.",
+        result,
+      );
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de l'abonnement transport", 400, error as Error);
       next(error);
@@ -478,10 +631,108 @@ class AbonnementTransportApp {
       }
       const data = this.normalizePayload({ ...existing, ...req.body });
       await this.ensureScopedRelations(data, tenantId, req.params.id);
-      const result = await this.abonnementTransport.update(req.params.id, data);
+      const result = await this.abonnementTransport.update(req.params.id, {
+        eleve_id: data.eleve_id,
+        annee_scolaire_id: data.annee_scolaire_id,
+        ligne_transport_id: data.ligne_transport_id,
+        arret_transport_id: data.arret_transport_id,
+        statut: data.statut,
+      });
+      await this.prisma.$executeRaw(
+        Prisma.sql`UPDATE abonnements_transport
+          SET date_debut_service = ${data.date_debut_service},
+              date_fin_service = ${data.date_fin_service},
+              prorata_ratio = ${data.prorata_ratio}
+          WHERE id = ${req.params.id}`,
+      );
       Response.success(res, "Abonnement transport mis a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de l'abonnement transport", 400, error as Error);
+      next(error);
+    }
+  }
+
+  private async changeLine(req: Request, res: R, next: NextFunction) {
+    try {
+      const tenantId = await this.resolveTenantIdForWrite(req);
+      const existing = await this.getScopedRecord(req.params.id, tenantId);
+      if (!existing) throw new Error("Abonnement transport introuvable.");
+      const payload = this.normalizeChangeLinePayload(req.body as Record<string, unknown>);
+      if (payload.ligne_transport_id === existing.ligne_transport_id && payload.arret_transport_id === existing.arret_transport_id) {
+        throw new Error("Le nouvel abonnement transport doit pointer vers un autre circuit ou arret.");
+      }
+
+      const [newLine, oldLine] = await Promise.all([
+        this.prisma.ligneTransport.findFirst({
+          where: { id: payload.ligne_transport_id, etablissement_id: tenantId },
+          select: { id: true, nom: true, catalogue_frais_id: true },
+        }),
+        this.prisma.ligneTransport.findFirst({
+          where: { id: existing.ligne_transport_id, etablissement_id: tenantId },
+          select: { id: true, nom: true, catalogue_frais_id: true },
+        }),
+      ]);
+      if (!newLine) throw new Error("La nouvelle ligne de transport n'appartient pas a cet etablissement.");
+      if (!oldLine) throw new Error("La ligne de transport actuelle est introuvable.");
+
+      const prorataRatio = this.computeProrataRatio(payload.date_effet, null);
+      const actorId = (req as Request & { user?: { sub?: string } }).user?.sub ?? null;
+
+      const result = await this.prisma.$transaction(async (tx) => {
+        let newFactureId = existing.facture_id ?? null;
+        if (existing.facture_id && payload.facturer_regularisation) {
+          await regularizeServiceSubscriptionFacture(tx, {
+            tenantId,
+            factureId: existing.facture_id,
+            eleveId: existing.eleve_id,
+            anneeScolaireId: existing.annee_scolaire_id,
+            catalogueFraisId: oldLine.catalogue_frais_id ?? null,
+            libellePrefix: "Transport -",
+            serviceLabel: oldLine.nom ? `transport ${oldLine.nom}` : "transport",
+            createdByUtilisateurId: actorId,
+            motif: "Changement de circuit transport",
+          });
+
+          if (newLine.catalogue_frais_id) {
+            const selectedCatalogue = await tx.catalogueFrais.findFirst({
+              where: { id: newLine.catalogue_frais_id, etablissement_id: tenantId },
+              select: { montant: true },
+            });
+            const montantOverride = this.applyProrata(Number(selectedCatalogue?.montant ?? 0), prorataRatio);
+            const { facture } = await createServiceSubscriptionFacture(tx, {
+              tenantId,
+              eleveId: existing.eleve_id,
+              anneeScolaireId: existing.annee_scolaire_id,
+              catalogueFraisId: newLine.catalogue_frais_id,
+              allowedScopes: ["GENERAL", "TRANSPORT"],
+              libelle: `Transport - ${newLine.nom} (regularisation)`,
+              modePaiement: "COMPTANT",
+              nombreTranches: 1,
+              createdByUtilisateurId: actorId,
+              dateEmission: payload.date_effet,
+              dateEcheance: payload.date_effet,
+              montantOverride,
+            });
+            newFactureId = facture.id;
+          }
+        }
+
+        await tx.$executeRaw(
+          Prisma.sql`UPDATE abonnements_transport
+            SET ligne_transport_id = ${payload.ligne_transport_id},
+                arret_transport_id = ${payload.arret_transport_id},
+                date_debut_service = ${payload.date_effet},
+                prorata_ratio = ${prorataRatio},
+                facture_id = ${newFactureId}
+            WHERE id = ${existing.id}`,
+        );
+
+        return tx.abonnementTransport.findUnique({ where: { id: existing.id } });
+      });
+
+      Response.success(res, "Circuit transport mis a jour.", result);
+    } catch (error) {
+      Response.error(res, "Erreur lors du changement de circuit transport", 400, error as Error);
       next(error);
     }
   }

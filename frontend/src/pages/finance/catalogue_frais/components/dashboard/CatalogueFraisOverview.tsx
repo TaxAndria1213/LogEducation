@@ -15,7 +15,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function CatalogueFraisOverview({ mode = "overview" }: Props) {
-  const { etablissement_id, user } = useAuth();
+  const { etablissement_id } = useAuth();
   const [rows, setRows] = useState<CatalogueFraisWithRelations[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -48,11 +48,7 @@ export default function CatalogueFraisOverview({ mode = "overview" }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">{user?.etablissement?.nom ?? "Etablissement"}</h2>
-        <p className="mt-2 text-sm text-slate-500">{mode === "settings" ? "Le catalogue de frais pilote les montants reutilisables dans les inscriptions et la facturation." : "Vue d'ensemble des frais parametrables de l'etablissement."}</p>
-        {errorMessage ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
-      </section>
+      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3 text-slate-500"><FiCreditCard /><span className="text-sm font-medium">Frais</span></div><p className="mt-3 text-3xl font-semibold text-slate-900">{rows.length}</p></div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3 text-slate-500"><FiRefreshCw /><span className="text-sm font-medium">Recurrents</span></div><p className="mt-3 text-3xl font-semibold text-slate-900">{recurringCount}</p></div>

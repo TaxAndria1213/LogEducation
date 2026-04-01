@@ -48,11 +48,7 @@ export default function RemiseOverview({ mode = "overview" }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Remises financieres</h2>
-        <p className="mt-2 text-sm text-slate-500">{mode === "settings" ? "Les remises permettent de preparer des reductions a appliquer ensuite dans les flux de facturation." : "Vue d'ensemble des reductions disponibles dans l'etablissement."}</p>
-        {errorMessage ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
-      </section>
+      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3 text-slate-500"><FiTag /><span className="text-sm font-medium">Remises</span></div><p className="mt-3 text-3xl font-semibold text-slate-900">{rows.length}</p></div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3 text-slate-500"><FiPercent /><span className="text-sm font-medium">Pourcentage</span></div><p className="mt-3 text-3xl font-semibold text-slate-900">{percentCount}</p></div>

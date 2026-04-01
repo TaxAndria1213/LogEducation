@@ -432,6 +432,7 @@ class FinanceRecouvrementApp {
         this.prisma,
         promise.eleve_id,
         promise.annee_scolaire_id,
+        tenantId,
       );
       if (overdueAmount > 0) {
         throw new Error("La dette en retard n'est pas encore soldee. La promesse ne peut pas etre marquee comme tenue.");
@@ -515,9 +516,24 @@ class FinanceRecouvrementApp {
         this.prisma,
         context.eleveId,
         context.anneeId,
+        tenantId,
       );
       if (overdueAmount <= 0) {
         throw new Error("Aucun impaye en retard ne justifie un blocage administratif.");
+      }
+
+      const existingRestriction = await this.prisma.restrictionAdministrative.findFirst({
+        where: {
+          etablissement_id: tenantId,
+          eleve_id: context.eleveId,
+          annee_scolaire_id: context.anneeId,
+          type,
+          statut: "ACTIVE",
+        } as never,
+        select: { id: true },
+      });
+      if (existingRestriction) {
+        throw new Error("Une restriction administrative active de ce type existe deja pour ce dossier.");
       }
 
       const restriction = await this.prisma.restrictionAdministrative.create({
@@ -570,6 +586,7 @@ class FinanceRecouvrementApp {
         this.prisma,
         restriction.eleve_id,
         restriction.annee_scolaire_id,
+        tenantId,
       );
       if (overdueAmount > 0) {
         throw new Error("La dette en retard n'est pas encore soldee. Le blocage ne peut pas etre leve.");
@@ -606,7 +623,23 @@ class FinanceRecouvrementApp {
         this.prisma,
         context.eleveId,
         context.anneeId,
+        tenantId,
       );
+
+      const existingCase = await this.prisma.dossierRecouvrement.findFirst({
+        where: {
+          etablissement_id: tenantId,
+          eleve_id: context.eleveId,
+          annee_scolaire_id: context.anneeId,
+          facture_id: context.factureId,
+          plan_paiement_id: context.planId,
+          statut: { notIn: ["CLOTURE", "ABANDONNE"] },
+        } as never,
+        select: { id: true },
+      });
+      if (existingCase) {
+        throw new Error("Un dossier de recouvrement actif existe deja pour cette dette.");
+      }
 
       const dossier = await this.prisma.dossierRecouvrement.create({
         data: {
@@ -768,6 +801,12 @@ class FinanceRecouvrementApp {
             dossier,
             userId,
             motif,
+          });
+          await autoLiftAdministrativeRestrictions(tx, {
+            tenantId,
+            eleveId: dossier.eleve_id,
+            anneeScolaireId: dossier.annee_scolaire_id,
+            utilisateurId: userId,
           });
         }
 

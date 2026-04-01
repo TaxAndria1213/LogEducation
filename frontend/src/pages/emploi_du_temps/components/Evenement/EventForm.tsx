@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { useAuth } from "../../../../auth/AuthContext";
 import Spin from "../../../../components/anim/Spin";
@@ -119,19 +119,7 @@ function EventForm() {
   const formKey = `${mode}-${editingEventId ?? "new"}-${initialValues?.etablissement_id ?? "none"}`;
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,_#ffffff_0%,_#fff7ed_46%,_#fffbeb_100%)] px-6 py-5 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)]">
-        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-          {mode === "edit" ? "Modifier un evenement" : "Nouvel evenement calendrier"}
-        </h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          {mode === "edit"
-            ? "Ajuste les horaires, le site ou le type de l'evenement, puis republie la version corrigee."
-            : "Planifie rapidement un cours special, un examen, une reunion ou une activite dans un calendrier lisible et coherent."}
-        </p>
-      </section>
-
-      <section className="w-full rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)]">
+    <div className="space-y-5">      <section className="w-full rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)]">
         {loading || !ready ? (
           <Spin label="Chargement des ressources..." showLabel />
         ) : (
@@ -165,3 +153,4 @@ function EventForm() {
 }
 
 export default EventForm;
+

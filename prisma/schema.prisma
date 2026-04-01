@@ -1324,6 +1324,7 @@ model OperationFinanciere {
   etablissement_id       String
   facture_id             String?
   paiement_id            String?
+  abonnement_cantine_id  String?
   cree_par_utilisateur_id String?
   type                   String
   montant                Decimal? @db.Decimal(12, 2)
@@ -1336,11 +1337,13 @@ model OperationFinanciere {
   etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
   facture Facture? @relation(fields: [facture_id], references: [id], onDelete: SetNull)
   paiement Paiement? @relation(fields: [paiement_id], references: [id], onDelete: SetNull)
+  abonnementCantine AbonnementCantine? @relation(fields: [abonnement_cantine_id], references: [id], onDelete: SetNull)
   createur Utilisateur? @relation("operations_financieres_createur", fields: [cree_par_utilisateur_id], references: [id])
 
   @@index([etablissement_id, type], map: "idx_opfin_etab_type")
   @@index([facture_id], map: "idx_opfin_facture")
   @@index([paiement_id], map: "idx_opfin_paiement")
+  @@index([abonnement_cantine_id], map: "idx_opfin_abonnement_cantine")
   @@map("operations_financieres")
 }
 
@@ -1644,6 +1647,9 @@ model AbonnementTransport {
   arret_transport_id String?
   facture_id         String?
   statut             String?
+  date_debut_service DateTime?
+  date_fin_service   DateTime?
+  prorata_ratio      Decimal? @db.Decimal(8, 4)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -1683,6 +1689,9 @@ model AbonnementCantine {
   formule_cantine_id String
   facture_id         String?
   statut             String?
+  solde_prepaye      Decimal @default(0) @db.Decimal(12, 2)
+  solde_min_alerte   Decimal @default(0) @db.Decimal(12, 2)
+  dernier_rechargement_le DateTime?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -1691,6 +1700,7 @@ model AbonnementCantine {
   annee   AnneeScolaire  @relation(fields: [annee_scolaire_id], references: [id])
   formule FormuleCantine @relation(fields: [formule_cantine_id], references: [id])
   facture Facture?       @relation(fields: [facture_id], references: [id], onDelete: SetNull)
+  operationsFinancieres OperationFinanciere[]
 
   @@index([eleve_id])
   @@index([facture_id], map: "idx_abc_facture")

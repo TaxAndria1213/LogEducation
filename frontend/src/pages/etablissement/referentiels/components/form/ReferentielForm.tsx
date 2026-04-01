@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+﻿import { useMemo, useState, type FormEvent } from "react";
 import { useInfo } from "../../../../../hooks/useInfo";
 import ReferencielService, {
   type ReferentialCatalogItem,
@@ -70,14 +70,6 @@ export default function ReferentielForm() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">
-          Nouvelle valeur de referentiel
-        </h2>
-        <p className="mt-2 text-sm text-slate-500">
-          Ajoute une valeur reutilisable dans les formulaires qui en dependent.
-        </p>
-      </section>
 
       <form
         onSubmit={handleSubmit}
@@ -123,7 +115,7 @@ export default function ReferentielForm() {
               {selectedCategory.description}
             </p>
             <p className="mt-2 text-xs text-slate-400">
-              {selectedCategory.fieldTargets.join(" • ")}
+              {selectedCategory.fieldTargets.join(" â€¢ ")}
             </p>
           </div>
         ) : null}
@@ -141,3 +133,4 @@ export default function ReferentielForm() {
     </div>
   );
 }
+

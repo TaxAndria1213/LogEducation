@@ -1,4 +1,4 @@
-﻿import type { CreneauHoraire } from "../../../../types/models";
+import type { CreneauHoraire } from "../../../../types/models";
 import Spin from "../../../../components/anim/Spin";
 import type { EmploiDuTempsWithRelations } from "../../../../services/emploiDuTemps.service";
 import {
@@ -173,7 +173,7 @@ function GroupGrid({
   const merged = buildMergedCells(rows, creneaux);
 
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-5 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.25)]">
+    <section className="rounded-[28px] border border-slate-200 bg-white">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h4 className="text-base font-semibold text-slate-900">{title}</h4>
@@ -235,7 +235,7 @@ function GroupGrid({
                           style={{ minHeight }}
                           className={`group flex h-full flex-col justify-center border text-center transition-all duration-150 ${
                             row
-                              ? "border-emerald-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f0fdf4_100%)] hover:border-emerald-300"
+                              ? "border-emerald-200 bg-white hover:border-emerald-300"
                               : "border-slate-200 bg-white/90 hover:border-cyan-300"
                           } ${mergeInfo.rowSpan > 1 ? "px-2.5 py-2" : "px-2.5 py-1.5"}`}
                         >

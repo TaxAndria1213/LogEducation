@@ -1,4 +1,5 @@
 import Service from "../app/api/Service";
+import { Http } from "../app/api/Http";
 import type { AbonnementTransport, ArretTransport, LigneTransport } from "../types/models";
 
 type QueryParams = Record<string, unknown>;
@@ -50,6 +51,15 @@ export function getAbonnementTransportDisplayLabel(record?: Partial<AbonnementTr
   return fullName || record.eleve?.code_eleve || "Abonnement transport";
 }
 
+export function getAbonnementTransportProrataLabel(record?: Partial<AbonnementTransportWithRelations> | null) {
+  const ratio =
+    typeof record?.prorata_ratio === "number"
+      ? record.prorata_ratio
+      : Number(record?.prorata_ratio ?? 0);
+  if (!Number.isFinite(ratio) || ratio <= 0 || ratio >= 1) return "Plein tarif";
+  return `Prorata ${(ratio * 100).toFixed(0)}%`;
+}
+
 class AbonnementTransportService extends Service {
   constructor() {
     super("abonnement-transport");
@@ -65,6 +75,18 @@ class AbonnementTransportService extends Service {
           ? params.orderBy
           : JSON.stringify(params.orderBy ?? [{ created_at: "desc" }]),
     } as Record<string, string | number | Date | boolean>);
+  }
+
+  async changeLine(
+    id: string,
+    payload: {
+      ligne_transport_id: string;
+      arret_transport_id?: string | null;
+      date_effet: string | Date;
+      facturer_regularisation?: boolean;
+    },
+  ) {
+    return Http.post(["/api", this.url, id, "change-line"].join("/"), payload);
   }
 
   private buildScopedWhere(etablissementId: string, whereParam?: unknown) {

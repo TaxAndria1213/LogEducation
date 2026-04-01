@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Page from "./Page";
 import Title1 from "../text/Title1";
 import Paragraph from "../text/Paragraph";
@@ -11,22 +11,47 @@ type PageProps = {
 };
 
 function ERPPage({ title, description, headerActions = [], children }: PageProps) {
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [isCondensed, setIsCondensed] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const rect = headerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setIsCondensed(rect.top <= 72);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
+
   return (
     <Page>
       <div className="flex min-h-full flex-col">
-        <header className="sticky -top-4 z-20 -mx-6 -mt-6 border-b border-slate-200 bg-white px-6 py-3 shadow-sm">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <header
+          ref={headerRef}
+          className={`sticky z-20 -mx-6 -mt-6 border-b border-slate-200 bg-white/95 backdrop-blur-sm transition-all duration-200 ${
+            isCondensed ? "top-[68px] px-6 py-2.5" : "top-[68px] px-6 py-4"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="space-y-0.5">
+              <div className={isCondensed ? "" : "space-y-1"}>
                 <Title1 title={title} />
-                <Paragraph description={description} />
+                {!isCondensed ? <Paragraph description={description} /> : null}
               </div>
             </div>
 
             {headerActions.length > 0 ? (
-              <div className="max-w-full">
+              <div className="max-w-full shrink-0">
                 <div
-                  className="erp-page-header-actions inline-flex items-center gap-2"
+                  className="erp-page-header-actions flex flex-wrap items-center justify-end gap-2"
                   data-erp-header-actions="true"
                 >
                   {headerActions.map((action, index) => (
@@ -44,11 +69,7 @@ function ERPPage({ title, description, headerActions = [], children }: PageProps
           </div>
         </header>
 
-        <div className="pt-4">
-          <div className="rounded-[24px] bg-slate-50/80 p-1">
-            {children}
-          </div>
-        </div>
+        <div className="pt-5">{children}</div>
       </div>
     </Page>
   );

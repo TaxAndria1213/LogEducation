@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   FiBookOpen,
   FiLayers,
@@ -45,7 +45,7 @@ function getErrorMessage(error: unknown) {
 }
 
 function NiveauOverview({ mode = "overview" }: Props) {
-  const { etablissement_id, user } = useAuth();
+  const { etablissement_id } = useAuth();
   const [niveaux, setNiveaux] = useState<NiveauRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -117,40 +117,7 @@ function NiveauOverview({ mode = "overview" }: Props) {
   }, [niveaux]);
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
-              <FiLayers />
-              Niveaux scolaires
-            </span>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900">
-                {user?.etablissement?.nom ?? "Etablissement"}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {mode === "settings"
-                  ? "Retrouve ici les reperes utiles pour organiser les niveaux de l'etablissement et garder une structure coherente."
-                  : "Accueil du module Niveaux avec une lecture rapide des niveaux disponibles, de leur ordre et de leur usage."}
-              </p>
-            </div>
-          </div>
-          {loading ? (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-              Chargement...
-            </span>
-          ) : null}
-        </div>
-
-        {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {errorMessage}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">      {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Chargement...</div> : null}      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiLayers />
@@ -184,46 +151,7 @@ function NiveauOverview({ mode = "overview" }: Props) {
         </div>
       </section>
 
-      {mode === "settings" ? (
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-              <FiSettings />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Parametres du module Niveaux
-              </h3>
-              <p className="text-sm text-slate-500">
-                Un bon ordonnancement des niveaux facilite ensuite la gestion des classes
-                et des programmes.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Organisation
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Garde un ordre progressif entre les niveaux pour simplifier la lecture
-                des classes, des inscriptions et des parcours.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Cohérence pedagogique
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Rattacher les programmes aux bons niveaux evite les decalages entre la
-                structure scolaire et le contenu enseigne.
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : (
+      {mode === "settings" ? null : (
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div>
             <h3 className="text-lg font-semibold text-slate-900">Apercu des niveaux</h3>
@@ -264,3 +192,5 @@ function NiveauOverview({ mode = "overview" }: Props) {
 }
 
 export default NiveauOverview;
+
+

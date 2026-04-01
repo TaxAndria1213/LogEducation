@@ -129,11 +129,6 @@ export default function EmpruntBibliothequeForm() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Nouvel emprunt</h2>
-        <p className="mt-2 text-sm text-slate-500">Selectionne une ressource disponible puis rattache-la a un eleve ou a un membre du personnel.</p>
-      </section>
-
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:grid-cols-2">
         <Controller control={form.control} name="ressource_bibliotheque_id" render={({ field, fieldState }) => <FieldWrapper id="ressource_bibliotheque_id" label="Ressource" required error={fieldState.error?.message}><select {...field} className={getInputClassName(Boolean(fieldState.error))}><option value="">Selectionner une ressource</option>{ressources.map((item) => <option key={item.id} value={item.id}>{item.titre} - disponible {getAvailableStock(item)}</option>)}</select></FieldWrapper>} />
         <Controller control={form.control} name="emprunteur_type" render={({ field, fieldState }) => <FieldWrapper id="emprunteur_type" label="Type d'emprunteur" required error={fieldState.error?.message}><select {...field} className={getInputClassName(Boolean(fieldState.error))}><option value="eleve">Eleve</option><option value="personnel">Personnel</option></select></FieldWrapper>} />

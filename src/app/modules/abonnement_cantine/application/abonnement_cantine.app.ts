@@ -25,6 +25,21 @@ type AbonnementCantineBillingPayload = {
   date_echeance: Date | null;
 };
 
+type CantineRechargePayload = {
+  montant: number;
+  methode: string;
+  reference: string | null;
+  note: string | null;
+  rechargement_le: Date;
+};
+
+type CantineConsumptionPayload = {
+  montant: number;
+  type_repas: string;
+  note: string | null;
+  consommation_le: Date;
+};
+
 type AbonnementCantineScopedRecord = Awaited<ReturnType<AbonnementCantineApp["getScopedRecord"]>>;
 
 class AbonnementCantineApp {
@@ -45,6 +60,9 @@ class AbonnementCantineApp {
     this.router.post("/", this.create.bind(this));
     this.router.get("/", this.getAll.bind(this));
     this.router.get("/:id", this.getOne.bind(this));
+    this.router.get("/:id/wallet", this.getWallet.bind(this));
+    this.router.post("/:id/recharge", this.recharge.bind(this));
+    this.router.post("/:id/consume", this.consume.bind(this));
     this.router.delete("/:id", this.delete.bind(this));
     this.router.put("/:id", this.update.bind(this));
     return this.router;
@@ -160,6 +178,81 @@ class AbonnementCantineApp {
     };
   }
 
+  private normalizeRechargePayload(raw: Record<string, unknown>): CantineRechargePayload {
+    const montant = Number(raw.montant ?? 0);
+    if (!Number.isFinite(montant) || montant <= 0) {
+      throw new Error("Le montant du rechargement cantine doit etre strictement positif.");
+    }
+
+    const methodeRaw =
+      typeof raw.methode === "string" && raw.methode.trim()
+        ? raw.methode.trim().toLowerCase()
+        : "cash";
+    const methode = ["cash", "mobile_money", "virement", "cheque", "bank", "card", "famille"].includes(
+      methodeRaw,
+    )
+      ? methodeRaw
+      : "cash";
+    const reference =
+      typeof raw.reference === "string" && raw.reference.trim() ? raw.reference.trim() : null;
+    const note = typeof raw.note === "string" && raw.note.trim() ? raw.note.trim() : null;
+    const dateRaw =
+      typeof raw.rechargement_le === "string" && raw.rechargement_le.trim()
+        ? raw.rechargement_le.trim()
+        : null;
+    const rechargement_le = dateRaw ? new Date(dateRaw) : new Date();
+
+    if (Number.isNaN(rechargement_le.getTime())) {
+      throw new Error("La date du rechargement cantine est invalide.");
+    }
+
+    return {
+      montant: Number(montant.toFixed(2)),
+      methode,
+      reference,
+      note,
+      rechargement_le,
+    };
+  }
+
+  private normalizeConsumptionPayload(raw: Record<string, unknown>): CantineConsumptionPayload {
+    const montant = Number(raw.montant ?? 0);
+    if (!Number.isFinite(montant) || montant <= 0) {
+      throw new Error("Le montant du repas consomme doit etre strictement positif.");
+    }
+
+    const typeRepasRaw =
+      typeof raw.type_repas === "string" && raw.type_repas.trim()
+        ? raw.type_repas.trim().toLowerCase()
+        : "repas";
+    const type_repas = [
+      "petit_dejeuner",
+      "dejeuner",
+      "gouter",
+      "diner",
+      "repas",
+    ].includes(typeRepasRaw)
+      ? typeRepasRaw
+      : "repas";
+    const note = typeof raw.note === "string" && raw.note.trim() ? raw.note.trim() : null;
+    const dateRaw =
+      typeof raw.consommation_le === "string" && raw.consommation_le.trim()
+        ? raw.consommation_le.trim()
+        : null;
+    const consommation_le = dateRaw ? new Date(dateRaw) : new Date();
+
+    if (Number.isNaN(consommation_le.getTime())) {
+      throw new Error("La date de consommation cantine est invalide.");
+    }
+
+    return {
+      montant: Number(montant.toFixed(2)),
+      type_repas,
+      note,
+      consommation_le,
+    };
+  }
+
   private buildScopedWhere(existingWhere: Record<string, unknown>, tenantId: string) {
     const scope = { eleve: { is: { etablissement_id: tenantId } } };
     if (!existingWhere || Object.keys(existingWhere).length === 0) return scope;
@@ -237,6 +330,22 @@ class AbonnementCantineApp {
         eleve: { include: { utilisateur: { include: { profil: true } } } },
         annee: true,
         formule: true,
+        operationsFinancieres: {
+          where: {
+            type: {
+              in: [
+                "RECHARGEMENT_CANTINE",
+                "ANNULATION_RECHARGEMENT_CANTINE",
+                "CONSOMMATION_CANTINE",
+                "AJUSTEMENT_SOLDE_CANTINE",
+                "SUSPENSION_CANTINE",
+                "REACTIVATION_CANTINE",
+              ],
+            },
+          },
+          orderBy: { created_at: "desc" },
+          take: 20,
+        },
       },
     });
     if (!record) return null;
@@ -316,6 +425,8 @@ class AbonnementCantineApp {
           annee_scolaire_id: data.annee_scolaire_id,
           formule_cantine_id: data.formule_cantine_id,
           statut: data.statut,
+          solde_prepaye: new Prisma.Decimal(0),
+          solde_min_alerte: new Prisma.Decimal(0),
         },
       });
 
@@ -352,6 +463,36 @@ class AbonnementCantineApp {
         facture_id: factureId,
       };
     });
+  }
+
+  private buildWalletResponse(existing: NonNullable<AbonnementCantineScopedRecord>) {
+    const history = (existing.operationsFinancieres ?? []).map((item) => ({
+      id: item.id,
+      type: item.type,
+      montant: item.montant,
+      motif: item.motif,
+      details_json: item.details_json,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+    }));
+
+    return {
+      abonnement: existing,
+      wallet: {
+        solde_prepaye: existing.solde_prepaye,
+        solde_min_alerte: existing.solde_min_alerte,
+        dernier_rechargement_le: existing.dernier_rechargement_le,
+        history,
+      },
+    };
+  }
+
+  private shouldAutoSuspend(soldeApres: number, soldeMinAlerte: number) {
+    return soldeApres <= Math.max(0, soldeMinAlerte);
+  }
+
+  private shouldAutoReactivate(currentStatus: string | null | undefined, soldeApres: number, soldeMinAlerte: number) {
+    return (currentStatus ?? "ACTIF").toUpperCase() === "SUSPENDU" && soldeApres > Math.max(0, soldeMinAlerte);
   }
 
   private async create(req: Request, res: R, next: NextFunction) {
@@ -408,6 +549,36 @@ class AbonnementCantineApp {
       Response.success(res, "Abonnement cantine.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de l'abonnement cantine", 404, error as Error);
+      next(error);
+    }
+  }
+
+  private async getWallet(req: Request, res: R, next: NextFunction) {
+    try {
+      const tenantId = this.resolveTenantId(req);
+      const existing = await this.getScopedRecord(req.params.id, tenantId);
+      if (!existing) throw new Error("Compte cantine introuvable.");
+      Response.success(res, "Compte cantine.", this.buildWalletResponse(existing));
+    } catch (error) {
+      Response.error(res, "Erreur lors de la recuperation du compte cantine", 404, error as Error);
+      next(error);
+    }
+  }
+
+  private async recharge(req: Request, res: R, next: NextFunction) {
+    try {
+      throw new Error("Le rechargement cantine doit etre enregistre depuis le module Finance.");
+    } catch (error) {
+      Response.error(res, "Erreur lors du rechargement du compte cantine", 400, error as Error);
+      next(error);
+    }
+  }
+
+  private async consume(req: Request, res: R, next: NextFunction) {
+    try {
+      throw new Error("La consommation monetaire cantine n'est plus saisie ici. Utilise un statut financier transmis par Finance.");
+    } catch (error) {
+      Response.error(res, "Erreur lors de l'enregistrement de la consommation cantine", 400, error as Error);
       next(error);
     }
   }

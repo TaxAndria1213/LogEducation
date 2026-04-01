@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { FiAlertTriangle, FiCheckCircle, FiClock, FiSettings, FiShield } from "react-icons/fi";
+﻿import { useEffect, useMemo, useState } from "react";
+import { FiAlertTriangle, FiCheckCircle, FiClock, FiShield } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import IncidentDisciplinaireService, {
   getIncidentDisplayLabel,
@@ -18,7 +18,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function IncidentOverview({ mode = "overview" }: Props) {
-  const { etablissement_id, user } = useAuth();
+  const { etablissement_id } = useAuth();
   const [rows, setRows] = useState<IncidentDisciplinaireWithRelations[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -73,28 +73,8 @@ export default function IncidentOverview({ mode = "overview" }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-rose-700">
-              <FiShield />
-              Discipline
-            </span>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900">
-                {user?.etablissement?.nom ?? "Etablissement"}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {mode === "settings"
-                  ? "Le module Discipline centralise les incidents, les sanctions associees et les bonnes pratiques de suivi."
-                  : "Vue d'ensemble des signalements en cours, des situations sensibles et des incidents deja resolus."}
-              </p>
-            </div>
-          </div>
-          {loading ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Chargement...</span> : null}
-        </div>
-        {errorMessage ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
-      </section>
+      {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Chargement...</div> : null}
+      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3 text-slate-500"><FiAlertTriangle /><span className="text-sm font-medium">Incidents</span></div><p className="mt-3 text-3xl font-semibold text-slate-900">{rows.length}</p></div>
@@ -137,19 +117,10 @@ export default function IncidentOverview({ mode = "overview" }: Props) {
             <p className="mt-2 text-sm text-slate-500">Nombre de dossiers ayant deja une decision rattachee.</p>
             <p className="mt-4 text-3xl font-semibold text-slate-900">{sanctionedCount}</p>
           </div>
-          {mode === "settings" ? (
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700"><FiSettings /></div>
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Parametres du module</h3>
-                  <p className="text-sm text-slate-500">Utilise les referentiels d'etablissement pour harmoniser les statuts d'incident et le vocabulaire de suivi.</p>
-                </div>
-              </div>
-            </div>
-          ) : null}
+          {mode === "settings" ? null : null}
         </div>
       </section>
     </div>
   );
 }
+

@@ -74,6 +74,20 @@ class OperationFinanciereApp {
         },
       },
       paiement: true,
+      abonnementCantine: {
+        include: {
+          eleve: {
+            include: {
+              utilisateur: {
+                include: {
+                  profil: true,
+                },
+              },
+            },
+          },
+          formule: true,
+        },
+      },
       createur: {
         include: {
           profil: true,

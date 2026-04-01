@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   FiCoffee,
   FiCheckCircle,
@@ -97,7 +97,7 @@ function getEleveLabel(link: NonNullable<ParentTuteurRecord["eleves"]>[number]) 
 }
 
 function ParentTuteurOverview({ mode = "overview" }: Props) {
-  const { etablissement_id, user } = useAuth();
+  const { etablissement_id } = useAuth();
   const [parents, setParents] = useState<ParentTuteurRecord[]>([]);
   const [familyFinance, setFamilyFinance] = useState<ParentFamilyFinanceSummary[]>([]);
   const [transportSubscriptions, setTransportSubscriptions] = useState<AbonnementTransport[]>(
@@ -283,40 +283,7 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
   }, [parents]);
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
-              <FiUsers />
-              Parents et tuteurs
-            </span>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900">
-                {user?.etablissement?.nom ?? "Etablissement"}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {mode === "settings"
-                  ? "Retrouve ici les repères utiles pour maintenir des contacts fiables et des liens eleve-tuteur cohérents."
-                  : "Accueil du module Parents/Tuteurs avec une lecture rapide des contacts disponibles et des rattachements aux eleves."}
-              </p>
-            </div>
-          </div>
-          {loading ? (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-              Chargement...
-            </span>
-          ) : null}
-        </div>
-
-        {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {errorMessage}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">      {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Chargement...</div> : null}      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiUsers />
@@ -382,46 +349,7 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
         </section>
       ) : null}
 
-      {mode === "settings" ? (
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-              <FiSettings />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Parametres du module Parents/Tuteurs
-              </h3>
-              <p className="text-sm text-slate-500">
-                Des fiches de contact propres améliorent ensuite les inscriptions, les
-                communications et la recuperation des eleves.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Coordonnees
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Garde au moins un moyen de contact fiable par parent ou tuteur pour
-                faciliter les echanges avec l'etablissement.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Liens eleves
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Verifie les statuts de tuteur principal et d'autorisation de recuperation
-                pour garder les informations administratives coherentes.
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : (
+      {mode === "settings" ? null : (
         <section className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
           <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
@@ -678,7 +606,7 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span>
                             {child.nom_complet || "Eleve"}
-                            {child.sibling_rank ? ` • Rang ${child.sibling_rank}` : ""}
+                            {child.sibling_rank ? ` â€¢ Rang ${child.sibling_rank}` : ""}
                           </span>
                           <span className="font-medium text-slate-900">
                             {child.total_du.toLocaleString("fr-FR")} MGA
@@ -702,3 +630,5 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
 }
 
 export default ParentTuteurOverview;
+
+

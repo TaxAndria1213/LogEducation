@@ -1,6 +1,12 @@
-import type { ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { useMemo, useState, type ReactNode, type ReactElement } from "react";
+import { FiBarChart2, FiGrid, FiList, FiMenu, FiPlus, FiSettings } from "react-icons/fi";
 import ERPPage from "../../../components/page/ERPPage";
+import { getComponentById } from "../../../components/components.build";
+import IconButton from "../../../components/actions/IconButton";
+import ListContainer from "../../../components/sidebar/ListContainer";
+import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
+import type { FinanceHeroAction, FinanceHeroHighlight } from "./financeUi";
+import type { componentId } from "../../../types/types";
 
 type FinanceModuleKey =
   | "dashboard"
@@ -18,26 +24,20 @@ type LocalView = {
   onClick: () => void;
   active?: boolean;
   tone?: "default" | "primary";
+  helper?: string;
 };
 
 type Props = {
   title: string;
   description: string;
   currentModule: FinanceModuleKey;
+  eyebrow?: string;
   localViews?: LocalView[];
+  heroHighlights?: FinanceHeroHighlight[];
+  heroActions?: FinanceHeroAction[];
+  heroAside?: ReactNode;
   children: ReactNode;
 };
-
-const financeTabs: Array<{ key: FinanceModuleKey; label: string; path: string }> = [
-  { key: "dashboard", label: "Vue globale", path: "/finance/dashboard" },
-  { key: "catalogue_frais", label: "Catalogue", path: "/finance/catalogue_frais" },
-  { key: "remises", label: "Remises", path: "/finance/remises" },
-  { key: "factures", label: "Factures", path: "/finance/factures" },
-  { key: "paiements", label: "Paiements", path: "/finance/paiements" },
-  { key: "plans_de_paiement", label: "Plans", path: "/finance/plans_de_paiement" },
-  { key: "journal_financier", label: "Journal", path: "/finance/journal_financier" },
-  { key: "recouvrement", label: "Recouvrement", path: "/finance/recouvrement" },
-];
 
 export default function FinanceModuleLayout({
   title,
@@ -46,57 +46,126 @@ export default function FinanceModuleLayout({
   localViews = [],
   children,
 }: Props) {
-  return (
-    <ERPPage title={title} description={description}>
-      <div className="space-y-4">
-        <section className="rounded-[26px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <div className="overflow-x-auto md:overflow-visible">
-            <div className="flex min-w-max items-center gap-2 md:min-w-0 md:flex-wrap">
-              {financeTabs.map((tab) => {
-                const isActive = tab.key === currentModule;
-                return (
-                  <NavLink
-                    key={tab.key}
-                    to={tab.path}
-                    className={`rounded-full border px-3 py-2 text-sm font-medium transition ${
-                      isActive
-                        ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                        : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white hover:text-slate-900"
-                    }`}
-                  >
-                    {tab.label}
-                  </NavLink>
-                );
-              })}
-            </div>
-          </div>
+  const [menuOpen, setMenuOpen] = useState(false);
+  const hasViewMenu = localViews.length > 0;
+  const viewMenuPrefix = useMemo(() => {
+    switch (currentModule) {
+      case "catalogue_frais":
+        return "FIN.CATALOGUEFRAIS.MENUACTION";
+      case "remises":
+        return "FIN.REMISES.MENUACTION";
+      case "factures":
+        return "FIN.FACTURES.MENUACTION";
+      case "paiements":
+        return "FIN.PAIEMENTS.MENUACTION";
+      case "plans_de_paiement":
+        return "FIN.PLANSPAIEMENT.MENUACTION";
+      case "journal_financier":
+        return "FIN.JOURNALFINANCIER.MENUACTION";
+      case "recouvrement":
+        return "FIN.RECOUVREMENT.MENUACTION";
+      default:
+        return null;
+    }
+  }, [currentModule]);
+  const menuActionId = useMemo(() => {
+    switch (currentModule) {
+      case "catalogue_frais":
+        return "FIN.CATALOGUEFRAIS.MENUACTION";
+      case "remises":
+        return "FIN.REMISES.MENUACTION";
+      case "factures":
+        return "FIN.FACTURES.MENUACTION";
+      case "paiements":
+        return "FIN.PAIEMENTS.MENUACTION";
+      case "plans_de_paiement":
+        return "FIN.PLANSPAIEMENT.MENUACTION";
+      case "journal_financier":
+        return "FIN.JOURNALFINANCIER.MENUACTION";
+      case "recouvrement":
+        return "FIN.RECOUVREMENT.MENUACTION";
+      default:
+        return null;
+    }
+  }, [currentModule]);
 
-          {localViews.length > 0 ? (
-            <div className="mt-3 overflow-x-auto border-t border-slate-100 pt-3 md:overflow-visible">
-              <div className="flex min-w-max items-center gap-2 md:min-w-0 md:flex-wrap">
-                {localViews.map((view) => (
-                  <button
-                    key={view.id}
-                    type="button"
-                    onClick={view.onClick}
-                    className={`rounded-full px-3 py-2 text-sm font-medium transition ${
-                      view.active
-                        ? view.tone === "primary"
-                          ? "bg-emerald-600 text-white shadow-sm"
-                          : "bg-slate-900 text-white shadow-sm"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                    }`}
-                  >
-                    {view.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </section>
+  const OptionButton = menuActionId ? getComponentById(menuActionId) : null;
+  const viewSelectedIndex = localViews.findIndex((view) => view.active);
 
-        {children}
+  const viewMenuItems = localViews.map((view): ReactElement => {
+    const suffix =
+      view.id === "dashboard"
+        ? "DASHBOARD"
+        : view.id === "list"
+          ? "LIST"
+          : view.id === "parametre"
+            ? "PARAMETRE"
+            : view.id === "add"
+              ? "ADD"
+              : null;
+
+    const componentId = viewMenuPrefix && suffix ? `${viewMenuPrefix}.${suffix}` : null;
+    const ViewComponent = componentId ? getComponentById(componentId as componentId) : null;
+
+    if (ViewComponent) {
+      return <ViewComponent key={view.id} onClick={view.onClick} />;
+    }
+
+    const Icon =
+      view.id === "dashboard"
+        ? FiBarChart2
+        : view.id === "list"
+          ? FiList
+          : view.id === "parametre"
+            ? FiSettings
+            : view.id === "add"
+              ? FiPlus
+              : FiGrid;
+
+    return (
+      <div key={view.id} onClick={view.onClick} className="flex items-center gap-2 text-sm">
+        <Icon className="shrink-0 text-[15px]" />
+        <span className="truncate font-medium">{view.label}</span>
       </div>
+    );
+  });
+
+  return (
+    <ERPPage
+      title={title}
+      description={description}
+      headerActions={
+        hasViewMenu
+          ? [
+              OptionButton ? (
+                <OptionButton key="finance-menu" onClick={() => setMenuOpen((value: boolean) => !value)} />
+              ) : (
+                <IconButton
+                  key="finance-menu"
+                  icon={<FiMenu />}
+                  onClick={() => setMenuOpen((value) => !value)}
+                  size={40}
+                />
+              ),
+            ]
+          : []
+      }
+    >
+      <div>{children}</div>
+
+      <PageSidebarPopup open={hasViewMenu && menuOpen} onClose={() => setMenuOpen(false)}>
+        {viewMenuItems.length > 0 ? (
+          <div>
+            <ListContainer
+              onItemClick={() => setMenuOpen(false)}
+              selected={viewSelectedIndex >= 0 ? viewSelectedIndex : undefined}
+              components={viewMenuItems}
+            />
+          </div>
+        ) : (
+          <div className="px-2 py-3 text-sm text-slate-500">Aucune vue disponible.</div>
+        )}
+      </PageSidebarPopup>
     </ERPPage>
   );
 }

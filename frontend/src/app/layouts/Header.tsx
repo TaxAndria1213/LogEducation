@@ -1,15 +1,23 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
+import { useMemo, type JSX } from "react";
+import {
+  FiUser,
+  FiBell,
+  FiMessageCircle,
+  FiChevronRight,
+  FiLogOut,
+} from "react-icons/fi";
 import { useAuth } from "../../auth/AuthContext";
-import { FiUser, FiBell, FiMessageCircle } from "react-icons/fi";
 import IconButton from "../../components/actions/IconButton";
 import { useHeaderStore } from "../store/headerStore";
 import UserPopup from "../process/headBar/components/UserPopup";
 import { getComponentById } from "../../components/components.build";
 import AdminPopup from "../process/headBar/components/AdminPopup";
-import type { JSX } from "react";
+import { modules } from "../../routes/modules";
 
 function Header() {
-  const { user, logout } = useAuth();
+  const { user, profil, logout } = useAuth();
+  const location = useLocation();
 
   const popupOpen = useHeaderStore((state) => state.popupOpen);
   const popupType = useHeaderStore((state) => state.popupType);
@@ -17,57 +25,115 @@ function Header() {
   const setPopupContent = useHeaderStore((state) => state.setPopupContent);
   const setPopupOpen = useHeaderStore((state) => state.setPopupOpen);
 
-  const EtablissementChoiceButton = getComponentById(
-    "ADM.BARRE.SELECT.ETABLISSEMENT",
-  );
+  const EtablissementChoiceButton = getComponentById("ADM.BARRE.SELECT.ETABLISSEMENT");
+
+  const routeContext = useMemo(() => {
+    for (const module of modules) {
+      const directMatch = module.path && location.pathname.startsWith(module.path);
+      if (directMatch) {
+        return { moduleName: module.name, sectionName: module.name };
+      }
+
+      const submodule = module.submodules?.find((item) =>
+        location.pathname.startsWith(item.path ?? ""),
+      );
+      if (submodule) {
+        return { moduleName: module.name, sectionName: submodule.name };
+      }
+    }
+
+    return {
+      moduleName: "Pilotage",
+      sectionName: "Vue generale",
+    };
+  }, [location.pathname]);
 
   const togglePopup = (type: "left" | "center" | "right") => {
-    // si on clique sur le même type => toggle
     if (popupType === type) {
       setPopupOpen(!popupOpen, type);
       return;
     }
-    // si on clique sur un autre type => ouvre celui-là
     setPopupOpen(true, type);
   };
 
   return (
-    <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
-      <div className="relative flex items-center px-6 h-14">
-        {/* gauche */}
-        <div className="flex items-center space-x-4">
-          <h1 className="text-xl font-bold text-gray-800">EducAr</h1>
-          <EtablissementChoiceButton onClick={() => togglePopup("left")} />
-        </div>
+    <header className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-xl">
+      <div className="relative flex min-h-[68px] items-center justify-between gap-4 px-6">
+        <div className="min-w-0 flex flex-1 items-center gap-4">
+          <div className="min-w-0 shrink">
+            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+              <span>{routeContext.moduleName}</span>
+              <FiChevronRight className="text-slate-300" />
+              <span>{routeContext.sectionName}</span>
+            </div>
+            <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+              {profil?.prenom || user?.email || "equipe"}
+              <span className="ml-2 text-xs font-medium text-slate-500">session active</span>
+            </p>
+          </div>
 
-        {/* centre */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div className="flex items-center space-x-4">
-            <IconButton
-              icon={<FiMessageCircle />}
-              onClick={() => {
-                togglePopup("center");
-                setPopupContent("message");
-              }}
-            />
-            <IconButton
-              icon={<FiBell />}
-              onClick={() => {
-                togglePopup("center");
-                setPopupContent("notification");
-              }}
-            />
-            <IconButton
-              icon={<FiUser />}
-              onClick={() => {
-                  togglePopup("center");
-                  setPopupContent("profil");
-                }}
-            />
+          <div className="hidden xl:block">
+            {EtablissementChoiceButton ? (
+              <EtablissementChoiceButton onClick={() => togglePopup("left")} />
+            ) : null}
           </div>
         </div>
 
-        {/* Popups */}
+        <div className="flex items-center gap-2">
+          <IconButton
+            icon={<FiMessageCircle />}
+            onClick={() => {
+              togglePopup("center");
+              setPopupContent("message");
+            }}
+            size={40}
+          />
+          <IconButton
+            icon={<FiBell />}
+            onClick={() => {
+              togglePopup("center");
+              setPopupContent("notification");
+            }}
+            size={40}
+          />
+          <IconButton
+            icon={<FiUser />}
+            onClick={() => {
+              togglePopup("center");
+              setPopupContent("profil");
+            }}
+            size={40}
+          />
+
+          {user ? (
+            <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+              <div className="grid h-9 w-9 place-items-center rounded-[14px] bg-slate-950 text-xs font-bold uppercase tracking-[0.12em] text-white">
+                {(profil?.prenom?.[0] ?? user?.email?.[0] ?? "U").toUpperCase()}
+              </div>
+              <div className="hidden min-w-0 sm:block sm:max-w-[160px]">
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {[profil?.prenom, profil?.nom].filter(Boolean).join(" ") || user.email}
+                </p>
+              </div>
+              <button
+                onClick={logout}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                aria-label="Se deconnecter"
+                type="button"
+              >
+                <FiLogOut />
+              </button>
+            </div>
+          ) : (
+            <NavLink
+              to="/login"
+              className="inline-flex items-center rounded-[16px] border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              Se connecter
+            </NavLink>
+          )}
+        </div>
+
         {popupType === "left" && (
           <AdminPopup
             isOpen={popupOpen}
@@ -75,7 +141,7 @@ function Header() {
             onClose={() => setPopupOpen(false)}
           />
         )}
-        {popupType === "center" && (
+        {popupType === "center" && popupContent && (
           <UserPopup
             component={popupContent as JSX.Element}
             isOpen={popupOpen}
@@ -83,25 +149,6 @@ function Header() {
             onClose={() => setPopupOpen(false)}
           />
         )}
-
-        {/* droite */}
-        <div className="ml-auto">
-          {user ? (
-            <button
-              onClick={logout}
-              className="text-sm text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md"
-            >
-              Se déconnecter
-            </button>
-          ) : (
-            <NavLink
-              to="/login"
-              className="text-sm text-blue-600 hover:text-blue-800"
-            >
-              Se connecter
-            </NavLink>
-          )}
-        </div>
       </div>
     </header>
   );

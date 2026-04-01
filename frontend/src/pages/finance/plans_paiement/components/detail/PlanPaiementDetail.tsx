@@ -15,7 +15,7 @@ import { useInfo } from "../../../../../hooks/useInfo";
 import FinanceRelanceService, {
   type FinanceRelanceHistoryItem,
 } from "../../../../../services/financeRelance.service";
-import {
+import PlanPaiementEleveService, {
   getPlanPaiementDisplayLabel,
   getPlanPaiementEcheances,
   getPlanPaiementPaidAmount,
@@ -544,5 +544,7 @@ export default function PlanPaiementDetail() {
     </div>
   );
 }
+
+
 
 

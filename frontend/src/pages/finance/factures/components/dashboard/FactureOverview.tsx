@@ -105,19 +105,11 @@ export default function FactureOverview({ mode = "overview" }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Facturation eleves</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          {mode === "settings"
-            ? "Le module facture centralise les montants emis, les lignes detaillees et le suivi des paiements."
-            : "Vue d'ensemble des factures emises pour les eleves et de leur niveau de recouvrement."}
-        </p>
-        {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {errorMessage}
-          </div>
-        ) : null}
-      </section>
+      {errorMessage ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {errorMessage}
+        </div>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">

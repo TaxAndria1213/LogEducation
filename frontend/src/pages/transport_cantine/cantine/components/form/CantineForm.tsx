@@ -27,19 +27,6 @@ const abonnementSchema = z.object({
   eleve_id: z.string().min(1, "L'eleve est obligatoire."),
   formule_cantine_id: z.string().min(1, "La formule est obligatoire."),
   statut: z.string().default("ACTIF"),
-  mode_facturation: z.enum(["SERVICE_ONLY", "SERVICE_AND_BILL"]).default("SERVICE_ONLY"),
-  mode_paiement: z.enum(["COMPTANT", "ECHELONNE"]).default("COMPTANT"),
-  nombre_tranches: z.coerce.number().int().min(1).default(1),
-  jour_paiement_mensuel: z.coerce.number().int().min(1).max(28).nullable().optional(),
-  date_echeance: z.string().optional(),
-}).superRefine((data, ctx) => {
-  if (data.mode_facturation === "SERVICE_AND_BILL" && data.mode_paiement === "ECHELONNE" && !data.jour_paiement_mensuel) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["jour_paiement_mensuel"],
-      message: "Le jour du mois est requis pour un paiement echelonne.",
-    });
-  }
 });
 
 type CantineAction = "formule" | "abonnement";
@@ -140,15 +127,8 @@ export default function CantineForm() {
       eleve_id: "",
       formule_cantine_id: "",
       statut: "ACTIF",
-      mode_facturation: "SERVICE_ONLY",
-      mode_paiement: "COMPTANT",
-      nombre_tranches: 1,
-      jour_paiement_mensuel: 5,
-      date_echeance: "",
     },
   });
-  const selectedBillingMode = abonnementForm.watch("mode_facturation");
-  const selectedPaymentMode = abonnementForm.watch("mode_paiement");
   const selectedFormuleId = abonnementForm.watch("formule_cantine_id");
 
   const load = useMemo(
@@ -202,21 +182,12 @@ export default function CantineForm() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Ajouts cantine</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          Les actions formule et abonnement sont maintenant separees pour rendre le
-          parcours plus clair.
-        </p>
-        <div className="mt-5">
-          <ActionSelector value={activeAction} onChange={setActiveAction} />
+      <ActionSelector value={activeAction} onChange={setActiveAction} />
+      {loading ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <Spin label="Chargement du formulaire cantine..." showLabel />
         </div>
-        {loading ? (
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <Spin label="Chargement du formulaire cantine..." showLabel />
-          </div>
-        ) : null}
-      </section>
+      ) : null}
 
       {activeAction === "formule" ? (
         <form
@@ -324,36 +295,12 @@ export default function CantineForm() {
                 annee_scolaire_id: currentYear.id,
                 formule_cantine_id: data.formule_cantine_id,
                 statut: data.statut || "ACTIF",
-                facturer_maintenant: data.mode_facturation === "SERVICE_AND_BILL",
-                mode_paiement: data.mode_paiement,
-                nombre_tranches:
-                  data.mode_facturation === "SERVICE_AND_BILL"
-                    ? Number(data.nombre_tranches ?? 1)
-                    : 1,
-                jour_paiement_mensuel:
-                  data.mode_facturation === "SERVICE_AND_BILL" && data.mode_paiement === "ECHELONNE"
-                    ? Number(data.jour_paiement_mensuel ?? 5)
-                    : null,
-                date_echeance:
-                  data.mode_facturation === "SERVICE_AND_BILL"
-                    ? data.date_echeance || null
-                    : null,
               });
-              info(
-                data.mode_facturation === "SERVICE_AND_BILL"
-                  ? "Abonnement cantine et facture crees."
-                  : "Abonnement cantine cree.",
-                "success",
-              );
+              info("Abonnement cantine cree. La facturation se gere ensuite dans Finance.", "success");
               abonnementForm.reset({
                 eleve_id: "",
                 formule_cantine_id: "",
                 statut: "ACTIF",
-                mode_facturation: "SERVICE_ONLY",
-                mode_paiement: "COMPTANT",
-                nombre_tranches: 1,
-                jour_paiement_mensuel: 5,
-                date_echeance: "",
               });
               await load();
             } catch (error) {
@@ -369,9 +316,8 @@ export default function CantineForm() {
               Nouvel abonnement cantine
             </h3>
             <p className="mt-1 text-sm text-slate-500">
-              Cette vue est reservee au rattachement d'un eleve a une formule
-              cantine. Tu peux ouvrir le service seul ou declencher la facture en meme temps.
-              Si le frais lie est recurrent, un service actif pourra ensuite etre repris par la facturation automatique.
+              Cette vue sert uniquement a rattacher un eleve a une formule cantine.
+              La facture, l'encaissement et toute regularisation monetaire se font dans Finance.
             </p>
           </div>
 
@@ -440,133 +386,17 @@ export default function CantineForm() {
             )}
           />
 
-          <Controller
-            control={abonnementForm.control}
-            name="mode_facturation"
-            render={({ field, fieldState }) => (
-              <FieldWrapper
-                id="cantine_subscription_billing_mode"
-                label="Activation"
-                required
-                error={fieldState.error?.message}
-              >
-                <select
-                  {...field}
-                  disabled={loading || submittingAction === "abonnement"}
-                  className={getInputClassName(Boolean(fieldState.error))}
-                >
-                  <option value="SERVICE_ONLY">Activer sans facture immediate</option>
-                  <option value="SERVICE_AND_BILL">Activer et facturer maintenant</option>
-                </select>
-              </FieldWrapper>
-            )}
-          />
-
-          {selectedBillingMode === "SERVICE_AND_BILL" ? (
-            <>
-              <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900 md:col-span-2">
-                <p className="font-semibold">Tarif applique automatiquement</p>
-                <p className="mt-1">
-                  {selectedFormule?.frais
-                    ? `${selectedFormule.frais.nom} - ${getCatalogueFraisSecondaryLabel(selectedFormule.frais as CatalogueFraisWithRelations)}`
-                    : "Choisis d'abord une formule reliee a un frais catalogue cantine."}
-                </p>
-              </div>
-
-              <Controller
-                control={abonnementForm.control}
-                name="mode_paiement"
-                render={({ field, fieldState }) => (
-                  <FieldWrapper
-                    id="cantine_subscription_payment_mode"
-                    label="Mode de paiement"
-                    required
-                    error={fieldState.error?.message}
-                  >
-                    <select
-                      {...field}
-                      disabled={loading || submittingAction === "abonnement"}
-                      className={getInputClassName(Boolean(fieldState.error))}
-                    >
-                      <option value="COMPTANT">Comptant</option>
-                      <option value="ECHELONNE">Echelonne</option>
-                    </select>
-                  </FieldWrapper>
-                )}
-              />
-
-              <Controller
-                control={abonnementForm.control}
-                name="nombre_tranches"
-                render={({ field, fieldState }) => (
-                  <FieldWrapper
-                    id="cantine_subscription_tranches"
-                    label="Nombre de tranches"
-                    required
-                    error={fieldState.error?.message}
-                    hint="Pour un paiement echelonne, le service sera decoupe en plusieurs echeances mensuelles."
-                  >
-                    <input
-                      type="number"
-                      min={1}
-                      {...field}
-                      disabled={loading || submittingAction === "abonnement"}
-                      className={getInputClassName(Boolean(fieldState.error))}
-                    />
-                  </FieldWrapper>
-                )}
-              />
-
-              {selectedPaymentMode === "ECHELONNE" ? (
-                <Controller
-                  control={abonnementForm.control}
-                  name="jour_paiement_mensuel"
-                  render={({ field, fieldState }) => (
-                    <FieldWrapper
-                      id="cantine_subscription_payment_day"
-                      label="Jour de paiement du mois"
-                      required
-                      error={fieldState.error?.message}
-                    >
-                      <input
-                        type="number"
-                        min={1}
-                        max={28}
-                        value={field.value ?? ""}
-                        onChange={(event) =>
-                          field.onChange(
-                            event.target.value === "" ? null : Number(event.target.value),
-                          )
-                        }
-                        disabled={loading || submittingAction === "abonnement"}
-                        className={getInputClassName(Boolean(fieldState.error))}
-                      />
-                    </FieldWrapper>
-                  )}
-                />
-              ) : null}
-
-              <Controller
-                control={abonnementForm.control}
-                name="date_echeance"
-                render={({ field, fieldState }) => (
-                  <FieldWrapper
-                    id="cantine_subscription_due_date"
-                    label="Premiere date d'echeance"
-                    error={fieldState.error?.message}
-                    hint="Optionnelle. Sert d'ancre pour la premiere echeance du service."
-                  >
-                    <input
-                      type="date"
-                      {...field}
-                      disabled={loading || submittingAction === "abonnement"}
-                      className={getInputClassName(Boolean(fieldState.error))}
-                    />
-                  </FieldWrapper>
-                )}
-              />
-            </>
-          ) : null}
+          <div className="md:col-span-2 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
+            <p className="font-semibold">Tarif et suivi financier dans Finance</p>
+            <p className="mt-1">
+              {selectedFormule?.frais
+                ? `${selectedFormule.frais.nom} - ${getCatalogueFraisSecondaryLabel(selectedFormule.frais as CatalogueFraisWithRelations)}`
+                : "Choisis une formule reliee a un frais catalogue cantine."}
+            </p>
+            <p className="mt-2 text-xs text-sky-800">
+              Ici tu actives seulement le service. La facture et les paiements se gerent ensuite depuis Finance.
+            </p>
+          </div>
 
           <div className="md:col-span-2 flex justify-end">
             <button

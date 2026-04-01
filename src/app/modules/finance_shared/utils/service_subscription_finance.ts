@@ -27,6 +27,7 @@ type CreateServiceSubscriptionFactureArgs = {
   createdByUtilisateurId?: string | null;
   dateEmission?: Date | null;
   dateEcheance?: Date | null;
+  montantOverride?: number | null;
 };
 
 type RegularizeServiceSubscriptionFactureArgs = {
@@ -305,8 +306,11 @@ export async function createServiceSubscriptionFacture(
     throw new Error("Le frais selectionne n'est pas applicable au niveau de l'eleve.");
   }
 
-  const montant = roundMoney(toMoney(selectedCatalogue.montant));
-  if (montant < 0) {
+  const montantBase =
+    args.montantOverride != null
+      ? roundMoney(Math.max(0, Number(args.montantOverride)))
+      : roundMoney(toMoney(selectedCatalogue.montant));
+  if (montantBase < 0) {
     throw new Error("Le montant du frais selectionne est invalide.");
   }
 
@@ -315,7 +319,7 @@ export async function createServiceSubscriptionFacture(
   const normalizedModePaiement = normalizeModePaiement(args.modePaiement);
   const dueDate = args.dateEcheance ?? null;
   const paymentSchedule = buildServicePaymentSchedule({
-    montant,
+    montant: montantBase,
     modePaiement: normalizedModePaiement,
     nombreTranches: args.nombreTranches ?? 1,
     dateEmission,
@@ -365,8 +369,8 @@ export async function createServiceSubscriptionFacture(
       catalogue_frais_id: selectedCatalogue.id,
       libelle: args.libelle || selectedCatalogue.nom,
       quantite: 1,
-      prix_unitaire: montant,
-      montant,
+      prix_unitaire: montantBase,
+      montant: montantBase,
     } as never,
   });
 

@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
-import ERPPage from "../../../components/page/ERPPage";
-import { getComponentById } from "../../../components/components.build";
-import ListContainer from "../../../components/sidebar/ListContainer";
-import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import NotFound from "../../NotFound";
 import { useAuth } from "../../../auth/AuthContext";
 import PlanPaiementEleveService, {
   type PlanPaiementEleveWithRelations,
 } from "../../../services/planPaiementEleve.service";
+import FinanceModuleLayout from "../components/FinanceModuleLayout";
 import { usePlanPaiementStore } from "./store/PlanPaiementIndexStore";
 import {
   clearFinanceNavigationTarget,
@@ -18,18 +15,11 @@ export default function PlansPaiementIndex() {
   const [render, setRender] = useState<JSX.Element>(<NotFound />);
   const { etablissement_id } = useAuth();
   const service = useMemo(() => new PlanPaiementEleveService(), []);
-  const menuListIsVisible = usePlanPaiementStore((state) => state.menuListIsVisible);
-  const setMenuListIsVisible = usePlanPaiementStore((state) => state.setMenuListIsVisible);
   const renderState = usePlanPaiementStore((state) => state.renderState);
   const renderedElement = usePlanPaiementStore((state) => state.renderedComponent);
   const setRenderState = usePlanPaiementStore((state) => state.setRenderState);
   const setRenderedComponent = usePlanPaiementStore((state) => state.setRenderedComponent);
   const setSelectedPlanPaiement = usePlanPaiementStore((state) => state.setSelectedPlanPaiement);
-  const OptionButton = getComponentById("FIN.PLANSPAIEMENT.MENUACTION");
-  const DashboardButton = getComponentById("FIN.PLANSPAIEMENT.MENUACTION.DASHBOARD");
-  const ListButton = getComponentById("FIN.PLANSPAIEMENT.MENUACTION.LIST");
-  const ParametreButton = getComponentById("FIN.PLANSPAIEMENT.MENUACTION.PARAMETRE");
-  const AddButton = getComponentById("FIN.PLANSPAIEMENT.MENUACTION.ADD");
 
   useEffect(() => {
     if (renderedElement) setRender(renderedElement);
@@ -92,33 +82,54 @@ export default function PlansPaiementIndex() {
     };
   }, [etablissement_id, service, setRenderedComponent, setSelectedPlanPaiement]);
 
+  const localViews = [
+    {
+      id: "dashboard",
+      label: "Vue d'ensemble",
+      onClick: () => {
+        setRenderState("dashboard");
+        setRenderedComponent("dashboard");
+      },
+      active: renderState === "dashboard",
+    },
+    {
+      id: "list",
+      label: "Liste",
+      onClick: () => {
+        setRenderState("list");
+        setRenderedComponent("list");
+      },
+      active: renderState === "list",
+    },
+    {
+      id: "parametre",
+      label: "Parametres",
+      onClick: () => {
+        setRenderState("parametre");
+        setRenderedComponent("parametre");
+      },
+      active: renderState === "parametre",
+    },
+    {
+      id: "add",
+      label: "Nouveau plan",
+      onClick: () => {
+        setRenderState("add");
+        setRenderedComponent("add");
+      },
+      active: renderState === "add",
+      tone: "primary" as const,
+    },
+  ];
+
   return (
-    <ERPPage
+    <FinanceModuleLayout
       title="Plans de paiement"
       description="Echeanciers et tranches de reglement par eleve et annee scolaire."
-      headerActions={[
-        <OptionButton
-          key="FIN.PLANSPAIEMENT.MENUACTION"
-          onClick={() => setMenuListIsVisible(!menuListIsVisible)}
-        />,
-      ]}
+      currentModule="plans_de_paiement"
+      localViews={localViews}
     >
-      <div className="flex items-start gap-4">
-        <div className="min-w-0 flex-1">{render}</div>
-        <PageSidebarPopup open={menuListIsVisible} onClose={() => setMenuListIsVisible(false)}>
-          <ListContainer
-            onItemClick={() => setMenuListIsVisible(false)}
-            selected={renderState}
-            setSelected={setRenderState}
-            components={[
-              <DashboardButton onClick={() => setRenderedComponent("dashboard")} />,
-              <ListButton onClick={() => setRenderedComponent("list")} />,
-              <ParametreButton onClick={() => setRenderedComponent("parametre")} />,
-              <AddButton onClick={() => setRenderedComponent("add")} />,
-            ]}
-          />
-        </PageSidebarPopup>
-      </div>
-    </ERPPage>
+      <div className="min-w-0">{render}</div>
+    </FinanceModuleLayout>
   );
 }

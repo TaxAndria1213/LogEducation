@@ -8,7 +8,7 @@ export default function CreneauManager() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-[30px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_30%),linear-gradient(135deg,_#ffffff_0%,_#f8fafc_52%,_#ecfeff_100%)] p-6 shadow-[0_20px_60px_-38px_rgba(15,23,42,0.45)]">
+      <section className="relative overflow-hidden rounded-[30px] border border-slate-200 bg-white">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-white">

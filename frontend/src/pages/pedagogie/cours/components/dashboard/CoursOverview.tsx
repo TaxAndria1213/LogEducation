@@ -50,7 +50,7 @@ function formatDate(value?: Date | string | null) {
 }
 
 function CoursOverview({ mode = "overview" }: Props) {
-  const { etablissement_id, user } = useAuth();
+  const { etablissement_id } = useAuth();
   const [cours, setCours] = useState<CoursWithRelations[]>([]);
   const [currentYear, setCurrentYear] = useState<AnneeScolaire | null>(null);
   const [loading, setLoading] = useState(false);
@@ -195,37 +195,12 @@ function CoursOverview({ mode = "overview" }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
-              <FiBookOpen />
-              Cours
-            </span>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900">
-                {user?.etablissement?.nom ?? "Etablissement"}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {mode === "settings"
-                  ? "Retrouve ici les reperes utiles pour garder les cours coherents avec les classes, les programmes, les enseignants et les usages en aval."
-                  : "Accueil du module Cours avec une vue rapide sur les affectations pedagogiques actives, les matieres couvertes et les liens vers l'evaluation et l'emploi du temps."}
-              </p>
-            </div>
-          </div>
-          {loading ? (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-              Chargement...
-            </span>
-          ) : null}
+      {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Chargement...</div> : null}
+      {errorMessage ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {errorMessage}
         </div>
-
-        {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {errorMessage}
-          </div>
-        ) : null}
-      </section>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -261,43 +236,7 @@ function CoursOverview({ mode = "overview" }: Props) {
         </div>
       </section>
 
-      {mode === "settings" ? (
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-              <FiSettings />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Parametres du module Cours
-              </h3>
-              <p className="text-sm text-slate-500">
-                Un cours propre depend d'une classe de la bonne annee, d'une matiere compatible avec le programme et d'un enseignant coherent avec le departement.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Coherence academique
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Garde les cours alignes avec les programmes du niveau pour faciliter ensuite les evaluations, les bulletins et les affectations horaires.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Usage aval
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Evite de supprimer un cours deja utilise dans l'emploi du temps ou les evaluations pour garder un historique fiable.
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : (
+      {mode === "settings" ? null : (
         <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
           <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
@@ -426,3 +365,5 @@ function CoursOverview({ mode = "overview" }: Props) {
 }
 
 export default CoursOverview;
+
+

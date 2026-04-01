@@ -72,11 +72,6 @@ export default function RessourceBibliothequeForm() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Nouvelle ressource</h2>
-        <p className="mt-2 text-sm text-slate-500">Ajoute un livre ou un materiel avec son stock et ses metadonnees utiles au pret.</p>
-      </section>
-
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:grid-cols-2">
         <Controller control={form.control} name="type" render={({ field, fieldState }) => <FieldWrapper id="type" label="Type" required error={fieldState.error?.message}><select {...field} className={getInputClassName(Boolean(fieldState.error))}><option value="livre">Livre</option><option value="materiel">Materiel</option></select></FieldWrapper>} />
         <Controller control={form.control} name="titre" render={({ field, fieldState }) => <FieldWrapper id="titre" label="Titre" required error={fieldState.error?.message}><input {...field} className={getInputClassName(Boolean(fieldState.error))} /></FieldWrapper>} />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   FiAlertTriangle,
   FiClock,
@@ -67,7 +67,7 @@ function getEleveLabel(identifiant: IdentifiantEleveRecord) {
 }
 
 function IdentifiantEleveOverview({ mode = "overview" }: Props) {
-  const { etablissement_id, user } = useAuth();
+  const { etablissement_id } = useAuth();
   const [identifiants, setIdentifiants] = useState<IdentifiantEleveRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -198,40 +198,7 @@ function IdentifiantEleveOverview({ mode = "overview" }: Props) {
   }, [identifiants]);
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
-              <FiFileText />
-              Identifiants des eleves
-            </span>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900">
-                {user?.etablissement?.nom ?? "Etablissement"}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {mode === "settings"
-                  ? "Retrouve ici les regles utiles pour organiser les pieces, references et dates de validite des identifiants eleves."
-                  : "Accueil du module Identifiants des eleves avec une vue rapide sur la couverture des dossiers et les echeances a surveiller."}
-              </p>
-            </div>
-          </div>
-          {loading ? (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-              Chargement...
-            </span>
-          ) : null}
-        </div>
-
-        {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {errorMessage}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">      {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Chargement...</div> : null}      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiFileText />
@@ -269,46 +236,7 @@ function IdentifiantEleveOverview({ mode = "overview" }: Props) {
         </div>
       </section>
 
-      {mode === "settings" ? (
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-              <FiSettings />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Parametres du module Identifiants
-              </h3>
-              <p className="text-sm text-slate-500">
-                Une gestion propre des types et des dates de validite facilite le suivi
-                administratif des eleves.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Qualite des references
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Harmonise les types d'identifiants saisis pour garder une lecture claire
-                entre numero scolaire, piece officielle et reference interne.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Suivi des echeances
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Surveille les dates d'expiration pour anticiper les renouvellements et
-                garder les dossiers eleves a jour.
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : (
+      {mode === "settings" ? null : (
         <section className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
           <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
@@ -429,3 +357,5 @@ function IdentifiantEleveOverview({ mode = "overview" }: Props) {
 }
 
 export default IdentifiantEleveOverview;
+
+

@@ -69,7 +69,6 @@ export default function SanctionForm() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-2xl font-semibold text-slate-900">Nouvelle sanction disciplinaire</h2><p className="mt-2 text-sm text-slate-500">Associe une decision claire a un incident deja signale, avec periode d'application et notes de suivi.</p></section>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:grid-cols-2">
         <Controller control={form.control} name="incident_id" render={({ field, fieldState }) => <FieldWrapper id="incident_id" label="Incident" required error={fieldState.error?.message}><select {...field} className={getInputClassName(Boolean(fieldState.error))}><option value="">Selectionner un incident</option>{incidents.map((item) => <option key={item.id} value={item.id}>{getIncidentDisplayLabel(item)}</option>)}</select></FieldWrapper>} />
         <Controller control={form.control} name="type_action" render={({ field, fieldState }) => <FieldWrapper id="type_action" label="Type de sanction" required error={fieldState.error?.message}><select {...field} className={getInputClassName(Boolean(fieldState.error))}>{typeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></FieldWrapper>} />

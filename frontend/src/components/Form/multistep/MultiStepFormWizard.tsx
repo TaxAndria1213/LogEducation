@@ -51,7 +51,7 @@ function getPreviewValue(data: Record<string, any> | undefined) {
   }
 
   if (values.length > 0) {
-    return values.slice(0, 2).join(" Â· ");
+    return values.slice(0, 2).join(" · ");
   }
 
   for (const value of Object.values(data)) {
@@ -115,7 +115,7 @@ export function MultiStepFormWizard({
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),_transparent_34%),linear-gradient(180deg,_#f8fbff_0%,_#ffffff_34%)]">
+    <div className="min-h-screen bg-slate-50">
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 xl:grid-cols-[340px_minmax(0,1fr)]">
         <aside className="space-y-5 rounded-[30px] border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
           <div className="space-y-3">
@@ -135,7 +135,7 @@ export function MultiStepFormWizard({
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-400 transition-all"
+                className="h-full rounded-full bg-sky-500 transition-all"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -261,7 +261,7 @@ export function MultiStepFormWizard({
             </button>
           </div>
 
-          <div className="mt-6 rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,_rgba(248,250,252,0.92),_rgba(255,255,255,0.96))] p-5 md:p-6">
+          <div className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 md:p-6">
             <Form
               key={current.key}
               schema={current.schema}

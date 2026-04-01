@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+﻿import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { FiCheckCircle, FiClock, FiUsers } from "react-icons/fi";
 import { useAuth } from "../../../../../auth/AuthContext";
 import Spin from "../../../../../components/anim/Spin";
@@ -71,17 +71,7 @@ export default function UtilisateurDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[30px] border border-slate-200 bg-[linear-gradient(135deg,_#ffffff_0%,_#f8fafc_48%,_#eef2ff_100%)] px-6 py-5 shadow-sm">
-        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-          Tableau de bord des utilisateurs
-        </h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          Vision rapide des comptes actifs, a approuver ou a nettoyer dans l'etablissement.
-        </p>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
+    <div className="space-y-6">      <section className="grid gap-4 md:grid-cols-3">
         <StatCard
           title="Total"
           value={users.length}
@@ -104,3 +94,4 @@ export default function UtilisateurDashboard() {
     </div>
   );
 }
+

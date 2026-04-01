@@ -1,4 +1,5 @@
 import Service from "../app/api/Service";
+import { Http } from "../app/api/Http";
 
 type QueryParams = Record<string, unknown>;
 
@@ -50,7 +51,7 @@ class FinanceRelanceService extends Service {
   }
 
   async runCalendar(payload: { date_reference?: string | Date | null } = {}) {
-    return this.customRequest.post("/run-calendar", payload);
+    return Http.post(`/api/${this.url}/run-calendar`, payload);
   }
 }
 

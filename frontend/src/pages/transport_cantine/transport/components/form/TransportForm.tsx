@@ -40,19 +40,20 @@ const subscriptionSchema = z.object({
   eleve_id: z.string().min(1, "L'eleve est obligatoire."),
   ligne_transport_id: z.string().min(1, "La ligne est obligatoire."),
   arret_transport_id: z.string().optional(),
-  statut: z.string().default("ACTIF"),
-  mode_facturation: z.enum(["SERVICE_ONLY", "SERVICE_AND_BILL"]).default("SERVICE_ONLY"),
-  mode_paiement: z.enum(["COMPTANT", "ECHELONNE"]).default("COMPTANT"),
-  nombre_tranches: z.coerce.number().int().min(1).default(1),
-  jour_paiement_mensuel: z.coerce.number().int().min(1).max(28).nullable().optional(),
-  date_echeance: z.string().optional(),
+  date_debut_service: z.string().optional(),
+  date_fin_service: z.string().optional(),
+  statut: z.string().default("EN_ATTENTE_VALIDATION_FINANCIERE"),
 }).superRefine((data, ctx) => {
-  if (data.mode_facturation === "SERVICE_AND_BILL" && data.mode_paiement === "ECHELONNE" && !data.jour_paiement_mensuel) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["jour_paiement_mensuel"],
-      message: "Le jour du mois est requis pour un paiement echelonne.",
-    });
+  if (data.date_debut_service && data.date_fin_service) {
+    const start = new Date(data.date_debut_service);
+    const end = new Date(data.date_fin_service);
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end < start) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["date_fin_service"],
+        message: "La date de fin doit etre posterieure a la date de debut.",
+      });
+    }
   }
 });
 
@@ -174,18 +175,15 @@ export default function TransportForm() {
       eleve_id: "",
       ligne_transport_id: "",
       arret_transport_id: "",
-      statut: "ACTIF",
-      mode_facturation: "SERVICE_ONLY",
-      mode_paiement: "COMPTANT",
-      nombre_tranches: 1,
-      jour_paiement_mensuel: 5,
-      date_echeance: "",
+      date_debut_service: "",
+      date_fin_service: "",
+      statut: "EN_ATTENTE_VALIDATION_FINANCIERE",
     },
   });
 
   const selectedLineForSubscription = subscriptionForm.watch("ligne_transport_id");
-  const selectedBillingMode = subscriptionForm.watch("mode_facturation");
-  const selectedPaymentMode = subscriptionForm.watch("mode_paiement");
+  const selectedServiceStartDate = subscriptionForm.watch("date_debut_service");
+  const selectedServiceEndDate = subscriptionForm.watch("date_fin_service");
   const selectedLine = useMemo(
     () => lignes.find((item) => item.id === selectedLineForSubscription) ?? null,
     [lignes, selectedLineForSubscription],
@@ -252,21 +250,12 @@ export default function TransportForm() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Ajouts transport</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          Chaque action est maintenant separee pour eviter de melanger creation de
-          ligne, d'arret et d'abonnement sur le meme ecran.
-        </p>
-        <div className="mt-5">
-          <ActionSelector value={activeAction} onChange={setActiveAction} />
+      <ActionSelector value={activeAction} onChange={setActiveAction} />
+      {loading ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <Spin label="Chargement du formulaire transport..." showLabel />
         </div>
-        {loading ? (
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <Spin label="Chargement du formulaire transport..." showLabel />
-          </div>
-        ) : null}
-      </section>
+      ) : null}
 
       {activeAction === "line" ? (
         <form
@@ -503,38 +492,21 @@ export default function TransportForm() {
                 annee_scolaire_id: currentYear.id,
                 ligne_transport_id: data.ligne_transport_id,
                 arret_transport_id: data.arret_transport_id || null,
-                statut: data.statut || "ACTIF",
-                facturer_maintenant: data.mode_facturation === "SERVICE_AND_BILL",
-                mode_paiement: data.mode_paiement,
-                nombre_tranches:
-                  data.mode_facturation === "SERVICE_AND_BILL"
-                    ? Number(data.nombre_tranches ?? 1)
-                    : 1,
-                jour_paiement_mensuel:
-                  data.mode_facturation === "SERVICE_AND_BILL" && data.mode_paiement === "ECHELONNE"
-                    ? Number(data.jour_paiement_mensuel ?? 5)
-                    : null,
-                date_echeance:
-                  data.mode_facturation === "SERVICE_AND_BILL"
-                    ? data.date_echeance || null
-                    : null,
+                date_debut_service: data.date_debut_service || null,
+                date_fin_service: data.date_fin_service || null,
+                statut: "EN_ATTENTE_VALIDATION_FINANCIERE",
               });
               info(
-                data.mode_facturation === "SERVICE_AND_BILL"
-                  ? "Abonnement transport et facture crees."
-                  : "Abonnement transport cree.",
+                "Abonnement transport cree. Le service reste en attente de validation financiere.",
                 "success",
               );
               subscriptionForm.reset({
                 eleve_id: "",
                 ligne_transport_id: "",
                 arret_transport_id: "",
-                statut: "ACTIF",
-      mode_facturation: "SERVICE_ONLY",
-                mode_paiement: "COMPTANT",
-                nombre_tranches: 1,
-                jour_paiement_mensuel: 5,
-                date_echeance: "",
+                date_debut_service: "",
+                date_fin_service: "",
+                statut: "EN_ATTENTE_VALIDATION_FINANCIERE",
               });
               await load();
             } catch (error) {
@@ -551,8 +523,7 @@ export default function TransportForm() {
             </h3>
             <p className="mt-1 text-sm text-slate-500">
               Cette vue est reservee a l'inscription d'un eleve au service de
-              transport. Tu peux ouvrir le service seul ou generer la facture dans le meme geste.
-              Si le frais lie est recurrent, un service actif pourra ensuite etre repris par la facturation automatique.
+              transport. Le module Transport rattache l'eleve au circuit et transmet ensuite l'information a Finance pour la facturation.
             </p>
           </div>
 
@@ -648,131 +619,65 @@ export default function TransportForm() {
 
           <Controller
             control={subscriptionForm.control}
-            name="mode_facturation"
+            name="date_debut_service"
             render={({ field, fieldState }) => (
               <FieldWrapper
-                id="transport_subscription_billing_mode"
-                label="Activation"
-                required
+                id="transport_subscription_start_date"
+                label="Debut du service"
                 error={fieldState.error?.message}
+                hint="Optionnel. Permet de calculer automatiquement un prorata si l'eleve commence en cours de mois."
               >
-                <select
+                <input
+                  type="date"
                   {...field}
                   disabled={loading || submittingAction === "subscription"}
                   className={getInputClassName(Boolean(fieldState.error))}
-                >
-                  <option value="SERVICE_ONLY">Activer sans facture immediate</option>
-                  <option value="SERVICE_AND_BILL">Activer et facturer maintenant</option>
-                </select>
+                />
               </FieldWrapper>
             )}
           />
 
-          {selectedBillingMode === "SERVICE_AND_BILL" ? (
-            <>
-              <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900 md:col-span-2">
-                <p className="font-semibold">Tarif applique automatiquement</p>
-                <p className="mt-1">
-                  {selectedLine?.frais
-                    ? `${selectedLine.frais.nom} - ${getCatalogueFraisSecondaryLabel(selectedLine.frais as CatalogueFraisWithRelations)}`
-                    : "Choisis d'abord une ligne reliee a un frais catalogue transport."}
-                </p>
-              </div>
-
-              <Controller
-                control={subscriptionForm.control}
-                name="mode_paiement"
-                render={({ field, fieldState }) => (
-                  <FieldWrapper
-                    id="transport_subscription_payment_mode"
-                    label="Mode de paiement"
-                    required
-                    error={fieldState.error?.message}
-                  >
-                    <select
-                      {...field}
-                      disabled={loading || submittingAction === "subscription"}
-                      className={getInputClassName(Boolean(fieldState.error))}
-                    >
-                      <option value="COMPTANT">Comptant</option>
-                      <option value="ECHELONNE">Echelonne</option>
-                    </select>
-                  </FieldWrapper>
-                )}
-              />
-
-              <Controller
-                control={subscriptionForm.control}
-                name="nombre_tranches"
-                render={({ field, fieldState }) => (
-                  <FieldWrapper
-                    id="transport_subscription_tranches"
-                    label="Nombre de tranches"
-                    required
-                    error={fieldState.error?.message}
-                    hint="Pour un paiement echelonne, le service sera divise en echeances mensuelles."
-                  >
-                    <input
-                      type="number"
-                      min={1}
-                      {...field}
-                      disabled={loading || submittingAction === "subscription"}
-                      className={getInputClassName(Boolean(fieldState.error))}
-                    />
-                  </FieldWrapper>
-                )}
-              />
-
-              {selectedPaymentMode === "ECHELONNE" ? (
-                <Controller
-                  control={subscriptionForm.control}
-                  name="jour_paiement_mensuel"
-                  render={({ field, fieldState }) => (
-                    <FieldWrapper
-                      id="transport_subscription_payment_day"
-                      label="Jour de paiement du mois"
-                      required
-                      error={fieldState.error?.message}
-                    >
-                      <input
-                        type="number"
-                        min={1}
-                        max={28}
-                        value={field.value ?? ""}
-                        onChange={(event) =>
-                          field.onChange(
-                            event.target.value === "" ? null : Number(event.target.value),
-                          )
-                        }
-                        disabled={loading || submittingAction === "subscription"}
-                        className={getInputClassName(Boolean(fieldState.error))}
-                      />
-                    </FieldWrapper>
-                  )}
+          <Controller
+            control={subscriptionForm.control}
+            name="date_fin_service"
+            render={({ field, fieldState }) => (
+              <FieldWrapper
+                id="transport_subscription_end_date"
+                label="Fin du service"
+                error={fieldState.error?.message}
+                hint="Optionnel. Utilise pour limiter la periode d'usage ou calculer un prorata de sortie."
+              >
+                <input
+                  type="date"
+                  {...field}
+                  disabled={loading || submittingAction === "subscription"}
+                  className={getInputClassName(Boolean(fieldState.error))}
                 />
-              ) : null}
+              </FieldWrapper>
+            )}
+          />
 
-              <Controller
-                control={subscriptionForm.control}
-                name="date_echeance"
-                render={({ field, fieldState }) => (
-                  <FieldWrapper
-                    id="transport_subscription_due_date"
-                    label="Premiere date d'echeance"
-                    error={fieldState.error?.message}
-                    hint="Optionnelle. Sert d'ancre pour la premiere echeance du service."
-                  >
-                    <input
-                      type="date"
-                      {...field}
-                      disabled={loading || submittingAction === "subscription"}
-                      className={getInputClassName(Boolean(fieldState.error))}
-                    />
-                  </FieldWrapper>
-                )}
-              />
-            </>
+          {selectedServiceStartDate || selectedServiceEndDate ? (
+            <div className="md:col-span-2 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
+              <p className="font-semibold">Periode d'usage transmise a Finance</p>
+              <p className="mt-1">
+                La periode saisie servira au prorata lors de la facturation faite ensuite dans Finance.
+              </p>
+            </div>
           ) : null}
+
+          <div className="md:col-span-2 rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+            <p className="font-semibold">Statut initial</p>
+            <p className="mt-1">
+              L'inscription est creee en <span className="font-semibold">attente de validation financiere</span>.
+              Elle deviendra active apres confirmation par Finance.
+            </p>
+            <p className="mt-2 text-xs text-amber-800">
+              {selectedLine?.frais
+                ? `Tarif de reference: ${selectedLine.frais.nom} - ${getCatalogueFraisSecondaryLabel(selectedLine.frais as CatalogueFraisWithRelations)}`
+                : "Choisis une ligne reliee a un frais catalogue transport."}
+            </p>
+          </div>
 
           <div className="md:col-span-2 flex justify-end">
             <button

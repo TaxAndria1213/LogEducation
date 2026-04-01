@@ -10,7 +10,8 @@ import {
   FiPercent,
   FiRepeat,
 } from "react-icons/fi";
-import ERPPage from "../../../components/page/ERPPage";
+import FinanceModuleLayout from "../components/FinanceModuleLayout";
+import { FinanceControlBanner, FinanceMetricCard } from "../components/financeUi";
 import { hasAccess } from "../../../components/components.build";
 import { useAuth } from "../../../hooks/useAuth";
 import { useInfo } from "../../../hooks/useInfo";
@@ -986,110 +987,197 @@ export default function FinanceDashboardIndex() {
     }
   };
 
+  const financeRoleNames = (roles ?? [])
+    .map((assignment) => assignment.role?.nom?.trim())
+    .filter(Boolean) as string[];
+
+  const financePersonaLabel =
+    financeRoleNames.find((roleName) =>
+      ["DIRECTION", "COMPTABLE", "CAISSIER", "SECRETAIRE", "AUDITEUR"].includes(roleName.toUpperCase()),
+    ) ?? "Equipe finance";
+
+  const pendingReconciliationCount = reconciliationStats
+    .filter((item) => item.key !== "Rapproche")
+    .reduce((sum, item) => sum + item.count, 0);
+
+  const dashboardViews = [
+    { id: "synthese", label: "Synthese", helper: `${openEcheances.length} ouvertes`, onClick: () => setActiveTab("synthese"), active: activeTab === "synthese" },
+    { id: "retards", label: "Retards", helper: `${overdueStudents.length} eleves`, onClick: () => setActiveTab("retards"), active: activeTab === "retards", tone: overdueEcheances.length > 0 ? ("primary" as const) : undefined },
+    { id: "activite", label: "Activite", helper: `${recentPaiements.length} paiements`, onClick: () => setActiveTab("activite"), active: activeTab === "activite" },
+    { id: "reporting", label: "Reporting", helper: `${dailyReceipts.length} jour(s)`, onClick: () => setActiveTab("reporting"), active: activeTab === "reporting" },
+    { id: "automatisation", label: "Automatisation", helper: `${recurrentFraisCount} recurrents`, onClick: () => setActiveTab("automatisation"), active: activeTab === "automatisation" },
+  ];
+
+  const dashboardHighlights = [
+    {
+      id: "collection-rate",
+      label: "Taux de recouvrement",
+      value: `${collectionRate.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%`,
+      helper: `${activePaiementsCount} paiement(s) actifs`,
+      tone: (collectionRate >= 80 ? "success" : collectionRate >= 60 ? "warning" : "danger") as const,
+    },
+    {
+      id: "encaisse",
+      label: "Encaisse",
+      value: formatMoney(totalEncaisse),
+      helper: `${reversedPaiementsCount} operation(s) regularisee(s)`,
+      tone: "info" as const,
+    },
+    {
+      id: "reste",
+      label: "Reste a recouvrer",
+      value: formatMoney(resteARecouvrer),
+      helper: `${partiallyPaidInvoices} facture(s) partielle(s)`,
+      tone: overdueEcheances.length > 0 ? ("warning" as const) : ("default" as const),
+    },
+    {
+      id: "retards",
+      label: "Retards critiques",
+      value: String(overdueEcheances.length),
+      helper: `${overdueStudents.length} eleve(s) concernes`,
+      tone: overdueEcheances.length > 0 ? ("danger" as const) : ("default" as const),
+    },
+  ];
   if (!canAccess) return <NotFound />;
 
   return (
-    <ERPPage
+    <FinanceModuleLayout
       title="Finance"
-      description="Tableau de bord global de la facturation, des encaissements et des echeanciers de l'etablissement."
+      description="Vue globale des encaissements, creances et controles prioritaires."
+      currentModule="dashboard"
+      localViews={dashboardViews}
     >
       <div className="space-y-6">
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-3xl">
-              <h2 className="text-2xl font-semibold text-slate-900">Vue d'ensemble financiere</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Suivi centralise des factures, paiements, plans de paiement, remises et frais reutilisables.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                Taux de recouvrement
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-900">
-                {collectionRate.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%
-              </p>
+        {errorMessage ? (
+          <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 shadow-sm">
+            {errorMessage}
+          </div>
+        ) : null}
+
+        <section className="grid gap-4 xl:grid-cols-[1.2fr,0.95fr]">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <FinanceControlBanner
+              label="Controle factures"
+              title={overdueEcheances.length > 0 ? `${overdueEcheances.length} echeance(s) en retard` : "Aucun retard critique"}
+              description={
+                overdueEcheances.length > 0
+                  ? `${overdueStudents.length} eleve(s) demandent une relance ou un suivi de recouvrement.`
+                  : "Les echeances ouvertes restent sous controle sur la periode chargee."
+              }
+              tone={overdueEcheances.length > 0 ? "danger" : "success"}
+              action={
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("retards")}
+                  className="rounded-full border border-current px-3 py-1.5 text-xs font-semibold"
+                >
+                  Voir les retards
+                </button>
+              }
+            />
+            <FinanceControlBanner
+              label="Rapprochement"
+              title={pendingReconciliationCount > 0 ? `${pendingReconciliationCount} paiement(s) a verifier` : "Rapprochement sain"}
+              description={
+                pendingReconciliationCount > 0
+                  ? "Des encaissements attendent encore une confirmation caisse, banque ou systeme."
+                  : "Aucun paiement en attente de rapprochement sur les donnees chargees."
+              }
+              tone={pendingReconciliationCount > 0 ? "warning" : "success"}
+              action={
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("reporting")}
+                  className="rounded-full border border-current px-3 py-1.5 text-xs font-semibold"
+                >
+                  Ouvrir le reporting
+                </button>
+              }
+            />
+            <FinanceControlBanner
+              label="Automatisation"
+              title={recurringReadiness?.ready ? "Facturation recurrente prete" : "Verification requise"}
+              description={
+                recurringReadiness?.ready
+                  ? `${recurrentFraisCount} frais recurrents peuvent etre lances.`
+                  : (recurringReadiness?.issues[0]?.message ?? "Controlez les parametres avant generation.")
+              }
+              tone={recurringReadiness?.ready ? "info" : "warning"}
+              action={
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("automatisation")}
+                  className="rounded-full border border-current px-3 py-1.5 text-xs font-semibold"
+                >
+                  Voir l'automatisation
+                </button>
+              }
+            />
+            <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Checkpoints visibles</p>
+              <div className="mt-4 space-y-3 text-sm text-slate-600">
+                <div className="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                  <span>Facture unique et tracable</span>
+                  <span className="font-semibold text-slate-900">{factures.length} factures</span>
+                </div>
+                <div className="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                  <span>Solde mis a jour</span>
+                  <span className="font-semibold text-slate-900">{activePaiementsCount} encaissements</span>
+                </div>
+                <div className="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                  <span>Controle service / periode</span>
+                  <span className="font-semibold text-slate-900">{openEcheances.length} echeances</span>
+                </div>
+              </div>
             </div>
           </div>
-          {errorMessage ? (
-            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-              {errorMessage}
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Vue operationnelle</p>
+            <h3 className="mt-3 text-xl font-semibold text-slate-950">Questions auxquelles le dashboard repond</h3>
+            <div className="mt-5 space-y-3 text-sm text-slate-600">
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="font-semibold text-slate-900">Qui doit quoi ?</p>
+                <p className="mt-1">Le volet retards et l'ageing montrent la dette restante par eleve, classe et niveau.</p>
+              </div>
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="font-semibold text-slate-900">Qui a paye quoi ?</p>
+                <p className="mt-1">L'activite recente et les canaux d'encaissement regroupent les reglements, modes et statuts.</p>
+              </div>
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="font-semibold text-slate-900">Y a-t-il une anomalie ?</p>
+                <p className="mt-1">Les cartes de controle rendent visibles retards, rapprochements incomplets et readiness recurrence.</p>
+              </div>
             </div>
-          ) : null}
+          </div>
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3 text-slate-500">
-              <FiFileText />
-              <span className="text-sm font-medium">Montant facture</span>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-slate-900">{formatMoney(totalFacture)}</p>
-            <p className="mt-2 text-xs text-slate-500">{factures.length} facture(s) suivie(s)</p>
-          </div>
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3 text-slate-500">
-              <FiCreditCard />
-              <span className="text-sm font-medium">Montant encaisse</span>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-slate-900">{formatMoney(totalEncaisse)}</p>
-            <p className="mt-2 text-xs text-slate-500">
-              {activePaiementsCount} paiement(s) actif(s), {reversedPaiementsCount} regularise(s)
-            </p>
-          </div>
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3 text-slate-500">
-              <FiDollarSign />
-              <span className="text-sm font-medium">Reste a recouvrer</span>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-slate-900">{formatMoney(resteARecouvrer)}</p>
-            <p className="mt-2 text-xs text-slate-500">{partiallyPaidInvoices} facture(s) partielle(s)</p>
-          </div>
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3 text-slate-500">
-              <FiAlertCircle />
-              <span className="text-sm font-medium">Echeances en retard</span>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-slate-900">{overdueEcheances.length}</p>
-            <p className="mt-2 text-xs text-slate-500">
-              {overdueStudents.length} eleve(s) concerne(s), {impactedOverdueInvoices} facture(s) impactee(s)
-            </p>
-          </div>
+          <FinanceMetricCard
+            icon={<FiFileText />}
+            label="Montant facture"
+            value={formatMoney(totalFacture)}
+            helper={`${factures.length} facture(s) suivie(s)`}
+          />
+          <FinanceMetricCard
+            icon={<FiCreditCard />}
+            label="Montant encaisse"
+            value={formatMoney(totalEncaisse)}
+            helper={`${activePaiementsCount} paiement(s) actif(s), ${reversedPaiementsCount} regularise(s)`}
+          />
+          <FinanceMetricCard
+            icon={<FiDollarSign />}
+            label="Reste a recouvrer"
+            value={formatMoney(resteARecouvrer)}
+            helper={`${partiallyPaidInvoices} facture(s) partielle(s)`}
+          />
+          <FinanceMetricCard
+            icon={<FiAlertCircle />}
+            label="Echeances en retard"
+            value={String(overdueEcheances.length)}
+            helper={`${overdueStudents.length} eleve(s) concernes, ${impactedOverdueInvoices} facture(s) impactees`}
+          />
         </section>
-
-        <section className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="overflow-x-auto">
-            <div className="flex min-w-max items-center gap-2">
-              {[
-                { key: "synthese", label: "Synthese", helper: `${openEcheances.length} ouvertes` },
-                { key: "retards", label: "Retards", helper: `${overdueStudents.length} eleves` },
-                { key: "activite", label: "Activite", helper: `${recentPaiements.length} paiements` },
-                { key: "reporting", label: "Reporting", helper: `${dailyReceipts.length} jour(s)` },
-                { key: "automatisation", label: "Automatisation", helper: `${recurrentFraisCount} recurrents` },
-              ].map((tab) => {
-                const isActive = activeTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setActiveTab(tab.key as FinanceDashboardTab)}
-                    className={`rounded-2xl border px-4 py-3 text-left transition ${
-                      isActive
-                        ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                        : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white"
-                    }`}
-                  >
-                    <div className="text-sm font-semibold">{tab.label}</div>
-                    <div className={`mt-1 text-xs ${isActive ? "text-slate-200" : "text-slate-500"}`}>
-                      {tab.helper}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
         <section
           className={`grid gap-4 ${
             activeTab === "activite" || activeTab === "reporting"
@@ -1162,7 +1250,7 @@ export default function FinanceDashboardIndex() {
                               {formatDayKeyLabel(item.dayKey)}
                             </p>
                             <p className="mt-1 text-xs text-slate-500">
-                              {item.count} encaissement(s) · {formatMoney(item.cash)} caisse ·{' '}
+                              {item.count} encaissement(s) � {formatMoney(item.cash)} caisse �{' '}
                               {formatMoney(item.bank)} banque
                             </p>
                           </div>
@@ -1258,14 +1346,14 @@ export default function FinanceDashboardIndex() {
                           <div>
                             <p className="text-sm font-semibold text-slate-900">{item.label}</p>
                             <p className="mt-1 text-xs text-slate-500">
-                              {item.studentsCount} eleve(s) · {item.invoicesCount} facture(s) ·{' '}
+                              {item.studentsCount} eleve(s) � {item.invoicesCount} facture(s) �{' '}
                               {item.niveauLabel ?? "Niveau non renseigne"}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-semibold text-slate-900">{formatMoney(item.totalFacture)}</p>
                             <p className="text-xs text-slate-500">
-                              Encaisse {formatMoney(item.totalEncaisse)} · Reste {formatMoney(item.restant)}
+                              Encaisse {formatMoney(item.totalEncaisse)} � Reste {formatMoney(item.restant)}
                             </p>
                           </div>
                         </div>
@@ -1692,7 +1780,7 @@ export default function FinanceDashboardIndex() {
           </section>
         ) : null}
       </div>
-    </ERPPage>
+    </FinanceModuleLayout>
   );
 }
 

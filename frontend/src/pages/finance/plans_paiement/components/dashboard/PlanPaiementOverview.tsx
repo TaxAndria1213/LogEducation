@@ -123,19 +123,11 @@ export default function PlanPaiementOverview({ mode = "overview" }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Plans de paiement</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          {mode === "settings"
-            ? "Les echeanciers sont rattaches aux eleves et aux annees scolaires, avec des tranches modifiables."
-            : "Vue d'ensemble des echeanciers et modalites de paiement prepares pour les eleves."}
-        </p>
-        {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {errorMessage}
-          </div>
-        ) : null}
-      </section>
+      {errorMessage ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {errorMessage}
+        </div>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">

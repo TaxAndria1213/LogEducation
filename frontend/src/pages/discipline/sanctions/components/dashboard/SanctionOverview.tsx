@@ -54,11 +54,7 @@ export default function SanctionOverview({ mode = "overview" }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Sanctions disciplinaires</h2>
-        <p className="mt-2 text-sm text-slate-500">{mode === "settings" ? "Les types de sanctions sont pilotables via les referentiels d'etablissement." : "Vue d'ensemble des decisions prises apres signalement d'un incident."}</p>
-        {errorMessage ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
-      </section>
+      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3 text-slate-500"><FiShield /><span className="text-sm font-medium">Sanctions</span></div><p className="mt-3 text-3xl font-semibold text-slate-900">{rows.length}</p></div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3 text-slate-500"><FiCheckCircle /><span className="text-sm font-medium">Actives</span></div><p className="mt-3 text-3xl font-semibold text-slate-900">{activeCount}</p></div>

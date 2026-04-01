@@ -124,43 +124,25 @@ export default function EventDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_35%),linear-gradient(135deg,_#ffffff_0%,_#eff6ff_45%,_#f8fafc_100%)] px-6 py-6 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)]">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-sky-700">
-              Calendrier des evenements
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-              Pilote les temps forts de l'etablissement dans une vue claire
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Suis les rendez-vous du jour, les examens, les reunions et les
-              activites a venir. Tu peux revenir rapidement sur la liste ou
-              preparer un nouvel evenement depuis ce tableau de bord.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                resetEditor(etablissement_id);
-                setRenderedComponent("add");
-              }}
-              className="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
-            >
-              Nouvel evenement
-            </button>
-            <button
-              type="button"
-              onClick={() => setRenderedComponent("list")}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700"
-            >
-              Ouvrir la liste
-            </button>
-          </div>
-        </div>
-      </section>
+      <div className="flex flex-wrap justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            resetEditor(etablissement_id);
+            setRenderedComponent("add");
+          }}
+          className="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
+        >
+          Nouvel evenement
+        </button>
+        <button
+          type="button"
+          onClick={() => setRenderedComponent("list")}
+          className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700"
+        >
+          Ouvrir la liste
+        </button>
+      </div>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard

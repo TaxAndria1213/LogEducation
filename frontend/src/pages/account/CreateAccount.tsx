@@ -25,8 +25,8 @@ type WizardData = {
 const steps = [
   {
     key: "etablissement",
-    title: "Établissement",
-    desc: "Infos de l’organisation",
+    title: "Ã‰tablissement",
+    desc: "Infos de lâ€™organisation",
   },
   { key: "utilisateur", title: "Utilisateur", desc: "Compte de connexion" },
   { key: "profil", title: "Profil", desc: "Informations personnelles" },
@@ -74,7 +74,7 @@ export default function CreateAccount() {
         ],
         labelByField: {
           mot_de_passe_hash: "Mot de passe",
-          telephone: "Téléphone",
+          telephone: "TÃ©lÃ©phone",
         },
         metaByField: {
           mot_de_passe_hash: {
@@ -170,8 +170,8 @@ export default function CreateAccount() {
     setAllData(finalData);
     setCompleted((c) => ({ ...c, 2: true }));
 
-    // ✅ Ici: un seul objet final
-    console.log("✅ DONNÉES FINALES :", finalData);
+    // âœ… Ici: un seul objet final
+    console.log("âœ… DONNÃ‰ES FINALES :", finalData);
     const dataToSend: Pick<
       Utilisateur,
       "email" | "mot_de_passe_hash" | "telephone" | "statut" | "scope_json"
@@ -185,17 +185,17 @@ export default function CreateAccount() {
         data: finalData,
       }),
     };
-    // Exemple : ouvrir une page de confirmation / déclencher un call API
+    // Exemple : ouvrir une page de confirmation / dÃ©clencher un call API
     const service = new UtilisateurService();
     const result = await service.createDirectionAccount(dataToSend);
     if (result?.status.success === true) {
       setLoading(false);
       setSubmitMessage(
-        "Compte créé avec succès ! Un administrateur doit encore l’activer.",
+        "Compte crÃ©Ã© avec succÃ¨s ! Un administrateur doit encore lâ€™activer.",
       );
     } else {
       setSubmitMessage(
-        "Une erreur est survenue lors de la création du compte.",
+        "Une erreur est survenue lors de la crÃ©ation du compte.",
       );
     }
   };
@@ -256,7 +256,7 @@ export default function CreateAccount() {
             fontSize: 12,
           }}
         >
-          {isDone ? "✓" : index + 1}
+          {isDone ? "âœ“" : index + 1}
         </div>
 
         <div style={{ display: "grid", gap: 2 }}>
@@ -273,7 +273,7 @@ export default function CreateAccount() {
         style={{
           minHeight: "100vh",
           background:
-            "linear-gradient(180deg, rgba(59,130,246,.06) 0%, rgba(255,255,255,1) 220px)",
+            "#f8fafc",
         }}
       >
         <div
@@ -302,10 +302,10 @@ export default function CreateAccount() {
           >
             <div style={{ display: "grid", gap: 6 }}>
               <div style={{ fontSize: 16 }}>
-                Création de compte
+                CrÃ©ation de compte
               </div>
               <div style={{ fontSize: 12, opacity: 0.7 }}>
-                Complétez les étapes. Vous pouvez revenir en arrière à tout
+                ComplÃ©tez les Ã©tapes. Vous pouvez revenir en arriÃ¨re Ã  tout
                 moment.
               </div>
             </div>
@@ -356,17 +356,17 @@ export default function CreateAccount() {
                 gap: 8,
               }}
             >
-              <div style={{ fontSize: 13 }}>Résumé</div>
+              <div style={{ fontSize: 13 }}>RÃ©sumÃ©</div>
               <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.4 }}>
                 {completed[0]
-                  ? "✓ Établissement renseigné"
-                  : "• Établissement à compléter"}
+                  ? "âœ“ Ã‰tablissement renseignÃ©"
+                  : "â€¢ Ã‰tablissement Ã  complÃ©ter"}
                 <br />
                 {completed[1]
-                  ? "✓ Utilisateur renseigné"
-                  : "• Utilisateur à compléter"}
+                  ? "âœ“ Utilisateur renseignÃ©"
+                  : "â€¢ Utilisateur Ã  complÃ©ter"}
                 <br />
-                {completed[2] ? "✓ Profil renseigné" : "• Profil à compléter"}
+                {completed[2] ? "âœ“ Profil renseignÃ©" : "â€¢ Profil Ã  complÃ©ter"}
               </div>
 
               {(completed[0] || completed[1] || completed[2]) && (
@@ -376,7 +376,7 @@ export default function CreateAccount() {
                   className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-3 rounded"
                   style={{ justifySelf: "start", fontSize: 13 }}
                 >
-                  Réinitialiser
+                  RÃ©initialiser
                 </button>
               )}
             </div>
@@ -418,7 +418,7 @@ export default function CreateAccount() {
                   className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-3 rounded"
                   style={{ opacity: step === 0 ? 0.5 : 1 }}
                 >
-                  ← Retour
+                  â† Retour
                 </button>
               </div>
             </header>
@@ -482,7 +482,7 @@ export default function CreateAccount() {
             }}
           >
             <div style={{ fontSize: 12, opacity: 0.75 }}>
-              Étape <b>{step + 1}</b> sur <b>{steps.length}</b>
+              Ã‰tape <b>{step + 1}</b> sur <b>{steps.length}</b>
             </div>
 
             <div style={{ display: "flex", gap: 10 }}>
@@ -508,7 +508,7 @@ export default function CreateAccount() {
                 Connexion
               </a>
 
-              {/* CTA hint: l’action “Suivant” est le submit du Form */}
+              {/* CTA hint: lâ€™action â€œSuivantâ€ est le submit du Form */}
               <div
                 style={{
                   padding: "10px 12px",
@@ -519,7 +519,7 @@ export default function CreateAccount() {
                   opacity: 0.85,
                 }}
               >
-                Cliquez sur <b>Enregistrer</b> pour passer à l’étape suivante.
+                Cliquez sur <b>Enregistrer</b> pour passer Ã  lâ€™Ã©tape suivante.
               </div>
             </div>
           </div>

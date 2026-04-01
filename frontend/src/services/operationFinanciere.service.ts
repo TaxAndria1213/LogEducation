@@ -8,6 +8,7 @@ export type OperationFinanciereWithRelations = {
   etablissement_id: string;
   facture_id?: string | null;
   paiement_id?: string | null;
+  abonnement_cantine_id?: string | null;
   cree_par_utilisateur_id?: string | null;
   type: string;
   montant?: number | string | null;
@@ -27,6 +28,21 @@ export type OperationFinanciereWithRelations = {
     } | null;
   }) | null;
   paiement?: Pick<Paiement, "id" | "reference" | "methode" | "montant" | "paye_le"> | null;
+  abonnementCantine?: {
+    id: string;
+    formule?: {
+      nom?: string | null;
+    } | null;
+    eleve?: {
+      code_eleve?: string | null;
+      utilisateur?: {
+        profil?: {
+          prenom?: string | null;
+          nom?: string | null;
+        } | null;
+      } | null;
+    } | null;
+  } | null;
   createur?: (Utilisateur & {
     profil?: {
       prenom?: string | null;
@@ -73,6 +89,18 @@ export function getOperationFinanciereTypeLabel(type?: string | null) {
       return "Remboursement trop-percu";
     case "RAPPROCHEMENT_PAIEMENT":
       return "Rapprochement paiement";
+    case "RECHARGEMENT_CANTINE":
+      return "Rechargement cantine";
+    case "ANNULATION_RECHARGEMENT_CANTINE":
+      return "Annulation rechargement cantine";
+    case "CONSOMMATION_CANTINE":
+      return "Consommation cantine";
+    case "AJUSTEMENT_SOLDE_CANTINE":
+      return "Ajustement solde cantine";
+    case "SUSPENSION_CANTINE":
+      return "Suspension cantine";
+    case "REACTIVATION_CANTINE":
+      return "Reactivation cantine";
     case "TROP_PERCU":
       return "Trop-percu";
     case "SUPPRESSION_PAIEMENT":
@@ -95,9 +123,25 @@ export function getOperationFinanciereTargetLabel(
 ) {
   const facture = record?.facture?.numero_facture?.trim();
   const paiement = record?.paiement?.reference?.trim();
+  const cantineAccount = [
+    record?.abonnementCantine?.eleve?.utilisateur?.profil?.prenom,
+    record?.abonnementCantine?.eleve?.utilisateur?.profil?.nom,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
   if (facture && paiement) return `${facture} / ${paiement}`;
   if (facture) return facture;
   if (paiement) return paiement;
+  if (cantineAccount) {
+    return [
+      "Compte cantine",
+      cantineAccount,
+      record?.abonnementCantine?.formule?.nom?.trim() || "",
+    ]
+      .filter(Boolean)
+      .join(" - ");
+  }
   return "Sans cible";
 }
 

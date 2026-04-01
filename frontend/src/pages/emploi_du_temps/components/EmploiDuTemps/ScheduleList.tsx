@@ -1,11 +1,9 @@
-﻿import React from "react";
+import React from "react";
 import {
   FiColumns,
   FiGrid,
-  FiLayers,
   FiRefreshCw,
   FiSearch,
-  FiUsers,
 } from "react-icons/fi";
 import { useAuth } from "../../../../hooks/useAuth";
 import { formatDateWithLocalTimezone } from "../../../../app/utils/functions";
@@ -21,7 +19,6 @@ import { useEmploiDuTempsDashboardStore } from "../../store/EmploiDuTempsDashboa
 import { buildVirtualCreneaux } from "../../utils/virtualCreneaux";
 import ScheduleGridListView from "./ScheduleGridListView";
 import ScheduleKanbanView from "./ScheduleKanbanView";
-import { getScheduleScopeMeta } from "../../types";
 
 type ScopeFilter = "all" | "recurrent" | "specific";
 type ViewMode = "grid" | "kanban";
@@ -256,30 +253,11 @@ export default function ScheduleList() {
     [refreshAll, service],
   );
 
-  const totalRows = previewRows.length;
-  const classesCount = new Set(previewRows.map((row) => row.classe_id).filter(Boolean)).size;
-  const teachersCount = new Set(
-    previewRows.map((row) => row.enseignant_id).filter((value): value is string => Boolean(value)),
-  ).size;
-  const specificRows = previewRows.filter(
-    (row) => getScheduleScopeMeta(row).label === "Specifique",
-  ).length;
-
   return (
     <div className="space-y-5">
-      <section className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,_#ffffff_0%,_#f8fafc_48%,_#ecfeff_100%)] px-6 py-5 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)]">
+      <section className="rounded-[28px] border border-slate-200 bg-white">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-              Liste emploi du temps
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Cette vue reprend maintenant la logique de grille du dashboard, avec fusion des blocs
-              contigus quand la meme matiere occupe plusieurs creneaux consecutifs.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 p-2">
             <button
               type="button"
               onClick={() => setViewMode("grid")}
@@ -426,40 +404,6 @@ export default function ScheduleList() {
             Recherche active: {appliedSearch}
           </div>
         ) : null}
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3 text-slate-500">
-            <FiLayers />
-            <span className="text-sm font-medium">Lignes visibles</span>
-          </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{totalRows}</p>
-        </div>
-
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3 text-slate-500">
-            <FiGrid />
-            <span className="text-sm font-medium">Classes couvertes</span>
-          </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{classesCount}</p>
-        </div>
-
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3 text-slate-500">
-            <FiUsers />
-            <span className="text-sm font-medium">Enseignants relies</span>
-          </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{teachersCount}</p>
-        </div>
-
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3 text-slate-500">
-            <FiColumns />
-            <span className="text-sm font-medium">Lignes specifiques</span>
-          </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{specificRows}</p>
-        </div>
       </section>
 
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)]">

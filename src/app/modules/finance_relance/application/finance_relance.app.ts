@@ -357,6 +357,10 @@ class FinanceRelanceApp {
         stage_days: typeof parsed.stage_days === "number" ? parsed.stage_days : null,
         suggested_penalty:
           typeof parsed.suggested_penalty === "number" ? parsed.suggested_penalty : null,
+        penalty_facture_id:
+          typeof parsed.penalty_facture_id === "string" ? parsed.penalty_facture_id : null,
+        penalty_facture_number:
+          typeof parsed.penalty_facture_number === "string" ? parsed.penalty_facture_number : null,
       };
     } catch {
       return null;
@@ -900,7 +904,6 @@ class FinanceRelanceApp {
           },
         },
         orderBy: [{ envoye_le: "desc" }, { created_at: "desc" }],
-        take: safeTake,
       });
 
       const history = messages
@@ -910,7 +913,8 @@ class FinanceRelanceApp {
           if (planPaiementId && item.plan_paiement_id !== planPaiementId) return false;
           if (echeanceId && !item.echeance_ids.includes(echeanceId)) return false;
           return true;
-        });
+        })
+        .slice(0, safeTake);
 
       Response.success(res, "Historique des relances financieres.", history);
     } catch (error) {

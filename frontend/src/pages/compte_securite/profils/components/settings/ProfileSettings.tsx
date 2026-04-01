@@ -28,7 +28,7 @@ function SettingCard({
 export default function ProfileSettings() {
   return (
     <div className="space-y-6">
-      <section className="rounded-[30px] border border-slate-200 bg-[linear-gradient(135deg,_#ffffff_0%,_#f8fafc_52%,_#fef2f2_100%)] px-6 py-5 shadow-sm">
+      <section className="rounded-[30px] border border-slate-200 bg-white px-6 py-5 shadow-sm">
         <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
           Parametres des profils
         </h2>

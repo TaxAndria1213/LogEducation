@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   FiBookOpen,
   FiLayers,
@@ -74,7 +74,7 @@ function getEnseignantLabel(enseignant: EnseignantRecord) {
 }
 
 function EnseignantOverview({ mode = "overview" }: Props) {
-  const { etablissement_id, user } = useAuth();
+  const { etablissement_id } = useAuth();
   const [enseignants, setEnseignants] = useState<EnseignantRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -190,40 +190,7 @@ function EnseignantOverview({ mode = "overview" }: Props) {
   }, [enseignants]);
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
-              <FiUsers />
-              Enseignants
-            </span>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900">
-                {user?.etablissement?.nom ?? "Etablissement"}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {mode === "settings"
-                  ? "Retrouve ici les reperes utiles pour garder des profils enseignants coherents avec les personnels, les departements et les cours."
-                  : "Accueil du module Enseignants avec une vue rapide sur les affectations, les departements couverts et les profils deja rattaches."}
-              </p>
-            </div>
-          </div>
-          {loading ? (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-              Chargement...
-            </span>
-          ) : null}
-        </div>
-
-        {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {errorMessage}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">      {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Chargement...</div> : null}      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiUsers />
@@ -261,46 +228,7 @@ function EnseignantOverview({ mode = "overview" }: Props) {
         </div>
       </section>
 
-      {mode === "settings" ? (
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-              <FiSettings />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Parametres du module Enseignants
-              </h3>
-              <p className="text-sm text-slate-500">
-                Une bonne fiche enseignant depend d'un personnel bien rattache, d'un
-                departement clair et d'affectations pedagogiques coherentes.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Rattachement
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Associe chaque enseignant a la bonne fiche personnel pour garder une base
-                simple a relier ensuite aux comptes et aux droits.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Affectations
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Maintiens les departements et les cours a jour pour simplifier l'emploi du
-                temps, les cours et le suivi pedagogique.
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : (
+      {mode === "settings" ? null : (
         <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
           <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
@@ -425,3 +353,5 @@ function EnseignantOverview({ mode = "overview" }: Props) {
 }
 
 export default EnseignantOverview;
+
+

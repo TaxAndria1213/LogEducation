@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+﻿import { useMemo } from "react";
 import Spin from "../../../../../components/anim/Spin";
 import { useReferentialCatalog } from "../../hooks/useReferentialCatalog";
 
@@ -30,21 +30,11 @@ export default function ReferentielOverview({ mode = "overview" }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">
-          Referentiels d'etablissement
-        </h2>
-        <p className="mt-2 text-sm text-slate-500">
-          {mode === "settings"
-            ? "Centralise ici les listes personnalisees reutilisees dans les formulaires metier."
-            : "Vue d'ensemble des listes reutilisables qui alimentent les formulaires du systeme."}
-        </p>
-        {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {errorMessage}
-          </div>
-        ) : null}
-      </section>
+      {errorMessage ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {errorMessage}
+        </div>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -147,7 +137,7 @@ export default function ReferentielOverview({ mode = "overview" }: Props) {
                     {item.titre}
                   </p>
                   <p className="mt-1 text-xs text-amber-800">
-                    {item.fieldTargets.join(" • ")}
+                    {item.fieldTargets.join(" â€¢ ")}
                   </p>
                 </div>
               ))
@@ -163,3 +153,4 @@ export default function ReferentielOverview({ mode = "overview" }: Props) {
     </div>
   );
 }
+

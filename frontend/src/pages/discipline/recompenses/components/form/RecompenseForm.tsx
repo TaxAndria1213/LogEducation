@@ -65,7 +65,6 @@ export default function RecompenseForm() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-2xl font-semibold text-slate-900">Nouvelle recompense</h2><p className="mt-2 text-sm text-slate-500">Valorise un comportement positif avec une date, un nombre de points et un motif partageable.</p></section>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:grid-cols-2">
         <Controller control={form.control} name="eleve_id" render={({ field, fieldState }) => <FieldWrapper id="eleve_id" label="Eleve" required error={fieldState.error?.message}><select {...field} className={getInputClassName(Boolean(fieldState.error))}><option value="">Selectionner un eleve</option>{eleves.map((item) => <option key={item.id} value={item.id}>{item.code_eleve ? `${item.code_eleve} - ` : ""}{item.utilisateur?.profil?.prenom} {item.utilisateur?.profil?.nom}</option>)}</select></FieldWrapper>} />
         <Controller control={form.control} name="date" render={({ field, fieldState }) => <FieldWrapper id="date" label="Date et heure" required error={fieldState.error?.message}><input type="datetime-local" {...field} className={getInputClassName(Boolean(fieldState.error))} /></FieldWrapper>} />

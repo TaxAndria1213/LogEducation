@@ -45,6 +45,7 @@ import { factureComponents } from "../pages/finance/factures/components/CI.factu
 import { paiementComponents } from "../pages/finance/paiements/components/CI.paiement";
 import { planPaiementComponents } from "../pages/finance/plans_paiement/components/CI.planPaiement";
 import { journalFinancierComponents } from "../pages/finance/journal_financier/components/CI.journalFinancier";
+import { recouvrementComponents } from "../pages/finance/recouvrement/components/CI.recouvrement";
 import { transportComponents } from "../pages/transport_cantine/transport/components/CI.transport";
 import { cantineComponents } from "../pages/transport_cantine/cantine/components/CI.cantine";
 import { ressourceBibliothequeComponents } from "../pages/bibliotheque/ressources/components/CI.ressourceBibliotheque";
@@ -111,6 +112,7 @@ const components: ComponentIdentifierType[] = [
   ...paiementComponents,
   ...planPaiementComponents,
   ...journalFinancierComponents,
+  ...recouvrementComponents,
   ...transportComponents,
   ...cantineComponents,
   ...ressourceBibliothequeComponents,

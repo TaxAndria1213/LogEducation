@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { roundMoney, toMoney } from "./echeance_paiement";
+import { getApprovedRecoveryPolicy } from "./recovery_policy";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -7,6 +8,7 @@ export async function computeOutstandingOverdueAmount(
   prisma: DbClient,
   eleveId: string,
   anneeScolaireId: string,
+  tenantId: string,
 ) {
   const echeances = await prisma.echeancePaiement.findMany({
     where: {
@@ -23,12 +25,16 @@ export async function computeOutstandingOverdueAmount(
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const policy = await getApprovedRecoveryPolicy(prisma, tenantId);
+  const graceDays = Math.max(0, Number(policy?.jours_grace ?? 0) || 0);
 
   return roundMoney(
     echeances.reduce((sum, item) => {
       const dueDate = new Date(item.date_echeance);
       dueDate.setHours(0, 0, 0, 0);
-      if (dueDate > today) return sum;
+      const effectiveDueDate = new Date(dueDate);
+      effectiveDueDate.setDate(effectiveDueDate.getDate() + graceDays);
+      if (effectiveDueDate > today) return sum;
       return sum + toMoney(item.montant_restant);
     }, 0),
   );
@@ -47,6 +53,7 @@ export async function autoLiftAdministrativeRestrictions(
     prisma,
     args.eleveId,
     args.anneeScolaireId,
+    args.tenantId,
   );
 
   if (overdueAmount > 0) {

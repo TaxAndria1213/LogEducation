@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+﻿import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { FiCalendar, FiSmile, FiUserCheck } from "react-icons/fi";
 import { useAuth } from "../../../../../auth/AuthContext";
 import Spin from "../../../../../components/anim/Spin";
@@ -80,19 +80,7 @@ export default function ProfileDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[30px] border border-slate-200 bg-[linear-gradient(135deg,_#ffffff_0%,_#f8fafc_48%,_#fef3c7_100%)] px-6 py-5 shadow-sm">
-        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-          Tableau de bord des profils
-        </h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          Suis la qualite des fiches personnelles rattachees aux comptes de
-          l'etablissement et repere rapidement les informations encore
-          incompletes.
-        </p>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
+    <div className="space-y-6">      <section className="grid gap-4 md:grid-cols-3">
         <StatCard
           title="Profils"
           value={profiles.length}
@@ -143,3 +131,4 @@ export default function ProfileDashboard() {
     </div>
   );
 }
+

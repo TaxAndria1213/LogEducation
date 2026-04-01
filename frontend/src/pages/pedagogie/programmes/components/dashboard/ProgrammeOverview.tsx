@@ -50,7 +50,7 @@ function formatDate(value?: Date | string | null) {
 }
 
 function ProgrammeOverview({ mode = "overview" }: Props) {
-  const { etablissement_id, user } = useAuth();
+  const { etablissement_id } = useAuth();
   const [programmes, setProgrammes] = useState<ProgrammeWithRelations[]>([]);
   const [currentYear, setCurrentYear] = useState<AnneeScolaire | null>(null);
   const [loading, setLoading] = useState(false);
@@ -159,40 +159,7 @@ function ProgrammeOverview({ mode = "overview" }: Props) {
   }, [programmes]);
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
-              <FiBookOpen />
-              Programmes
-            </span>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900">
-                {user?.etablissement?.nom ?? "Etablissement"}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {mode === "settings"
-                  ? "Retrouve ici les reperes utiles pour garder des programmes coherents avec l'annee scolaire, le niveau et le contenu des matieres."
-                  : "Accueil du module Programmes avec une vue rapide sur les programmes actifs, les niveaux couverts et le contenu pedagogique deja structure."}
-              </p>
-            </div>
-          </div>
-          {loading ? (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-              Chargement...
-            </span>
-          ) : null}
-        </div>
-
-        {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {errorMessage}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">      {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Chargement...</div> : null}      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiBookOpen />
@@ -226,43 +193,7 @@ function ProgrammeOverview({ mode = "overview" }: Props) {
         </div>
       </section>
 
-      {mode === "settings" ? (
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-              <FiSettings />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Parametres du module Programmes
-              </h3>
-              <p className="text-sm text-slate-500">
-                Un programme propre depend d'une annee scolaire claire, d'un niveau bien choisi et d'une liste de matieres sans doublons.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Structure
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Garde un programme par combinaison claire d'annee scolaire, niveau et nom pour eviter les doublons administratifs.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Contenu
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Maintiens les matieres, coefficients et volumes horaires a jour pour faciliter la suite des cours et des evaluations.
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : (
+      {mode === "settings" ? null : (
         <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
           <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
@@ -370,3 +301,5 @@ function ProgrammeOverview({ mode = "overview" }: Props) {
 }
 
 export default ProgrammeOverview;
+
+

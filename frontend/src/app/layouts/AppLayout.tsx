@@ -1,328 +1,276 @@
-import { NavLink, Outlet } from "react-router-dom";
-import { FiMenu } from "react-icons/fi";
-import { FaChevronCircleLeft } from "react-icons/fa";
-import { useAuth } from "../../hooks/useAuth";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import {
+  FiChevronDown,
+  FiChevronRight,
+  FiMenu,
+  FiSearch,
+  FiGrid,
+  FiChevronLeft,
+} from "react-icons/fi";
 import { useMemo, useState, type CSSProperties } from "react";
+import { useAuth } from "../../hooks/useAuth";
 import { modules } from "../../routes/modules";
-import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import Header from "./Header";
-import { styles } from "../../styles/styles";
+import type { menu } from "../../types/types";
+
+function moduleMatchesSearch(module: menu, query: string) {
+  if (!query) return true;
+  const haystacks = [module.name, ...(module.submodules?.map((sub) => sub.name) ?? [])]
+    .join(" ")
+    .toLowerCase();
+  return haystacks.includes(query);
+}
+
+function getFilteredModule(module: menu, query: string) {
+  if (!query) return module;
+
+  const normalized = query.toLowerCase();
+  const moduleMatches = module.name.toLowerCase().includes(normalized);
+  const matchedSubmodules = module.submodules?.filter((sub) =>
+    sub.name.toLowerCase().includes(normalized),
+  );
+
+  if (moduleMatches) return module;
+  if (matchedSubmodules && matchedSubmodules.length > 0) {
+    return { ...module, submodules: matchedSubmodules };
+  }
+  return null;
+}
 
 export default function AppLayout() {
-  const { user } = useAuth();
-  console.log("🚀 ~ AppLayout ~ user:", user);
-
+  const { user, roles } = useAuth();
+  const location = useLocation();
   const [openModule, setOpenModule] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [search, setSearch] = useState("");
 
-  const toggleModule = (name: string) =>
-    setOpenModule(openModule === name ? null : name);
+  const activeModuleKey = useMemo(() => {
+    const found = modules.find((module) =>
+      module.submodules?.some((submodule) => location.pathname.startsWith(submodule.path ?? "")) ||
+      (!!module.path && location.pathname.startsWith(module.path)),
+    );
+    return found?.key ?? null;
+  }, [location.pathname]);
 
-  const filteredModules = useMemo(
-    () =>
-      modules.filter((m) =>
-        m.name.toLowerCase().includes(search.trim().toLowerCase()),
-      ),
-    [search],
-  );
+  const filteredModules = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return modules;
+    return modules
+      .filter((module) => moduleMatchesSearch(module, query))
+      .map((module) => getFilteredModule(module, query))
+      .filter((module): module is menu => Boolean(module));
+  }, [search]);
+
+  const expandedModule = openModule ?? activeModuleKey;
+  const appShellStyle = {
+    "--app-sidebar-offset": collapsed ? "88px" : "340px",
+  } as CSSProperties;
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-gray-800"
-      style={
-        {
-          "--app-sidebar-offset": collapsed ? "72px" : "18rem",
-        } as CSSProperties
-      }
-    >
-      {/* Sidebar */}
+    <div className="min-h-screen bg-slate-50 text-slate-800" style={appShellStyle}>
       <aside
-        className={`fixed left-0 top-0 h-screen transition-all duration-300 border-r shadow-lg ${
-          collapsed ? "w-[72px] px-3" : "w-72 px-4"
-        } py-5 overflow-hidden`}
-        style={{
-          backgroundColor: styles.color.sidebar.background,
-          borderColor: styles.color.sidebar.border,
-          color: styles.color.sidebar.text,
-        }}
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-white/70 bg-white/86 shadow-[0_18px_50px_rgba(15,23,42,0.09)] backdrop-blur-2xl transition-all duration-300 ${
+          collapsed ? "w-[88px] px-2 py-3" : "w-[340px] px-4 py-5"
+        }`}
       >
-        <div className="flex items-center justify-between gap-2 mb-6">
-          <div className="flex items-center gap-3">
-            <div
-              className="cursor-pointer grid h-10 w-10 place-items-center rounded-2xl text-lg font-bold uppercase tracking-widest"
-              style={{
-                backgroundColor: styles.color.sidebar.hover,
-                color: styles.color.sidebar.active,
-              }}
-              onClick={() => setCollapsed(!collapsed)}
-            >
-              {collapsed ? (
-                <FiMenu />
-              ) : (
-                user?.etablissement?.nom.slice(0, 2) || "E"
-              )}
-            </div>
-            {!collapsed && (
-              <div>
-                <div
-                  className="text-sm"
-                  style={{ color: styles.color.sidebar.text }}
-                >
-                  {user?.etablissement?.nom || "Etablissement"}
-                </div>
-                <div
-                  className="text-xs"
-                  style={{ color: styles.color.sidebar.textSecondary }}
-                >
-                  Navigation
-                </div>
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => setCollapsed((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-[11px] uppercase tracking-[0.12em] transition"
-            style={{
-              backgroundColor: collapsed
-                ? ""
-                : styles.color.primary,
-              color: collapsed
-                ? ""
-                : styles.color.sidebar.activeText,
-            }}
+        <div
+          className={`border border-slate-200/80 bg-white shadow-[0_16px_30px_rgba(148,163,184,0.14)] ${
+            collapsed ? "rounded-[24px] p-2.5" : "rounded-[28px] p-3.5"
+          }`}
+        >
+          <div
+            className={`flex ${collapsed ? "flex-col items-center gap-2" : "items-center justify-between gap-3"}`}
           >
-            {collapsed ? <FiMenu /> : (
-              <>
-                <FaChevronCircleLeft />
-              </>
-            )}
-            <span>Réduire</span>
-          </button>
+            <div className={`flex min-w-0 items-center ${collapsed ? "justify-center" : "gap-3"}`}>
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[18px] bg-slate-950 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_12px_24px_rgba(15,23,42,0.26)]">
+                {user?.etablissement?.nom?.slice(0, 2) ?? "ED"}
+              </div>
+              {!collapsed ? (
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-950">
+                    {user?.etablissement?.nom ?? "Etablissement"}
+                  </p>
+                  <p className="text-xs text-slate-500">Administration et pilotage scolaire</p>
+                </div>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setCollapsed((value) => !value)}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+              aria-label={collapsed ? "Etendre la navigation" : "Reduire la navigation"}
+            >
+              {collapsed ? <FiMenu /> : <FiChevronLeft />}
+            </button>
+          </div>
+
+          {!collapsed ? (
+            <div className="mt-3 space-y-3">
+              <div className="relative">
+                <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-10 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                  placeholder="Rechercher un module ou une section"
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 shadow-sm">
+                <span className="truncate">{modules.length} module(s)</span>
+                <span className="truncate font-semibold text-slate-700">
+                  {roles?.[0]?.role?.nom ?? "Utilisateur"}
+                </span>
+              </div>
+            </div>
+          ) : null}
         </div>
 
-        {!collapsed && (
-          <div className="mb-4">
-            <div
-              className="text-[11px] uppercase tracking-[0.15em] mb-2"
-              style={{ color: styles.color.sidebar.textSecondary }}
-            >
-              Recherche
-            </div>
-            <div className="relative">
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-xl px-3 py-2 text-sm outline-none border"
-                style={{
-                  backgroundColor: styles.color.sidebar.background,
-                  color: styles.color.sidebar.text,
-                  borderColor: styles.color.sidebar.border,
-                }}
-                placeholder="Filtrer les modules..."
-              />
-            </div>
-          </div>
-        )}
+        <div className={`mt-4 flex-1 overflow-y-auto ${collapsed ? "hide-scrollbar pr-0" : "pr-1"}`}>
+          <div className={`space-y-2 ${collapsed ? "px-0.5" : ""}`}>
+            {filteredModules.map((module) => {
+              const hasChildren = Boolean(module.submodules?.length);
+              const isExpanded = expandedModule === module.key;
+              const isModuleActive =
+                module.key === activeModuleKey ||
+                module.submodules?.some((submodule) => location.pathname.startsWith(submodule.path ?? ""));
 
-        <div
-          className={`space-y-2 ${collapsed ? "hide-scrollbar" : ""}`}
-          style={{
-            maxHeight: "calc(100vh - 170px)",
-            overflowY: "auto",
-            paddingRight: collapsed ? 0 : 4,
-          }}
-        >
-          <nav className="space-y-2">
-            {filteredModules.map((mod) => {
-              const hasChildren = !!mod.submodules;
-              const active = openModule === mod.name;
-              const Row = ({ children }: { children: React.ReactNode }) => (
-                <div
-                  className="flex items-center gap-3 rounded-xl px-3 py-2 transition cursor-pointer"
-                  style={{
-                    color: styles.color.sidebar.text,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      styles.color.sidebar.hover;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                  onClick={() => (hasChildren ? toggleModule(mod.name) : null)}
-                >
-                  {children}
-                </div>
-              );
+              const collapsedItemClass = isModuleActive
+                ? "mx-auto flex h-12 w-12 items-center justify-center rounded-[18px] border border-slate-900 bg-slate-900 text-white shadow-sm"
+                : "mx-auto flex h-12 w-12 items-center justify-center rounded-[18px] border border-transparent bg-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900";
 
               return (
-                <div key={mod.name}>
+                <div key={module.key} className="space-y-2">
                   {hasChildren ? (
-                    <Row>
-                      <div
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold uppercase"
-                        style={{
-                          backgroundColor: collapsed
-                            ? "transparent"
-                            : styles.color.sidebar.hover,
-                          color: styles.color.sidebar.active,
-                        }}
-                        onClick={() => {
-                          toggleModule(mod.name);
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenModule((current) => (current === module.key ? null : module.key));
+                        if (collapsed) {
                           setCollapsed(false);
-                        }}
-                      >
-                        {mod.icon ?? mod.name.slice(0, 2)}
-                      </div>
-                      {!collapsed && (
-                        <div
-                          className="flex-1 text-sm font-semibold"
-                          style={{ color: styles.color.sidebar.text }}
-                        >
-                          {mod.name}
-                        </div>
+                        }
+                      }}
+                      aria-label={module.name}
+                      className={
+                        collapsed
+                          ? collapsedItemClass
+                          : `flex w-full items-center gap-3 rounded-[24px] border px-3 py-3 text-left transition ${
+                              isModuleActive
+                                ? "border-slate-900 bg-slate-900 text-white shadow-[0_18px_28px_rgba(15,23,42,0.18)]"
+                                : "border-transparent bg-white/62 text-slate-700 hover:border-slate-200 hover:bg-white"
+                            }`
+                      }
+                    >
+                      {collapsed ? (
+                        module.icon ?? <FiGrid />
+                      ) : (
+                        <>
+                          <span
+                            className={`grid h-11 w-11 shrink-0 place-items-center rounded-[18px] text-sm ${
+                              isModuleActive ? "bg-white/12 text-white" : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            {module.icon ?? <FiGrid />}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold">{module.name}</span>
+                            <span className={`block text-xs ${isModuleActive ? "text-slate-300" : "text-slate-500"}`}>
+                              {module.submodules?.length ?? 0} section(s)
+                            </span>
+                          </span>
+                          <span className={`text-sm ${isModuleActive ? "text-slate-200" : "text-slate-400"}`}>
+                            {isExpanded ? <FiChevronDown /> : <FiChevronRight />}
+                          </span>
+                        </>
                       )}
-                      {hasChildren && !collapsed && (
-                        <span
-                          className="text-xs"
-                          style={{ color: styles.color.sidebar.textSecondary }}
-                        >
-                          {active ? <FiChevronDown /> : <FiChevronRight />}
-                        </span>
-                      )}
-                    </Row>
+                    </button>
                   ) : (
                     <NavLink
-                      to={mod.path as string}
-                      className={`block rounded-xl`}
-                      style={({ isActive }) => ({
-                        backgroundColor: isActive
-                          ? styles.color.sidebar.active
-                          : "transparent",
-                        border: isActive
-                          ? `1px solid ${styles.color.sidebar.active}`
-                          : "none",
-                      })}
+                      to={module.path ?? "/"}
+                      aria-label={module.name}
+                      className={({ isActive }) =>
+                        collapsed
+                          ? `mx-auto flex h-12 w-12 items-center justify-center rounded-[18px] border transition ${
+                              isActive
+                                ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                                : "border-transparent bg-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900"
+                            }`
+                          : `flex items-center gap-3 rounded-[24px] border px-3 py-3 transition ${
+                              isActive
+                                ? "border-slate-900 bg-slate-900 text-white shadow-[0_18px_28px_rgba(15,23,42,0.18)]"
+                                : "border-transparent bg-white/62 text-slate-700 hover:border-slate-200 hover:bg-white"
+                            }`
+                      }
                     >
-                      {({ isActive }) => (
-                        <div
-                          className="flex items-center gap-3 px-3 py-2 transition"
-                          style={{
-                            color: isActive
-                              ? styles.color.sidebar.activeText
-                              : styles.color.sidebar.text,
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isActive) {
-                              e.currentTarget.style.backgroundColor =
-                                styles.color.sidebar.hover;
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isActive) {
-                              e.currentTarget.style.backgroundColor =
-                                "transparent";
-                            }
-                          }}
-                        >
-                          <div
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold uppercase"
-                            style={{
-                              backgroundColor: isActive
-                                ? styles.color.sidebar.activeText
-                                : styles.color.sidebar.hover,
-                              color: isActive
-                                ? styles.color.sidebar.active
-                                : styles.color.sidebar.active,
-                            }}
-                          >
-                            {(mod.icon as string) ?? mod.name.slice(0, 2)}
-                          </div>
-                          {!collapsed && (
-                            <div className="flex-1 text-sm font-semibold">
-                              {mod.name}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      {({ isActive }) =>
+                        collapsed ? (
+                          module.icon ?? <FiGrid />
+                        ) : (
+                          <>
+                            <span
+                              className={`grid h-11 w-11 shrink-0 place-items-center rounded-[18px] text-sm ${
+                                isActive ? "bg-white/12 text-white" : "bg-slate-100 text-slate-700"
+                              }`}
+                            >
+                              {module.icon ?? <FiGrid />}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-semibold">{module.name}</span>
+                              <span className={`block text-xs ${isActive ? "text-slate-300" : "text-slate-500"}`}>
+                                Acces direct
+                              </span>
+                            </span>
+                          </>
+                        )
+                      }
                     </NavLink>
                   )}
 
-                  {hasChildren && active && !collapsed && (
-                    <div
-                      className="ml-4 mt-1 space-y-1 pl-3"
-                      style={{ borderLeftColor: styles.color.sidebar.border }}
-                    >
-                      {mod.submodules!.map((sub) => (
+                  {hasChildren && isExpanded && !collapsed ? (
+                    <div className="space-y-1 pl-4">
+                      {module.submodules?.map((submodule) => (
                         <NavLink
-                          key={sub.path}
-                          to={sub.path as string}
-                          className={`flex items-center justify-between rounded-lg px-2 py-1.5 text-sm transition`}
-                          style={({ isActive }) => ({
-                            backgroundColor: isActive
-                              ? styles.color.sidebar.active
-                              : "transparent",
-                            color: isActive
-                              ? styles.color.sidebar.activeText
-                              : styles.color.sidebar.text,
-                            border: isActive
-                              ? `1px solid ${styles.color.sidebar.active}`
-                              : "none",
-                          })}
+                          key={submodule.path}
+                          to={submodule.path ?? "/"}
+                          className={({ isActive }) =>
+                            `flex items-center justify-between rounded-[20px] border px-3 py-2.5 text-sm transition ${
+                              isActive
+                                ? "border-sky-200 bg-sky-50 text-sky-900 shadow-sm"
+                                : "border-transparent bg-transparent text-slate-600 hover:border-slate-200 hover:bg-white"
+                            }`
+                          }
                         >
-                          {({ isActive }) => (
-                            <span
-                              onMouseLeave={(e) => {
-                                if (!isActive) {
-                                  e.currentTarget.style.backgroundColor =
-                                    "transparent";
-                                }
-                              }}
-                            >
-                              {sub.name}
-                            </span>
+                          {() => (
+                            <>
+                              <span className="truncate font-medium">{submodule.name}</span>
+                              
+                            </>
                           )}
                         </NavLink>
                       ))}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               );
             })}
-          </nav>
+          </div>
         </div>
       </aside>
 
-      {/* Contenu principal (avec marge gauche = largeur sidebar) */}
       <div
-        className={`${collapsed ? "ml-[72px]" : "ml-72"} flex flex-col h-screen overflow-hidden transition-all duration-300`}
+        className={`${collapsed ? "ml-[88px]" : "ml-[340px]"} flex min-h-screen flex-col transition-all duration-300`}
       >
-        {/* Header collant */}
         <Header />
 
-        {/* Zone principale scrollable */}
-        <main className="flex-1 min-h-0 overflow-y-auto p-4">
-          <Outlet />
+        <main className="relative flex-1 px-5 pb-5 pt-4 lg:px-6">
+          <div className="pointer-events-none absolute inset-x-6 top-0 h-40 rounded-[32px] bg-white/40" />
+          <div className="relative">
+            <Outlet />
+          </div>
         </main>
 
-        {/* Footer */}
-        <footer className="shrink-0 text-center text-[10px] text-gray-300 py-2">
-          © {new Date().getFullYear()} - EducAr - Tous droits reservés -
-          Version 1.0 |
-          <span>
-            {" "}
-            Powered by{" "}
-            <a
-              href="https://arhexia-mg.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-300"
-            >
-              ArhexiaMG
-            </a>
-          </span>
+        <footer className="px-6 pb-4 text-center text-[11px] text-slate-400">
+          {new Date().getFullYear()} EducAr � ERP scolaire � Powered by ArhexiaMG
         </footer>
       </div>
     </div>

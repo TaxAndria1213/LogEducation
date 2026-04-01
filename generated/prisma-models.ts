@@ -966,6 +966,7 @@ export interface OperationFinanciere {
   etablissement_id: string;
   facture_id: string | null;
   paiement_id: string | null;
+  abonnement_cantine_id: string | null;
   cree_par_utilisateur_id: string | null;
   type: string;
   montant: Decimal | null;
@@ -976,6 +977,7 @@ export interface OperationFinanciere {
   etablissement?: Etablissement;
   facture?: Facture | null;
   paiement?: Paiement | null;
+  abonnementCantine?: AbonnementCantine | null;
   createur?: Utilisateur | null;
 }
 
@@ -1234,12 +1236,16 @@ export interface AbonnementCantine {
   formule_cantine_id: string;
   facture_id: string | null;
   statut: string | null;
+  solde_prepaye: Decimal;
+  solde_min_alerte: Decimal;
+  dernier_rechargement_le: Date | null;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;
   annee?: AnneeScolaire;
   formule?: FormuleCantine;
   facture?: Facture | null;
+  operationsFinancieres?: OperationFinanciere[];
 }
 
 /**

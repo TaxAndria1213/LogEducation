@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FiActivity, FiCreditCard, FiFileText, FiRefreshCcw, FiUsers } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import ERPPage from "../../../components/page/ERPPage";
+import FinanceModuleLayout from "../components/FinanceModuleLayout";
 import { DataTable } from "../../../shared/table/DataTable";
 import type { ColumnDef, RowAction } from "../../../shared/table/types";
 import { useAuth } from "../../../auth/AuthContext";
@@ -73,6 +73,20 @@ export default function JournalFinancierIndex() {
               },
             },
             paiement: true,
+            abonnementCantine: {
+              include: {
+                eleve: {
+                  include: {
+                    utilisateur: {
+                      include: {
+                        profil: true,
+                      },
+                    },
+                  },
+                },
+                formule: true,
+              },
+            },
             createur: {
               include: {
                 profil: true,
@@ -211,11 +225,12 @@ export default function JournalFinancierIndex() {
   if (!canAccess) return <NotFound />;
 
   return (
-    <ERPPage
+    <FinanceModuleLayout
       title="Journal Financier"
       description="Historique des corrections comptables, annulations, remboursements et avoirs."
+      currentModule="journal_financier"
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-3 text-slate-500">
@@ -301,6 +316,6 @@ export default function JournalFinancierIndex() {
           />
         </section>
       </div>
-    </ERPPage>
+    </FinanceModuleLayout>
   );
 }

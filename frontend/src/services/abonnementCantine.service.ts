@@ -1,4 +1,5 @@
 import Service from "../app/api/Service";
+import { Http } from "../app/api/Http";
 import type { AbonnementCantine, FormuleCantine } from "../types/models";
 
 type QueryParams = Record<string, unknown>;
@@ -24,6 +25,33 @@ export type AbonnementCantineWithRelations = AbonnementCantine & {
     numero_facture?: string | null;
     statut?: string | null;
   } | null;
+  operationsFinancieres?: Array<{
+    id: string;
+    type: string;
+    montant?: number | string | null;
+    motif?: string | null;
+    details_json?: Record<string, unknown> | null;
+    created_at?: string | Date;
+    updated_at?: string | Date;
+  }> | null;
+};
+
+export type AbonnementCantineWalletResponse = {
+  abonnement: AbonnementCantineWithRelations;
+  wallet: {
+    solde_prepaye: number | string;
+    solde_min_alerte: number | string;
+    dernier_rechargement_le?: string | Date | null;
+    history: Array<{
+      id: string;
+      type: string;
+      montant?: number | string | null;
+      motif?: string | null;
+      details_json?: Record<string, unknown> | null;
+      created_at?: string | Date;
+      updated_at?: string | Date;
+    }>;
+  };
 };
 
 function parseObjectParam(value: unknown): Record<string, unknown> | undefined {
@@ -49,6 +77,14 @@ export function getAbonnementCantineDisplayLabel(record?: Partial<AbonnementCant
   return fullName || record.eleve?.code_eleve || "Abonnement cantine";
 }
 
+export function getAbonnementCantineBalance(record?: Partial<AbonnementCantineWithRelations> | null) {
+  const value =
+    typeof record?.solde_prepaye === "number"
+      ? record.solde_prepaye
+      : Number(record?.solde_prepaye ?? 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
 class AbonnementCantineService extends Service {
   constructor() {
     super("abonnement-cantine");
@@ -64,6 +100,35 @@ class AbonnementCantineService extends Service {
           ? params.orderBy
           : JSON.stringify(params.orderBy ?? [{ created_at: "desc" }]),
     } as Record<string, string | number | Date | boolean>);
+  }
+
+  async getWallet(id: string) {
+    return this.get(`${id}/wallet`);
+  }
+
+  async recharge(
+    id: string,
+    payload: {
+      montant: number;
+      methode?: string;
+      reference?: string | null;
+      note?: string | null;
+      rechargement_le?: string | Date | null;
+    },
+  ) {
+    return Http.post(["/api", this.url, id, "recharge"].join("/"), payload);
+  }
+
+  async consume(
+    id: string,
+    payload: {
+      montant: number;
+      type_repas?: string;
+      note?: string | null;
+      consommation_le?: string | Date | null;
+    },
+  ) {
+    return Http.post(["/api", this.url, id, "consume"].join("/"), payload);
   }
 
   private buildScopedWhere(etablissementId: string, whereParam?: unknown) {

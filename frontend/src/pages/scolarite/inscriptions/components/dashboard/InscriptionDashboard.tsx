@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   FiBookOpen,
   FiClock,
@@ -83,7 +83,7 @@ function InscriptionDashboard({
   onNouvelleInscription,
   onReinscription,
 }: Props) {
-  const { etablissement_id, user } = useAuth();
+  const { etablissement_id } = useAuth();
   const [inscriptions, setInscriptions] = useState<InscriptionRecord[]>([]);
   const [currentYear, setCurrentYear] = useState<AnneeScolaire | null>(null);
   const [loading, setLoading] = useState(false);
@@ -190,69 +190,52 @@ function InscriptionDashboard({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
-              <FiBookOpen />
-              Inscriptions
-            </span>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900">
-                {user?.etablissement?.nom ?? "Etablissement"}
-              </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                {mode === "settings"
-                  ? "Retrouve ici les reperes utiles pour garder un module d'inscription coherent entre l'annee scolaire active, les classes ouvertes et les statuts des eleves."
-                  : "Accueil du module Inscriptions avec une lecture rapide de l'annee active, des volumes en cours et des mouvements recents."}
-              </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          {currentYear ? (
+            <div className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
+              <FiClock />
+              Annee active: {currentYear.nom}
             </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            {loading ? (
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                Chargement...
-              </span>
-            ) : null}
-            {mode === "overview" ? (
-              <>
-                <button
-                  onClick={onNouvelleInscription}
-                  className="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
-                  type="button"
-                >
-                  Nouvelle inscription
-                </button>
-                <button
-                  onClick={onReinscription}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  type="button"
-                >
-                  Reinscription
-                </button>
-              </>
-            ) : null}
-          </div>
+          ) : (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Aucune annee scolaire active n'a ete detectee pour cet etablissement.
+            </div>
+          )}
         </div>
 
-        {currentYear ? (
-          <div className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
-            <FiClock />
-            Annee active: {currentYear.nom}
-          </div>
-        ) : (
-          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Aucune annee scolaire active n'a ete detectee pour cet etablissement.
-          </div>
-        )}
+        <div className="flex flex-wrap gap-3">
+          {loading ? (
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+              Chargement...
+            </span>
+          ) : null}
+          {mode === "overview" ? (
+            <>
+              <button
+                onClick={onNouvelleInscription}
+                className="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                type="button"
+              >
+                Nouvelle inscription
+              </button>
+              <button
+                onClick={onReinscription}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                type="button"
+              >
+                Reinscription
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
 
-        {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {errorMessage}
-          </div>
-        ) : null}
-      </section>
+      {errorMessage ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {errorMessage}
+        </div>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -290,47 +273,7 @@ function InscriptionDashboard({
         </div>
       </section>
 
-      {mode === "settings" ? (
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-              <FiSettings />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Parametres du module Inscriptions
-              </h3>
-              <p className="text-sm text-slate-500">
-                Les inscriptions reposent surtout sur la bonne annee scolaire, la bonne
-                classe et un suivi clair des statuts.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Cohesion annuelle
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Verifie qu'une seule annee scolaire reste active et que les classes
-                ouvertes sont rattachees a cette annee avant de lancer les nouvelles
-                inscriptions.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Suivi des mouvements
-              </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                Les statuts transferes et sortis gagnent a etre controles regulierement
-                pour garder des effectifs fiables dans les classes et les tableaux de bord.
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : (
+      {mode === "settings" ? null : (
         <div className="grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
           <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
@@ -433,3 +376,4 @@ function InscriptionDashboard({
 }
 
 export default InscriptionDashboard;
+

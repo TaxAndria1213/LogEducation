@@ -1146,7 +1146,7 @@ export default function ScheduleDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-5 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)] sm:p-6">
+      <section className="rounded-[32px] border border-slate-200 bg-white sm:p-6">
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-3xl">
@@ -1335,7 +1335,7 @@ export default function ScheduleDashboard() {
               </div>
             )}
 
-            <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-4 xl:col-span-3">
+            <div className="rounded-[24px] border border-slate-200 bg-white p-4 xl:col-span-3">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -1628,7 +1628,7 @@ export default function ScheduleDashboard() {
                   </div>
                 )}
 
-                <div className={`rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,_#f8fafc_0%,_#ffffff_40%,_#f0fdf4_100%)] ${isCompactGrid ? "p-2.5" : "p-3"}`}>
+                <div className={`rounded-[28px] border border-slate-200 bg-white ${isCompactGrid ? "p-2.5" : "p-3"}`}>
                 <div className={`mb-3 rounded-[24px] border border-white/70 bg-white/80 shadow-sm ${isCompactGrid ? "p-2.5" : "p-3"}`}>
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -1749,7 +1749,7 @@ export default function ScheduleDashboard() {
                                       isUnavailableDay
                                         ? "cursor-not-allowed border-dashed border-slate-200 bg-slate-50"
                                         : cell?.cours_id || isPauseCell
-                                        ? "border-emerald-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f0fdf4_100%)] hover:border-emerald-300"
+                                        ? "border-emerald-200 bg-white hover:border-emerald-300"
                                         : "border-slate-200 bg-white/90 hover:border-cyan-300"
                                     } ${
                                       isSelected
@@ -1829,7 +1829,7 @@ export default function ScheduleDashboard() {
         </div>
 
         <aside className="hidden min-w-0 space-y-6 2xl:sticky 2xl:top-6 2xl:self-start">
-          <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-5 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)]">
+          <div className="rounded-[28px] border border-slate-200 bg-white">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700 shadow-inner">
                 <FiCheckCircle />
@@ -1886,7 +1886,7 @@ export default function ScheduleDashboard() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-5 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)]">
+          <div className="rounded-[28px] border border-slate-200 bg-white">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">

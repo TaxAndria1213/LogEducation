@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { FiClock, FiRefreshCcw, FiSettings, FiUsers } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import EmpruntBibliothequeService, {
@@ -56,15 +56,7 @@ export default function EmpruntBibliothequeOverview({ mode = "overview" }: Props
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Emprunts de bibliotheque</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          {mode === "settings"
-            ? "Les retours sont suivis au niveau des emprunts pour garder une disponibilite fiable des ressources."
-            : "Vue d'ensemble des sorties, retours et retards de la bibliotheque."}
-        </p>
-        {errorMessage ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
-      </section>
+      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3 text-slate-500"><FiUsers /><span className="text-sm font-medium">Emprunts</span></div><p className="mt-3 text-3xl font-semibold text-slate-900">{rows.length}</p></div>
@@ -94,17 +86,7 @@ export default function EmpruntBibliothequeOverview({ mode = "overview" }: Props
           </div>
         </div>
 
-        {mode === "settings" ? (
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700"><FiSettings /></div>
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">Regles de circulation</h3>
-                <p className="text-sm text-slate-500">Un emprunt actif doit etre retourne avant suppression et un exemplaire doit rester disponible pour autoriser un nouveau pret.</p>
-              </div>
-            </div>
-          </div>
-        ) : (
+        {mode === "settings" ? null : (
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900">Emprunteurs suivis</h3>
             <p className="mt-2 text-sm text-slate-500">{uniqueBorrowers} emprunteur(s) distinct(s) sur la periode visible.</p>
@@ -122,3 +104,4 @@ export default function EmpruntBibliothequeOverview({ mode = "overview" }: Props
     </div>
   );
 }
+

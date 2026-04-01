@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { FiArchive, FiBookOpen, FiLayers, FiSettings } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import RessourceBibliothequeService, {
@@ -54,15 +54,7 @@ export default function RessourceBibliothequeOverview({ mode = "overview" }: Pro
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Ressources de bibliotheque</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          {mode === "settings"
-            ? "Le module suit les ressources physiques, leur stock et les disponibilites a l'instant."
-            : "Vue d'ensemble des livres et materiels disponibles dans la bibliotheque."}
-        </p>
-        {errorMessage ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
-      </section>
+      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3 text-slate-500"><FiBookOpen /><span className="text-sm font-medium">Ressources</span></div><p className="mt-3 text-3xl font-semibold text-slate-900">{rows.length}</p></div>
@@ -92,17 +84,7 @@ export default function RessourceBibliothequeOverview({ mode = "overview" }: Pro
           </div>
         </div>
 
-        {mode === "settings" ? (
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700"><FiSettings /></div>
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">Regles de gestion</h3>
-                <p className="text-sm text-slate-500">Le stock ne peut pas passer sous le nombre d'emprunts actifs et les codes de ressources doivent rester uniques.</p>
-              </div>
-            </div>
-          </div>
-        ) : (
+        {mode === "settings" ? null : (
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900">Ressources sous pression</h3>
             <div className="mt-5 space-y-3">
@@ -126,3 +108,4 @@ export default function RessourceBibliothequeOverview({ mode = "overview" }: Pro
     </div>
   );
 }
+
