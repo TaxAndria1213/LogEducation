@@ -9,10 +9,14 @@ import mysql from "mysql2/promise";
 import { JwtService } from "./app/service/jwtService";
 import { AuthGuard } from "./middleware/AuthGuard";
 import { SystemApiRoutes } from "./app/api/system.routes";
+import FacturationRecurrenteScheduler from "./app/modules/facturation_recurrente/application/facturation_recurrente.scheduler";
+import FinanceRelanceScheduler from "./app/modules/finance_relance/application/finance_relance.scheduler";
 
 dotenv.config();
 class Server {
   private static instance: Server | null = null;
+  private recurringBillingScheduler: FacturationRecurrenteScheduler;
+  private financeRelanceScheduler: FinanceRelanceScheduler;
 
   public app: Application;
   public port: number = (parseInt(process.env.PORT || "3000", 10));
@@ -20,6 +24,8 @@ class Server {
   constructor(port: number) {
     this.app = express();
     this.port = port;
+    this.recurringBillingScheduler = new FacturationRecurrenteScheduler();
+    this.financeRelanceScheduler = new FinanceRelanceScheduler();
     // NOTE: Clearing npm cache on every start is slow and unnecessary in most environments.
     // If needed, run this manually or as part of a CI/CD pipeline.
     // this.clearAllNodeCache();
@@ -102,6 +108,8 @@ class Server {
   public start(): void {
     this.app.listen(this.port, () => {
       console.log(`Server is running on http://localhost:${this.port}`);
+      this.recurringBillingScheduler.start();
+      this.financeRelanceScheduler.start();
     });
   }
 
@@ -138,3 +146,5 @@ const server = Server.getInstance(process.env.PORT ? parseInt(process.env.PORT, 
   server.start();
 })();
 export default Server;
+
+

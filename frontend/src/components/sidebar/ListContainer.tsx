@@ -12,6 +12,16 @@ function ListContainer({ components, selected, setSelected, onItemClick }: Props
   const [hover, setHover] = useState({ id: -1, state: false });
   const s = styles;
 
+  const activateItem = (component: ReactElement, index: number) => {
+    setSelected?.(index);
+
+    const componentOnClick =
+      typeof component.props?.onClick === "function" ? component.props.onClick : undefined;
+
+    componentOnClick?.();
+    onItemClick?.();
+  };
+
   return (
     <div className="flex flex-col gap-1">
       {components &&
@@ -25,10 +35,7 @@ function ListContainer({ components, selected, setSelected, onItemClick }: Props
             <div
               onMouseEnter={() => setHover({ id: index, state: true })}
               onMouseLeave={() => setHover({ id: -1, state: false })}
-              onClick={() => {
-                setSelected?.(index);
-                onItemClick?.();
-              }}
+              onClick={() => activateItem(Component, index)}
               key={index}
               style={{
                 backgroundColor: hovered || active ? s.color.hoverColor : "",
@@ -40,7 +47,7 @@ function ListContainer({ components, selected, setSelected, onItemClick }: Props
               }`}
             >
               <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">{Component}</div>
+                <div className="pointer-events-none min-w-0 flex-1">{Component}</div>
                 <span
                   className={`h-2 w-2 shrink-0 rounded-full transition ${
                     active ? "bg-sky-500" : hovered ? "bg-slate-300" : "bg-transparent"

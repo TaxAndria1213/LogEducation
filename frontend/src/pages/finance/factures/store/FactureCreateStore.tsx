@@ -5,6 +5,7 @@ import EleveService from "../../../../services/eleve.service";
 import CatalogueFraisService, {
   getCatalogueFraisDisplayLabel,
   getCatalogueFraisSecondaryLabel,
+  isApprovedCatalogueFrais,
   type CatalogueFraisWithRelations,
 } from "../../../../services/catalogueFrais.service";
 import RemiseService from "../../../../services/remise.service";
@@ -24,6 +25,7 @@ type State = {
       montant?: number;
       devise?: string | null;
       niveau_scolaire_id?: string | null;
+      usage_scope?: string | null;
     }
   >;
   remiseOptions: Array<
@@ -168,13 +170,16 @@ export const useFactureCreateStore = create<State>((set) => ({
 
       if (fraisResult?.status.success) {
         set({
-          catalogueFraisOptions: fraisResult.data.data.map((item: CatalogueFraisWithRelations) => ({
-            value: item.id,
-            label: `${getCatalogueFraisDisplayLabel(item)} - ${getCatalogueFraisSecondaryLabel(item)}`,
-            montant: Number(item.montant ?? 0),
-            devise: item.devise ?? "MGA",
-            niveau_scolaire_id: item.niveau_scolaire_id ?? null,
-          })),
+          catalogueFraisOptions: (fraisResult.data.data as CatalogueFraisWithRelations[])
+            .filter((item) => isApprovedCatalogueFrais(item))
+            .map((item: CatalogueFraisWithRelations) => ({
+              value: item.id,
+              label: `${getCatalogueFraisDisplayLabel(item)} - ${getCatalogueFraisSecondaryLabel(item)}`,
+              montant: Number(item.montant ?? 0),
+              devise: item.devise ?? "MGA",
+              niveau_scolaire_id: item.niveau_scolaire_id ?? null,
+              usage_scope: item.usage_scope ?? "GENERAL",
+            })),
         });
       }
 

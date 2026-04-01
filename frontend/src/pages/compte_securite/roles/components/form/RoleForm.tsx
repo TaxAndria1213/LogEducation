@@ -141,6 +141,15 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     ],
   },
   {
+    key: "transport_cantine",
+    title: "Transport & cantine",
+    description: "Services eleves, abonnements et parametres lies a la vie scolaire.",
+    items: [
+      { code: "TC.TRANSPORT.*", label: "Transport", description: "Lignes, arrets et abonnements transport des eleves." },
+      { code: "TC.CANTINE.*", label: "Cantine", description: "Formules et abonnements cantine des eleves." },
+    ],
+  },
+  {
     key: "bibliotheque",
     title: "Bibliotheque",
     description: "Ressources documentaires et circulation des emprunts.",
@@ -157,21 +166,21 @@ const ROLE_TEMPLATES: RoleTemplate[] = [
     label: "Administrateur",
     suggestedName: "Administrateur",
     description: "Acces total aux modules et a l'administration globale.",
-    permissions: ["ADM.*", "ET.*", "CS.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*", "BI.*"],
+    permissions: ["ADM.*", "ET.*", "CS.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*", "TC.*", "BI.*"],
   },
   {
     key: "DIRECTION",
     label: "Direction",
     suggestedName: "Direction",
     description: "Pilotage transverse de l'etablissement sans administration pure.",
-    permissions: ["ET.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*", "BI.*"],
+    permissions: ["ET.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*", "TC.*", "BI.*"],
   },
   {
     key: "SECRETARIAT",
     label: "Secretariat",
     suggestedName: "Secretariat",
     description: "Orientation administrative, eleves et suivi quotidien.",
-    permissions: ["ET.*", "SC.*", "PR.*", "DI.*", "BI.*"],
+    permissions: ["ET.*", "SC.*", "PR.*", "DI.*", "TC.*", "BI.*"],
   },
   {
     key: "ENSEIGNANT",
@@ -185,7 +194,7 @@ const ROLE_TEMPLATES: RoleTemplate[] = [
     label: "Comptable",
     suggestedName: "Comptable",
     description: "Acces restreint aux donnees utiles pour le suivi administratif et financier.",
-    permissions: ["ET.*", "SC.*", "FIN.*"],
+    permissions: ["ET.*", "SC.*", "FIN.*", "TC.*"],
   },
   {
     key: "SURVEILLANT",

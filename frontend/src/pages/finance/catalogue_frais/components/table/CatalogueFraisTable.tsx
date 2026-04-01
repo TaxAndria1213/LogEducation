@@ -5,6 +5,7 @@ import { useAuth } from "../../../../../auth/AuthContext";
 import CatalogueFraisService, {
   getCatalogueFraisDisplayLabel,
   getCatalogueFraisSecondaryLabel,
+  isApprovedCatalogueFrais,
   type CatalogueFraisWithRelations,
 } from "../../../../../services/catalogueFrais.service";
 
@@ -34,10 +35,13 @@ export default function CatalogueFraisTable() {
     { key: "frais", header: "Frais", render: (row) => <div><p className="font-medium text-slate-900">{getCatalogueFraisDisplayLabel(row)}</p><p className="text-xs text-slate-500">{getCatalogueFraisSecondaryLabel(row)}</p></div>, sortable: false, sortKey: "nom" },
     { key: "montant", header: "Montant", render: (row) => `${Number(row.montant ?? 0).toLocaleString("fr-FR")} ${row.devise ?? "MGA"}`, sortable: false, sortKey: "montant" },
     { key: "periodicite", header: "Periodicite", render: (row) => row.est_recurrent ? row.periodicite ?? "Recurrent" : "Ponctuel", sortable: false, sortKey: "periodicite" },
+    { key: "validation", header: "Validation", render: (row) => row.statut_validation ?? "EN_ATTENTE", sortable: false, sortKey: "statut_validation" },
     { key: "usage", header: "Usage", render: (row) => row._count?.lignesFacture ?? 0, sortable: false },
   ];
 
   const actions: RowAction<CatalogueFraisWithRelations>[] = [
+    { label: "Approuver", variant: "primary", show: (row) => !isApprovedCatalogueFrais(row), onClick: async (row) => { await service.approve(row.id); tableRef.current?.refresh(); } },
+    { label: "Rejeter", variant: "secondary", show: (row) => (row.statut_validation ?? "").toUpperCase() !== "REJETEE", onClick: async (row) => { await service.reject(row.id); tableRef.current?.refresh(); } },
     { label: "Supprimer", variant: "danger", confirm: { title: "Suppression", message: "Supprimer ce frais catalogue ?" }, onClick: async (row) => { await service.delete(row.id); tableRef.current?.refresh(); } },
   ];
 

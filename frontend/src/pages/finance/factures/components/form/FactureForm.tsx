@@ -25,6 +25,17 @@ type FactureFormValues = {
   eleve_id: string;
   annee_scolaire_id: string;
   remise_id: string;
+  nature:
+    | "FACTURE"
+    | "OPTION_PEDAGOGIQUE"
+    | "ACTIVITE_EXTRASCOLAIRE"
+    | "FOURNITURE"
+    | "UNIFORME"
+    | "BADGE"
+    | "EXAMEN"
+    | "RATTRAPAGE"
+    | "COMPLEMENTAIRE"
+    | "REFACTURATION";
   numero_facture: string;
   date_emission: string;
   date_echeance: string;
@@ -60,6 +71,18 @@ const factureSchema = z.object({
   eleve_id: z.string().min(1, "L'eleve est requis."),
   annee_scolaire_id: z.string().min(1, "L'annee scolaire est requise."),
   remise_id: z.string().optional(),
+  nature: z.enum([
+    "FACTURE",
+    "OPTION_PEDAGOGIQUE",
+    "ACTIVITE_EXTRASCOLAIRE",
+    "FOURNITURE",
+    "UNIFORME",
+    "BADGE",
+    "EXAMEN",
+    "RATTRAPAGE",
+    "COMPLEMENTAIRE",
+    "REFACTURATION",
+  ]),
   numero_facture: z.string().trim().optional(),
   date_emission: z.string().min(1, "La date d'emission est requise."),
   date_echeance: z.string().optional(),
@@ -115,6 +138,7 @@ export default function FactureForm({ mode = "create" }: Props) {
       eleve_id: selectedFacture?.eleve_id ?? "",
       annee_scolaire_id: selectedFacture?.annee_scolaire_id ?? initialData?.annee_scolaire_id ?? "",
       remise_id: selectedFacture?.remise_id ?? initialData?.remise_id ?? "",
+      nature: ((selectedFacture?.nature ?? "FACTURE").toUpperCase() as FactureFormValues["nature"]) ?? "FACTURE",
       numero_facture: mode === "edit" ? selectedFacture?.numero_facture ?? "" : "",
       date_emission: toInputDate(selectedFacture?.date_emission ?? new Date()),
       date_echeance: toInputDate(selectedFacture?.date_echeance),
@@ -154,19 +178,39 @@ export default function FactureForm({ mode = "create" }: Props) {
   const lines = watch("lignes");
   const selectedEleveId = watch("eleve_id");
   const selectedAnneeId = watch("annee_scolaire_id");
+  const selectedNature = watch("nature");
   const selectedNiveauId = useMemo(() => {
     const selectedEleve = eleveOptions.find((option) => option.value === selectedEleveId);
     return selectedEleve?.niveauxParAnnee?.[selectedAnneeId ?? ""] ?? null;
   }, [eleveOptions, selectedAnneeId, selectedEleveId]);
   const filteredCatalogueFraisOptions = useMemo(() => {
+    const allowedScopesByNature: Record<FactureFormValues["nature"], string[] | null> = {
+      FACTURE: null,
+      OPTION_PEDAGOGIQUE: ["GENERAL", "OPTION_PEDAGOGIQUE"],
+      ACTIVITE_EXTRASCOLAIRE: ["GENERAL", "ACTIVITE_EXTRASCOLAIRE"],
+      FOURNITURE: ["GENERAL", "FOURNITURE"],
+      UNIFORME: ["GENERAL", "UNIFORME"],
+      BADGE: ["GENERAL", "BADGE"],
+      EXAMEN: ["GENERAL", "EXAMEN"],
+      RATTRAPAGE: ["GENERAL", "RATTRAPAGE"],
+      COMPLEMENTAIRE: ["GENERAL", "COMPLEMENTAIRE"],
+      REFACTURATION: null,
+    };
+    const allowedScopes = allowedScopesByNature[selectedNature] ?? null;
+    const scopeFiltered = allowedScopes
+      ? catalogueFraisOptions.filter((option) =>
+          allowedScopes.includes((option.usage_scope ?? "GENERAL").toUpperCase()),
+        )
+      : catalogueFraisOptions;
+
     if (!selectedNiveauId) {
-      return catalogueFraisOptions.filter((option) => !option.niveau_scolaire_id);
+      return scopeFiltered.filter((option) => !option.niveau_scolaire_id);
     }
-    return catalogueFraisOptions.filter(
+    return scopeFiltered.filter(
       (option) =>
         option.niveau_scolaire_id === selectedNiveauId || !option.niveau_scolaire_id,
     );
-  }, [catalogueFraisOptions, selectedNiveauId]);
+  }, [catalogueFraisOptions, selectedNature, selectedNiveauId]);
   const total = useMemo(
     () => (lines ?? []).reduce((sum, line) => sum + Number(line?.montant ?? 0), 0),
     [lines],
@@ -320,6 +364,40 @@ export default function FactureForm({ mode = "create" }: Props) {
                             {option.label}
                           </option>
                         ))}
+                      </select>
+                    </FieldWrapper>
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="nature"
+                  render={({ field, fieldState }) => (
+                    <FieldWrapper
+                      id="nature"
+                      label="Nature de facturation"
+                      required
+                      error={fieldState.error?.message}
+                      description="Permet de distinguer une facture standard d'une option, d'un examen, d'un rattrapage ou d'une refacturation."
+                    >
+                      <select
+                        id="nature"
+                        value={field.value ?? "FACTURE"}
+                        onChange={(event) => field.onChange(event.target.value)}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        className={getInputClassName(Boolean(fieldState.error))}
+                      >
+                        <option value="FACTURE">Facture standard</option>
+                        <option value="OPTION_PEDAGOGIQUE">Option pedagogique</option>
+                        <option value="ACTIVITE_EXTRASCOLAIRE">Activite extrascolaire</option>
+                        <option value="FOURNITURE">Fourniture</option>
+                        <option value="UNIFORME">Uniforme</option>
+                        <option value="BADGE">Badge</option>
+                        <option value="EXAMEN">Examen</option>
+                        <option value="RATTRAPAGE">Rattrapage</option>
+                        <option value="COMPLEMENTAIRE">Complementaire</option>
+                        <option value="REFACTURATION">Refacturation</option>
                       </select>
                     </FieldWrapper>
                   )}

@@ -3,7 +3,11 @@ import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
 import { DataTable, type DataTableHandle } from "../../../../../shared/table/DataTable";
 import { useAuth } from "../../../../../auth/AuthContext";
 import PaiementService, {
+  getPaiementAvailableOverpayment,
   getPaiementDisplayLabel,
+  getPaiementMethodLabel,
+  getPaiementReconciliationStatusLabel,
+  getPaiementReceiptStatusLabel,
   getPaiementSecondaryLabel,
   getPaiementStatusLabel,
   type PaiementWithRelations,
@@ -92,8 +96,12 @@ export default function PaiementTable() {
       header: "Methode",
       render: (row) => (
         <div>
-          <p className="font-medium text-slate-900">{row.methode ?? "-"}</p>
-          <p className="text-xs text-slate-500">{getPaiementStatusLabel(row.statut)}</p>
+          <p className="font-medium text-slate-900">{getPaiementMethodLabel(row.methode)}</p>
+          <p className="text-xs text-slate-500">
+            {row.payeur_nom?.trim()
+              ? `${row.payeur_nom} - ${getPaiementReceiptStatusLabel(row.statut)}`
+              : getPaiementReceiptStatusLabel(row.statut)}
+          </p>
         </div>
       ),
       sortable: false,
@@ -101,10 +109,21 @@ export default function PaiementTable() {
     },
     {
       key: "reference",
-      header: "Reference",
-      render: (row) => row.reference ?? "-",
+      header: "Recu / reference",
+      render: (row) => (
+        <div>
+          <p className="font-medium text-slate-900">{row.numero_recu ?? "-"}</p>
+          <p className="text-xs text-slate-500">{row.reference ?? "Sans reference externe"}</p>
+        </div>
+      ),
       sortable: false,
       sortKey: "reference",
+    },
+    {
+      key: "rapprochement",
+      header: "Rapprochement",
+      render: (row) => getPaiementReconciliationStatusLabel(row),
+      sortable: false,
     },
   ];
 
@@ -118,7 +137,7 @@ export default function PaiementTable() {
       },
     },
     {
-      label: "Annuler",
+      label: "Annuler le recu",
       variant: "danger",
       show: (row) => (row.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE",
       onClick: async (row) => {
@@ -134,6 +153,64 @@ export default function PaiementTable() {
       onClick: async (row) => {
         const motif = window.prompt("Motif du remboursement", "") ?? "";
         await service.refund(row.id, { motif: motif.trim() || null });
+        tableRef.current?.refresh();
+      },
+    },
+    {
+      label: "Rapprocher",
+      variant: "secondary",
+      onClick: async (row) => {
+        const canal = window.prompt("Canal de rapprochement (CAISSE, BANQUE, SYSTEME)", "") ?? "";
+        const reference_rapprochement =
+          window.prompt("Reference de rapprochement", row.reference ?? row.numero_recu ?? "") ?? "";
+        const note = window.prompt("Note de rapprochement", "") ?? "";
+        await service.reconcile(row.id, {
+          canal: canal.trim() || null,
+          reference_rapprochement: reference_rapprochement.trim() || null,
+          note: note.trim() || null,
+        });
+        tableRef.current?.refresh();
+      },
+    },
+    {
+      label: "Rembourser trop-percu",
+      variant: "secondary",
+      show: (row) => getPaiementAvailableOverpayment(row) > 0,
+      onClick: async (row) => {
+        const available = getPaiementAvailableOverpayment(row);
+        const montant = window.prompt("Montant du trop-percu a rembourser", String(available)) ?? "";
+        const motif = window.prompt("Motif du remboursement du trop-percu", "") ?? "";
+        await service.refundOverpayment(row.id, {
+          montant: Number(montant),
+          motif: motif.trim() || null,
+        });
+        tableRef.current?.refresh();
+      },
+    },
+    {
+      label: "Reaffecter",
+      variant: "secondary",
+      show: (row) => (row.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE",
+      onClick: async (row) => {
+        const factureNumero =
+          window.prompt(
+            "Numero de facture cible. Laisse vide pour rester sur la facture actuelle.",
+            row.facture?.numero_facture ?? "",
+          ) ?? "";
+        const echeanceOrdres =
+          window.prompt(
+            "Ordres des echeances cibles separes par des virgules. Ex: 1,2",
+            "",
+          ) ?? "";
+        const motif = window.prompt("Motif de la reaffectation", "") ?? "";
+        await service.reallocate(row.id, {
+          facture_numero: factureNumero.trim() || null,
+          echeance_ordres: echeanceOrdres
+            .split(",")
+            .map((item) => Number(item.trim()))
+            .filter((item) => Number.isInteger(item) && item > 0),
+          motif: motif.trim() || null,
+        });
         tableRef.current?.refresh();
       },
     },
@@ -190,7 +267,10 @@ export default function PaiementTable() {
           {
             OR: [
               { reference: { contains: text } },
+              { numero_recu: { contains: text } },
               { methode: { contains: text } },
+              { payeur_nom: { contains: text } },
+              { payeur_reference: { contains: text } },
               { facture: { is: { numero_facture: { contains: text } } } },
             ],
           },

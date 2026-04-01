@@ -9,7 +9,8 @@ type FinanceModuleKey =
   | "factures"
   | "paiements"
   | "plans_de_paiement"
-  | "journal_financier";
+  | "journal_financier"
+  | "recouvrement";
 
 type LocalView = {
   id: string;
@@ -35,6 +36,7 @@ const financeTabs: Array<{ key: FinanceModuleKey; label: string; path: string }>
   { key: "paiements", label: "Paiements", path: "/finance/paiements" },
   { key: "plans_de_paiement", label: "Plans", path: "/finance/plans_de_paiement" },
   { key: "journal_financier", label: "Journal", path: "/finance/journal_financier" },
+  { key: "recouvrement", label: "Recouvrement", path: "/finance/recouvrement" },
 ];
 
 export default function FinanceModuleLayout({

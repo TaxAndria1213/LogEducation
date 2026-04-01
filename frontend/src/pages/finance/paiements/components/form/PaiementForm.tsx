@@ -6,17 +6,26 @@ import { FieldWrapper } from "../../../../../components/Form/fields/FieldWrapper
 import { getInputClassName } from "../../../../../components/Form/fields/inputStyles";
 import Spin from "../../../../../components/anim/Spin";
 import FlyPopup from "../../../../../components/popup/FlyPopup";
-import PaiementService from "../../../../../services/paiement.service";
+import PaiementService, {
+  type PaiementWithRelations,
+} from "../../../../../services/paiement.service";
 import { useAuth } from "../../../../../auth/AuthContext";
 import { useInfo } from "../../../../../hooks/useInfo";
+import {
+  buildPaiementReceiptPdf,
+  downloadPdf,
+  previewPdf,
+} from "../../../utils/financePdf";
 import {
   usePaiementCreateStore,
   type PaiementFactureOption,
   type PaiementInstallmentOption,
 } from "../../store/PaiementCreateStore";
 
-const paymentMethodValues = ["cash", "mobile_money", "virement", "cheque", "bank"] as const;
+const paymentMethodValues = ["cash", "mobile_money", "virement", "cheque", "bank", "card"] as const;
 type PaymentMethod = (typeof paymentMethodValues)[number];
+const payerTypeValues = ["ELEVE", "PARENT_TUTEUR", "SPONSOR", "EMPLOYEUR", "AUTRE"] as const;
+type PayerType = (typeof payerTypeValues)[number];
 
 const paiementSchema = z.object({
   facture_id: z.string().min(1, "La facture est requise."),
@@ -24,10 +33,16 @@ const paiementSchema = z.object({
   montant: z.number().positive("Le montant doit etre strictement positif."),
   methode: z.string().trim().optional(),
   reference: z.string().trim().optional(),
+  payeur_type: z.string().trim().optional(),
+  payeur_nom: z.string().trim().optional(),
+  payeur_reference: z.string().trim().optional(),
+  justificatif_reference: z.string().trim().optional(),
+  justificatif_url: z.string().trim().optional(),
+  justificatif_note: z.string().trim().optional(),
   recu_par: z.string().trim().optional(),
 }).superRefine((data, ctx) => {
   const methode = (data.methode ?? "").trim().toLowerCase();
-  const needsReference = ["mobile_money", "mobile", "virement", "cheque", "bank"].includes(methode);
+  const needsReference = ["mobile_money", "mobile", "virement", "cheque", "bank", "card"].includes(methode);
 
   if (needsReference && !(data.reference ?? "").trim()) {
     ctx.addIssue({
@@ -36,11 +51,28 @@ const paiementSchema = z.object({
       message: "La reference est obligatoire pour cette methode de paiement.",
     });
   }
+
+  if ((data.payeur_type ?? "").trim() && !(data.payeur_nom ?? "").trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["payeur_nom"],
+      message: "Le nom du payeur est requis quand un tiers payeur est renseigne.",
+    });
+  }
 });
 
 type PaiementFormValues = z.infer<typeof paiementSchema>;
 type PendingConfirmation = PaiementFormValues & {
   echeance_ids: string[];
+  montant_base: number;
+  penalite_retard: number;
+  motif_penalite: string;
+};
+type PaymentSplitDraft = {
+  id: string;
+  methode: PaymentMethod;
+  montant: number;
+  reference: string;
 };
 
 const methodOptions = [
@@ -49,7 +81,16 @@ const methodOptions = [
   { value: "virement", label: "Virement" },
   { value: "cheque", label: "Cheque" },
   { value: "bank", label: "Banque" },
+  { value: "card", label: "Carte bancaire" },
 ] as const satisfies ReadonlyArray<{ value: PaymentMethod; label: string }>;
+
+const payerTypeOptions = [
+  { value: "ELEVE", label: "Eleve" },
+  { value: "PARENT_TUTEUR", label: "Parent / tuteur" },
+  { value: "SPONSOR", label: "Sponsor" },
+  { value: "EMPLOYEUR", label: "Employeur" },
+  { value: "AUTRE", label: "Autre" },
+] as const satisfies ReadonlyArray<{ value: PayerType; label: string }>;
 
 function normalizePaymentMethod(value?: string | null): PaymentMethod {
   const normalized = (value ?? "").trim().toLowerCase();
@@ -68,6 +109,8 @@ function getReferenceHint(methode?: string | null) {
       return "Saisis le numero du cheque.";
     case "bank":
       return "Saisis la reference bancaire utile au rapprochement.";
+    case "card":
+      return "Saisis la reference du ticket ou de la transaction carte.";
     case "cash":
     default:
       return "Laisse vide pour generation automatique d'une reference caisse.";
@@ -84,6 +127,8 @@ function getReferencePlaceholder(methode?: string | null) {
       return "Ex: CHQ-001284";
     case "bank":
       return "Ex: BANK-20260326-0045";
+    case "card":
+      return "Ex: CARD-20260326-0045";
     case "cash":
     default:
       return "Ex: CAISSE-20260326-0001";
@@ -99,6 +144,13 @@ function formatDate(value?: string | Date | null) {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "Date non definie";
   return date.toLocaleDateString("fr-FR");
+}
+
+function toDateKey(value?: string | Date | null) {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
 }
 
 function getStatusClasses(statut?: string | null) {
@@ -135,6 +187,39 @@ function getQuickAmount(mode: "next" | "full", option?: PaiementFactureOption | 
   if (!option) return 0;
   if (mode === "full") return option.remaining;
   return option.nextDue?.montant_restant ?? option.suggestedAmount ?? option.remaining;
+}
+
+function buildSplitDraft(
+  montant: number,
+  methode: PaymentMethod = "cash",
+  reference = "",
+): PaymentSplitDraft {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    montant: Number(montant.toFixed(2)),
+    methode,
+    reference,
+  };
+}
+
+function isExternalReferenceRequired(methode: PaymentMethod) {
+  return ["mobile_money", "virement", "cheque", "bank", "card"].includes(methode);
+}
+
+function openGeneratedReceipt(
+  paiement: PaiementWithRelations | PaiementWithRelations[],
+  info: (message: string, type?: "success" | "error" | "info" | "warning") => void,
+) {
+  const { doc, filename } = buildPaiementReceiptPdf(paiement);
+  const opened = previewPdf(doc, false);
+
+  if (!opened) {
+    downloadPdf(doc, filename);
+    info("Le recu a ete telecharge juste apres l'encaissement.", "warning");
+    return;
+  }
+
+  info("Le recu du paiement a ete ouvert.", "success");
 }
 
 function InstallmentRow({
@@ -248,6 +333,8 @@ export default function PaiementForm() {
   const [selectedEcheanceIds, setSelectedEcheanceIds] = useState<string[]>([]);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
+  const [useMixedPayment, setUseMixedPayment] = useState(false);
+  const [mixedDrafts, setMixedDrafts] = useState<PaymentSplitDraft[]>([]);
 
   useEffect(() => {
     if (etablissement_id) {
@@ -262,6 +349,12 @@ export default function PaiementForm() {
       montant: initialData?.montant ?? 0,
       methode: normalizePaymentMethod(initialData?.methode),
       reference: initialData?.reference ?? "",
+      payeur_type: initialData?.payeur_type ?? "",
+      payeur_nom: initialData?.payeur_nom ?? "",
+      payeur_reference: initialData?.payeur_reference ?? "",
+      justificatif_reference: "",
+      justificatif_url: "",
+      justificatif_note: "",
       recu_par: user?.id ?? initialData?.recu_par ?? "",
     }),
     [initialData, user?.id],
@@ -293,11 +386,46 @@ export default function PaiementForm() {
       ),
     [selectedInstallments],
   );
+  const pendingInstallments = useMemo(
+    () =>
+      pendingConfirmation?.echeance_ids?.length
+        ? visibleInstallments.filter((item) => pendingConfirmation.echeance_ids.includes(item.id))
+        : selectedFacture?.nextDue
+          ? [selectedFacture.nextDue]
+          : [],
+    [pendingConfirmation?.echeance_ids, selectedFacture?.nextDue, visibleInstallments],
+  );
+  const hasPendingOverdueInstallments = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return pendingInstallments.some(
+      (item) => toDateKey(item.date_echeance) && toDateKey(item.date_echeance) < today,
+    );
+  }, [pendingInstallments]);
+  const mixedDraftTotal = useMemo(
+    () => Number(mixedDrafts.reduce((sum, item) => sum + Number(item.montant || 0), 0).toFixed(2)),
+    [mixedDrafts],
+  );
+  const pendingTotalAmount = useMemo(
+    () =>
+      Number(
+        (
+          Number(pendingConfirmation?.montant_base ?? pendingConfirmation?.montant ?? 0) +
+          Number(pendingConfirmation?.penalite_retard ?? 0)
+        ).toFixed(2),
+      ),
+    [pendingConfirmation?.montant, pendingConfirmation?.montant_base, pendingConfirmation?.penalite_retard],
+  );
+  const pendingOverpaymentAmount = useMemo(
+    () => Number(Math.max(0, pendingConfirmation?.montant ?? 0 - pendingTotalAmount).toFixed(2)),
+    [pendingConfirmation?.montant, pendingTotalAmount],
+  );
 
   useEffect(() => {
     setSelectedEcheanceIds([]);
     setConfirmationOpen(false);
     setPendingConfirmation(null);
+    setUseMixedPayment(false);
+    setMixedDrafts([]);
   }, [selectedFactureId]);
 
   useEffect(() => {
@@ -308,22 +436,57 @@ export default function PaiementForm() {
     }
   }, [selectedEcheanceIds, selectedInstallmentsAmount, setValue]);
 
+  useEffect(() => {
+    if (!useMixedPayment || mixedDrafts.length === 0) return;
+    setMixedDrafts((current) => {
+      const total = Number(
+        current.reduce((sum, item) => sum + Number(item.montant || 0), 0).toFixed(2),
+      );
+      const difference = Number((pendingTotalAmount - total).toFixed(2));
+      if (Math.abs(difference) <= 0.009) return current;
+      const lastIndex = current.length - 1;
+      return current.map((item, index) =>
+        index === lastIndex
+          ? {
+              ...item,
+              montant: Number(Math.max(0, item.montant + difference).toFixed(2)),
+            }
+          : item,
+      );
+    });
+  }, [mixedDrafts.length, pendingTotalAmount, useMixedPayment]);
+
   const submitPayment = async (data: PendingConfirmation) => {
     try {
       const submittedFactureId = data.facture_id;
-      await service.create({
+      const dueAmount = Number((data.montant_base + data.penalite_retard).toFixed(2));
+      const receivedAmount = Number(data.montant.toFixed(2));
+      const response = await service.create({
         facture_id: data.facture_id,
         paye_le: data.paye_le,
-        montant: Number(data.montant),
+        montant: receivedAmount,
         methode: data.methode?.trim() || null,
         reference: data.reference?.trim() || null,
+        payeur_type: data.payeur_type?.trim() || null,
+        payeur_nom: data.payeur_nom?.trim() || null,
+        payeur_reference: data.payeur_reference?.trim() || null,
+        justificatif_reference: data.justificatif_reference?.trim() || null,
+        justificatif_url: data.justificatif_url?.trim() || null,
+        justificatif_note: data.justificatif_note?.trim() || null,
         recu_par: data.recu_par?.trim() || null,
         echeance_ids: data.echeance_ids,
+        penalite_retard: data.penalite_retard > 0 ? Number(data.penalite_retard) : 0,
+        trop_percu: Math.max(0, Number((receivedAmount - dueAmount).toFixed(2))),
+        motif_trop_percu:
+          receivedAmount > dueAmount ? "Trop-percu enregistre lors de l'encaissement." : null,
+        motif_penalite: data.motif_penalite?.trim() || null,
       });
-      info("Paiement enregistre avec succes !", "success");
+      openGeneratedReceipt(response.data as PaiementWithRelations, info);
       setConfirmationOpen(false);
       setPendingConfirmation(null);
       setSelectedEcheanceIds([]);
+      setUseMixedPayment(false);
+      setMixedDrafts([]);
       if (etablissement_id) {
         await getOptions(etablissement_id);
       }
@@ -340,11 +503,81 @@ export default function PaiementForm() {
           0,
         methode: "cash",
         reference: "",
+        payeur_type: "",
+        payeur_nom: "",
+        payeur_reference: "",
+        justificatif_reference: "",
+        justificatif_url: "",
+        justificatif_note: "",
         recu_par: user?.id ?? "",
       });
     } catch (error) {
       console.error("Erreur creation paiement", error);
       info("Le paiement n'a pas pu etre enregistre.", "error");
+    }
+  };
+
+  const submitMixedPayment = async (data: PendingConfirmation) => {
+    try {
+      const submittedFactureId = data.facture_id;
+      const dueAmount = Number((data.montant_base + data.penalite_retard).toFixed(2));
+      const receivedAmount = Number(mixedDraftTotal.toFixed(2));
+      const response = await service.createMixed({
+        facture_id: data.facture_id,
+        paye_le: data.paye_le,
+        recu_par: data.recu_par?.trim() || null,
+        payeur_type: data.payeur_type?.trim() || null,
+        payeur_nom: data.payeur_nom?.trim() || null,
+        payeur_reference: data.payeur_reference?.trim() || null,
+        justificatif_reference: data.justificatif_reference?.trim() || null,
+        justificatif_url: data.justificatif_url?.trim() || null,
+        justificatif_note: data.justificatif_note?.trim() || null,
+        echeance_ids: data.echeance_ids,
+        montant: receivedAmount,
+        penalite_retard: data.penalite_retard > 0 ? Number(data.penalite_retard) : 0,
+        trop_percu: Math.max(0, Number((receivedAmount - dueAmount).toFixed(2))),
+        motif_trop_percu:
+          receivedAmount > dueAmount ? "Trop-percu enregistre lors de l'encaissement mixte." : null,
+        motif_penalite: data.motif_penalite?.trim() || null,
+        splits: mixedDrafts.map((item) => ({
+          montant: Number(item.montant),
+          methode: item.methode,
+          reference: item.reference?.trim() || null,
+        })),
+      });
+      openGeneratedReceipt(response.data as PaiementWithRelations[], info);
+      setConfirmationOpen(false);
+      setPendingConfirmation(null);
+      setSelectedEcheanceIds([]);
+      setUseMixedPayment(false);
+      setMixedDrafts([]);
+      if (etablissement_id) {
+        await getOptions(etablissement_id);
+      }
+      const refreshedOptions = usePaiementCreateStore.getState().factureOptions;
+      const refreshedCurrentFacture =
+        refreshedOptions.find((option) => option.value === submittedFactureId) ??
+        refreshedOptions[0];
+      reset({
+        facture_id: refreshedCurrentFacture?.value ?? "",
+        paye_le: new Date().toISOString().slice(0, 10),
+        montant:
+          refreshedCurrentFacture?.suggestedAmount ??
+          refreshedCurrentFacture?.remaining ??
+          0,
+        methode: "cash",
+        reference: "",
+        payeur_type: "",
+        payeur_nom: "",
+        payeur_reference: "",
+        justificatif_reference: "",
+        justificatif_url: "",
+        justificatif_note: "",
+        recu_par: user?.id ?? "",
+      });
+    } catch (error) {
+      console.error("Erreur creation paiement mixte", error);
+      info("Le paiement mixte n'a pas pu etre enregistre.", "error");
     }
   };
 
@@ -366,9 +599,44 @@ export default function PaiementForm() {
     setPendingConfirmation({
       ...currentValues,
       montant: Number(payload.montant.toFixed(2)),
+      montant_base: Number(payload.montant.toFixed(2)),
       echeance_ids: payload.echeance_ids,
+      penalite_retard: 0,
+      motif_penalite: "",
     });
+    setUseMixedPayment(false);
+    setMixedDrafts([
+      buildSplitDraft(
+        Number(payload.montant.toFixed(2)),
+        normalizePaymentMethod(currentValues.methode),
+        currentValues.reference ?? "",
+      ),
+    ]);
     setConfirmationOpen(true);
+  };
+
+  const updateSplitDraft = (
+    splitId: string,
+    patch: Partial<Omit<PaymentSplitDraft, "id">>,
+  ) => {
+    setMixedDrafts((current) =>
+      current.map((item) =>
+        item.id === splitId
+          ? {
+              ...item,
+              ...patch,
+            }
+          : item,
+      ),
+    );
+  };
+
+  const addSplitDraft = () => {
+    setMixedDrafts((current) => [...current, buildSplitDraft(0)]);
+  };
+
+  const removeSplitDraft = (splitId: string) => {
+    setMixedDrafts((current) => current.filter((item) => item.id !== splitId));
   };
 
   const toggleEcheanceSelection = (echeanceId: string) => {
@@ -610,16 +878,35 @@ export default function PaiementForm() {
               <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
                 <div className="space-y-2">
                   <p className="text-sm text-slate-600">
-                    Choisis le mode de paiement et complete la reference si elle existe.
+                    Choisis le mode de paiement ou ventile le reglement si la famille paie avec plusieurs moyens.
                   </p>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
                     <p>
-                      <span className="font-semibold text-slate-900">Montant:</span>{" "}
+                      <span className="font-semibold text-slate-900">Montant principal:</span>{" "}
                       {formatCurrency(
-                        pendingConfirmation?.montant ?? 0,
+                        pendingConfirmation?.montant_base ?? pendingConfirmation?.montant ?? 0,
                         selectedFacture?.devise ?? "MGA",
                       )}
                     </p>
+                    {(pendingConfirmation?.penalite_retard ?? 0) > 0 ? (
+                      <p>
+                        <span className="font-semibold text-slate-900">Penalite de retard:</span>{" "}
+                        {formatCurrency(
+                          pendingConfirmation?.penalite_retard ?? 0,
+                          selectedFacture?.devise ?? "MGA",
+                        )}
+                      </p>
+                    ) : null}
+                    <p>
+                      <span className="font-semibold text-slate-900">Total a encaisser:</span>{" "}
+                      {formatCurrency(pendingTotalAmount, selectedFacture?.devise ?? "MGA")}
+                    </p>
+                    {(pendingOverpaymentAmount ?? 0) > 0 ? (
+                      <p>
+                        <span className="font-semibold text-slate-900">Trop-percu enregistre:</span>{" "}
+                        {formatCurrency(pendingOverpaymentAmount, selectedFacture?.devise ?? "MGA")}
+                      </p>
+                    ) : null}
                     <p>
                       <span className="font-semibold text-slate-900">Facture:</span>{" "}
                       {selectedFacture?.numero_facture ?? "Non renseignee"}
@@ -628,6 +915,60 @@ export default function PaiementForm() {
                 </div>
 
                 <div className="grid gap-4">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={useMixedPayment}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setUseMixedPayment(checked);
+                          if (checked && mixedDrafts.length < 2) {
+                            const total = pendingTotalAmount > 0 ? pendingTotalAmount : 0;
+                            const firstAmount = Number((total / 2).toFixed(2));
+                            const secondAmount = Number((total - firstAmount).toFixed(2));
+                            setMixedDrafts([
+                              buildSplitDraft(firstAmount, normalizePaymentMethod(pendingConfirmation?.methode), pendingConfirmation?.reference ?? ""),
+                              buildSplitDraft(secondAmount),
+                            ]);
+                          }
+                        }}
+                      />
+                      <span>Encaissement mixte</span>
+                    </label>
+                    <p className="mt-2 text-xs text-slate-500">
+                      Active cette option si le parent paie cette meme facture avec plusieurs moyens.
+                    </p>
+                  </div>
+
+                  {!useMixedPayment ? (
+                    <>
+                  <FieldWrapper
+                    id="popup_montant_recu"
+                    label="Montant recu"
+                    description="Tu peux saisir un montant superieur pour enregistrer un trop-percu reutilisable plus tard."
+                  >
+                    <input
+                      id="popup_montant_recu"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={pendingConfirmation?.montant ?? 0}
+                      onChange={(event) => {
+                        const montant = Number(event.target.value || 0);
+                        setPendingConfirmation((current) =>
+                          current
+                            ? {
+                                ...current,
+                                montant,
+                              }
+                            : current,
+                        );
+                      }}
+                      className={getInputClassName(false)}
+                    />
+                  </FieldWrapper>
+
                   <FieldWrapper
                     id="popup_methode"
                     label="Mode de paiement"
@@ -685,6 +1026,293 @@ export default function PaiementForm() {
                       className={getInputClassName(false)}
                     />
                   </FieldWrapper>
+                    </>
+                  ) : (
+                    <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">Lignes de paiement</p>
+                          <p className="text-xs text-slate-500">
+                            Le total des lignes doit correspondre au total a encaisser.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={addSplitDraft}
+                          className="rounded-2xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
+                        >
+                          Ajouter une ligne
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {mixedDrafts.map((draft, index) => (
+                          <div key={draft.id} className="rounded-2xl border border-slate-200 bg-white p-3">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                              <p className="text-sm font-semibold text-slate-900">Ligne {index + 1}</p>
+                              {mixedDrafts.length > 2 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => removeSplitDraft(draft.id)}
+                                  className="text-xs font-semibold text-rose-600 transition hover:text-rose-700"
+                                >
+                                  Supprimer
+                                </button>
+                              ) : null}
+                            </div>
+                            <div className="grid gap-3 md:grid-cols-3">
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                  Mode
+                                </label>
+                                <select
+                                  value={draft.methode}
+                                  onChange={(event) =>
+                                    updateSplitDraft(draft.id, {
+                                      methode: normalizePaymentMethod(event.target.value),
+                                    })
+                                  }
+                                  className={getInputClassName(false)}
+                                >
+                                  {methodOptions.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                  Montant
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={draft.montant}
+                                  onChange={(event) =>
+                                    updateSplitDraft(draft.id, {
+                                      montant: Number(event.target.value || 0),
+                                    })
+                                  }
+                                  className={getInputClassName(false)}
+                                />
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                  Reference
+                                </label>
+                                <input
+                                  type="text"
+                                  value={draft.reference}
+                                  onChange={(event) =>
+                                    updateSplitDraft(draft.id, {
+                                      reference: event.target.value,
+                                    })
+                                  }
+                                  placeholder={getReferencePlaceholder(draft.methode)}
+                                  className={getInputClassName(false)}
+                                />
+                              </div>
+                            </div>
+                            <p className="mt-2 text-xs text-slate-500">
+                              {getReferenceHint(draft.methode)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700">
+                        Total des lignes:{" "}
+                        <span className="font-semibold text-slate-900">
+                          {formatCurrency(mixedDraftTotal, selectedFacture?.devise ?? "MGA")}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <FieldWrapper
+                    id="popup_payeur_type"
+                    label="Qui paie ?"
+                    description="Renseigne le type de payeur pour renforcer la tracabilite."
+                  >
+                    <select
+                      id="popup_payeur_type"
+                      value={pendingConfirmation?.payeur_type ?? ""}
+                      onChange={(event) => {
+                        const payeur_type = event.target.value;
+                        setPendingConfirmation((current) =>
+                          current ? { ...current, payeur_type } : current,
+                        );
+                        setValue("payeur_type", payeur_type, { shouldValidate: true });
+                      }}
+                      className={getInputClassName(false)}
+                    >
+                      <option value="">Payeur non precise</option>
+                      {payerTypeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </FieldWrapper>
+
+                  <FieldWrapper
+                    id="popup_payeur_nom"
+                    label="Nom du payeur"
+                    error={formState.errors.payeur_nom?.message}
+                    description="Utile si le paiement vient d'un parent, sponsor, employeur ou autre tiers."
+                  >
+                    <input
+                      id="popup_payeur_nom"
+                      type="text"
+                      value={pendingConfirmation?.payeur_nom ?? ""}
+                      onChange={(event) => {
+                        const payeur_nom = event.target.value;
+                        setPendingConfirmation((current) =>
+                          current ? { ...current, payeur_nom } : current,
+                        );
+                        setValue("payeur_nom", payeur_nom, { shouldValidate: true });
+                      }}
+                      placeholder="Ex: Rakoto Rachelle"
+                      className={getInputClassName(false)}
+                    />
+                  </FieldWrapper>
+
+                  <FieldWrapper
+                    id="popup_payeur_reference"
+                    label="Reference payeur"
+                    description="Ex: matricule employeur, code sponsor, numero dossier."
+                  >
+                    <input
+                      id="popup_payeur_reference"
+                      type="text"
+                      value={pendingConfirmation?.payeur_reference ?? ""}
+                      onChange={(event) => {
+                        const payeur_reference = event.target.value;
+                        setPendingConfirmation((current) =>
+                          current ? { ...current, payeur_reference } : current,
+                        );
+                        setValue("payeur_reference", payeur_reference, { shouldValidate: true });
+                      }}
+                      placeholder="Ex: SPONSOR-2026-014"
+                      className={getInputClassName(false)}
+                    />
+                  </FieldWrapper>
+
+                  <FieldWrapper
+                    id="popup_justificatif_reference"
+                    label="Reference justificatif"
+                    description="Ex: numero de bordereau, ticket, bordereau banque ou code archive."
+                  >
+                    <input
+                      id="popup_justificatif_reference"
+                      type="text"
+                      value={pendingConfirmation?.justificatif_reference ?? ""}
+                      onChange={(event) => {
+                        const justificatif_reference = event.target.value;
+                        setPendingConfirmation((current) =>
+                          current ? { ...current, justificatif_reference } : current,
+                        );
+                        setValue("justificatif_reference", justificatif_reference, { shouldValidate: true });
+                      }}
+                      placeholder="Ex: BORD-2026-0092"
+                      className={getInputClassName(false)}
+                    />
+                  </FieldWrapper>
+
+                  <FieldWrapper
+                    id="popup_justificatif_url"
+                    label="URL / chemin justificatif"
+                    description="Tu peux conserver ici l'emplacement du document numerise."
+                  >
+                    <input
+                      id="popup_justificatif_url"
+                      type="text"
+                      value={pendingConfirmation?.justificatif_url ?? ""}
+                      onChange={(event) => {
+                        const justificatif_url = event.target.value;
+                        setPendingConfirmation((current) =>
+                          current ? { ...current, justificatif_url } : current,
+                        );
+                        setValue("justificatif_url", justificatif_url, { shouldValidate: true });
+                      }}
+                      placeholder="Ex: /documents/encaissements/recu-014.pdf"
+                      className={getInputClassName(false)}
+                    />
+                  </FieldWrapper>
+
+                  <FieldWrapper
+                    id="popup_justificatif_note"
+                    label="Note justificatif"
+                  >
+                    <input
+                      id="popup_justificatif_note"
+                      type="text"
+                      value={pendingConfirmation?.justificatif_note ?? ""}
+                      onChange={(event) => {
+                        const justificatif_note = event.target.value;
+                        setPendingConfirmation((current) =>
+                          current ? { ...current, justificatif_note } : current,
+                        );
+                        setValue("justificatif_note", justificatif_note, { shouldValidate: true });
+                      }}
+                      placeholder="Ex: capture Mobile Money verifiee"
+                      className={getInputClassName(false)}
+                    />
+                  </FieldWrapper>
+
+                  {hasPendingOverdueInstallments ? (
+                    <>
+                      <FieldWrapper
+                        id="popup_penalite_retard"
+                        label="Penalite de retard"
+                        description="Ajoute une penalite exceptionnelle a regler immediatement avec ce paiement."
+                      >
+                        <input
+                          id="popup_penalite_retard"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={pendingConfirmation?.penalite_retard ?? 0}
+                          onChange={(event) =>
+                            setPendingConfirmation((current) =>
+                              current
+                                ? {
+                                    ...current,
+                                    penalite_retard: Number(event.target.value || 0),
+                                  }
+                                : current,
+                            )
+                          }
+                          className={getInputClassName(false)}
+                        />
+                      </FieldWrapper>
+
+                      <FieldWrapper
+                        id="popup_motif_penalite"
+                        label="Motif de la penalite"
+                      >
+                        <input
+                          id="popup_motif_penalite"
+                          type="text"
+                          value={pendingConfirmation?.motif_penalite ?? ""}
+                          onChange={(event) =>
+                            setPendingConfirmation((current) =>
+                              current
+                                ? {
+                                    ...current,
+                                    motif_penalite: event.target.value,
+                                  }
+                                : current,
+                            )
+                          }
+                          placeholder="Ex: retard au-dela du delai accorde"
+                          className={getInputClassName(false)}
+                        />
+                      </FieldWrapper>
+                    </>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">
@@ -692,14 +1320,7 @@ export default function PaiementForm() {
                     Echeances concernees
                   </p>
                   <div className="max-h-64 space-y-2 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-2">
-                    {(pendingConfirmation?.echeance_ids?.length
-                      ? visibleInstallments.filter((item) =>
-                          pendingConfirmation.echeance_ids.includes(item.id),
-                        )
-                      : selectedFacture?.nextDue
-                        ? [selectedFacture.nextDue]
-                        : []
-                    ).map((echeance) => (
+                    {pendingInstallments.map((echeance) => (
                       <div
                         key={echeance.id}
                         className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700"
@@ -731,14 +1352,43 @@ export default function PaiementForm() {
                   type="button"
                   disabled={!pendingConfirmation || formState.isSubmitting}
                   onClick={async () => {
-                    const valid = await trigger(["methode", "reference"]);
-                    if (valid && pendingConfirmation) {
-                      await submitPayment(pendingConfirmation);
+                    const valid = await trigger(
+                      useMixedPayment ? ["payeur_nom"] : ["methode", "reference", "payeur_nom"],
+                    );
+                    if (!valid || !pendingConfirmation) {
+                      return;
                     }
+
+                    if (useMixedPayment) {
+                      if (mixedDrafts.length < 2) {
+                        info("Ajoute au moins deux lignes pour un paiement mixte.", "error");
+                        return;
+                      }
+                      const invalidSplit = mixedDrafts.find(
+                        (item) =>
+                          Number(item.montant) <= 0 ||
+                          (isExternalReferenceRequired(item.methode) && !item.reference.trim()),
+                      );
+                      if (invalidSplit) {
+                        info("Chaque ligne mixte doit avoir un montant positif et sa reference si elle est obligatoire.", "error");
+                        return;
+                      }
+                      if (mixedDraftTotal <= 0) {
+                        info("Le total des lignes mixtes doit etre strictement positif.", "error");
+                        return;
+                      }
+                      await submitMixedPayment(pendingConfirmation);
+                      return;
+                    }
+                    await submitPayment(pendingConfirmation);
                   }}
                   className="rounded-2xl border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {formState.isSubmitting ? "Enregistrement..." : "Confirmer le paiement"}
+                  {formState.isSubmitting
+                    ? "Enregistrement..."
+                    : useMixedPayment
+                      ? "Confirmer le paiement mixte"
+                      : "Confirmer le paiement"}
                 </button>
               </div>
             </div>

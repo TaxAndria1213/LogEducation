@@ -31,6 +31,7 @@ type PlanPaiementFormValues = {
   annee_scolaire_id: string;
   remise_id: string;
   mode_paiement: string;
+  jour_paiement_mensuel: number | null;
   devise: string;
   notes: string;
   echeances: EcheanceForm[];
@@ -68,9 +69,18 @@ const planSchema = z.object({
   annee_scolaire_id: z.string().min(1, "L'annee scolaire est requise."),
   remise_id: z.string().optional(),
   mode_paiement: z.string().min(1, "Le mode de paiement est requis."),
+  jour_paiement_mensuel: z.coerce.number().int().min(1).max(28).nullable(),
   devise: z.string().min(1, "La devise est requise."),
   notes: z.string().optional(),
   echeances: z.array(echeanceSchema).min(1, "Ajoute au moins une echeance."),
+}).superRefine((data, ctx) => {
+  if ((data.mode_paiement ?? "").toUpperCase() === "ECHELONNE" && data.jour_paiement_mensuel == null) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Le jour de paiement mensuel est requis pour un plan echelonne.",
+      path: ["jour_paiement_mensuel"],
+    });
+  }
 });
 
 const modeOptions = [
@@ -91,6 +101,7 @@ function buildDefaultValues(
     remise_id?: string | null;
     plan_json?: {
       mode_paiement?: string | null;
+      jour_paiement_mensuel?: number | null;
       devise?: string | null;
       notes?: string | null;
     } | null;
@@ -102,6 +113,7 @@ function buildDefaultValues(
     annee_scolaire_id: selectedPlan?.annee_scolaire_id ?? initialData?.annee_scolaire_id ?? "",
     remise_id: selectedPlan?.remise_id ?? initialData?.remise_id ?? "",
     mode_paiement: selectedPlan?.plan_json?.mode_paiement ?? "ECHELONNE",
+    jour_paiement_mensuel: selectedPlan?.plan_json?.jour_paiement_mensuel ?? 5,
     devise: selectedPlan?.plan_json?.devise ?? initialData?.devise ?? "MGA",
     notes: selectedPlan?.plan_json?.notes ?? "",
     echeances:
@@ -188,6 +200,10 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
         annee_scolaire_id: data.annee_scolaire_id,
         remise_id: data.remise_id?.trim() || null,
         mode_paiement: data.mode_paiement,
+        jour_paiement_mensuel:
+          (data.mode_paiement ?? "").toUpperCase() === "ECHELONNE"
+            ? Number(data.jour_paiement_mensuel ?? 5)
+            : null,
         devise: data.devise,
         notes: data.notes?.trim() || null,
         echeances: data.echeances.map((item, index) => ({
@@ -201,6 +217,16 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
       };
 
       if (mode === "edit" && selectedPlan?.id) {
+        if (lockedInstallmentCount > 0) {
+          await service.requestReschedule(selectedPlan.id, {
+            ...payload,
+            motif: data.notes?.trim() || "Reechelonnement demande depuis le module plans de paiement.",
+          });
+          info("La demande de reechelonnement a ete envoyee pour validation.", "success");
+          setRenderedComponent("detail");
+          return;
+        }
+
         await service.update(selectedPlan.id, payload);
         info("Plan de paiement mis a jour avec succes !", "success");
         setRenderedComponent("list");
@@ -358,6 +384,36 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
                           </option>
                         ))}
                       </select>
+                    </FieldWrapper>
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="jour_paiement_mensuel"
+                  render={({ field, fieldState }) => (
+                    <FieldWrapper
+                      id="jour_paiement_mensuel"
+                      label="Jour de paiement du mois"
+                      required
+                      error={fieldState.error?.message}
+                      description="Jour fixe autorise pour le reglement mensuel. Limite a 28 pour rester valide tous les mois."
+                    >
+                      <input
+                        id="jour_paiement_mensuel"
+                        type="number"
+                        min={1}
+                        max={28}
+                        value={field.value ?? 5}
+                        onChange={(event) =>
+                          field.onChange(
+                            event.target.value === "" ? null : Number(event.target.value || 5),
+                          )
+                        }
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        className={getInputClassName(Boolean(fieldState.error))}
+                      />
                     </FieldWrapper>
                   )}
                 />
@@ -577,7 +633,7 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
                 className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {formState.isSubmitting ? <Spin inline /> : null}
-                <span>{mode === "edit" ? "Mettre a jour le plan" : "Enregistrer le plan"}</span>
+                <span>{mode === "edit" ? (lockedInstallmentCount > 0 ? "Demander le reechelonnement" : "Mettre a jour le plan") : "Enregistrer le plan"}</span>
               </button>
             </div>
           </form>
@@ -586,3 +642,4 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
     </div>
   );
 }
+

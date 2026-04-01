@@ -1,15 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  FiCoffee,
   FiCheckCircle,
   FiMail,
   FiPhone,
   FiSettings,
   FiUsers,
   FiUserCheck,
+  FiTruck,
 } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
+import AbonnementCantineService from "../../../../../services/abonnementCantine.service";
+import AbonnementTransportService from "../../../../../services/abonnementTransport.service";
 import ParentTuteurService from "../../../../../services/parentTuteur.service";
-import type { ParentTuteur } from "../../../../../types/models";
+import type {
+  AbonnementCantine,
+  AbonnementTransport,
+  ParentTuteur,
+} from "../../../../../types/models";
 
 type Props = {
   mode?: "overview" | "settings";
@@ -92,6 +100,12 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
   const { etablissement_id, user } = useAuth();
   const [parents, setParents] = useState<ParentTuteurRecord[]>([]);
   const [familyFinance, setFamilyFinance] = useState<ParentFamilyFinanceSummary[]>([]);
+  const [transportSubscriptions, setTransportSubscriptions] = useState<AbonnementTransport[]>(
+    [],
+  );
+  const [cantineSubscriptions, setCantineSubscriptions] = useState<AbonnementCantine[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -109,7 +123,9 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
 
       try {
         const service = new ParentTuteurService();
-        const [result, financeResult] = await Promise.all([
+        const abonnementTransportService = new AbonnementTransportService();
+        const abonnementCantineService = new AbonnementCantineService();
+        const [result, financeResult, transportResult, cantineResult] = await Promise.all([
           service.getAll({
             page: 1,
             take: 500,
@@ -132,6 +148,14 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
             orderBy: JSON.stringify([{ created_at: "desc" }]),
           }),
           service.getFamilyFinanceList(),
+          abonnementTransportService.getForEtablissement(etablissement_id, {
+            take: 1000,
+            orderBy: JSON.stringify([{ created_at: "desc" }]),
+          }),
+          abonnementCantineService.getForEtablissement(etablissement_id, {
+            take: 1000,
+            orderBy: JSON.stringify([{ created_at: "desc" }]),
+          }),
         ]);
 
         if (!active) return;
@@ -144,6 +168,16 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
         setFamilyFinance(
           financeResult?.status.success
             ? ((financeResult.data as ParentFamilyFinanceSummary[]) ?? [])
+            : [],
+        );
+        setTransportSubscriptions(
+          transportResult?.status.success
+            ? ((transportResult.data.data as AbonnementTransport[]) ?? [])
+            : [],
+        );
+        setCantineSubscriptions(
+          cantineResult?.status.success
+            ? ((cantineResult.data.data as AbonnementCantine[]) ?? [])
             : [],
         );
       } catch (error: unknown) {
@@ -197,6 +231,41 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
         .slice(0, 6),
     [familyFinance],
   );
+  const familyServiceSnapshots = useMemo(() => {
+    const activeTransport = transportSubscriptions.filter(
+      (subscription) => (subscription.statut ?? "").toUpperCase() === "ACTIF",
+    );
+    const activeCantine = cantineSubscriptions.filter(
+      (subscription) => (subscription.statut ?? "").toUpperCase() === "ACTIF",
+    );
+
+    return parents
+      .map((parent) => {
+        const childIds = (parent.eleves ?? []).map((link) => link.eleve_id);
+        const transportCount = activeTransport.filter((subscription) =>
+          childIds.includes(subscription.eleve_id),
+        ).length;
+        const cantineCount = activeCantine.filter((subscription) =>
+          childIds.includes(subscription.eleve_id),
+        ).length;
+
+        return {
+          id: parent.id,
+          nom_complet: parent.nom_complet,
+          nombre_enfants: childIds.length,
+          transportCount,
+          cantineCount,
+        };
+      })
+      .filter((item) => item.transportCount > 0 || item.cantineCount > 0)
+      .sort(
+        (left, right) =>
+          right.transportCount +
+          right.cantineCount -
+          (left.transportCount + left.cantineCount),
+      )
+      .slice(0, 6);
+  }, [cantineSubscriptions, parents, transportSubscriptions]);
 
   const relationDistribution = useMemo(() => {
     const counts = new Map<string, number>();
@@ -280,6 +349,38 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
           <p className="mt-3 text-3xl font-semibold text-slate-900">{withEmail}</p>
         </div>
       </section>
+
+      {mode !== "settings" ? (
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3 text-slate-500">
+              <FiTruck />
+              <span className="text-sm font-medium">Abonnements transport actifs</span>
+            </div>
+            <p className="mt-3 text-3xl font-semibold text-slate-900">
+              {
+                transportSubscriptions.filter(
+                  (subscription) => (subscription.statut ?? "").toUpperCase() === "ACTIF",
+                ).length
+              }
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3 text-slate-500">
+              <FiCoffee />
+              <span className="text-sm font-medium">Abonnements cantine actifs</span>
+            </div>
+            <p className="mt-3 text-3xl font-semibold text-slate-900">
+              {
+                cantineSubscriptions.filter(
+                  (subscription) => (subscription.statut ?? "").toUpperCase() === "ACTIF",
+                ).length
+              }
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       {mode === "settings" ? (
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
@@ -455,6 +556,71 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
           </article>
         </section>
       )}
+
+      {mode !== "settings" ? (
+        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Vue services par famille
+              </h3>
+              <p className="text-sm text-slate-500">
+                Lecture consolidee du transport et de la cantine pour les fratries rattachees.
+              </p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+              {familyServiceSnapshots.length} famille(s) concernee(s)
+            </span>
+          </div>
+
+          {familyServiceSnapshots.length > 0 ? (
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              {familyServiceSnapshots.map((family) => (
+                <article
+                  key={family.id}
+                  className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {family.nom_complet || "Parent / tuteur"}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {family.nombre_enfants} enfant(s) rattache(s)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[18px] bg-white px-3 py-3 text-sm text-slate-700">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <FiTruck />
+                        <span>Transport actif</span>
+                      </div>
+                      <p className="mt-2 text-lg font-semibold text-slate-900">
+                        {family.transportCount}
+                      </p>
+                    </div>
+                    <div className="rounded-[18px] bg-white px-3 py-3 text-sm text-slate-700">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <FiCoffee />
+                        <span>Cantine active</span>
+                      </div>
+                      <p className="mt-2 text-lg font-semibold text-slate-900">
+                        {family.cantineCount}
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+              Aucun service transport ou cantine actif n'est encore rattache aux familles de cet etablissement.
+            </div>
+          )}
+        </section>
+      ) : null}
 
       {mode !== "settings" ? (
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">

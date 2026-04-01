@@ -8,15 +8,33 @@ import CatalogueFraisModel from "../models/catalogue_frais.model";
 type CatalogueFraisPayload = {
   etablissement_id: string;
   niveau_scolaire_id: string | null;
+  usage_scope: string;
   nom: string;
   description: string | null;
   montant: number;
   devise: string;
   est_recurrent: boolean;
   periodicite: string | null;
+  prorata_eligible: boolean;
+  eligibilite_json: Record<string, unknown> | null;
 };
 
-const ALLOWED_PERIODICITIES = new Set(["daily", "weekly", "monthly", "term", "year"]);
+const ALLOWED_PERIODICITIES = new Set(["daily", "weekly", "monthly", "term", "semester", "year"]);
+const ALLOWED_USAGE_SCOPES = new Set([
+  "GENERAL",
+  "INSCRIPTION",
+  "SCOLARITE",
+  "TRANSPORT",
+  "CANTINE",
+  "OPTION_PEDAGOGIQUE",
+  "ACTIVITE_EXTRASCOLAIRE",
+  "FOURNITURE",
+  "UNIFORME",
+  "BADGE",
+  "EXAMEN",
+  "RATTRAPAGE",
+  "COMPLEMENTAIRE",
+]);
 
 class CatalogueFraisApp {
   public app: Application;
@@ -34,6 +52,8 @@ class CatalogueFraisApp {
 
   public routes(): Router {
     this.router.post("/", this.create.bind(this));
+    this.router.post("/:id/approve", this.approve.bind(this));
+    this.router.post("/:id/reject", this.reject.bind(this));
     this.router.get("/", this.getAll.bind(this));
     this.router.get("/:id", this.getOne.bind(this));
     this.router.delete("/:id", this.delete.bind(this));
@@ -68,6 +88,45 @@ class CatalogueFraisApp {
     return tenantCandidates[0];
   }
 
+  private getUserId(req: Request) {
+    return (req as Request & { user?: { sub?: string } }).user?.sub ?? null;
+  }
+
+  private normalizeEligibilityRules(raw: unknown) {
+    if (raw == null || raw === "") return null;
+
+    const value =
+      typeof raw === "string"
+        ? parseJSON<Record<string, unknown>>(raw, {})
+        : typeof raw === "object" && !Array.isArray(raw)
+          ? (raw as Record<string, unknown>)
+          : null;
+
+    if (!value) {
+      throw new Error("Les regles d'eligibilite doivent etre fournies sous forme d'objet JSON.");
+    }
+
+    const normalized: Record<string, unknown> = {};
+    const normalizeStringArray = (input: unknown, label: string) => {
+      if (input == null) return null;
+      if (!Array.isArray(input)) {
+        throw new Error(`La regle ${label} doit etre un tableau de chaines.`);
+      }
+      const items = input
+        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .filter(Boolean);
+      return items.length > 0 ? items : null;
+    };
+
+    const classeIds = normalizeStringArray(value.classe_ids, "classe_ids");
+    const eleveIds = normalizeStringArray(value.eleve_ids, "eleve_ids");
+
+    if (classeIds) normalized.classe_ids = classeIds;
+    if (eleveIds) normalized.eleve_ids = eleveIds;
+
+    return Object.keys(normalized).length > 0 ? normalized : null;
+  }
+
   private normalizePayload(
     raw: Partial<CatalogueFrais>,
     tenantId: string,
@@ -84,6 +143,13 @@ class CatalogueFraisApp {
       typeof raw.description === "string" && raw.description.trim()
         ? raw.description.trim().replace(/\s+/g, " ")
         : null;
+    const rawWithScope = raw as Partial<CatalogueFrais> & {
+      usage_scope?: string | null;
+    };
+    const usage_scope =
+      typeof rawWithScope.usage_scope === "string" && rawWithScope.usage_scope.trim()
+        ? rawWithScope.usage_scope.trim().toUpperCase()
+        : "GENERAL";
     const devise = typeof raw.devise === "string" && raw.devise.trim()
       ? raw.devise.trim().toUpperCase()
       : "MGA";
@@ -92,6 +158,12 @@ class CatalogueFraisApp {
       typeof raw.periodicite === "string" && raw.periodicite.trim()
         ? raw.periodicite.trim().toLowerCase()
         : null;
+    const prorata_eligible = Boolean(
+      (raw as Partial<CatalogueFrais> & { prorata_eligible?: unknown }).prorata_eligible,
+    );
+    const eligibilite_json = this.normalizeEligibilityRules(
+      (raw as Partial<CatalogueFrais> & { eligibilite_json?: unknown }).eligibilite_json,
+    );
     const montant = Number(raw.montant ?? 0);
     if (!nom) {
       throw new Error("Le nom du frais est requis.");
@@ -99,6 +171,10 @@ class CatalogueFraisApp {
 
     if (!Number.isFinite(montant) || montant < 0) {
       throw new Error("Le montant doit etre un nombre positif ou nul.");
+    }
+
+    if (!ALLOWED_USAGE_SCOPES.has(usage_scope)) {
+      throw new Error("Le type d'usage du frais n'est pas valide.");
     }
 
     if (est_recurrent && (!periodicite || !ALLOWED_PERIODICITIES.has(periodicite))) {
@@ -112,12 +188,15 @@ class CatalogueFraisApp {
     return {
       etablissement_id: tenantId,
       niveau_scolaire_id,
+      usage_scope,
       nom,
       description,
       montant,
       devise,
       est_recurrent,
       periodicite: est_recurrent ? periodicite : null,
+      prorata_eligible: est_recurrent && periodicite === "monthly" ? prorata_eligible : false,
+      eligibilite_json,
     };
   }
 
@@ -179,6 +258,12 @@ class CatalogueFraisApp {
           },
         },
         niveau: true,
+        approbateur: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
       } as never,
     });
   }
@@ -191,7 +276,13 @@ class CatalogueFraisApp {
       await this.ensureScopedNiveau(data.niveau_scolaire_id, tenantId);
       await this.ensureUniqueNom(data);
 
-      const result = await this.catalogueFrais.create(data);
+      const result = await this.catalogueFrais.create({
+        ...data,
+        statut_validation: "EN_ATTENTE",
+        approuve_par_utilisateur_id: null,
+        approuve_le: null,
+        motif_rejet: null,
+      });
       Response.success(res, "Frais catalogue cree avec succes.", result);
     } catch (error) {
       Response.error(
@@ -303,7 +394,13 @@ class CatalogueFraisApp {
       await this.ensureScopedNiveau(data.niveau_scolaire_id, tenantId);
       await this.ensureUniqueNom(data, req.params.id);
 
-      const result = await this.catalogueFrais.update(req.params.id, data);
+      const result = await this.catalogueFrais.update(req.params.id, {
+        ...data,
+        statut_validation: "EN_ATTENTE",
+        approuve_par_utilisateur_id: null,
+        approuve_le: null,
+        motif_rejet: null,
+      });
       Response.success(res, "Frais catalogue mis a jour avec succes.", result);
     } catch (error) {
       Response.error(
@@ -312,6 +409,57 @@ class CatalogueFraisApp {
         400,
         error as Error,
       );
+      next(error);
+    }
+  }
+
+  private async approve(req: Request, res: R, next: NextFunction): Promise<void> {
+    try {
+      const tenantId = this.resolveTenantId(req);
+      const existing = await this.getScopedCatalogueFrais(req.params.id, tenantId);
+
+      if (!existing) {
+        throw new Error("Frais catalogue introuvable pour cet etablissement.");
+      }
+
+      const result = await this.catalogueFrais.update(req.params.id, {
+        statut_validation: "APPROUVEE",
+        approuve_par_utilisateur_id: this.getUserId(req),
+        approuve_le: new Date(),
+        motif_rejet: null,
+      });
+
+      Response.success(res, "Barème approuve avec succes.", result);
+    } catch (error) {
+      Response.error(res, "Erreur lors de l'approbation du barème", 400, error as Error);
+      next(error);
+    }
+  }
+
+  private async reject(req: Request, res: R, next: NextFunction): Promise<void> {
+    try {
+      const tenantId = this.resolveTenantId(req);
+      const existing = await this.getScopedCatalogueFrais(req.params.id, tenantId);
+
+      if (!existing) {
+        throw new Error("Frais catalogue introuvable pour cet etablissement.");
+      }
+
+      const motif =
+        typeof req.body?.motif === "string" && req.body.motif.trim()
+          ? req.body.motif.trim()
+          : "Barème rejete par la direction.";
+
+      const result = await this.catalogueFrais.update(req.params.id, {
+        statut_validation: "REJETEE",
+        approuve_par_utilisateur_id: null,
+        approuve_le: null,
+        motif_rejet: motif,
+      });
+
+      Response.success(res, "Barème rejete avec succes.", result);
+    } catch (error) {
+      Response.error(res, "Erreur lors du rejet du barème", 400, error as Error);
       next(error);
     }
   }

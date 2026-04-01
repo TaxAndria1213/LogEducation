@@ -13,9 +13,14 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useInfo } from "../../../../../hooks/useInfo";
 import PaiementService, {
+  getPaiementAvailableOverpayment,
   getPaiementDisplayLabel,
+  getPaiementMethodLabel,
+  getPaiementReconciliationStatusLabel,
+  getPaiementReceiptStatusLabel,
   getPaiementSecondaryLabel,
   getPaiementStatusLabel,
+  getPaiementSupportingDocument,
   type PaiementWithRelations,
 } from "../../../../../services/paiement.service";
 import { getFactureStatusLabel } from "../../../../../services/facture.service";
@@ -119,6 +124,16 @@ export default function PaiementDetail() {
 
   const devise = paiement.facture?.devise ?? "MGA";
   const canOperate = (paiement.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE";
+  const availableOverpayment = getPaiementAvailableOverpayment(paiement);
+  const supportingDocument = getPaiementSupportingDocument(paiement);
+  const supportingDocumentLink =
+    typeof supportingDocument.url === "string" &&
+    /^https?:\/\//i.test(supportingDocument.url)
+      ? supportingDocument.url
+      : typeof supportingDocument.archivePath === "string" &&
+          /^https?:\/\//i.test(supportingDocument.archivePath)
+        ? supportingDocument.archivePath
+        : null;
 
   const openFacture = () => {
     if (!paiement.facture?.id) return;
@@ -192,6 +207,77 @@ export default function PaiementDetail() {
     }
   };
 
+  const handleRefundOverpayment = async () => {
+    const suggested = availableOverpayment > 0 ? String(availableOverpayment) : "";
+    const montant = window.prompt("Montant du trop-percu a rembourser", suggested) ?? "";
+    const motif = window.prompt("Motif du remboursement du trop-percu", "") ?? "";
+
+    try {
+      setProcessingAction(true);
+      await service.refundOverpayment(paiement.id, {
+        montant: Number(montant),
+        motif: motif.trim() || null,
+      });
+      await refreshPaiement();
+      info("Le trop-percu a ete rembourse.", "success");
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
+  const handleReallocate = async () => {
+    const factureNumero =
+      window.prompt(
+        "Numero de facture cible. Laisse vide pour rester sur la facture actuelle.",
+        paiement.facture?.numero_facture ?? "",
+      ) ?? "";
+    const echeanceOrdres =
+      window.prompt("Ordres des echeances cibles separes par des virgules. Ex: 1,2", "") ?? "";
+    const motif = window.prompt("Motif de la reaffectation", "") ?? "";
+
+    try {
+      setProcessingAction(true);
+      await service.reallocate(paiement.id, {
+        facture_numero: factureNumero.trim() || null,
+        echeance_ordres: echeanceOrdres
+          .split(",")
+          .map((item) => Number(item.trim()))
+          .filter((item) => Number.isInteger(item) && item > 0),
+        motif: motif.trim() || null,
+      });
+      await refreshPaiement();
+      info("Le paiement a ete reaffecte.", "success");
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
+  const handleReconcile = async () => {
+    const canal = window.prompt("Canal de rapprochement (CAISSE, BANQUE, SYSTEME)", "") ?? "";
+    const reference_rapprochement =
+      window.prompt("Reference de rapprochement", paiement.reference ?? paiement.numero_recu ?? "") ?? "";
+    const note = window.prompt("Note de rapprochement", "") ?? "";
+
+    try {
+      setProcessingAction(true);
+      await service.reconcile(paiement.id, {
+        canal: canal.trim() || null,
+        reference_rapprochement: reference_rapprochement.trim() || null,
+        note: note.trim() || null,
+      });
+      await refreshPaiement();
+      info("Le paiement a ete rapproche.", "success");
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
@@ -238,12 +324,32 @@ export default function PaiementDetail() {
             {canOperate ? (
               <button
                 type="button"
+                onClick={() => void handleReallocate()}
+                disabled={processingAction}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FiRefreshCcw />
+                Reaffecter
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void handleReconcile()}
+              disabled={processingAction}
+              className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FiRefreshCcw />
+              Rapprocher
+            </button>
+            {canOperate ? (
+              <button
+                type="button"
                 onClick={() => void handleCancel()}
                 disabled={processingAction}
                 className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <FiSlash />
-                Annuler
+                Annuler le recu
               </button>
             ) : null}
             {canOperate ? (
@@ -255,6 +361,17 @@ export default function PaiementDetail() {
               >
                 <FiRefreshCcw />
                 Rembourser
+              </button>
+            ) : null}
+            {availableOverpayment > 0 ? (
+              <button
+                type="button"
+                onClick={() => void handleRefundOverpayment()}
+                disabled={processingAction}
+                className="inline-flex items-center gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FiCreditCard />
+                Rembourser le trop-percu
               </button>
             ) : null}
           </div>
@@ -372,7 +489,14 @@ export default function PaiementDetail() {
                 <FiCreditCard className="mt-0.5 text-slate-400" />
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Methode</p>
-                  <p className="mt-1 text-sm text-slate-900">{paiement.methode ?? "Non renseignee"}</p>
+                  <p className="mt-1 text-sm text-slate-900">{getPaiementMethodLabel(paiement.methode)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <FiFileText className="mt-0.5 text-slate-400" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Numero de recu</p>
+                  <p className="mt-1 text-sm text-slate-900">{paiement.numero_recu ?? "Non renseigne"}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -385,10 +509,89 @@ export default function PaiementDetail() {
               <div className="flex items-start gap-3">
                 <FiRefreshCcw className="mt-0.5 text-slate-400" />
                 <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Rapprochement</p>
+                  <p className="mt-1 text-sm text-slate-900">{getPaiementReconciliationStatusLabel(paiement)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <FiFileText className="mt-0.5 text-slate-400" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Justificatif</p>
+                  <p className="mt-1 text-sm text-slate-900">
+                    {supportingDocument.reference ||
+                      supportingDocument.url ||
+                      supportingDocument.archivePath ||
+                      "Non renseigne"}
+                  </p>
+                  {supportingDocument.note ? (
+                    <p className="mt-1 text-xs text-slate-500">{supportingDocument.note}</p>
+                  ) : null}
+                  {supportingDocument.archiveId ? (
+                    <p className="mt-1 text-xs text-slate-500">
+                      Archive: {supportingDocument.archiveId}
+                      {supportingDocument.archiveStorage
+                        ? ` - ${supportingDocument.archiveStorage}`
+                        : ""}
+                    </p>
+                  ) : null}
+                  {supportingDocumentLink ? (
+                    <a
+                      href={supportingDocumentLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex text-xs font-semibold text-slate-700 underline underline-offset-2"
+                    >
+                      Ouvrir le justificatif
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <FiRefreshCcw className="mt-0.5 text-slate-400" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Statut du recu</p>
+                  <p className="mt-1 text-sm text-slate-900">{getPaiementReceiptStatusLabel(paiement.statut)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <FiRefreshCcw className="mt-0.5 text-slate-400" />
+                <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Statut comptable</p>
                   <p className="mt-1 text-sm text-slate-900">{getPaiementStatusLabel(paiement.statut)}</p>
                 </div>
               </div>
+              <div className="flex items-start gap-3">
+                <FiCreditCard className="mt-0.5 text-slate-400" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Trop-percu disponible</p>
+                  <p className="mt-1 text-sm text-slate-900">{formatMoney(availableOverpayment, devise)}</p>
+                </div>
+              </div>
+              {(paiement.payeur_type || paiement.payeur_nom || paiement.payeur_reference) ? (
+                <>
+                  <div className="flex items-start gap-3">
+                    <FiUser className="mt-0.5 text-slate-400" />
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Type de payeur</p>
+                      <p className="mt-1 text-sm text-slate-900">{paiement.payeur_type ?? "Non renseigne"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <FiUser className="mt-0.5 text-slate-400" />
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Nom du payeur</p>
+                      <p className="mt-1 text-sm text-slate-900">{paiement.payeur_nom ?? "Non renseigne"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <FiFileText className="mt-0.5 text-slate-400" />
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Reference payeur</p>
+                      <p className="mt-1 text-sm text-slate-900">{paiement.payeur_reference ?? "Non renseignee"}</p>
+                    </div>
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 import Service from "../app/api/Service";
+import { Http } from "../app/api/Http";
 import type { CatalogueFrais } from "../types/models";
 
 type QueryParams = Record<string, unknown>;
@@ -8,10 +9,56 @@ export type CatalogueFraisWithRelations = CatalogueFrais & {
     id: string;
     nom?: string | null;
   } | null;
+  approbateur?: {
+    id: string;
+    email?: string | null;
+  } | null;
   _count?: {
     lignesFacture?: number;
   };
 };
+
+function getUsageScopeLabel(scope?: string | null) {
+  switch ((scope ?? "GENERAL").toUpperCase()) {
+    case "INSCRIPTION":
+      return "Inscription";
+    case "SCOLARITE":
+      return "Scolarite";
+    case "TRANSPORT":
+      return "Transport";
+    case "CANTINE":
+      return "Cantine";
+    case "OPTION_PEDAGOGIQUE":
+      return "Option pedagogique";
+    case "ACTIVITE_EXTRASCOLAIRE":
+      return "Activite extrascolaire";
+    case "FOURNITURE":
+      return "Fourniture";
+    case "UNIFORME":
+      return "Uniforme";
+    case "BADGE":
+      return "Badge";
+    case "EXAMEN":
+      return "Examen";
+    case "RATTRAPAGE":
+      return "Rattrapage";
+    case "COMPLEMENTAIRE":
+      return "Complementaire";
+    default:
+      return "General";
+  }
+}
+
+function getValidationStatusLabel(status?: string | null) {
+  switch ((status ?? "").toUpperCase()) {
+    case "APPROUVEE":
+      return "Approuve";
+    case "REJETEE":
+      return "Rejete";
+    default:
+      return "En attente";
+  }
+}
 
 function parseObjectParam(value: unknown): Record<string, unknown> | undefined {
   if (!value) return undefined;
@@ -25,6 +72,10 @@ function parseObjectParam(value: unknown): Record<string, unknown> | undefined {
     }
   }
   return undefined;
+}
+
+export function isApprovedCatalogueFrais(record?: Partial<CatalogueFraisWithRelations> | null) {
+  return (record?.statut_validation ?? "").toUpperCase() === "APPROUVEE";
 }
 
 export function getCatalogueFraisDisplayLabel(record?: Partial<CatalogueFraisWithRelations> | null) {
@@ -44,13 +95,23 @@ export function getCatalogueFraisSecondaryLabel(record?: Partial<CatalogueFraisW
     amount !== null && Number.isFinite(amount)
       ? `${amount.toLocaleString("fr-FR")} ${record.devise ?? "MGA"}`
       : record.devise ?? "MGA";
+
   return [
     record.niveau?.nom ? `Niveau: ${record.niveau.nom}` : "Global - toutes classes",
+    `Usage: ${getUsageScopeLabel(record.usage_scope)}`,
     amountLabel,
-    record.est_recurrent ? `Recurrent${record.periodicite ? ` - ${record.periodicite}` : ""}` : "Ponctuel",
+    `Validation: ${getValidationStatusLabel(record.statut_validation)}`,
+    record.est_recurrent
+      ? `Recurrent${
+          record.periodicite
+            ? ` - ${record.periodicite === "semester" ? "semester" : record.periodicite}`
+            : ""
+        }`
+      : "Ponctuel",
+    record.prorata_eligible ? "Prorata actif" : null,
   ]
     .filter(Boolean)
-    .join(" • ");
+    .join(" - ");
 }
 
 class CatalogueFraisService extends Service {
@@ -68,6 +129,14 @@ class CatalogueFraisService extends Service {
           ? params.orderBy
           : JSON.stringify(params.orderBy ?? [{ nom: "asc" }, { created_at: "desc" }]),
     } as Record<string, string | number | Date | boolean>);
+  }
+
+  async approve(id: string) {
+    return Http.post(`/api/${this.url}/${id}/approve`, {});
+  }
+
+  async reject(id: string, motif?: string) {
+    return Http.post(`/api/${this.url}/${id}/reject`, { motif: motif ?? null });
   }
 
   private buildScopedWhere(etablissementId: string, whereParam?: unknown) {

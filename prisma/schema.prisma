@@ -58,6 +58,35 @@ enum StatutEcheancePaiement {
   EN_RETARD
 }
 
+enum StatutPromessePaiement {
+  EN_ATTENTE
+  TENUE
+  ROMPUE
+  ANNULEE
+}
+
+enum TypeRestrictionAdministrative {
+  BULLETIN
+  EXAMEN
+  REINSCRIPTION
+}
+
+enum StatutRestrictionAdministrative {
+  ACTIVE
+  LEVEE
+  ANNULEE
+}
+
+enum StatutDossierRecouvrement {
+  OUVERT
+  RENFORCE
+  CONTENTIEUX
+  IRRECOUVRABLE
+  ABANDON_EN_ATTENTE
+  ABANDONNE
+  CLOTURE
+}
+
 enum TypeCanal {
   EMAIL
   SMS
@@ -100,6 +129,10 @@ model Etablissement {
   catalogueFrais           CatalogueFrais[]
   facturationsRecurrentes  FacturationRecurrenteExecution[]
   remises                  Remise[]
+  reglesRecouvrement       RegleRecouvrementFinance[]
+  promessesPaiement        PromessePaiement[]
+  restrictionsAdministratives RestrictionAdministrative[]
+  dossiersRecouvrement     DossierRecouvrement[]
   fichiers                 Fichier[]
   journauxAudit            JournalAudit[]
   webhooks                 Webhook[]
@@ -161,6 +194,9 @@ model AnneeScolaire {
   facturationsRecurrentes FacturationRecurrenteExecution[]
   abonnementsTransport AbonnementTransport[]
   abonnementsCantine   AbonnementCantine[]
+  promessesPaiement    PromessePaiement[]
+  restrictionsAdministratives RestrictionAdministrative[]
+  dossiersRecouvrement DossierRecouvrement[]
 
   @@index([etablissement_id])
   @@map("annees_scolaires")
@@ -252,6 +288,14 @@ model Utilisateur {
   journauxAudit       JournalAudit[]
   facturationsRecurrentes FacturationRecurrenteExecution[] @relation("facturation_recurrente_createur")
   operationsFinancieres OperationFinanciere[] @relation("operations_financieres_createur")
+  cataloguesFraisApprouves CatalogueFrais[] @relation("catalogue_frais_approbateur")
+  reglesRecouvrementApprouvees RegleRecouvrementFinance[] @relation("regle_recouvrement_approbateur")
+  promessesPaiementCreees PromessePaiement[] @relation("promesse_paiement_createur")
+  promessesPaiementValidees PromessePaiement[] @relation("promesse_paiement_validateur")
+  restrictionsAdministrativesCreees RestrictionAdministrative[] @relation("restriction_admin_createur")
+  restrictionsAdministrativesLevees RestrictionAdministrative[] @relation("restriction_admin_leveur")
+  dossiersRecouvrementCrees DossierRecouvrement[] @relation("dossier_recouvrement_createur")
+  dossiersRecouvrementValides DossierRecouvrement[] @relation("dossier_recouvrement_validateur")
   Eleve               Eleve[]
   ParentTuteur        ParentTuteur[]
   Personnel           Personnel[]
@@ -371,6 +415,9 @@ model Eleve {
   facturationsRecurrentes FacturationRecurrenteExecution[]
   abonnementsTransport AbonnementTransport[]
   abonnementsCantine   AbonnementCantine[]
+  promessesPaiement    PromessePaiement[]
+  restrictionsAdministratives RestrictionAdministrative[]
+  dossiersRecouvrement DossierRecouvrement[]
   emprunts             Emprunt[]
 
   @@unique([etablissement_id, code_eleve])
@@ -1098,6 +1145,7 @@ model CatalogueFrais {
   id                 String  @id @default(uuid())
   etablissement_id   String
   niveau_scolaire_id String?
+  usage_scope        String  @default("GENERAL")
   nom                String
   description        String?
   montant            Decimal @db.Decimal(12, 2)
@@ -1105,16 +1153,27 @@ model CatalogueFrais {
   nombre_tranches    Int     @default(1)
   est_recurrent      Boolean @default(false)
   periodicite        String? // monthly/term/year
+  prorata_eligible   Boolean @default(false)
+  eligibilite_json   Json?
+  statut_validation  String  @default("EN_ATTENTE")
+  approuve_par_utilisateur_id String?
+  approuve_le        DateTime?
+  motif_rejet        String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   etablissement Etablissement  @relation(fields: [etablissement_id], references: [id])
   niveau        NiveauScolaire? @relation(fields: [niveau_scolaire_id], references: [id])
+  approbateur   Utilisateur? @relation("catalogue_frais_approbateur", fields: [approuve_par_utilisateur_id], references: [id])
   lignesFacture FactureLigne[]
+  lignesTransport LigneTransport[]
+  formulesCantine FormuleCantine[]
   executionsRecurrentes FacturationRecurrenteExecution[]
 
   @@index([etablissement_id, niveau_scolaire_id], map: "idx_catfrais_etab_niveau")
+  @@index([statut_validation], map: "idx_catfrais_statut_validation")
+  @@index([approuve_par_utilisateur_id], map: "idx_catfrais_approbateur")
   @@unique([etablissement_id, niveau_scolaire_id, nom], map: "uq_catfrais_etab_niveau_nom")
   @@map("catalogue_frais")
 }
@@ -1133,6 +1192,9 @@ model PlanPaiementEleve {
   annee     AnneeScolaire      @relation(fields: [annee_scolaire_id], references: [id])
   remise    Remise?            @relation(fields: [remise_id], references: [id])
   echeances EcheancePaiement[]
+  promessesPaiement PromessePaiement[]
+  restrictionsAdministratives RestrictionAdministrative[]
+  dossiersRecouvrement DossierRecouvrement[]
 
   @@index([eleve_id])
   @@index([remise_id], map: "idx_plan_remise")
@@ -1198,8 +1260,13 @@ model Facture {
   lignes        FactureLigne[]
   paiements     Paiement[]
   echeances     EcheancePaiement[]
+  abonnementsTransport AbonnementTransport[]
+  abonnementsCantine AbonnementCantine[]
   executionsRecurrentes FacturationRecurrenteExecution[]
   operationsFinancieres OperationFinanciere[]
+  promessesPaiement PromessePaiement[]
+  restrictionsAdministratives RestrictionAdministrative[]
+  dossiersRecouvrement DossierRecouvrement[]
 
   @@unique([etablissement_id, numero_facture])
   @@index([etablissement_id])
@@ -1233,8 +1300,12 @@ model Paiement {
   paye_le    DateTime @default(now())
   montant    Decimal  @db.Decimal(12, 2)
   statut     String   @default("ENREGISTRE")
-  methode    String? // cash/bank/mobile
+  methode    String? // cash/bank/mobile/card
+  numero_recu String?
   reference  String?
+  payeur_type String?
+  payeur_nom String?
+  payeur_reference String?
   recu_par   String? // id utilisateur
 
   created_at DateTime @default(now())
@@ -1297,6 +1368,7 @@ model EcheancePaiement {
   eleve        Eleve                        @relation(fields: [eleve_id], references: [id])
   annee        AnneeScolaire                @relation(fields: [annee_scolaire_id], references: [id])
   affectations PaiementEcheanceAffectation[]
+  promessesPaiement PromessePaiement[]
 
   @@index([plan_paiement_id], map: "idx_ech_plan")
   @@index([facture_id], map: "idx_ech_fact")
@@ -1341,6 +1413,140 @@ model Remise {
 
   @@index([etablissement_id])
   @@map("remises")
+}
+
+model RegleRecouvrementFinance {
+  id               String  @id @default(uuid())
+  etablissement_id String
+  nom              String  @default("Regle de recouvrement par defaut")
+  jours_grace      Int     @default(0)
+  relance_jours_json Json?
+  penalite_active  Boolean @default(false)
+  penalite_mode    String?
+  penalite_valeur  Decimal? @db.Decimal(12, 2)
+  statut_validation String @default("EN_ATTENTE")
+  approuve_par_utilisateur_id String?
+  approuve_le      DateTime?
+  motif_rejet      String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+  approbateur Utilisateur? @relation("regle_recouvrement_approbateur", fields: [approuve_par_utilisateur_id], references: [id])
+
+  @@unique([etablissement_id], map: "uq_regle_recouvrement_etab")
+  @@index([statut_validation], map: "idx_regle_recouvrement_statut")
+  @@index([approuve_par_utilisateur_id], map: "idx_regle_recouvrement_approbateur")
+  @@map("regles_recouvrement_finance")
+}
+
+model PromessePaiement {
+  id                    String                 @id @default(uuid())
+  etablissement_id      String
+  eleve_id              String
+  annee_scolaire_id     String
+  facture_id            String?
+  plan_paiement_id      String?
+  echeance_paiement_id  String?
+  montant_promis        Decimal                @db.Decimal(12, 2)
+  date_promesse         DateTime               @default(now())
+  date_limite           DateTime
+  statut                StatutPromessePaiement @default(EN_ATTENTE)
+  canal                 String?
+  note                  String?
+  tenue_le              DateTime?
+  rompue_le             DateTime?
+  annulee_le            DateTime?
+  cree_par_utilisateur_id String?
+  valide_par_utilisateur_id String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+  eleve Eleve @relation(fields: [eleve_id], references: [id])
+  annee AnneeScolaire @relation(fields: [annee_scolaire_id], references: [id])
+  facture Facture? @relation(fields: [facture_id], references: [id], onDelete: SetNull)
+  planPaiement PlanPaiementEleve? @relation(fields: [plan_paiement_id], references: [id], onDelete: SetNull)
+  echeance EcheancePaiement? @relation(fields: [echeance_paiement_id], references: [id], onDelete: SetNull)
+  createur Utilisateur? @relation("promesse_paiement_createur", fields: [cree_par_utilisateur_id], references: [id])
+  validateur Utilisateur? @relation("promesse_paiement_validateur", fields: [valide_par_utilisateur_id], references: [id])
+
+  @@index([etablissement_id, statut], map: "idx_promesse_etab_statut")
+  @@index([eleve_id, annee_scolaire_id], map: "idx_promesse_eleve_annee")
+  @@index([facture_id], map: "idx_promesse_facture")
+  @@index([plan_paiement_id], map: "idx_promesse_plan")
+  @@index([echeance_paiement_id], map: "idx_promesse_echeance")
+  @@map("promesses_paiement")
+}
+
+model RestrictionAdministrative {
+  id                    String                          @id @default(uuid())
+  etablissement_id      String
+  eleve_id              String
+  annee_scolaire_id     String
+  facture_id            String?
+  plan_paiement_id      String?
+  type                  TypeRestrictionAdministrative
+  statut                StatutRestrictionAdministrative @default(ACTIVE)
+  source                String? @default("MANUEL")
+  motif                 String?
+  date_activation       DateTime                        @default(now())
+  date_levee            DateTime?
+  cree_par_utilisateur_id String?
+  levee_par_utilisateur_id String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+  eleve Eleve @relation(fields: [eleve_id], references: [id])
+  annee AnneeScolaire @relation(fields: [annee_scolaire_id], references: [id])
+  facture Facture? @relation(fields: [facture_id], references: [id], onDelete: SetNull)
+  planPaiement PlanPaiementEleve? @relation(fields: [plan_paiement_id], references: [id], onDelete: SetNull)
+  createur Utilisateur? @relation("restriction_admin_createur", fields: [cree_par_utilisateur_id], references: [id])
+  leveur Utilisateur? @relation("restriction_admin_leveur", fields: [levee_par_utilisateur_id], references: [id])
+
+  @@index([etablissement_id, statut], map: "idx_restriction_etab_statut")
+  @@index([eleve_id, annee_scolaire_id], map: "idx_restriction_eleve_annee")
+  @@index([facture_id], map: "idx_restriction_facture")
+  @@index([plan_paiement_id], map: "idx_restriction_plan")
+  @@map("restrictions_administratives")
+}
+
+model DossierRecouvrement {
+  id                    String                    @id @default(uuid())
+  etablissement_id      String
+  eleve_id              String
+  annee_scolaire_id     String
+  facture_id            String?
+  plan_paiement_id      String?
+  statut                StatutDossierRecouvrement @default(OUVERT)
+  motif                 String?
+  note                  String?
+  montant_reference     Decimal? @db.Decimal(12, 2)
+  date_statut           DateTime @default(now())
+  cree_par_utilisateur_id String?
+  valide_par_utilisateur_id String?
+  valide_le             DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
+  eleve Eleve @relation(fields: [eleve_id], references: [id])
+  annee AnneeScolaire @relation(fields: [annee_scolaire_id], references: [id])
+  facture Facture? @relation(fields: [facture_id], references: [id], onDelete: SetNull)
+  planPaiement PlanPaiementEleve? @relation(fields: [plan_paiement_id], references: [id], onDelete: SetNull)
+  createur Utilisateur? @relation("dossier_recouvrement_createur", fields: [cree_par_utilisateur_id], references: [id])
+  validateur Utilisateur? @relation("dossier_recouvrement_validateur", fields: [valide_par_utilisateur_id], references: [id])
+
+  @@index([etablissement_id, statut], map: "idx_dossier_recouvrement_etab_statut")
+  @@index([eleve_id, annee_scolaire_id], map: "idx_dossier_recouvrement_eleve_annee")
+  @@index([facture_id], map: "idx_dossier_recouvrement_facture")
+  @@index([plan_paiement_id], map: "idx_dossier_recouvrement_plan")
+  @@map("dossiers_recouvrement")
 }
 
 /**
@@ -1398,15 +1604,18 @@ model LigneTransport {
   id                  String @id @default(uuid())
   etablissement_id    String
   nom                 String
+  catalogue_frais_id  String?
   infos_vehicule_json Json?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  frais       CatalogueFrais? @relation(fields: [catalogue_frais_id], references: [id], onDelete: SetNull)
   arrets      ArretTransport[]
   abonnements AbonnementTransport[]
 
   @@index([etablissement_id])
+  @@index([catalogue_frais_id], map: "idx_lignetransport_frais")
   @@map("lignes_transport")
 }
 
@@ -1433,6 +1642,7 @@ model AbonnementTransport {
   annee_scolaire_id  String
   ligne_transport_id String
   arret_transport_id String?
+  facture_id         String?
   statut             String?
 
   created_at DateTime @default(now())
@@ -1442,8 +1652,10 @@ model AbonnementTransport {
   annee AnneeScolaire   @relation(fields: [annee_scolaire_id], references: [id])
   ligne LigneTransport  @relation(fields: [ligne_transport_id], references: [id])
   arret ArretTransport? @relation(fields: [arret_transport_id], references: [id])
+  facture Facture?      @relation(fields: [facture_id], references: [id], onDelete: SetNull)
 
   @@index([eleve_id])
+  @@index([facture_id], map: "idx_abt_facture")
   @@map("abonnements_transport")
 }
 
@@ -1451,15 +1663,16 @@ model FormuleCantine {
   id               String  @id @default(uuid())
   etablissement_id String
   nom              String
-  prix             Decimal @db.Decimal(12, 2)
-  periodicite      String?
+  catalogue_frais_id String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   abonnements AbonnementCantine[]
+  frais       CatalogueFrais? @relation(fields: [catalogue_frais_id], references: [id], onDelete: SetNull)
 
   @@index([etablissement_id])
+  @@index([catalogue_frais_id], map: "idx_formulecantine_frais")
   @@map("formules_cantine")
 }
 
@@ -1468,6 +1681,7 @@ model AbonnementCantine {
   eleve_id           String
   annee_scolaire_id  String
   formule_cantine_id String
+  facture_id         String?
   statut             String?
 
   created_at DateTime @default(now())
@@ -1476,8 +1690,10 @@ model AbonnementCantine {
   eleve   Eleve          @relation(fields: [eleve_id], references: [id])
   annee   AnneeScolaire  @relation(fields: [annee_scolaire_id], references: [id])
   formule FormuleCantine @relation(fields: [formule_cantine_id], references: [id])
+  facture Facture?       @relation(fields: [facture_id], references: [id], onDelete: SetNull)
 
   @@index([eleve_id])
+  @@index([facture_id], map: "idx_abc_facture")
   @@map("abonnements_cantine")
 }
 

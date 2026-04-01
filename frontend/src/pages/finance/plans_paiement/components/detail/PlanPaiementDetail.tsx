@@ -19,6 +19,7 @@ import {
   getPlanPaiementDisplayLabel,
   getPlanPaiementEcheances,
   getPlanPaiementPaidAmount,
+  getPlanPaiementRescheduleWorkflow,
   getPlanPaiementRemainingAmount,
   getPlanPaiementSecondaryLabel,
   getPlanPaiementTotalAmount,
@@ -86,6 +87,7 @@ export default function PlanPaiementDetail() {
   const navigate = useNavigate();
   const { info } = useInfo();
   const [relances, setRelances] = useState<FinanceRelanceHistoryItem[]>([]);
+  const [processingReschedule, setProcessingReschedule] = useState(false);
   const [loadingRelances, setLoadingRelances] = useState(false);
   const [sendingRelance, setSendingRelance] = useState(false);
 
@@ -131,6 +133,9 @@ export default function PlanPaiementDetail() {
     );
   }
 
+  const service = new PlanPaiementEleveService();
+  const workflow = getPlanPaiementRescheduleWorkflow(plan);
+  const workflowStatus = String(workflow?.statut ?? "").toUpperCase();
   const devise = plan.plan_json?.devise ?? "MGA";
   const echeances = getPlanPaiementEcheances(plan);
   const lockedInstallments = echeances.filter(
@@ -172,6 +177,35 @@ export default function PlanPaiementDetail() {
       return;
     }
     info("AperÃ§u d'impression ouvert pour le plan de paiement.", "info");
+  };
+
+  const handleApproveReschedule = async () => {
+    if (!plan?.id) return;
+    try {
+      setProcessingReschedule(true);
+      await service.approveReschedule(plan.id);
+      info("Le reechelonnement a ete approuve et applique.", "success");
+      window.location.reload();
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setProcessingReschedule(false);
+    }
+  };
+
+  const handleRejectReschedule = async () => {
+    if (!plan?.id) return;
+    const motif = window.prompt("Motif du rejet", "") ?? "";
+    try {
+      setProcessingReschedule(true);
+      await service.rejectReschedule(plan.id, motif);
+      info("La demande de reechelonnement a ete rejetee.", "success");
+      window.location.reload();
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setProcessingReschedule(false);
+    }
   };
 
   const handleSendRelance = async () => {
@@ -241,6 +275,26 @@ export default function PlanPaiementDetail() {
               <FiEdit3 />
               {lockedInstallments.length > 0 ? "Reechelonner" : "Modifier"}
             </button>
+            {workflowStatus === "EN_ATTENTE" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void handleApproveReschedule()}
+                  disabled={processingReschedule}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {processingReschedule ? "Traitement..." : "Approuver le reechelonnement"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleRejectReschedule()}
+                  disabled={processingReschedule}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Rejeter la demande
+                </button>
+              </>
+            ) : null}
             {openInstallments.length > 0 ? (
               <button
                 type="button"
@@ -294,6 +348,17 @@ export default function PlanPaiementDetail() {
           </p>
         </div>
       </section>
+
+      {workflow ? (
+        <section className="rounded-[28px] border border-sky-200 bg-sky-50 px-6 py-5 shadow-sm">
+          <h3 className="text-lg font-semibold text-sky-950">Workflow de reechelonnement</h3>
+          <p className="mt-2 text-sm leading-6 text-sky-900">
+            Statut : {workflow.statut ?? "NON_DEFINI"}
+            {workflow.motif ? ` · Motif : ${String(workflow.motif)}` : ""}
+            {workflow.motif_rejet ? ` · Rejet : ${String(workflow.motif_rejet)}` : ""}
+          </p>
+        </section>
+      ) : null}
 
       <section className="rounded-[28px] border border-amber-200 bg-amber-50 px-6 py-5 shadow-sm">
         <h3 className="text-lg font-semibold text-amber-950">Reechelonnement controle</h3>
@@ -479,3 +544,5 @@ export default function PlanPaiementDetail() {
     </div>
   );
 }
+
+

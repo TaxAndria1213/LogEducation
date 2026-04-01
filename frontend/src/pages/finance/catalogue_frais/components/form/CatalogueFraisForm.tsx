@@ -12,7 +12,24 @@ const periodiciteOptions = [
   { value: "weekly", label: "Hebdomadaire" },
   { value: "monthly", label: "Mensuel" },
   { value: "term", label: "Par trimestre" },
+  { value: "semester", label: "Semestriel" },
   { value: "year", label: "Annuel" },
+];
+
+const usageScopeOptions = [
+  { value: "GENERAL", label: "General" },
+  { value: "INSCRIPTION", label: "Inscription" },
+  { value: "SCOLARITE", label: "Scolarite" },
+  { value: "TRANSPORT", label: "Transport" },
+  { value: "CANTINE", label: "Cantine" },
+  { value: "OPTION_PEDAGOGIQUE", label: "Option pedagogique" },
+  { value: "ACTIVITE_EXTRASCOLAIRE", label: "Activite extrascolaire" },
+  { value: "FOURNITURE", label: "Fourniture" },
+  { value: "UNIFORME", label: "Uniforme" },
+  { value: "BADGE", label: "Badge" },
+  { value: "EXAMEN", label: "Examen" },
+  { value: "RATTRAPAGE", label: "Rattrapage" },
+  { value: "COMPLEMENTAIRE", label: "Complementaire" },
 ];
 
 function CatalogueFraisForm() {
@@ -65,12 +82,18 @@ function CatalogueFraisForm() {
             (value) => (typeof value === "string" && value.trim() === "" ? null : value),
             z.string().nullable().optional(),
           ),
+          usage_scope: z.string().trim().min(1, "Le type d'usage est requis."),
           nom: z.string().trim().min(2, "Le nom du frais est requis.").max(120, "Nom trop long."),
           description: z.preprocess((value) => typeof value === "string" && value.trim() === "" ? null : value, z.string().max(240, "Description trop longue.").nullable().optional()),
           montant: z.coerce.number().min(0, "Le montant doit etre positif ou nul."),
           devise: z.string().trim().min(1, "La devise est requise."),
           est_recurrent: z.boolean().default(false),
           periodicite: z.preprocess((value) => typeof value === "string" && value.trim() === "" ? null : value, z.string().nullable().optional()),
+          prorata_eligible: z.boolean().default(false),
+          eligibilite_json: z.preprocess(
+            (value) => (typeof value === "string" && value.trim() === "" ? null : value),
+            z.string().nullable().optional(),
+          ),
         })
         .superRefine((value, ctx) => {
           if (value.est_recurrent && !value.periodicite) {
@@ -80,6 +103,27 @@ function CatalogueFraisForm() {
               message: "La periodicite est requise pour un frais recurrent.",
             });
           }
+          if (value.prorata_eligible && (!value.est_recurrent || value.periodicite !== "monthly")) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["prorata_eligible"],
+              message: "Le prorata n'est disponible que pour un frais recurrent mensuel.",
+            });
+          }
+          if (value.eligibilite_json) {
+            try {
+              const parsed = JSON.parse(value.eligibilite_json);
+              if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+                throw new Error();
+              }
+            } catch {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["eligibilite_json"],
+                message: "Les regles d'eligibilite doivent etre un JSON valide.",
+              });
+            }
+          }
         }),
     [],
   );
@@ -87,6 +131,17 @@ function CatalogueFraisForm() {
   const fields = getFieldsFromZodObjectSchema(schema, {
     omit: ["etablissement_id"],
     metaByField: {
+      usage_scope: {
+        relation: {
+          options: usageScopeOptions,
+        },
+        fieldProps: {
+          className: "md:col-span-1",
+          emptyLabel: "Choisir un usage",
+          description:
+            "Permet de rattacher le frais au bon usage metier: inscription, scolarite, options, extras, fournitures, examens, transport ou cantine.",
+        },
+      },
       niveau_scolaire_id: {
         relation: {
           options: [{ value: "", label: "Tous les niveaux / toutes les classes" }, ...niveauOptions],
@@ -126,8 +181,25 @@ function CatalogueFraisForm() {
           emptyLabel: "Aucune periodicite",
         },
       },
+      prorata_eligible: {
+        fieldProps: {
+          className: "md:col-span-1",
+          description:
+            "Active le calcul automatique du prorata sur la premiere facture si l'eleve arrive en cours de mois.",
+        },
+      },
+      eligibilite_json: {
+        widget: "textarea",
+        fieldProps: {
+          className: "md:col-span-2",
+          placeholder: '{"classe_ids":["..."],"eleve_ids":["..."]}',
+          description:
+            "Optionnel. Limite l'usage du frais a des classes ou eleves precis sous forme JSON.",
+        },
+      },
     },
     labelByField: {
+      usage_scope: "Usage du frais",
       niveau_scolaire_id: "Niveau scolaire",
       nom: "Nom",
       description: "Description",
@@ -135,6 +207,8 @@ function CatalogueFraisForm() {
       devise: "Devise",
       est_recurrent: "Frais recurrent",
       periodicite: "Periodicite",
+      prorata_eligible: "Prorata autorise",
+      eligibilite_json: "Regles d'eligibilite (JSON)",
     },
   });
 
@@ -144,7 +218,7 @@ function CatalogueFraisForm() {
         <div className="mb-5 space-y-2">
           <h3 className="text-lg font-semibold text-slate-900">Nouveau frais catalogue</h3>
           <p className="text-sm leading-6 text-slate-500">
-            Cree un tarif reutilisable dans les inscriptions et la future facturation.
+            Cree un tarif reutilisable. Le barème sera mis en attente puis devra etre approuve avant de pouvoir etre facture.
           </p>
         </div>
 
@@ -153,7 +227,7 @@ function CatalogueFraisForm() {
           fields={fields}
           service={service}
           labelMessage="Catalogue de frais"
-          initialValues={etablissement_id ? { etablissement_id, niveau_scolaire_id: "", devise: "MGA", est_recurrent: false } : undefined}
+          initialValues={etablissement_id ? { etablissement_id, niveau_scolaire_id: "", usage_scope: "GENERAL", devise: "MGA", est_recurrent: false, prorata_eligible: false, eligibilite_json: "" } : undefined}
           submitLabel="Enregistrer le frais"
           submitAlign="end"
         />

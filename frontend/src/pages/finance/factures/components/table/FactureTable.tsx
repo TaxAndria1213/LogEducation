@@ -85,6 +85,16 @@ export default function FactureTable() {
       },
     },
     {
+      label: "Emettre",
+      variant: "secondary",
+      show: (row) => (row.statut ?? "").toUpperCase() === "BROUILLON",
+      onClick: async (row) => {
+        const motif = window.prompt("Note de validation finale", "") ?? "";
+        await service.emit(row.id, { motif: motif.trim() || null });
+        tableRef.current?.refresh();
+      },
+    },
+    {
       label: "Annuler",
       variant: "danger",
       show: (row) =>
@@ -123,6 +133,16 @@ export default function FactureTable() {
           motif: motif.trim() || null,
           montant,
         });
+        tableRef.current?.refresh();
+      },
+    },
+    {
+      label: "Refacturer",
+      variant: "secondary",
+      show: (row) => (row.nature ?? "FACTURE").toUpperCase() !== "AVOIR",
+      onClick: async (row) => {
+        const motif = window.prompt("Motif de la refacturation", "") ?? "";
+        await service.reinvoice(row.id, { motif: motif.trim() || null });
         tableRef.current?.refresh();
       },
     },

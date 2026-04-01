@@ -18,6 +18,8 @@ export type FinanceRelanceHistoryItem = {
   facture_id?: string | null;
   plan_paiement_id?: string | null;
   eleve_id?: string | null;
+  stage_days?: number | null;
+  suggested_penalty?: number | null;
   echeance_ids: string[];
   destinataires: FinanceRelanceRecipient[];
   expediteur?: {
@@ -45,6 +47,10 @@ class FinanceRelanceService extends Service {
 
   async sendRelance(payload: FinanceRelanceSendPayload) {
     return this.create(payload);
+  }
+
+  async runCalendar(payload: { date_reference?: string | Date | null } = {}) {
+    return this.customRequest.post("/run-calendar", payload);
   }
 }
 

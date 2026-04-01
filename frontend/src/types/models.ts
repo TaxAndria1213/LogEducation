@@ -802,6 +802,7 @@ export interface CatalogueFrais {
   id: string;
   etablissement_id: string;
   niveau_scolaire_id: string | null;
+  usage_scope: string;
   nom: string;
   description: string | null;
   montant: Decimal;
@@ -809,10 +810,17 @@ export interface CatalogueFrais {
   nombre_tranches: number;
   est_recurrent: boolean;
   periodicite: string | null;
+  prorata_eligible: boolean;
+  eligibilite_json: JsonValue | null;
+  statut_validation: string;
+  approuve_par_utilisateur_id: string | null;
+  approuve_le: Date | null;
+  motif_rejet: string | null;
   created_at: Date;
   updated_at: Date;
   etablissement?: Etablissement;
   niveau?: NiveauScolaire | null;
+  approbateur?: Utilisateur | null;
   lignesFacture?: FactureLigne[];
   executionsRecurrentes?: FacturationRecurrenteExecution[];
 }
@@ -904,7 +912,11 @@ export interface Paiement {
   montant: Decimal;
   statut: string;
   methode: string | null;
+  numero_recu: string | null;
   reference: string | null;
+  payeur_type: string | null;
+  payeur_nom: string | null;
+  payeur_reference: string | null;
   recu_par: string | null;
   created_at: Date;
   updated_at: Date;
@@ -1027,9 +1039,11 @@ export interface LigneTransport {
   id: string;
   etablissement_id: string;
   nom: string;
+  catalogue_frais_id: string | null;
   infos_vehicule_json: JsonValue | null;
   created_at: Date;
   updated_at: Date;
+  frais?: CatalogueFrais | null;
   arrets?: ArretTransport[];
   abonnements?: AbonnementTransport[];
 }
@@ -1052,6 +1066,7 @@ export interface AbonnementTransport {
   annee_scolaire_id: string;
   ligne_transport_id: string;
   arret_transport_id: string | null;
+  facture_id: string | null;
   statut: string | null;
   created_at: Date;
   updated_at: Date;
@@ -1059,16 +1074,17 @@ export interface AbonnementTransport {
   annee?: AnneeScolaire;
   ligne?: LigneTransport;
   arret?: ArretTransport | null;
+  facture?: Facture | null;
 }
 
 export interface FormuleCantine {
   id: string;
   etablissement_id: string;
   nom: string;
-  prix: Decimal;
-  periodicite: string | null;
+  catalogue_frais_id: string | null;
   created_at: Date;
   updated_at: Date;
+  frais?: CatalogueFrais | null;
   abonnements?: AbonnementCantine[];
 }
 
@@ -1077,12 +1093,14 @@ export interface AbonnementCantine {
   eleve_id: string;
   annee_scolaire_id: string;
   formule_cantine_id: string;
+  facture_id: string | null;
   statut: string | null;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;
   annee?: AnneeScolaire;
   formule?: FormuleCantine;
+  facture?: Facture | null;
 }
 
 /**

@@ -29,6 +29,20 @@ export type FacturationRecurrenteGeneratePayload = {
   date_echeance?: string | Date | null;
 };
 
+export type FacturationRecurrenteReadiness = {
+  ready: boolean;
+  annee_scolaire_id: string;
+  annee_label: string;
+  approved_recurring_count: number;
+  active_inscriptions_count: number;
+  periodes_count: number;
+  issues: Array<{
+    code: string;
+    message: string;
+    severity: "error" | "warning";
+  }>;
+};
+
 class FacturationRecurrenteService extends Service {
   constructor() {
     super("facturation-recurrente");
@@ -40,6 +54,10 @@ class FacturationRecurrenteService extends Service {
 
   async getHistory(params: QueryParams = {}) {
     return this.getAllWithCustomPath("history", params as Record<string, string | number | Date | boolean>);
+  }
+
+  async getReadiness(params: QueryParams = {}) {
+    return this.getAllWithCustomPath("readiness", params as Record<string, string | number | Date | boolean>);
   }
 
   private async createWithCustomPath(path: string, payload: FacturationRecurrenteGeneratePayload) {

@@ -61,12 +61,14 @@ function buildFactureOption(facture: FactureWithRelations): PaiementFactureOptio
   const prenom = facture.eleve?.utilisateur?.profil?.prenom?.trim() ?? "";
   const nom = facture.eleve?.utilisateur?.profil?.nom?.trim() ?? "";
   const fullName = [prenom, nom].filter(Boolean).join(" ").trim();
-  const paidAmount = (facture.paiements ?? []).reduce(
+  const activePaiements = (facture.paiements ?? []).filter(
+    (payment) => (payment.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE",
+  );
+  const paidAmount = activePaiements.reduce(
     (sum, payment) => sum + Number(payment.montant ?? 0),
     0,
   );
   const total = toRoundedAmount(Number(facture.total_montant ?? 0));
-  const remaining = toRoundedAmount(total - paidAmount);
   const studentLabel = fullName || facture.eleve?.code_eleve || "Eleve";
   const today = new Date().toISOString().slice(0, 10);
 
@@ -80,6 +82,9 @@ function buildFactureOption(facture: FactureWithRelations): PaiementFactureOptio
     .sort(sortInstallments);
 
   const unpaid = echeances.filter((echeance) => echeance.montant_restant > 0);
+  const remaining = unpaid.length > 0
+    ? toRoundedAmount(unpaid.reduce((sum, echeance) => sum + echeance.montant_restant, 0))
+    : toRoundedAmount(total - paidAmount);
   const overdueCount = unpaid.filter(
     (echeance) => toIsoDate(echeance.date_echeance) && toIsoDate(echeance.date_echeance) < today,
   ).length;

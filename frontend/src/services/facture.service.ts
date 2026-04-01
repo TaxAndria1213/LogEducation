@@ -99,6 +99,24 @@ export function getFactureStatusLabel(status?: string | null) {
 
 export function getFactureNatureLabel(nature?: string | null) {
   switch ((nature ?? "FACTURE").toUpperCase()) {
+    case "OPTION_PEDAGOGIQUE":
+      return "Option pedagogique";
+    case "ACTIVITE_EXTRASCOLAIRE":
+      return "Activite extrascolaire";
+    case "FOURNITURE":
+      return "Fourniture";
+    case "UNIFORME":
+      return "Uniforme";
+    case "BADGE":
+      return "Badge";
+    case "EXAMEN":
+      return "Examen";
+    case "RATTRAPAGE":
+      return "Rattrapage";
+    case "COMPLEMENTAIRE":
+      return "Facturation complementaire";
+    case "REFACTURATION":
+      return "Refacturation";
     case "AVOIR":
       return "Avoir";
     case "FACTURE":
@@ -149,8 +167,20 @@ class FactureService extends Service {
     return Http.post(["/api", this.url, id, "cancel"].join("/"), payload);
   }
 
+  async emit(id: string, payload: { motif?: string | null } = {}) {
+    return Http.post(["/api", this.url, id, "emit"].join("/"), payload);
+  }
+
+  async reinvoice(id: string, payload: { motif?: string | null } = {}) {
+    return Http.post(["/api", this.url, id, "reinvoice"].join("/"), payload);
+  }
+
   async createAvoir(id: string, payload: { motif?: string | null; montant?: number | null } = {}) {
     return Http.post(["/api", this.url, id, "avoir"].join("/"), payload);
+  }
+
+  async applyAvailableCredit(id: string, payload: { motif?: string | null } = {}) {
+    return Http.post(["/api", this.url, id, "apply-available-credit"].join("/"), payload);
   }
 
   private buildScopedWhere(etablissementId: string, whereParam?: unknown) {

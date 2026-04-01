@@ -51,14 +51,30 @@ function parseObjectParam(value: unknown): Record<string, unknown> | undefined {
 
 export function getOperationFinanciereTypeLabel(type?: string | null) {
   switch ((type ?? "").toUpperCase()) {
+    case "CREATION_FACTURE":
+      return "Creation facture";
+    case "REVISION_FACTURE":
+      return "Revision facture";
+    case "EMISSION_FACTURE":
+      return "Emission facture";
+    case "REFACTURATION_FACTURE":
+      return "Refacturation";
     case "ANNULATION_FACTURE":
       return "Annulation facture";
     case "AVOIR_FACTURE":
       return "Creation avoir";
+    case "ENREGISTREMENT_PAIEMENT":
+      return "Encaissement";
     case "ANNULATION_PAIEMENT":
       return "Annulation paiement";
     case "REMBOURSEMENT_PAIEMENT":
       return "Remboursement paiement";
+    case "REMBOURSEMENT_TROP_PERCU":
+      return "Remboursement trop-percu";
+    case "RAPPROCHEMENT_PAIEMENT":
+      return "Rapprochement paiement";
+    case "TROP_PERCU":
+      return "Trop-percu";
     case "SUPPRESSION_PAIEMENT":
       return "Suppression paiement";
     default:

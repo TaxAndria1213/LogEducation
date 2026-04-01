@@ -6,6 +6,7 @@ import PlanPaiementEleveService, {
   getPlanPaiementEcheances,
   getPlanPaiementDisplayLabel,
   getPlanPaiementPaidAmount,
+  getPlanPaiementRescheduleWorkflow,
   getPlanPaiementRemainingAmount,
   getPlanPaiementSecondaryLabel,
   type PlanPaiementEleveWithRelations,
@@ -48,6 +49,12 @@ export default function PlanPaiementTable() {
       key: "devise",
       header: "Devise",
       render: (row) => row.plan_json?.devise ?? "MGA",
+      sortable: false,
+    },
+    {
+      key: "workflow",
+      header: "Reechelonnement",
+      render: (row) => getPlanPaiementRescheduleWorkflow(row)?.statut ?? "-",
       sortable: false,
     },
     {
@@ -124,3 +131,5 @@ export default function PlanPaiementTable() {
     />
   );
 }
+
+

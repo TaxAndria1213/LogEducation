@@ -1,4 +1,5 @@
 import Service from "../app/api/Service";
+import { Http } from "../app/api/Http";
 import type { AnneeScolaire, Eleve, PlanPaiementEleve, Remise } from "../types/models";
 
 type QueryParams = Record<string, unknown>;
@@ -30,6 +31,7 @@ export type PlanPaiementEleveWithRelations = PlanPaiementEleve & {
   remise?: Pick<Remise, "id" | "nom" | "type" | "valeur"> | null;
   plan_json?: {
     mode_paiement?: string | null;
+    jour_paiement_mensuel?: number | null;
     nombre_tranches?: number | null;
     devise?: string | null;
     notes?: string | null;
@@ -161,9 +163,28 @@ export function getPlanPaiementSecondaryLabel(record?: Partial<PlanPaiementEleve
     .join(" - ");
 }
 
+export function getPlanPaiementRescheduleWorkflow(record?: Partial<PlanPaiementEleveWithRelations> | null) {
+  const workflow = record?.plan_json?.workflow_reechelonnement;
+  return workflow && typeof workflow === "object" ? workflow : null;
+}
+
 class PlanPaiementEleveService extends Service {
   constructor() {
     super("plan-paiement-eleve");
+  }
+
+  async requestReschedule(id: string, payload: Record<string, unknown>) {
+    return Http.post(["/api", this.url, id, "request-reschedule"].join("/"), payload);
+  }
+
+  async approveReschedule(id: string) {
+    return Http.post(["/api", this.url, id, "approve-reschedule"].join("/"), {});
+  }
+
+  async rejectReschedule(id: string, motif_rejet?: string | null) {
+    return Http.post(["/api", this.url, id, "reject-reschedule"].join("/"), {
+      motif_rejet: motif_rejet ?? null,
+    });
   }
 
   async getForEtablissement(etablissementId: string, params: QueryParams = {}) {
@@ -187,3 +208,5 @@ class PlanPaiementEleveService extends Service {
 }
 
 export default PlanPaiementEleveService;
+
+

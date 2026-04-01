@@ -1,9 +1,10 @@
-﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
+import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient, type Note } from "@prisma/client";
 import Response from "../../../common/app/response";
 import NoteModel from "../models/note.model";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
+import { assertNoAdministrativeRestriction } from "../../finance_shared/utils/recovery_restrictions";
 
 type NotePayload = Pick<
   Note,
@@ -219,8 +220,10 @@ class NoteApp {
             etablissement_id: tenantId,
           },
         },
-        select: {
+        select:
+        {
           id: true,
+          type: true,
           note_max: true,
           cours: {
             select: {
@@ -270,6 +273,15 @@ class NoteApp {
       throw new Error(
         "L'eleve selectionne n'est pas inscrit dans la classe de cette evaluation pour l'annee scolaire concernee.",
       );
+    }
+
+    if ((evaluation.type ?? "").toUpperCase() === "EXAMEN") {
+      await assertNoAdministrativeRestriction(this.prisma, {
+        tenantId,
+        eleveId: payload.eleve_id,
+        anneeScolaireId: evaluation.cours.annee_scolaire_id,
+        type: "EXAMEN",
+      });
     }
   }
 
@@ -411,3 +423,7 @@ class NoteApp {
 }
 
 export default NoteApp;
+
+
+
+

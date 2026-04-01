@@ -15,7 +15,7 @@ import type { InscriptionScolarite } from "../../../../types/form";
 import AnneeScolaireService from "../../../../services/anneeScolaire.service";
 import ArretTransportService from "../../../../services/arretTransport.service";
 import ClasseService from "../../../../services/classe.service";
-import CatalogueFraisService from "../../../../services/catalogueFrais.service";
+import CatalogueFraisService, { isApprovedCatalogueFrais } from "../../../../services/catalogueFrais.service";
 import FormuleCantineService from "../../../../services/formuleCantine.service";
 import InscriptionService from "../../../../services/inscription.service";
 import LigneTransportService from "../../../../services/ligneTransport.service";
@@ -38,9 +38,9 @@ type State = {
 
   scolariteInitialData: Partial<InscriptionScolarite> | null;
   classeOptions: Array<Option & { niveau_scolaire_id?: string | null }>;
-  transportLineOptions: Option[];
-  transportStopOptions: Option[];
-  cantineFormulaOptions: Option[];
+  transportLineOptions: Array<Option & { catalogue_frais_id?: string | null }>;
+  transportStopOptions: Array<Option & { ligne_transport_id?: string | null }>;
+  cantineFormulaOptions: Array<Option & { catalogue_frais_id?: string | null }>;
   catalogueFraisOptions: Array<
     Option & {
       montant: number;
@@ -48,6 +48,7 @@ type State = {
       est_recurrent?: boolean;
       periodicite?: string | null;
       niveau_scolaire_id?: string | null;
+      usage_scope?: string | null;
     }
   >;
   remiseOptions: Array<
@@ -146,23 +147,19 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
           }),
           orderBy: JSON.stringify([{ nom: "asc" }]),
         }),
-        ligneTransportService.getAll({
+        ligneTransportService.getForEtablissement(etablissement_id, {
           take: 1000,
-          where: JSON.stringify({ etablissement_id }),
-          includeSpec: JSON.stringify({ arrets: true }),
+          includeSpec: JSON.stringify({ arrets: true, frais: true }),
           orderBy: JSON.stringify([{ nom: "asc" }]),
         }),
-        arretTransportService.getAll({
+        arretTransportService.getForEtablissement(etablissement_id, {
           take: 1000,
-          where: JSON.stringify({
-            ligne: { etablissement_id },
-          }),
           includeSpec: JSON.stringify({ ligne: true }),
           orderBy: JSON.stringify([{ ordre: "asc" }, { nom: "asc" }]),
         }),
-        formuleCantineService.getAll({
+        formuleCantineService.getForEtablissement(etablissement_id, {
           take: 1000,
-          where: JSON.stringify({ etablissement_id }),
+          includeSpec: JSON.stringify({ frais: true }),
           orderBy: JSON.stringify([{ nom: "asc" }]),
         }),
         catalogueFraisService.getForEtablissement(etablissement_id, {
@@ -197,10 +194,24 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
 
       const transportLineOptions =
         lignes?.status.success
-          ? lignes.data.data.map((ligne: LigneTransport) => ({
-              value: ligne.id,
-              label: ligne.nom,
-            }))
+          ? lignes.data.data.map(
+              (
+                ligne: LigneTransport & {
+                  frais?: { nom?: string | null; montant?: number | null; devise?: string | null } | null;
+                },
+              ) => ({
+                value: ligne.id,
+                label: [
+                  ligne.nom,
+                  ligne.frais?.nom
+                    ? `${ligne.frais.nom} (${Number(ligne.frais.montant ?? 0).toLocaleString("fr-FR")} ${ligne.frais.devise ?? "MGA"})`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" - "),
+                catalogue_frais_id: ligne.catalogue_frais_id ?? null,
+              }),
+            )
           : [];
 
       const transportStopOptions =
@@ -213,21 +224,38 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
               ) => ({
                 value: arret.id,
                 label: [arret.ligne?.nom, arret.nom].filter(Boolean).join(" - "),
+                ligne_transport_id: arret.ligne_transport_id ?? null,
               }),
             )
           : [];
 
       const cantineFormulaOptions =
         formules?.status.success
-          ? formules.data.data.map((formule: FormuleCantine) => ({
-              value: formule.id,
-              label: formule.nom,
-            }))
+          ? formules.data.data.map(
+              (
+                formule: FormuleCantine & {
+                  frais?: { nom?: string | null; montant?: number | null; devise?: string | null } | null;
+                },
+              ) => ({
+                value: formule.id,
+                label: [
+                  formule.nom,
+                  formule.frais?.nom
+                    ? `${formule.frais.nom} (${Number(formule.frais.montant ?? 0).toLocaleString("fr-FR")} ${formule.frais.devise ?? "MGA"})`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" - "),
+                catalogue_frais_id: formule.catalogue_frais_id ?? null,
+              }),
+            )
           : [];
 
       const catalogueFraisOptions =
         catalogueFrais?.status.success
-          ? catalogueFrais.data.data.map((frais: CatalogueFrais & {
+          ? catalogueFrais.data.data
+            .filter((frais: CatalogueFrais) => isApprovedCatalogueFrais(frais))
+            .map((frais: CatalogueFrais & {
               niveau?: { nom?: string | null } | null;
             }) => ({
               value: frais.id,
@@ -243,6 +271,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
               est_recurrent: Boolean(frais.est_recurrent),
               periodicite: frais.periodicite ?? null,
               niveau_scolaire_id: frais.niveau_scolaire_id ?? null,
+              usage_scope: frais.usage_scope ?? "GENERAL",
             }))
           : [];
 

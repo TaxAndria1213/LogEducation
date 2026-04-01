@@ -1,7 +1,13 @@
 import { randomUUID } from "crypto";
 import { Application, NextFunction, Request, Response as R, Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type Prisma } from "@prisma/client";
 import Response from "../../../common/app/response";
+import { ensureFactureEcheances } from "../../finance_shared/utils/echeance_paiement";
+import {
+  calculateRecoveryPenalty,
+  getApprovedRecoveryPolicy,
+  normalizeRelanceDays,
+} from "../../finance_shared/utils/recovery_policy";
 
 type FinanceRelancePayload = {
   echeance_ids: string[];
@@ -17,6 +23,10 @@ type ParsedRelanceMeta = {
   plan_paiement_id: string | null;
   echeance_ids: string[];
   eleve_id: string | null;
+  stage_days?: number | null;
+  suggested_penalty?: number | null;
+  penalty_facture_id?: string | null;
+  penalty_facture_number?: string | null;
 };
 
 type RequestWithAuth = Request & {
@@ -71,6 +81,7 @@ class FinanceRelanceApp {
 
   public routes(): Router {
     this.router.post("/", this.send.bind(this));
+    this.router.post("/run-calendar", this.runCalendar.bind(this));
     this.router.get("/", this.getHistory.bind(this));
     return this.router;
   }
@@ -138,6 +149,122 @@ class FinanceRelanceApp {
     }
 
     return sender;
+  }
+
+  private async buildInvoiceNumber(tenantId: string) {
+    const year = new Date().getFullYear();
+    const count = await this.prisma.facture.count({
+      where: {
+        etablissement_id: tenantId,
+        numero_facture: {
+          startsWith: `FAC-${year}-`,
+        },
+      },
+    });
+    return `FAC-${year}-${String(count + 1).padStart(4, "0")}`;
+  }
+
+  private async materializePenaltyForRelance(
+    tx: Prisma.TransactionClient,
+    args: {
+      tenantId: string;
+      senderId: string;
+      batchId: string;
+      group: any[];
+      stageDays: number;
+      penaltyAmount: number;
+      referenceDate: Date;
+    },
+  ) {
+    const penaltyAmount = Number(args.penaltyAmount ?? 0);
+    if (!Number.isFinite(penaltyAmount) || penaltyAmount <= 0) return null;
+
+    const originFactureId = args.group[0]?.facture_id ?? null;
+    const originFactureNumber = args.group[0]?.facture?.numero_facture?.trim() ?? null;
+    if (!originFactureId) return null;
+
+    const motif = `Penalite de retard J+${args.stageDays} - ${originFactureNumber ?? originFactureId}`;
+    const existing = await tx.operationFinanciere.findFirst({
+      where: {
+        etablissement_id: args.tenantId,
+        facture_id: originFactureId,
+        type: "PENALITE_RELANCE",
+        motif,
+      },
+      select: {
+        details_json: true,
+      },
+    });
+
+    if (existing?.details_json && typeof existing.details_json === "object" && !Array.isArray(existing.details_json)) {
+      const details = existing.details_json as Record<string, unknown>;
+      if (typeof details.facture_penalite_id === "string" || typeof details.facture_penalite_number === "string") {
+        return {
+          id: typeof details.facture_penalite_id === "string" ? details.facture_penalite_id : null,
+          numero_facture: typeof details.facture_penalite_number === "string" ? details.facture_penalite_number : null,
+          montant: penaltyAmount,
+        };
+      }
+    }
+
+    const numeroFacture = await this.buildInvoiceNumber(args.tenantId);
+    const eleveId = args.group[0]?.eleve_id;
+    const anneeScolaireId = args.group[0]?.annee_scolaire_id;
+    const devise = args.group[0]?.facture?.devise ?? args.group[0]?.devise ?? "MGA";
+    if (!eleveId || !anneeScolaireId) return null;
+
+    const penaltyFacture = await tx.facture.create({
+      data: {
+        etablissement_id: args.tenantId,
+        eleve_id: eleveId,
+        annee_scolaire_id: anneeScolaireId,
+        remise_id: null,
+        facture_origine_id: null,
+        nature: "COMPLEMENTAIRE",
+        numero_facture: numeroFacture,
+        date_emission: args.referenceDate,
+        date_echeance: args.referenceDate,
+        statut: "EMISE",
+        total_montant: penaltyAmount,
+        devise,
+      } as never,
+    });
+
+    await tx.factureLigne.create({
+      data: {
+        facture_id: penaltyFacture.id,
+        catalogue_frais_id: null,
+        libelle: motif,
+        quantite: 1,
+        prix_unitaire: penaltyAmount,
+        montant: penaltyAmount,
+      } as never,
+    });
+
+    await ensureFactureEcheances(tx, { factureId: penaltyFacture.id });
+
+    await tx.operationFinanciere.create({
+      data: {
+        etablissement_id: args.tenantId,
+        facture_id: originFactureId,
+        cree_par_utilisateur_id: args.senderId,
+        type: "PENALITE_RELANCE",
+        montant: penaltyAmount,
+        motif,
+        details_json: {
+          batch_id: args.batchId,
+          stage_days: args.stageDays,
+          facture_penalite_id: penaltyFacture.id,
+          facture_penalite_number: penaltyFacture.numero_facture,
+        },
+      } as never,
+    });
+
+    return {
+      id: penaltyFacture.id,
+      numero_facture: penaltyFacture.numero_facture,
+      montant: penaltyAmount,
+    };
   }
 
   private async getScopedEcheances(payload: FinanceRelancePayload, tenantId: string): Promise<any[]> {
@@ -227,6 +354,9 @@ class FinanceRelanceApp {
           ? parsed.echeance_ids.filter((item): item is string => typeof item === "string")
           : [],
         eleve_id: typeof parsed.eleve_id === "string" ? parsed.eleve_id : null,
+        stage_days: typeof parsed.stage_days === "number" ? parsed.stage_days : null,
+        suggested_penalty:
+          typeof parsed.suggested_penalty === "number" ? parsed.suggested_penalty : null,
       };
     } catch {
       return null;
@@ -240,7 +370,15 @@ class FinanceRelanceApp {
     return body.slice(endIndex + META_SUFFIX.length).trimStart();
   }
 
-  private buildMessageBody(echeances: any[], customMessage: string | null) {
+  private buildMessageBody(
+    echeances: any[],
+    customMessage: string | null,
+    options?: {
+      stageDays?: number | null;
+      suggestedPenalty?: number | null;
+      penaltyFactureNumber?: string | null;
+    },
+  ) {
     const first = echeances[0];
     const studentLabel =
       getProfilLabel(first?.eleve?.utilisateur?.profil) ??
@@ -263,11 +401,19 @@ class FinanceRelanceApp {
       "",
       `Eleve : ${studentLabel}`,
       `Facture : ${invoiceNumber}`,
+      options?.stageDays != null ? `Palier de relance : J+${options.stageDays}` : null,
+      options?.suggestedPenalty && options.suggestedPenalty > 0
+        ? options?.penaltyFactureNumber
+          ? `Penalite appliquee selon la regle approuvee : ${formatMoney(options.suggestedPenalty, first?.facture?.devise ?? "MGA")} (facture ${options.penaltyFactureNumber})`
+          : `Penalite suggeree selon la regle approuvee : ${formatMoney(options.suggestedPenalty, first?.facture?.devise ?? "MGA")}`
+        : null,
       "Echeances concernees :",
       ...lines,
       "",
       "Merci de regulariser ou de prendre contact avec l'etablissement.",
-    ].join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   private buildMessageSubject(echeances: any[], customSubject: string | null) {
@@ -354,6 +500,10 @@ class FinanceRelanceApp {
       plan_paiement_id: meta?.plan_paiement_id ?? null,
       echeance_ids: meta?.echeance_ids ?? [],
       eleve_id: meta?.eleve_id ?? null,
+      stage_days: meta?.stage_days ?? null,
+      suggested_penalty: meta?.suggested_penalty ?? null,
+      penalty_facture_id: meta?.penalty_facture_id ?? null,
+      penalty_facture_number: meta?.penalty_facture_number ?? null,
       destinataires: (message.destinataires ?? []).map((destinataire: any) => ({
         utilisateur_id: destinataire.utilisateur_id,
         nom:
@@ -373,6 +523,16 @@ class FinanceRelanceApp {
           }
         : null,
     };
+  }
+
+  private computeOverdueDays(referenceDate: Date, dueDate: Date | string | null | undefined) {
+    if (!dueDate) return 0;
+    const ref = new Date(referenceDate);
+    ref.setHours(0, 0, 0, 0);
+    const due = dueDate instanceof Date ? new Date(dueDate) : new Date(dueDate);
+    if (Number.isNaN(due.getTime())) return 0;
+    due.setHours(0, 0, 0, 0);
+    return Math.max(0, Math.floor((ref.getTime() - due.getTime()) / 86400000));
   }
 
   private async send(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -480,6 +640,221 @@ class FinanceRelanceApp {
     }
   }
 
+  public async runCalendarForTenant(tenantId: string, senderId: string, referenceDate = new Date()) {
+    if (Number.isNaN(referenceDate.getTime())) {
+      throw new Error("La date de reference de relance est invalide.");
+    }
+
+    const sender = await this.ensureSender(senderId, tenantId);
+    const policy = await getApprovedRecoveryPolicy(this.prisma, tenantId);
+    if (!policy) {
+      throw new Error("Aucune regle de recouvrement approuvee n'est disponible pour le calendrier de relance.");
+    }
+
+    const stages = normalizeRelanceDays(policy.relance_jours_json as any);
+    if (stages.length === 0) {
+      throw new Error("Aucun palier de relance n'est defini dans la regle approuvee.");
+    }
+
+    const overdueEcheances = await this.prisma.echeancePaiement.findMany({
+      where: {
+        eleve: { etablissement_id: tenantId },
+        montant_restant: { gt: 0 },
+        statut: { notIn: ["PAYEE", "ANNULEE"] },
+      } as never,
+      include: {
+        eleve: {
+          include: {
+            utilisateur: { include: { profil: true } },
+            liensParents: {
+              include: {
+                parent_tuteur: {
+                  include: {
+                    utilisateur: { include: { profil: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+        facture: {
+          select: { id: true, numero_facture: true, devise: true },
+        },
+        planPaiement: {
+          select: { id: true },
+        },
+      },
+      orderBy: [{ date_echeance: "asc" }, { ordre: "asc" }],
+    });
+
+    const overdueGroups = this.groupEcheances(
+      overdueEcheances.filter((item) => this.computeOverdueDays(referenceDate, item.date_echeance) > 0),
+    );
+
+    const messages = await this.prisma.message.findMany({
+      where: {
+        etablissement_id: tenantId,
+        objet: { contains: "[FINANCE_RELANCE]" },
+      },
+      select: {
+        id: true,
+        objet: true,
+        corps: true,
+      },
+    });
+
+    const existingStages = new Map<string, Set<number>>();
+    for (const message of messages) {
+      const meta = this.parseRelanceMeta(message.corps);
+      if (!meta || typeof meta.stage_days !== "number") continue;
+      const key = [meta.eleve_id ?? "-", meta.facture_id ?? "-", meta.plan_paiement_id ?? "-"].join("::");
+      const current = existingStages.get(key) ?? new Set<number>();
+      current.add(meta.stage_days);
+      existingStages.set(key, current);
+    }
+
+    const sent: Array<Record<string, unknown>> = [];
+    const skipped: Array<Record<string, unknown>> = [];
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const group of overdueGroups) {
+        const recipients = this.getRecipientUsers(group);
+        if (recipients.length === 0) {
+          skipped.push({
+            eleve_id: group[0]?.eleve_id ?? null,
+            reason: "Aucun destinataire utilisateur n'est relie a ces echeances.",
+          });
+          continue;
+        }
+
+        const oldestDueDate = group.reduce<Date | null>((min, item) => {
+          const date = item.date_echeance instanceof Date ? item.date_echeance : new Date(item.date_echeance);
+          if (Number.isNaN(date.getTime())) return min;
+          if (!min || date < min) return date;
+          return min;
+        }, null);
+        if (!oldestDueDate) continue;
+
+        const overdueDays = this.computeOverdueDays(referenceDate, oldestDueDate);
+        const key = [group[0]?.eleve_id ?? "-", group[0]?.facture_id ?? "-", group[0]?.plan_paiement_id ?? "-"].join("::");
+        const alreadySentStages = existingStages.get(key) ?? new Set<number>();
+        const stageDays = [...stages].reverse().find((value) => overdueDays >= value && !alreadySentStages.has(value));
+
+        if (stageDays == null) {
+          skipped.push({
+            eleve_id: group[0]?.eleve_id ?? null,
+            facture_id: group[0]?.facture_id ?? null,
+            reason: "Aucun nouveau palier de relance a envoyer pour ce dossier.",
+          });
+          continue;
+        }
+
+        const overdueAmount = group.reduce((sum, item) => sum + Number(item.montant_restant ?? 0), 0);
+        const suggestedPenalty = calculateRecoveryPenalty({
+          policy,
+          overdueAmount,
+          dueDate: oldestDueDate,
+          paymentDate: referenceDate,
+        });
+
+        const batchId = randomUUID();
+        const penaltyFacture =
+          suggestedPenalty > 0
+            ? await this.materializePenaltyForRelance(tx, {
+                tenantId,
+                senderId: sender.id,
+                batchId,
+                group,
+                stageDays,
+                penaltyAmount: suggestedPenalty,
+                referenceDate,
+              })
+            : null;
+        const meta: ParsedRelanceMeta = {
+          batch_id: batchId,
+          facture_id: group[0]?.facture_id ?? null,
+          plan_paiement_id: group[0]?.plan_paiement_id ?? null,
+          echeance_ids: group.map((item) => item.id),
+          eleve_id: group[0]?.eleve_id ?? null,
+          stage_days: stageDays,
+          suggested_penalty: suggestedPenalty > 0 ? suggestedPenalty : null,
+          penalty_facture_id: penaltyFacture?.id ?? null,
+          penalty_facture_number: penaltyFacture?.numero_facture ?? null,
+        };
+        const body = `${this.buildRelanceMeta(meta)}\n${this.buildMessageBody(group, null, {
+          stageDays,
+          suggestedPenalty,
+          penaltyFactureNumber: penaltyFacture?.numero_facture ?? null,
+        })}`;
+        const subject = `[FINANCE_RELANCE][${batchId}] Relance calendrier J+${stageDays}`;
+
+        const message = await tx.message.create({
+          data: {
+            etablissement_id: tenantId,
+            expediteur_utilisateur_id: sender.id,
+            objet: subject,
+            corps: body,
+            envoye_le: new Date(),
+            destinataires: {
+              create: recipients.map((recipient) => ({
+                utilisateur_id: recipient.utilisateur_id,
+                statut: "sent",
+              })),
+            },
+          },
+          include: {
+            destinataires: {
+              include: {
+                utilisateur: { include: { profil: true } },
+              },
+            },
+            expediteur: {
+              include: { profil: true },
+            },
+          },
+        });
+
+        await tx.notification.createMany({
+          data: recipients.map((recipient) => ({
+            utilisateur_id: recipient.utilisateur_id,
+            type: "FINANCE_RELANCE",
+            payload_json: {
+              batch_id: batchId,
+              message_id: message.id,
+              facture_id: meta.facture_id,
+              plan_paiement_id: meta.plan_paiement_id,
+              echeance_ids: meta.echeance_ids,
+              eleve_id: meta.eleve_id,
+              stage_days: stageDays,
+              suggested_penalty: suggestedPenalty > 0 ? suggestedPenalty : null,
+              penalty_facture_id: penaltyFacture?.id ?? null,
+              penalty_facture_number: penaltyFacture?.numero_facture ?? null,
+            },
+          })),
+        });
+
+        alreadySentStages.add(stageDays);
+        existingStages.set(key, alreadySentStages);
+        sent.push(this.buildHistoryEntry(message));
+      }
+    });
+
+    return { sent, skipped, stages };
+  }
+
+  private async runCalendar(req: Request, res: R, next: NextFunction): Promise<void> {
+    try {
+      const request = req as RequestWithAuth;
+      const tenantId = this.resolveTenantId(request);
+      const senderId = this.resolveSenderId(request);
+      const referenceDate = req.body?.date_reference ? new Date(req.body.date_reference) : new Date();
+      const result = await this.runCalendarForTenant(tenantId, senderId, referenceDate);
+      Response.success(res, "Calendrier de relance execute.", result);
+    } catch (error) {
+      Response.error(res, "Erreur lors de l'execution du calendrier de relance", 400, error as Error);
+      next(error);
+    }
+  }
   private async getHistory(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
       const request = req as RequestWithAuth;
@@ -551,3 +926,10 @@ class FinanceRelanceApp {
 }
 
 export default FinanceRelanceApp;
+
+
+
+
+
+
+

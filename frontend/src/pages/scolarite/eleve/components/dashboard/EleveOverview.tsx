@@ -8,10 +8,17 @@ import {
   FiUserCheck,
 } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
+import AbonnementCantineService from "../../../../../services/abonnementCantine.service";
+import AbonnementTransportService from "../../../../../services/abonnementTransport.service";
 import AnneeScolaireService from "../../../../../services/anneeScolaire.service";
 import EleveService from "../../../../../services/eleve.service";
 import InscriptionService from "../../../../../services/inscription.service";
-import type { AnneeScolaire, Eleve } from "../../../../../types/models";
+import type {
+  AbonnementCantine,
+  AbonnementTransport,
+  AnneeScolaire,
+  Eleve,
+} from "../../../../../types/models";
 
 type Props = {
   mode?: "overview" | "settings";
@@ -68,6 +75,12 @@ function EleveOverview({ mode = "overview" }: Props) {
   const [eleves, setEleves] = useState<EleveRecord[]>([]);
   const [currentYear, setCurrentYear] = useState<AnneeScolaire | null>(null);
   const [currentYearRegistrations, setCurrentYearRegistrations] = useState(0);
+  const [transportSubscriptions, setTransportSubscriptions] = useState<AbonnementTransport[]>(
+    [],
+  );
+  const [cantineSubscriptions, setCantineSubscriptions] = useState<AbonnementCantine[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -88,8 +101,10 @@ function EleveOverview({ mode = "overview" }: Props) {
       try {
         const eleveService = new EleveService();
         const inscriptionService = new InscriptionService();
+        const abonnementTransportService = new AbonnementTransportService();
+        const abonnementCantineService = new AbonnementCantineService();
 
-        const [elevesResult, activeYear] = await Promise.all([
+        const [elevesResult, activeYear, transportResult, cantineResult] = await Promise.all([
           eleveService.getAll({
             page: 1,
             take: 500,
@@ -104,6 +119,14 @@ function EleveOverview({ mode = "overview" }: Props) {
             orderBy: JSON.stringify([{ created_at: "desc" }]),
           }),
           AnneeScolaireService.getCurrent(etablissement_id),
+          abonnementTransportService.getForEtablissement(etablissement_id, {
+            take: 1000,
+            orderBy: JSON.stringify([{ created_at: "desc" }]),
+          }),
+          abonnementCantineService.getForEtablissement(etablissement_id, {
+            take: 1000,
+            orderBy: JSON.stringify([{ created_at: "desc" }]),
+          }),
         ]);
 
         if (!active) return;
@@ -111,6 +134,16 @@ function EleveOverview({ mode = "overview" }: Props) {
         setEleves(
           elevesResult?.status.success
             ? ((elevesResult.data.data as EleveRecord[]) ?? [])
+            : [],
+        );
+        setTransportSubscriptions(
+          transportResult?.status.success
+            ? ((transportResult.data.data as AbonnementTransport[]) ?? [])
+            : [],
+        );
+        setCantineSubscriptions(
+          cantineResult?.status.success
+            ? ((cantineResult.data.data as AbonnementCantine[]) ?? [])
             : [],
         );
         setCurrentYear((activeYear as AnneeScolaire | null) ?? null);
@@ -161,6 +194,20 @@ function EleveOverview({ mode = "overview" }: Props) {
         .slice(0, 6),
     [eleves],
   );
+  const activeTransportStudents = useMemo(
+    () =>
+      transportSubscriptions.filter(
+        (subscription) => (subscription.statut ?? "").toUpperCase() === "ACTIF",
+      ).length,
+    [transportSubscriptions],
+  );
+  const activeCantineStudents = useMemo(
+    () =>
+      cantineSubscriptions.filter(
+        (subscription) => (subscription.statut ?? "").toUpperCase() === "ACTIF",
+      ).length,
+    [cantineSubscriptions],
+  );
 
   return (
     <div className="space-y-6">
@@ -196,7 +243,7 @@ function EleveOverview({ mode = "overview" }: Props) {
         ) : null}
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiUser />
@@ -232,6 +279,26 @@ function EleveOverview({ mode = "overview" }: Props) {
             {studentsWithAccount}
           </p>
         </div>
+
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3 text-slate-500">
+            <FiUserCheck />
+            <span className="text-sm font-medium">Transport actif</span>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">
+            {activeTransportStudents}
+          </p>
+        </div>
+
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3 text-slate-500">
+            <FiBookOpen />
+            <span className="text-sm font-medium">Cantine active</span>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">
+            {activeCantineStudents}
+          </p>
+        </div>
       </section>
 
       {mode === "settings" ? (
@@ -251,7 +318,7 @@ function EleveOverview({ mode = "overview" }: Props) {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
             <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                 Identite
@@ -269,6 +336,17 @@ function EleveOverview({ mode = "overview" }: Props) {
               <p className="mt-3 text-sm leading-6 text-slate-700">
                 Le dossier eleve doit rester coherent avec l'annee scolaire active,
                 les inscriptions en classe et le statut reel de l'eleve.
+              </p>
+            </div>
+
+            <div className="mt-4 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Services eleves
+              </p>
+              <p className="mt-3 text-sm leading-6 text-slate-700">
+                Les rattachements transport et cantine sont relies au dossier eleve
+                pour fluidifier l'inscription, la lecture famille et le suivi des
+                services annexes.
               </p>
             </div>
           </div>

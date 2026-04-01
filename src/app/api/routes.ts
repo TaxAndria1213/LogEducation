@@ -34,6 +34,8 @@ import CreneauHoraireApp from "../modules/creneau_horaire/application/creneau_ho
 import LigneTransportApp from "../modules/ligne_transport/application/ligne_transport.app";
 import ArretTransportApp from "../modules/arret_transport/application/arret_transport.app";
 import FormuleCantineApp from "../modules/formule_cantine/application/formule_cantine.app";
+import AbonnementTransportApp from "../modules/abonnement_transport/application/abonnement_transport.app";
+import AbonnementCantineApp from "../modules/abonnement_cantine/application/abonnement_cantine.app";
 import SessionAppelApp from "../modules/session_appel/application/session_appel.app";
 import PresenceEleveApp from "../modules/presence_eleve/application/presence_eleve.app";
 import MotifAbsenceApp from "../modules/motif_absence/application/motif_absence.app";
@@ -50,6 +52,7 @@ import PlanPaiementEleveApp from "../modules/plan_paiement_eleve/application/pla
 import FinanceRelanceApp from "../modules/finance_relance/application/finance_relance.app";
 import FacturationRecurrenteApp from "../modules/facturation_recurrente/application/facturation_recurrente.app";
 import OperationFinanciereApp from "../modules/operation_financiere/application/operation_financiere.app";
+import FinanceRecouvrementApp from "../modules/finance_recouvrement/application/finance_recouvrement.app";
 import RessourceBibliothequeApp from "../modules/ressource_bibliotheque/application/ressource_bibliotheque.app";
 import EmpruntApp from "../modules/emprunt/application/emprunt.app";
 
@@ -94,6 +97,8 @@ export class ApiRoutes {
   private ligneTransport: LigneTransportApp;
   private arretTransport: ArretTransportApp;
   private formuleCantine: FormuleCantineApp;
+  private abonnementTransport: AbonnementTransportApp;
+  private abonnementCantine: AbonnementCantineApp;
 
   private sessionAppel: SessionAppelApp;
   private presenceEleve: PresenceEleveApp;
@@ -111,6 +116,7 @@ export class ApiRoutes {
   private financeRelance: FinanceRelanceApp;
   private facturationRecurrente: FacturationRecurrenteApp;
   private operationFinanciere: OperationFinanciereApp;
+  private financeRecouvrement: FinanceRecouvrementApp;
   private ressourceBibliotheque: RessourceBibliothequeApp;
   private empruntBibliotheque: EmpruntApp;
 
@@ -151,6 +157,8 @@ export class ApiRoutes {
     this.ligneTransport = new LigneTransportApp(app);
     this.arretTransport = new ArretTransportApp(app);
     this.formuleCantine = new FormuleCantineApp(app);
+    this.abonnementTransport = new AbonnementTransportApp(app);
+    this.abonnementCantine = new AbonnementCantineApp(app);
     this.sessionAppel = new SessionAppelApp(app);
     this.presenceEleve = new PresenceEleveApp(app);
     this.motifAbsence = new MotifAbsenceApp(app);
@@ -167,6 +175,7 @@ export class ApiRoutes {
     this.financeRelance = new FinanceRelanceApp(app);
     this.facturationRecurrente = new FacturationRecurrenteApp(app);
     this.operationFinanciere = new OperationFinanciereApp(app);
+    this.financeRecouvrement = new FinanceRecouvrementApp(app);
     this.ressourceBibliotheque = new RessourceBibliothequeApp(app);
     this.empruntBibliotheque = new EmpruntApp(app);
     this.routes();
@@ -213,6 +222,8 @@ export class ApiRoutes {
     this.router.use("/ligne-transport", this.ligneTransport.routes());
     this.router.use("/arret-transport", this.arretTransport.routes());
     this.router.use("/formule-cantine", this.formuleCantine.routes());
+    this.router.use("/abonnement-transport", this.abonnementTransport.routes());
+    this.router.use("/abonnement-cantine", this.abonnementCantine.routes());
 
     this.router.use("/session-appel", this.sessionAppel.routes());
     this.router.use("/presence-eleve", this.presenceEleve.routes());
@@ -230,6 +241,7 @@ export class ApiRoutes {
     this.router.use("/finance-relance", this.financeRelance.routes());
     this.router.use("/facturation-recurrente", this.facturationRecurrente.routes());
     this.router.use("/operation-financiere", this.operationFinanciere.routes());
+    this.router.use("/finance-recouvrement", this.financeRecouvrement.routes());
     this.router.use("/ressource-bibliotheque", this.ressourceBibliotheque.routes());
     this.router.use("/emprunt", this.empruntBibliotheque.routes());
 

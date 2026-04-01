@@ -7,6 +7,7 @@ import FacturesIndex from "../../pages/finance/factures/FacturesIndex";
 import PaiementsIndex from "../../pages/finance/paiements/PaiementsIndex";
 import PlansPaiementIndex from "../../pages/finance/plans_paiement/PlansPaiementIndex";
 import JournalFinancierIndex from "../../pages/finance/journal_financier/JournalFinancierIndex";
+import RecouvrementIndex from "../../pages/finance/recouvrement/RecouvrementIndex";
 
 export const finance: menu = {
   key: "finance",
@@ -54,6 +55,12 @@ export const finance: menu = {
       name: "Journal financier",
       path: "/finance/journal_financier",
       elements: <JournalFinancierIndex />,
+    },
+    {
+      key: "recouvrement",
+      name: "Recouvrement",
+      path: "/finance/recouvrement",
+      elements: <RecouvrementIndex />,
     },
   ],
 };

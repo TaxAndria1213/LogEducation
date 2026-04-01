@@ -88,6 +88,12 @@ export function normalizeText(value: unknown) {
   return normalized || null;
 }
 
+function clampPaymentDay(value: unknown, fallback = 1) {
+  const parsed = Number.parseInt(String(value ?? fallback), 10);
+  if (!Number.isFinite(parsed)) return Math.max(1, Math.min(28, fallback));
+  return Math.max(1, Math.min(28, parsed));
+}
+
 function getActivePaiements<T extends { statut?: string | null }>(paiements: T[]) {
   return paiements.filter((item) => (item.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE");
 }
@@ -647,6 +653,168 @@ export async function resolveLinkedFactureIdForPlan(tx: DbClient, planId: string
   }
 
   return null;
+}
+
+export async function ensurePlanForFacture(
+  tx: DbClient,
+  args: {
+    factureId: string;
+    preferredModePaiement?: string | null;
+    preferredPaymentDay?: number | null;
+    notes?: string | null;
+  },
+) {
+  const facture = await tx.facture.findUnique({
+    where: { id: args.factureId },
+    include: {
+      echeances: {
+        orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
+      },
+    },
+  });
+
+  if (!facture) return null;
+
+  const alreadyLinkedPlanId =
+    facture.echeances.find((item) => Boolean(item.plan_paiement_id))?.plan_paiement_id ?? null;
+
+  let plan = alreadyLinkedPlanId
+    ? await tx.planPaiementEleve.findUnique({
+        where: { id: alreadyLinkedPlanId },
+        select: {
+          id: true,
+          remise_id: true,
+          plan_json: true,
+          echeances: {
+            select: {
+              id: true,
+              facture_id: true,
+              ordre: true,
+            },
+            orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
+          },
+        },
+      })
+    : await tx.planPaiementEleve.findFirst({
+        where: {
+          eleve_id: facture.eleve_id,
+          annee_scolaire_id: facture.annee_scolaire_id,
+        },
+        select: {
+          id: true,
+          remise_id: true,
+          plan_json: true,
+          echeances: {
+            select: {
+              id: true,
+              facture_id: true,
+              ordre: true,
+            },
+            orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
+          },
+        },
+        orderBy: [{ created_at: "asc" }],
+      });
+
+  const preferredMode =
+    String(
+      args.preferredModePaiement ??
+        (facture.echeances.length > 1 ? "ECHELONNE" : "COMPTANT"),
+    )
+      .trim()
+      .toUpperCase() === "ECHELONNE"
+      ? "ECHELONNE"
+      : "COMPTANT";
+  const preferredPaymentDay =
+    args.preferredPaymentDay == null
+      ? facture.echeances[0]
+        ? clampPaymentDay(facture.echeances[0].date_echeance.getUTCDate(), 1)
+        : null
+      : clampPaymentDay(args.preferredPaymentDay, 1);
+
+  if (!plan) {
+    plan = await tx.planPaiementEleve.create({
+      data: {
+        eleve_id: facture.eleve_id,
+        annee_scolaire_id: facture.annee_scolaire_id,
+        remise_id: facture.remise_id ?? null,
+        plan_json: {
+          mode_paiement: preferredMode,
+          jour_paiement_mensuel:
+            preferredMode === "ECHELONNE" ? preferredPaymentDay : null,
+          nombre_tranches: facture.echeances.length,
+          devise: facture.devise ?? "MGA",
+          remise_id: facture.remise_id ?? null,
+          notes: normalizeText(args.notes),
+          metadata: {
+            cree_automatiquement: true,
+            origine: "facture",
+            facture_id: facture.id,
+          },
+        } as Prisma.InputJsonValue,
+      },
+      select: {
+        id: true,
+        remise_id: true,
+        plan_json: true,
+        echeances: {
+          select: {
+            id: true,
+            facture_id: true,
+            ordre: true,
+          },
+          orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
+        },
+      },
+    });
+  } else if (!plan.remise_id && facture.remise_id) {
+    plan = await tx.planPaiementEleve.update({
+      where: { id: plan.id },
+      data: { remise_id: facture.remise_id },
+      select: {
+        id: true,
+        remise_id: true,
+        plan_json: true,
+        echeances: {
+          select: {
+            id: true,
+            facture_id: true,
+            ordre: true,
+          },
+          orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
+        },
+      },
+    });
+  }
+
+  const currentFactureRows = facture.echeances;
+  if (currentFactureRows.length === 0) {
+    await syncPlanJsonFromEcheances(tx, plan.id);
+    return plan.id;
+  }
+
+  const rowsAlreadyLinked =
+    currentFactureRows.length > 0 &&
+    currentFactureRows.every((item) => item.plan_paiement_id === plan?.id);
+
+  if (!rowsAlreadyLinked) {
+    const maxExistingOrdre = (plan.echeances ?? [])
+      .filter((item) => item.facture_id !== facture.id)
+      .reduce((max, item) => Math.max(max, Number(item.ordre ?? 0)), 0);
+
+    for (const [index, echeance] of currentFactureRows.entries()) {
+      await tx.echeancePaiement.update({
+        where: { id: echeance.id },
+        data: {
+          plan_paiement_id: plan.id,
+          ordre: maxExistingOrdre + index + 1,
+        },
+      });
+    }
+  }
+
+  await syncPlanJsonFromEcheances(tx, plan.id);
+  return plan.id;
 }
 
 export async function allocatePaiementsToFactureEcheances(

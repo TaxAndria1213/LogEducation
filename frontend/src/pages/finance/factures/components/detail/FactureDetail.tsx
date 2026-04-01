@@ -169,13 +169,23 @@ export default function FactureDetail() {
   const activePaiements = (facture.paiements ?? []).filter(
     (item) => (item.statut ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE",
   );
-  const totalPaid = activePaiements.reduce((sum, item) => {
-    const amount = typeof item.montant === "number" ? item.montant : Number(item.montant ?? 0);
-    return sum + (Number.isFinite(amount) ? amount : 0);
-  }, 0);
+  const totalPaid =
+    (facture.echeances?.length ?? 0) > 0
+      ? (facture.echeances ?? []).reduce((sum, item) => {
+          const amount =
+            typeof item.montant_regle === "number"
+              ? item.montant_regle
+              : Number(item.montant_regle ?? 0);
+          return sum + (Number.isFinite(amount) ? amount : 0);
+        }, 0)
+      : activePaiements.reduce((sum, item) => {
+          const amount = typeof item.montant === "number" ? item.montant : Number(item.montant ?? 0);
+          return sum + (Number.isFinite(amount) ? amount : 0);
+        }, 0);
   const hasPlanLinkedEcheances = (facture.echeances ?? []).some((item) => item.plan_paiement_id);
   const canCancel = activePaiements.length === 0 && !hasPlanLinkedEcheances && (facture.statut ?? "").toUpperCase() !== "ANNULEE";
   const canCreateAvoir = (facture.statut ?? "").toUpperCase() !== "ANNULEE" && (facture.nature ?? "FACTURE").toUpperCase() !== "AVOIR";
+  const canEmit = (facture.statut ?? "").toUpperCase() === "BROUILLON";
 
   const openPlan = (planId: string) => {
     queueFinanceNavigationTarget({
@@ -252,6 +262,51 @@ export default function FactureDetail() {
       });
       await refreshFacture();
       info("L'avoir comptable a ete cree.", "success");
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setProcessingAccountingAction(false);
+    }
+  };
+
+  const handleApplyAvailableCredit = async () => {
+    const motif = window.prompt("Motif du report de credit", "") ?? "";
+
+    try {
+      setProcessingAccountingAction(true);
+      await service.applyAvailableCredit(facture.id, { motif: motif.trim() || null });
+      await refreshFacture();
+      info("Le credit disponible a ete applique a cette facture.", "success");
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setProcessingAccountingAction(false);
+    }
+  };
+
+  const handleEmitFacture = async () => {
+    const motif = window.prompt("Note de validation finale", "") ?? "";
+
+    try {
+      setProcessingAccountingAction(true);
+      await service.emit(facture.id, { motif: motif.trim() || null });
+      await refreshFacture();
+      info("La facture a ete emise.", "success");
+    } catch (error) {
+      info(getApiErrorMessage(error), "error");
+    } finally {
+      setProcessingAccountingAction(false);
+    }
+  };
+
+  const handleReinvoice = async () => {
+    const motif = window.prompt("Motif de la refacturation", "") ?? "";
+
+    try {
+      setProcessingAccountingAction(true);
+      const response = await service.reinvoice(facture.id, { motif: motif.trim() || null });
+      setSelectedFacture((response?.data?.data ?? facture) as FactureWithRelations);
+      info("La refacturation a ete creee.", "success");
     } catch (error) {
       info(getApiErrorMessage(error), "error");
     } finally {
@@ -340,6 +395,17 @@ export default function FactureDetail() {
                 Modifier
               </button>
             ) : null}
+            {canEmit ? (
+              <button
+                type="button"
+                onClick={() => void handleEmitFacture()}
+                disabled={processingAccountingAction}
+                className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FiBell />
+                Valider et emettre
+              </button>
+            ) : null}
             {canCancel ? (
               <button
                 type="button"
@@ -360,6 +426,28 @@ export default function FactureDetail() {
               >
                 <FiRefreshCcw />
                 Creer un avoir
+              </button>
+            ) : null}
+            {(facture.nature ?? "FACTURE").toUpperCase() !== "AVOIR" ? (
+              <button
+                type="button"
+                onClick={() => void handleReinvoice()}
+                disabled={processingAccountingAction}
+                className="inline-flex items-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FiRefreshCcw />
+                Refacturer
+              </button>
+            ) : null}
+            {openInstallments.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => void handleApplyAvailableCredit()}
+                disabled={processingAccountingAction}
+                className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FiRefreshCcw />
+                Appliquer credit disponible
               </button>
             ) : null}
             {openInstallments.length > 0 ? (

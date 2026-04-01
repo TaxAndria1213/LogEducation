@@ -8,7 +8,22 @@ import {
   ensureFactureEcheances,
   syncFactureStatusFromEcheances,
 } from "../../finance_shared/utils/echeance_paiement";
+import { applyAvailableCreditsToFacture } from "../../finance_shared/utils/credit_carry_forward";
+import { assessBillingReadiness } from "../../finance_shared/utils/billing_readiness";
 import FactureModel from "../models/facture.model";
+
+const ALLOWED_INVOICE_NATURES = new Set([
+  "FACTURE",
+  "OPTION_PEDAGOGIQUE",
+  "ACTIVITE_EXTRASCOLAIRE",
+  "FOURNITURE",
+  "UNIFORME",
+  "BADGE",
+  "EXAMEN",
+  "RATTRAPAGE",
+  "COMPLEMENTAIRE",
+  "REFACTURATION",
+]);
 
 type FactureLinePayload = {
   id?: string;
@@ -33,6 +48,11 @@ type FacturePayload = {
   total_montant: number;
   devise: string;
   lignes: FactureLinePayload[];
+};
+
+type CatalogueEligibilityRules = {
+  classe_ids?: string[];
+  eleve_ids?: string[];
 };
 
 type ResolvedRemise = {
@@ -71,10 +91,13 @@ class FactureApp {
 
   public routes(): Router {
     this.router.post("/", this.create.bind(this));
+    this.router.post("/:id/emit", this.emit.bind(this));
+    this.router.post("/:id/reinvoice", this.reinvoice.bind(this));
     this.router.get("/", this.getAll.bind(this));
     this.router.get("/:id", this.getOne.bind(this));
     this.router.post("/:id/cancel", this.cancel.bind(this));
     this.router.post("/:id/avoir", this.createCreditNote.bind(this));
+    this.router.post("/:id/apply-available-credit", this.applyAvailableCredit.bind(this));
     this.router.delete("/:id", this.delete.bind(this));
     this.router.put("/:id", this.update.bind(this));
     return this.router;
@@ -189,6 +212,14 @@ class FactureApp {
     return "EMISE";
   }
 
+  private isDraftStatus(status?: string | null) {
+    return (status ?? "").toUpperCase() === "BROUILLON";
+  }
+
+  private getUserId(req: Request) {
+    return (req as Request & { user?: { sub?: string } }).user?.sub ?? null;
+  }
+
   private async buildInvoiceNumber(tenantId: string) {
     const year = new Date().getFullYear();
     const count = await this.prisma.facture.count({
@@ -271,6 +302,7 @@ class FactureApp {
     eleveId: string,
     anneeId: string,
     lignes: FactureLinePayload[],
+    nature: string,
   ) {
     const ids = Array.from(
       new Set(
@@ -290,12 +322,14 @@ class FactureApp {
       select: {
         classe: {
           select: {
+            id: true,
             niveau_scolaire_id: true,
           },
         },
       },
     });
 
+    const classeId = inscription?.classe?.id ?? null;
     const niveauId = inscription?.classe?.niveau_scolaire_id;
     if (!niveauId) {
       throw new Error("Impossible de determiner le niveau scolaire de l'eleve pour cette annee.");
@@ -310,11 +344,130 @@ class FactureApp {
           { niveau_scolaire_id: null },
         ],
       } as never,
-      select: { id: true },
-    });
+      select: {
+        id: true,
+        usage_scope: true,
+        statut_validation: true,
+        eligibilite_json: true,
+      } as never,
+    }) as Array<{
+      id: string;
+      usage_scope: string | null;
+      statut_validation: string | null;
+      eligibilite_json: Prisma.JsonValue | null;
+    }>;
 
     if (found.length !== ids.length) {
       throw new Error("Une ligne reference un frais catalogue qui n'est pas applicable au niveau scolaire de l'eleve.");
+    }
+
+    const allowedScopesByNature: Record<string, string[] | null> = {
+      FACTURE: null,
+      OPTION_PEDAGOGIQUE: ["GENERAL", "OPTION_PEDAGOGIQUE"],
+      ACTIVITE_EXTRASCOLAIRE: ["GENERAL", "ACTIVITE_EXTRASCOLAIRE"],
+      FOURNITURE: ["GENERAL", "FOURNITURE"],
+      UNIFORME: ["GENERAL", "UNIFORME"],
+      BADGE: ["GENERAL", "BADGE"],
+      EXAMEN: ["GENERAL", "EXAMEN"],
+      RATTRAPAGE: ["GENERAL", "RATTRAPAGE"],
+      COMPLEMENTAIRE: ["GENERAL", "COMPLEMENTAIRE"],
+      REFACTURATION: null,
+    };
+
+    const allowedScopes = allowedScopesByNature[(nature ?? "FACTURE").toUpperCase()] ?? null;
+
+    for (const fee of found) {
+      if ((fee.statut_validation ?? "").toUpperCase() !== "APPROUVEE") {
+        throw new Error("Un frais catalogue non approuve ne peut pas etre facture.");
+      }
+
+      const scope = (fee.usage_scope ?? "GENERAL").toUpperCase();
+      if (allowedScopes && !allowedScopes.includes(scope)) {
+        throw new Error(`Le frais selectionne n'est pas compatible avec la nature ${nature.toLowerCase()}.`);
+      }
+
+      const rules =
+        fee.eligibilite_json && typeof fee.eligibilite_json === "object" && !Array.isArray(fee.eligibilite_json)
+          ? (fee.eligibilite_json as CatalogueEligibilityRules)
+          : null;
+      const allowedClasses = Array.isArray(rules?.classe_ids) ? rules.classe_ids.filter(Boolean) : [];
+      const allowedEleves = Array.isArray(rules?.eleve_ids) ? rules.eleve_ids.filter(Boolean) : [];
+
+      if (allowedClasses.length > 0 && (!classeId || !allowedClasses.includes(classeId))) {
+        throw new Error("Un frais selectionne n'est pas autorise pour la classe de cet eleve.");
+      }
+
+      if (allowedEleves.length > 0 && !allowedEleves.includes(eleveId)) {
+        throw new Error("Un frais selectionne n'est pas autorise pour cet eleve.");
+      }
+    }
+  }
+
+  private buildLineSignature(lignes: FactureLinePayload[]) {
+    return [...lignes]
+      .map((line) => ({
+        catalogue_frais_id: line.catalogue_frais_id ?? null,
+        libelle: line.libelle.trim().toUpperCase(),
+        quantite: Number(line.quantite),
+        montant: this.toNumber(line.montant),
+      }))
+      .sort((left, right) => {
+        const leftKey = `${left.catalogue_frais_id ?? ""}::${left.libelle}`;
+        const rightKey = `${right.catalogue_frais_id ?? ""}::${right.libelle}`;
+        return leftKey.localeCompare(rightKey);
+      })
+      .map((line) => `${line.catalogue_frais_id ?? "-"}|${line.libelle}|${line.quantite}|${line.montant}`)
+      .join("||");
+  }
+
+  private async ensureNoDuplicateFacture(
+    tenantId: string,
+    args: {
+      eleveId: string;
+      anneeId: string;
+      nature: string;
+      dateEcheance: Date | null;
+      lignes: FactureLinePayload[];
+      excludeId?: string;
+    },
+  ) {
+    const duplicateCandidates = await this.prisma.facture.findMany({
+      where: {
+        etablissement_id: tenantId,
+        eleve_id: args.eleveId,
+        annee_scolaire_id: args.anneeId,
+        nature: args.nature,
+        statut: { not: "ANNULEE" },
+        ...(args.excludeId ? { id: { not: args.excludeId } } : {}),
+      },
+      include: {
+        lignes: true,
+      },
+    });
+
+    const targetDueDate = args.dateEcheance ? args.dateEcheance.toISOString().slice(0, 10) : "__NULL__";
+    const targetSignature = this.buildLineSignature(args.lignes);
+
+    const duplicate = duplicateCandidates.find((item) => {
+      const candidateDueDate = item.date_echeance ? item.date_echeance.toISOString().slice(0, 10) : "__NULL__";
+      if (candidateDueDate !== targetDueDate) return false;
+      const candidateSignature = this.buildLineSignature(
+        (item.lignes ?? []).map((line) => ({
+          id: line.id,
+          catalogue_frais_id: line.catalogue_frais_id ?? null,
+          libelle: line.libelle,
+          quantite: Number(line.quantite),
+          prix_unitaire: Number(line.prix_unitaire),
+          montant: Number(line.montant),
+        })),
+      );
+      return candidateSignature === targetSignature;
+    });
+
+    if (duplicate) {
+      throw new Error(
+        `Une facture ${duplicate.numero_facture} porte deja la meme creance pour cet eleve et cette echeance.`,
+      );
     }
   }
 
@@ -334,11 +487,23 @@ class FactureApp {
         nom: true,
         type: true,
         valeur: true,
+        regles_json: true,
       },
     });
 
     if (!remise) {
       throw new Error("La remise selectionnee n'appartient pas a cet etablissement.");
+    }
+
+    const rules =
+      remise.regles_json && typeof remise.regles_json === "object" && !Array.isArray(remise.regles_json)
+        ? (remise.regles_json as Record<string, unknown>)
+        : null;
+    const validationRequired = Boolean(rules?.validation_requise);
+    const validationStatus =
+      typeof rules?.statut_validation === "string" ? rules.statut_validation.trim().toUpperCase() : "";
+    if (validationRequired && validationStatus !== "APPROUVEE") {
+      throw new Error("La remise selectionnee doit etre approuvee avant utilisation.");
     }
 
     return {
@@ -399,9 +564,9 @@ class FactureApp {
       typeof current?.nature === "string" && String(current.nature).trim()
         ? String(current.nature).trim().toUpperCase()
         : null;
-    if ((requestedNature && requestedNature !== "FACTURE") || currentNature === "AVOIR") {
+    if ((requestedNature && !ALLOWED_INVOICE_NATURES.has(requestedNature)) || currentNature === "AVOIR") {
       throw new Error(
-        "Les avoirs doivent etre geres uniquement depuis l'operation dediee, pas depuis le CRUD facture.",
+        "La nature de facture demandee n'est pas autorisee depuis ce formulaire.",
       );
     }
 
@@ -493,7 +658,7 @@ class FactureApp {
     if (lignes.length === 0) throw new Error("La facture doit contenir au moins une ligne.");
 
     await this.ensureEleveAndAnnee(eleve_id, annee_scolaire_id, tenantId);
-    await this.validateCatalogueLinks(tenantId, eleve_id, annee_scolaire_id, lignes);
+    await this.validateCatalogueLinks(tenantId, eleve_id, annee_scolaire_id, lignes, nature);
     const remise = await this.resolveRemise(remise_id, tenantId);
 
     const numero_facture =
@@ -527,6 +692,14 @@ class FactureApp {
     const statut = this.deriveStatus(requestedStatus, total_montant, paidAmount, date_echeance);
 
     await this.ensureNumeroUnique(tenantId, numero_facture, current?.id as string | undefined);
+    await this.ensureNoDuplicateFacture(tenantId, {
+      eleveId: eleve_id,
+      anneeId: annee_scolaire_id,
+      nature,
+      dateEcheance: date_echeance,
+      lignes: normalizedLines,
+      excludeId: current?.id as string | undefined,
+    });
 
     return {
       etablissement_id: tenantId,
@@ -560,6 +733,175 @@ class FactureApp {
 
   private getOperationFinanciereDelegate(tx: Prisma.TransactionClient) {
     return (tx as unknown as TransactionWithFinance).operationFinanciere;
+  }
+
+  private async createFactureOperation(
+    tx: Prisma.TransactionClient,
+    args: {
+      tenantId: string;
+      factureId: string;
+      userId?: string | null;
+      type:
+        | "CREATION_FACTURE"
+        | "REVISION_FACTURE"
+        | "EMISSION_FACTURE"
+        | "ANNULATION_FACTURE"
+        | "AVOIR_FACTURE"
+        | "REFACTURATION_FACTURE";
+      montant?: number | null;
+      motif?: string | null;
+      details?: Record<string, unknown>;
+    },
+  ) {
+    await this.getOperationFinanciereDelegate(tx).create({
+      data: {
+        etablissement_id: args.tenantId,
+        facture_id: args.factureId,
+        cree_par_utilisateur_id: args.userId ?? null,
+        type: args.type,
+        montant: args.montant ?? null,
+        motif: args.motif ?? null,
+        details_json: args.details ?? {},
+      },
+    });
+  }
+
+  private async validateBeforeFinalization(
+    tx: Prisma.TransactionClient,
+    args: {
+      tenantId: string;
+      factureId?: string;
+      eleveId: string;
+      anneeId: string;
+      totalAmount: number;
+      dueDate: Date | null;
+      lines: FactureLinePayload[];
+    },
+  ) {
+    if (args.lines.length === 0) {
+      throw new Error("Une facture emise doit contenir au moins une ligne.");
+    }
+    if (args.totalAmount <= 0) {
+      throw new Error("Une facture emise doit porter un total strictement positif.");
+    }
+    if (!args.dueDate) {
+      throw new Error("Une date d'echeance est requise avant l'emission finale de la facture.");
+    }
+
+    const eleve = await tx.eleve.findFirst({
+      where: {
+        id: args.eleveId,
+        etablissement_id: args.tenantId,
+      },
+      select: {
+        id: true,
+        inscriptions: {
+          where: {
+            annee_scolaire_id: args.anneeId,
+            statut: "INSCRIT",
+          },
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!eleve || (eleve.inscriptions?.length ?? 0) === 0) {
+      throw new Error("L'eleve doit etre inscrit sur l'annee concernee avant l'emission finale.");
+    }
+
+    const readiness = await assessBillingReadiness(tx, {
+      tenantId: args.tenantId,
+      anneeScolaireId: args.anneeId,
+      referenceDate: args.dueDate ?? new Date(),
+      catalogueFraisIds: args.lines.map((line) => line.catalogue_frais_id ?? null),
+    });
+    const blockingIssues = readiness.issues.filter((item) => item.severity === "error");
+    if (blockingIssues.length > 0) {
+      throw new Error(
+        `La facturation n'est pas prete pour emission: ${blockingIssues
+          .map((item) => item.message)
+          .join(" ")}`,
+      );
+    }
+  }
+
+  private async sendInvoiceNotificationToFamily(
+    tx: Prisma.TransactionClient,
+    args: {
+      tenantId: string;
+      factureId: string;
+      eleveId: string;
+      numeroFacture: string;
+      statut: StatutFacture;
+      nature: string;
+      totalMontant: number;
+      devise: string;
+      dueDate: Date | null;
+      senderId?: string | null;
+      eventType: "FACTURE_CREEE" | "FACTURE_EMISE" | "FACTURE_REFACTUREE";
+    },
+  ) {
+    const parentLinks = await tx.eleveParentTuteur.findMany({
+      where: {
+        eleve_id: args.eleveId,
+        parent_tuteur: {
+          etablissement_id: args.tenantId,
+        },
+      },
+      select: {
+        parent_tuteur: {
+          select: {
+            utilisateur_id: true,
+          },
+        },
+      },
+    });
+
+    const recipientIds = Array.from(
+      new Set(
+        parentLinks
+          .map((item) => item.parent_tuteur?.utilisateur_id)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+
+    if (recipientIds.length === 0) return;
+
+    const payload = {
+      facture_id: args.factureId,
+      numero_facture: args.numeroFacture,
+      statut: args.statut,
+      nature: args.nature,
+      total_montant: args.totalMontant,
+      devise: args.devise,
+      date_echeance: args.dueDate?.toISOString() ?? null,
+    };
+
+    if (args.senderId) {
+      await tx.message.create({
+        data: {
+          etablissement_id: args.tenantId,
+          expediteur_utilisateur_id: args.senderId,
+          objet: `[FINANCE] ${args.numeroFacture} - ${args.eventType.replace(/_/g, " ")}`,
+          corps: `La facture ${args.numeroFacture} est disponible. Montant: ${args.totalMontant.toLocaleString("fr-FR")} ${args.devise}.`,
+          envoye_le: new Date(),
+          destinataires: {
+            create: recipientIds.map((utilisateur_id) => ({
+              utilisateur_id,
+              statut: "sent",
+            })),
+          },
+        },
+      });
+    }
+
+    await tx.notification.createMany({
+      data: recipientIds.map((utilisateur_id) => ({
+        utilisateur_id,
+        type: args.eventType,
+        payload_json: payload as Prisma.InputJsonValue,
+      })),
+    });
   }
 
   private buildScopedWhere(existingWhere: Record<string, unknown>, tenantId: string) {
@@ -612,8 +954,20 @@ class FactureApp {
     try {
       const tenantId = this.resolveTenantId(req);
       const data = await this.normalizePayload(req.body as Record<string, unknown>, tenantId);
+      const userId = this.getUserId(req);
 
       const result = await this.prisma.$transaction(async (tx) => {
+        if (data.statut === "EMISE") {
+          await this.validateBeforeFinalization(tx, {
+            tenantId,
+            eleveId: data.eleve_id,
+            anneeId: data.annee_scolaire_id,
+            totalAmount: data.total_montant,
+            dueDate: data.date_echeance,
+            lines: data.lignes,
+          });
+        }
+
         const facture = await tx.facture.create({
           data: {
             etablissement_id: data.etablissement_id,
@@ -645,7 +999,49 @@ class FactureApp {
         }
 
         await ensureFactureEcheances(tx, { factureId: facture.id });
+        await applyAvailableCreditsToFacture(tx, {
+          tenantId,
+          factureId: facture.id,
+          utilisateurId: userId,
+          motif: "Report automatique d'un credit disponible lors de la creation de facture.",
+        }).catch(() => ({ montant_applique: 0, usages: [] }));
         await syncFactureStatusFromEcheances(tx, facture.id);
+
+        await this.createFactureOperation(tx, {
+          tenantId,
+          factureId: facture.id,
+          userId,
+          type: "CREATION_FACTURE",
+          montant: data.total_montant,
+          details: {
+            numero_facture: data.numero_facture,
+            nature: data.nature,
+            statut: data.statut,
+            date_echeance: data.date_echeance?.toISOString() ?? null,
+            lignes: data.lignes.map((line) => ({
+              catalogue_frais_id: line.catalogue_frais_id,
+              libelle: line.libelle,
+              quantite: line.quantite,
+              montant: line.montant,
+            })),
+          },
+        });
+
+        if (data.statut === "EMISE") {
+          await this.sendInvoiceNotificationToFamily(tx, {
+            tenantId,
+            factureId: facture.id,
+            eleveId: data.eleve_id,
+            numeroFacture: data.numero_facture,
+            statut: data.statut,
+            nature: data.nature,
+            totalMontant: data.total_montant,
+            devise: data.devise,
+            dueDate: data.date_echeance,
+            senderId: userId,
+            eventType: "FACTURE_CREEE",
+          });
+        }
 
         return tx.facture.findUnique({
           where: { id: facture.id },
@@ -751,8 +1147,21 @@ class FactureApp {
         tenantId,
         existing as unknown as Record<string, unknown>,
       );
+      const userId = this.getUserId(req);
 
       const result = await this.prisma.$transaction(async (tx) => {
+        if (data.statut === "EMISE") {
+          await this.validateBeforeFinalization(tx, {
+            tenantId,
+            factureId: req.params.id,
+            eleveId: data.eleve_id,
+            anneeId: data.annee_scolaire_id,
+            totalAmount: data.total_montant,
+            dueDate: data.date_echeance,
+            lines: data.lignes,
+          });
+        }
+
         await tx.facture.update({
           where: { id: req.params.id },
           data: {
@@ -789,6 +1198,37 @@ class FactureApp {
 
         await ensureFactureEcheances(tx, { factureId: req.params.id });
         await syncFactureStatusFromEcheances(tx, req.params.id);
+
+        await this.createFactureOperation(tx, {
+          tenantId,
+          factureId: req.params.id,
+          userId,
+          type: "REVISION_FACTURE",
+          montant: data.total_montant,
+          details: {
+            numero_facture: data.numero_facture,
+            nature: data.nature,
+            statut_avant: existing.statut,
+            statut_apres: data.statut,
+            date_echeance: data.date_echeance?.toISOString() ?? null,
+          },
+        });
+
+        if ((existing.statut ?? "").toUpperCase() !== "EMISE" && data.statut === "EMISE") {
+          await this.sendInvoiceNotificationToFamily(tx, {
+            tenantId,
+            factureId: req.params.id,
+            eleveId: data.eleve_id,
+            numeroFacture: data.numero_facture,
+            statut: data.statut,
+            nature: data.nature,
+            totalMontant: data.total_montant,
+            devise: data.devise,
+            dueDate: data.date_echeance,
+            senderId: userId,
+            eventType: "FACTURE_EMISE",
+          });
+        }
 
         return tx.facture.findUnique({
           where: { id: req.params.id },
@@ -839,18 +1279,16 @@ class FactureApp {
           },
         });
 
-        await this.getOperationFinanciereDelegate(tx).create({
-          data: {
-            etablissement_id: tenantId,
-            facture_id: existing.id,
-            cree_par_utilisateur_id: (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
-            type: "ANNULATION_FACTURE",
-            montant: existing.total_montant,
-            motif: payload.motif,
-            details_json: {
-              numero_facture: existing.numero_facture,
-              nature: (existing as { nature?: string | null }).nature ?? "FACTURE",
-            },
+        await this.createFactureOperation(tx, {
+          tenantId,
+          factureId: existing.id,
+          userId: this.getUserId(req),
+          type: "ANNULATION_FACTURE",
+          montant: Number(existing.total_montant ?? 0),
+          motif: payload.motif,
+          details: {
+            numero_facture: existing.numero_facture,
+            nature: (existing as { nature?: string | null }).nature ?? "FACTURE",
           },
         });
 
@@ -939,20 +1377,18 @@ class FactureApp {
           await applyCreditToFactureEcheances(tx, existing.id, compensationAmount);
         }
 
-        await this.getOperationFinanciereDelegate(tx).create({
-          data: {
-            etablissement_id: tenantId,
-            facture_id: existing.id,
-            cree_par_utilisateur_id: (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
-            type: "AVOIR_FACTURE",
-            montant: amount,
-            motif: payload.motif,
-            details_json: {
-              facture_avoir_id: avoir.id,
-              numero_avoir: avoir.numero_facture,
-              montant_applique: compensationAmount,
-              montant_non_affecte: Math.max(0, amount - compensationAmount),
-            },
+        await this.createFactureOperation(tx, {
+          tenantId,
+          factureId: existing.id,
+          userId: this.getUserId(req),
+          type: "AVOIR_FACTURE",
+          montant: amount,
+          motif: payload.motif,
+          details: {
+            facture_avoir_id: avoir.id,
+            numero_avoir: avoir.numero_facture,
+            montant_applique: compensationAmount,
+            montant_non_affecte: Math.max(0, amount - compensationAmount),
           },
         });
 
@@ -965,6 +1401,237 @@ class FactureApp {
       Response.success(res, "Avoir cree avec succes.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de l'avoir", 400, error as Error);
+      next(error);
+    }
+  }
+
+  private async applyAvailableCredit(req: Request, res: R, next: NextFunction): Promise<void> {
+    try {
+      const tenantId = this.resolveTenantId(req);
+      const existing = await this.getScopedFacture(req.params.id, tenantId);
+
+      if (!existing) {
+        throw new Error("Facture introuvable pour cet etablissement.");
+      }
+
+      if ((existing.statut ?? "").toUpperCase() === "ANNULEE") {
+        throw new Error("Impossible d'appliquer un credit sur une facture annulee.");
+      }
+
+      const payload = this.normalizeOperationPayload(req.body as Record<string, unknown>);
+      const userId = (req as Request & { user?: { sub?: string } }).user?.sub ?? null;
+
+      const result = await this.prisma.$transaction(async (tx) => {
+        const applied = await applyAvailableCreditsToFacture(tx, {
+          tenantId,
+          factureId: existing.id,
+          utilisateurId: userId,
+          motif: payload.motif,
+        });
+
+        return {
+          ...applied,
+          facture: await tx.facture.findUnique({
+            where: { id: existing.id },
+            include: this.getInclude(),
+          }),
+        };
+      });
+
+      Response.success(res, "Le credit disponible a ete applique a la facture.", result);
+    } catch (error) {
+      Response.error(res, "Erreur lors de l'application du credit disponible", 400, error as Error);
+      next(error);
+    }
+  }
+
+  private async emit(req: Request, res: R, next: NextFunction): Promise<void> {
+    try {
+      const tenantId = this.resolveTenantId(req);
+      const existing = await this.getScopedFacture(req.params.id, tenantId);
+
+      if (!existing) {
+        throw new Error("Facture introuvable pour cet etablissement.");
+      }
+
+      if (!this.isDraftStatus(existing.statut)) {
+        throw new Error("Seules les factures en brouillon peuvent etre emises.");
+      }
+
+      const payload = this.normalizeOperationPayload(req.body as Record<string, unknown>);
+      const userId = this.getUserId(req);
+
+      const result = await this.prisma.$transaction(async (tx) => {
+        const lines = (existing.lignes ?? []).map((line) => ({
+          id: line.id,
+          catalogue_frais_id: line.catalogue_frais_id ?? null,
+          libelle: line.libelle,
+          quantite: Number(line.quantite),
+          prix_unitaire: Number(line.prix_unitaire),
+          montant: Number(line.montant),
+        }));
+
+        await this.validateBeforeFinalization(tx, {
+          tenantId,
+          factureId: existing.id,
+          eleveId: existing.eleve_id,
+          anneeId: existing.annee_scolaire_id,
+          totalAmount: Number(existing.total_montant ?? 0),
+          dueDate: existing.date_echeance,
+          lines,
+        });
+
+        await tx.facture.update({
+          where: { id: existing.id },
+          data: {
+            statut: "EMISE",
+          },
+        });
+
+        await this.createFactureOperation(tx, {
+          tenantId,
+          factureId: existing.id,
+          userId,
+          type: "EMISSION_FACTURE",
+          montant: Number(existing.total_montant ?? 0),
+          motif: payload.motif,
+          details: {
+            numero_facture: existing.numero_facture,
+            nature: existing.nature ?? "FACTURE",
+          },
+        });
+
+        await this.sendInvoiceNotificationToFamily(tx, {
+          tenantId,
+          factureId: existing.id,
+          eleveId: existing.eleve_id,
+          numeroFacture: existing.numero_facture,
+          statut: "EMISE",
+          nature: existing.nature ?? "FACTURE",
+          totalMontant: Number(existing.total_montant ?? 0),
+          devise: existing.devise ?? "MGA",
+          dueDate: existing.date_echeance,
+          senderId: userId,
+          eventType: "FACTURE_EMISE",
+        });
+
+        return tx.facture.findUnique({
+          where: { id: existing.id },
+          include: this.getInclude(),
+        });
+      });
+
+      Response.success(res, "Facture emise avec succes.", result);
+    } catch (error) {
+      Response.error(res, "Erreur lors de l'emission de la facture", 400, error as Error);
+      next(error);
+    }
+  }
+
+  private async reinvoice(req: Request, res: R, next: NextFunction): Promise<void> {
+    try {
+      const tenantId = this.resolveTenantId(req);
+      const existing = await this.getScopedFacture(req.params.id, tenantId);
+
+      if (!existing) {
+        throw new Error("Facture introuvable pour cet etablissement.");
+      }
+
+      const activePayments = this.getActivePaiements(existing.paiements ?? []);
+      if (activePayments.length > 0) {
+        throw new Error("Annule ou regularise d'abord les paiements avant de refacturer.");
+      }
+
+      const payload = this.normalizeOperationPayload(req.body as Record<string, unknown>);
+      const userId = this.getUserId(req);
+
+      const result = await this.prisma.$transaction(async (tx) => {
+        const numeroFacture = await this.buildInvoiceNumber(tenantId);
+        const lines = (existing.lignes ?? []).map((line) => ({
+          catalogue_frais_id: line.catalogue_frais_id ?? null,
+          libelle: line.libelle,
+          quantite: Number(line.quantite),
+          prix_unitaire: Number(line.prix_unitaire),
+          montant: Number(line.montant),
+        }));
+
+        await this.ensureNoDuplicateFacture(tenantId, {
+          eleveId: existing.eleve_id,
+          anneeId: existing.annee_scolaire_id,
+          nature: "REFACTURATION",
+          dateEcheance: existing.date_echeance,
+          lignes: lines,
+        });
+
+        const refacture = await tx.facture.create({
+          data: {
+            etablissement_id: tenantId,
+            eleve_id: existing.eleve_id,
+            annee_scolaire_id: existing.annee_scolaire_id,
+            remise_id: existing.remise_id ?? null,
+            facture_origine_id: null,
+            nature: "REFACTURATION",
+            numero_facture: numeroFacture,
+            date_emission: new Date(),
+            date_echeance: existing.date_echeance,
+            statut: "EMISE",
+            total_montant: existing.total_montant,
+            devise: existing.devise ?? "MGA",
+          } as never,
+        });
+
+        if ((existing.lignes?.length ?? 0) > 0) {
+          await tx.factureLigne.createMany({
+            data: (existing.lignes ?? []).map((line) => ({
+              facture_id: refacture.id,
+              catalogue_frais_id: line.catalogue_frais_id ?? null,
+              libelle: line.libelle,
+              quantite: Number(line.quantite),
+              prix_unitaire: line.prix_unitaire,
+              montant: line.montant,
+            })),
+          });
+        }
+
+        await ensureFactureEcheances(tx, { factureId: refacture.id });
+        await syncFactureStatusFromEcheances(tx, refacture.id);
+
+        await this.createFactureOperation(tx, {
+          tenantId,
+          factureId: refacture.id,
+          userId,
+          type: "REFACTURATION_FACTURE",
+          montant: Number(refacture.total_montant ?? 0),
+          motif: payload.motif,
+          details: {
+            facture_source_id: existing.id,
+            numero_facture_source: existing.numero_facture,
+          },
+        });
+
+        await this.sendInvoiceNotificationToFamily(tx, {
+          tenantId,
+          factureId: refacture.id,
+          eleveId: refacture.eleve_id,
+          numeroFacture: refacture.numero_facture,
+          statut: "EMISE",
+          nature: "REFACTURATION",
+          totalMontant: Number(refacture.total_montant ?? 0),
+          devise: refacture.devise ?? "MGA",
+          dueDate: refacture.date_echeance,
+          senderId: userId,
+          eventType: "FACTURE_REFACTUREE",
+        });
+
+        return tx.facture.findUnique({
+          where: { id: refacture.id },
+          include: this.getInclude(),
+        });
+      });
+
+      Response.success(res, "Refacturation creee avec succes.", result);
+    } catch (error) {
+      Response.error(res, "Erreur lors de la refacturation", 400, error as Error);
       next(error);
     }
   }

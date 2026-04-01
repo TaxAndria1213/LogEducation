@@ -29,6 +29,19 @@ class InscriptionService extends Service {
             console.log(error);
         }
     }
+
+    async changeClass(
+        id: string,
+        payload: {
+            classe_id: string;
+            date_effet?: string | Date | null;
+            catalogue_frais_scolarite_id?: string | null;
+            generer_regularisation_financiere?: boolean;
+            motif?: string | null;
+        },
+    ) {
+        return Http.post(["/api", this.url, id, "change-class"].join("/"), payload);
+    }
 }
 
 export default InscriptionService
