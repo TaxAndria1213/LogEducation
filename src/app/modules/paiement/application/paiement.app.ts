@@ -1,5 +1,5 @@
 import { Application, NextFunction, Request, Response as R, Router } from "express";
-import { PrismaClient, type Paiement, type Prisma, type StatutFacture } from "@prisma/client";
+import { PrismaClient, Prisma, type Paiement, type StatutFacture } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
@@ -143,6 +143,18 @@ class PaiementApp {
     return normalized || null;
   }
 
+  private resolveUserId(req: Request) {
+    return (req as Request & { user?: { sub?: string } }).user?.sub ?? null;
+  }
+
+  private getRequestIp(req: Request) {
+    const forwarded = req.headers["x-forwarded-for"];
+    if (typeof forwarded === "string" && forwarded.trim()) {
+      return forwarded.split(",")[0]?.trim() ?? null;
+    }
+    return req.ip ?? null;
+  }
+
   private normalizeMethode(value: unknown) {
     const normalized = this.normalizeText(value)?.toLowerCase();
 
@@ -267,6 +279,219 @@ class PaiementApp {
           orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
         },
       },
+    });
+  }
+
+  private async autoActivateTransportSubscriptionsForFacture(
+    tx: Prisma.TransactionClient,
+    factureId: string,
+    actorId?: string | null,
+    ip?: string | null,
+  ) {
+    const facture = await tx.facture.findUnique({
+      where: { id: factureId },
+      include: {
+        lignes: {
+          select: {
+            catalogue_frais_id: true,
+          },
+        },
+        paiements: {
+          select: {
+            id: true,
+            montant: true,
+            statut: true,
+          },
+        },
+        echeances: {
+          select: {
+            montant_restant: true,
+            statut: true,
+          },
+        },
+      },
+    });
+
+    if (!facture) return;
+    if (this.getOutstandingAmount(facture) > 0) return;
+
+    const catalogueFraisIds = Array.from(
+      new Set(
+        (facture.lignes ?? [])
+          .map((line) => line.catalogue_frais_id)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+
+    if (catalogueFraisIds.length === 0) return;
+
+    const subscriptions = await tx.abonnementTransport.findMany({
+      where: {
+        eleve_id: facture.eleve_id,
+        annee_scolaire_id: facture.annee_scolaire_id,
+        statut: {
+          in: [
+            "EN_ATTENTE_VALIDATION_FINANCIERE",
+            "EN_ATTENTE_REGLEMENT",
+            "EN_ATTENTE_SUSPENSION_FINANCIERE",
+            "SUSPENDU_FINANCE",
+          ],
+        },
+        ligne: {
+          is: {
+            catalogue_frais_id: { in: catalogueFraisIds },
+          },
+        },
+      },
+      select: { id: true, facture_id: true, eleve_id: true, ligne_transport_id: true, statut: true },
+    });
+
+    if (subscriptions.length === 0) return;
+
+    await tx.abonnementTransport.updateMany({
+      where: { id: { in: subscriptions.map((item) => item.id) } },
+      data: {
+        statut: "ACTIF",
+        facture_id: facture.id,
+      },
+    });
+
+    if (subscriptions.length > 0) {
+      await tx.$executeRaw(
+        Prisma.sql`UPDATE abonnements_transport
+          SET a_facturer = ${false}
+          WHERE id IN (${Prisma.join(subscriptions.map((item) => item.id))})`,
+      );
+    }
+
+    const reactivatedSubscriptions = subscriptions.filter((item) =>
+      ["EN_ATTENTE_SUSPENSION_FINANCIERE", "SUSPENDU_FINANCE"].includes(
+        (item.statut ?? "").toUpperCase(),
+      ),
+    );
+
+    const cantineSubscriptions = await tx.abonnementCantine.findMany({
+      where: {
+        facture_id: facture.id,
+        eleve_id: facture.eleve_id,
+        annee_scolaire_id: facture.annee_scolaire_id,
+        statut: {
+          in: ["EN_ATTENTE_VALIDATION_FINANCIERE", "EN_ATTENTE_REGLEMENT"],
+        },
+      },
+      select: { id: true },
+    });
+
+    if (cantineSubscriptions.length > 0) {
+      await tx.abonnementCantine.updateMany({
+        where: { id: { in: cantineSubscriptions.map((item) => item.id) } },
+        data: {
+          statut: "ACTIF",
+          facture_id: facture.id,
+        },
+      });
+    }
+
+    if (reactivatedSubscriptions.length === 0) return;
+
+    for (const subscription of reactivatedSubscriptions) {
+      await tx.journalAudit.create({
+        data: {
+          etablissement_id: facture.etablissement_id,
+          acteur_utilisateur_id: actorId ?? null,
+          action: "TRANSPORT_REACTIVATION_FINANCIERE",
+          type_entite: "ABONNEMENT_TRANSPORT",
+          id_entite: subscription.id,
+          avant_json: {
+            statut: subscription.statut ?? null,
+            facture_id: subscription.facture_id ?? null,
+          } as Prisma.InputJsonValue,
+          apres_json: {
+            statut: "ACTIF",
+            facture_id: facture.id,
+            source: "PAIEMENT_FINANCE",
+          } as Prisma.InputJsonValue,
+          ip: ip ?? null,
+        } as never,
+      });
+    }
+
+    const transportPermissionCodes = [
+      "TC.TRANSPORT.MENUACTION",
+      "TC.TRANSPORT.MENUACTION.LIST",
+      "TC.TRANSPORT.MENUACTION.PARAMETRE",
+      "TC.TRANSPORT.MENUACTION.DASHBOARD",
+      "TC.TRANSPORT.MENUACTION.ADD",
+    ];
+
+    const parentLinks = await tx.eleveParentTuteur.findMany({
+      where: {
+        eleve_id: facture.eleve_id,
+        parent_tuteur: {
+          etablissement_id: facture.etablissement_id,
+        },
+      },
+      select: {
+        parent_tuteur: {
+          select: {
+            utilisateur_id: true,
+          },
+        },
+      },
+    });
+
+    const transportAssignments = await tx.utilisateurRole.findMany({
+      where: {
+        utilisateur: {
+          etablissement_id: facture.etablissement_id,
+        },
+        role: {
+          permissions: {
+            some: {
+              permission: {
+                code: {
+                  in: transportPermissionCodes,
+                },
+              },
+            },
+          },
+        },
+      },
+      select: {
+        utilisateur_id: true,
+      },
+    });
+
+    const recipientIds = Array.from(
+      new Set(
+        [
+          ...parentLinks
+            .map((item) => item.parent_tuteur?.utilisateur_id)
+            .filter((value): value is string => Boolean(value)),
+          ...transportAssignments
+            .map((item) => item.utilisateur_id)
+            .filter((value): value is string => Boolean(value)),
+          ...(actorId ? [actorId] : []),
+        ],
+      ),
+    );
+
+    if (recipientIds.length === 0) return;
+
+    await tx.notification.createMany({
+      data: reactivatedSubscriptions.flatMap((subscription) =>
+        recipientIds.map((utilisateur_id) => ({
+          utilisateur_id,
+          type: "TRANSPORT_REACTIVATION_ACTIVEE",
+          payload_json: {
+            abonnement_transport_id: subscription.id,
+            eleve_id: subscription.eleve_id,
+            ligne_transport_id: subscription.ligne_transport_id,
+            facture_id: facture.id,
+            source: "PAIEMENT_FINANCE",
+          } as Prisma.InputJsonValue,
+        })),
+      ),
     });
   }
 
@@ -1052,7 +1277,8 @@ class PaiementApp {
     try {
       const tenantId = this.resolveTenantId(req);
       const data = await this.normalizePayload(req.body, tenantId);
-      const userId = (req as Request & { user?: { sub?: string } }).user?.sub ?? null;
+      const userId = this.resolveUserId(req);
+      const requestIp = this.getRequestIp(req);
 
       const result = await this.prisma.$transaction(async (tx) => {
         const justificatifReference = this.readString(req.body as Record<string, unknown>, "justificatif_reference");
@@ -1145,6 +1371,12 @@ class PaiementApp {
         }
 
         await this.autoLiftRestrictionsForFacture(tx, tenantId, data.facture_id, userId);
+        await this.autoActivateTransportSubscriptionsForFacture(
+          tx,
+          data.facture_id,
+          userId,
+          requestIp,
+        );
 
         return tx.paiement.findUnique({
           where: { id: paiement.id },
@@ -1165,7 +1397,8 @@ class PaiementApp {
       const data = await this.normalizePayload(req.body, tenantId);
       const splits = await this.normalizeSplitPayloads(req.body as Record<string, unknown>, tenantId, data.paye_le);
       const totalAmount = roundMoney(splits.reduce((sum, item) => sum + item.montant, 0));
-      const userId = (req as Request & { user?: { sub?: string } }).user?.sub ?? null;
+      const userId = this.resolveUserId(req);
+      const requestIp = this.getRequestIp(req);
 
       const result = await this.prisma.$transaction(async (tx) => {
         const justificatifReference = this.readString(req.body as Record<string, unknown>, "justificatif_reference");
@@ -1284,6 +1517,12 @@ class PaiementApp {
         }
 
         await this.autoLiftRestrictionsForFacture(tx, tenantId, data.facture_id, userId);
+        await this.autoActivateTransportSubscriptionsForFacture(
+          tx,
+          data.facture_id,
+          userId,
+          requestIp,
+        );
 
         return tx.paiement.findMany({
           where: { id: { in: paiements.map((item) => item.id) } },

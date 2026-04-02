@@ -9,6 +9,7 @@ import {
   FiLayers,
   FiPercent,
   FiRepeat,
+  FiTruck,
 } from "react-icons/fi";
 import FinanceModuleLayout from "../components/FinanceModuleLayout";
 import { FinanceControlBanner, FinanceMetricCard } from "../components/financeUi";
@@ -51,6 +52,14 @@ import RemiseService, {
   getRemiseTypeLabel,
   type RemiseWithRelations,
 } from "../../../services/remise.service";
+import AbonnementTransportService, {
+  getAbonnementTransportDisplayLabel,
+  type AbonnementTransportWithRelations,
+} from "../../../services/abonnementTransport.service";
+import AbonnementCantineService, {
+  getAbonnementCantineDisplayLabel,
+  type AbonnementCantineWithRelations,
+} from "../../../services/abonnementCantine.service";
 import NotFound from "../../NotFound";
 import type { componentId } from "../../../types/types";
 
@@ -147,6 +156,12 @@ type DashboardAgeingBucket = {
   label: string;
   count: number;
   total: number;
+};
+
+type TransportHistoryDetails = {
+  notification_finance?: boolean;
+  reason?: string | null;
+  finance_processed_at?: string | null;
 };
 
 type FinanceDashboardTab = "synthese" | "retards" | "activite" | "automatisation" | "reporting";
@@ -251,6 +266,24 @@ function getPaymentChannel(method?: string | null) {
   }
 }
 
+function getLatestTransportHistory(item: AbonnementTransportWithRelations) {
+  return item.historiquesAffectation?.[0] ?? null;
+}
+
+function getTransportHistoryDetails(item: AbonnementTransportWithRelations): TransportHistoryDetails {
+  const history = getLatestTransportHistory(item);
+  if (!history?.details_json || typeof history.details_json !== "object" || Array.isArray(history.details_json)) {
+    return {};
+  }
+  const raw = history.details_json as Record<string, unknown>;
+  return {
+    notification_finance: raw.notification_finance === true,
+    reason: typeof raw.reason === "string" ? raw.reason : null,
+    finance_processed_at:
+      typeof raw.finance_processed_at === "string" ? raw.finance_processed_at : null,
+  };
+}
+
 function getInscriptionForYear(
   inscriptions?: DashboardInscriptionRelation[] | null,
   anneeId?: string | null,
@@ -287,6 +320,9 @@ export default function FinanceDashboardIndex() {
   const [plans, setPlans] = useState<PlanPaiementEleveWithRelations[]>([]);
   const [catalogueFrais, setCatalogueFrais] = useState<CatalogueFraisWithRelations[]>([]);
   const [remises, setRemises] = useState<RemiseWithRelations[]>([]);
+  const [pendingTransportBilling, setPendingTransportBilling] = useState<AbonnementTransportWithRelations[]>([]);
+  const [transportSubscriptions, setTransportSubscriptions] = useState<AbonnementTransportWithRelations[]>([]);
+  const [pendingCantineBilling, setPendingCantineBilling] = useState<AbonnementCantineWithRelations[]>([]);
   const [relances, setRelances] = useState<FinanceRelanceHistoryItem[]>([]);
   const [facturationsRecurrentes, setFacturationsRecurrentes] = useState<FacturationRecurrenteHistoryItem[]>([]);
   const [recurringReadiness, setRecurringReadiness] = useState<FacturationRecurrenteReadiness | null>(null);
@@ -294,6 +330,12 @@ export default function FinanceDashboardIndex() {
   const [isLoading, setIsLoading] = useState(true);
   const [sendingRelanceId, setSendingRelanceId] = useState<string | null>(null);
   const [isGeneratingRecurring, setIsGeneratingRecurring] = useState(false);
+  const [linkingTransportId, setLinkingTransportId] = useState<string | null>(null);
+  const [processingTransportBillingId, setProcessingTransportBillingId] = useState<string | null>(null);
+  const [processingCantineBillingId, setProcessingCantineBillingId] = useState<string | null>(null);
+  const [processingTransportRegularizationId, setProcessingTransportRegularizationId] = useState<string | null>(null);
+  const [signalingTransportSuspensionId, setSignalingTransportSuspensionId] = useState<string | null>(null);
+  const [transportFactureSelection, setTransportFactureSelection] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<FinanceDashboardTab>("retards");
 
   const canAccess = useMemo(() => {
@@ -327,6 +369,8 @@ export default function FinanceDashboardIndex() {
         const remiseService = new RemiseService();
         const relanceService = new FinanceRelanceService();
         const recurringService = new FacturationRecurrenteService();
+        const transportService = new AbonnementTransportService();
+        const cantineService = new AbonnementCantineService();
 
         const [
           facturesResult,
@@ -337,6 +381,9 @@ export default function FinanceDashboardIndex() {
           relancesResult,
           recurringHistoryResult,
           recurringReadinessResult,
+          pendingTransportResult,
+          transportSubscriptionsResult,
+          pendingCantineResult,
         ] =
           await Promise.all([
             factureService.getForEtablissement(etablissement_id, {
@@ -418,6 +465,19 @@ export default function FinanceDashboardIndex() {
               take: 20,
             }),
             recurringService.getReadiness({}),
+            transportService.getPendingFinanceBilling(etablissement_id),
+            transportService.getForEtablissement(etablissement_id, {
+              page: 1,
+              take: 500,
+              includeSpec: JSON.stringify({
+                eleve: { include: { utilisateur: { include: { profil: true } } } },
+                annee: true,
+                ligne: true,
+                arret: true,
+                facture: true,
+              }),
+            }),
+            cantineService.getPendingFinanceBilling(etablissement_id),
           ]);
 
         if (!active) return;
@@ -438,6 +498,21 @@ export default function FinanceDashboardIndex() {
         );
         setRemises(
           remisesResult?.status.success ? ((remisesResult.data.data as RemiseWithRelations[]) ?? []) : [],
+        );
+        setPendingTransportBilling(
+          pendingTransportResult?.status.success
+            ? ((pendingTransportResult.data as AbonnementTransportWithRelations[]) ?? [])
+            : [],
+        );
+        setTransportSubscriptions(
+          transportSubscriptionsResult?.status.success
+            ? ((transportSubscriptionsResult.data.data as AbonnementTransportWithRelations[]) ?? [])
+            : [],
+        );
+        setPendingCantineBilling(
+          pendingCantineResult?.status.success
+            ? ((pendingCantineResult.data as AbonnementCantineWithRelations[]) ?? [])
+            : [],
         );
         setRelances(
           relancesResult?.status.success
@@ -678,6 +753,41 @@ export default function FinanceDashboardIndex() {
   const recurrentFraisCount = useMemo(
     () => catalogueFrais.filter((item) => Boolean(item.est_recurrent)).length,
     [catalogueFrais],
+  );
+
+  const transportBillingCandidates = useMemo(() => {
+    const grouped = new Map<string, FactureWithRelations[]>();
+
+    pendingTransportBilling.forEach((item) => {
+      const key = `${item.eleve_id}::${item.annee_scolaire_id}`;
+      const matching = factures.filter(
+        (facture) =>
+          facture.eleve_id === item.eleve_id &&
+          facture.annee_scolaire_id === item.annee_scolaire_id &&
+          (facture.statut ?? "").toUpperCase() !== "ANNULEE",
+      );
+      grouped.set(key, matching);
+    });
+
+    return grouped;
+  }, [factures, pendingTransportBilling]);
+
+  const transportSuspensionCandidates = useMemo(
+    () =>
+      transportSubscriptions.filter((item) => {
+        const status = (item.statut ?? "").toUpperCase();
+        const financeStatus = (item.finance_status ?? "").toUpperCase();
+        const history = getLatestTransportHistory(item);
+        const historyDetails = getTransportHistoryDetails(item);
+        const regularizationPending =
+          history?.impact_tarifaire === true &&
+          historyDetails.notification_finance === true &&
+          !historyDetails.finance_processed_at;
+        if (["RESILIE", "ANNULE", "INACTIF"].includes(status)) return false;
+        if (["SUSPENDU_FINANCE", "EN_ATTENTE_SUSPENSION_FINANCIERE"].includes(status)) return false;
+        return financeStatus === "EN_ATTENTE_REGLEMENT" || regularizationPending;
+      }),
+    [transportSubscriptions],
   );
 
   const remiseStats = useMemo(
@@ -1007,6 +1117,119 @@ export default function FinanceDashboardIndex() {
     { id: "reporting", label: "Reporting", helper: `${dailyReceipts.length} jour(s)`, onClick: () => setActiveTab("reporting"), active: activeTab === "reporting" },
     { id: "automatisation", label: "Automatisation", helper: `${recurrentFraisCount} recurrents`, onClick: () => setActiveTab("automatisation"), active: activeTab === "automatisation" },
   ];
+
+  const refreshTransportFinanceData = async () => {
+    const service = new AbonnementTransportService();
+    const [refreshedPending, refreshedSubscriptions] = await Promise.all([
+      service.getPendingFinanceBilling(etablissement_id ?? ""),
+      service.getForEtablissement(etablissement_id ?? "", {
+        page: 1,
+        take: 500,
+        includeSpec: JSON.stringify({
+          eleve: { include: { utilisateur: { include: { profil: true } } } },
+          annee: true,
+          ligne: true,
+          arret: true,
+          facture: true,
+        }),
+      }),
+    ]);
+    setPendingTransportBilling(
+      refreshedPending?.status.success
+        ? ((refreshedPending.data as AbonnementTransportWithRelations[]) ?? [])
+        : [],
+    );
+    setTransportSubscriptions(
+      refreshedSubscriptions?.status.success
+        ? ((refreshedSubscriptions.data.data as AbonnementTransportWithRelations[]) ?? [])
+        : [],
+    );
+  };
+
+  const refreshCantineFinanceData = async () => {
+    const service = new AbonnementCantineService();
+    const refreshedPending = await service.getPendingFinanceBilling(etablissement_id ?? "");
+    setPendingCantineBilling(
+      refreshedPending?.status.success
+        ? ((refreshedPending.data as AbonnementCantineWithRelations[]) ?? [])
+        : [],
+    );
+  };
+
+  const handleLinkTransportFacture = async (item: AbonnementTransportWithRelations) => {
+    const factureId = transportFactureSelection[item.id];
+    if (!factureId) {
+      info("Selectionne d'abord une facture Finance pour ce service transport.", "error");
+      return;
+    }
+
+    try {
+      setLinkingTransportId(item.id);
+      await new AbonnementTransportService().linkFinanceFacture(item.id, factureId);
+      info("Service transport rattache a la facture selectionnee.", "success");
+      setTransportFactureSelection((current) => ({ ...current, [item.id]: "" }));
+      await refreshTransportFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setLinkingTransportId(null);
+    }
+  };
+
+  const handleProcessTransportRegularization = async (item: AbonnementTransportWithRelations) => {
+    try {
+      setProcessingTransportRegularizationId(item.id);
+      await new AbonnementTransportService().processFinanceRegularization(item.id);
+      info("Regularisation transport generee par Finance.", "success");
+      await refreshTransportFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setProcessingTransportRegularizationId(null);
+    }
+  };
+
+  const handleProcessTransportBilling = async (item: AbonnementTransportWithRelations) => {
+    try {
+      setProcessingTransportBillingId(item.id);
+      await new AbonnementTransportService().processFinanceBilling(item.id);
+      info("Facturation transport generee par Finance.", "success");
+      await refreshTransportFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setProcessingTransportBillingId(null);
+    }
+  };
+
+  const handleProcessCantineBilling = async (item: AbonnementCantineWithRelations) => {
+    try {
+      setProcessingCantineBillingId(item.id);
+      await new AbonnementCantineService().processFinanceBilling(item.id);
+      info("Facturation cantine generee par Finance.", "success");
+      await refreshCantineFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setProcessingCantineBillingId(null);
+    }
+  };
+
+  const handleSignalTransportSuspension = async (item: AbonnementTransportWithRelations) => {
+    try {
+      setSignalingTransportSuspensionId(item.id);
+      await new AbonnementTransportService().signalFinanceSuspension(item.id, {
+        source: "FINANCE_DASHBOARD",
+        motif: "Impaye signale depuis Finance",
+      });
+      info("Suspension transport signalee au module Transport.", "success");
+      await refreshTransportFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setSignalingTransportSuspensionId(null);
+    }
+  };
 
   const dashboardHighlights = [
     {
@@ -1421,6 +1644,272 @@ export default function FinanceDashboardIndex() {
                       {remiseStats.percent} en pourcentage, {remiseStats.fixed} fixes
                     </p>
                   </div>
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "synthese" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <FiTruck className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Transport a facturer</h3>
+                    <p className="text-sm text-slate-500">
+                      Demandes transport validees cote service et encore en attente de prise en charge Finance.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {pendingTransportBilling.slice(0, 6).map((item) => {
+                    const candidateKey = `${item.eleve_id}::${item.annee_scolaire_id}`;
+                    const candidates = transportBillingCandidates.get(candidateKey) ?? [];
+                    const history = getLatestTransportHistory(item);
+                    const historyDetails = getTransportHistoryDetails(item);
+                    const requiresRegularization =
+                      history?.impact_tarifaire === true &&
+                      historyDetails.notification_finance === true &&
+                      !historyDetails.finance_processed_at;
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-[22px] border border-amber-200 bg-amber-50/80 px-4 py-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {getAbonnementTransportDisplayLabel(item)}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {item.ligne?.nom ?? "Ligne non renseignee"}
+                              {item.arret?.nom ? ` - ${item.arret.nom}` : ""}
+                              {item.zone_transport ? ` - ${item.zone_transport}` : ""}
+                            </p>
+                            <p className="mt-1 text-xs text-amber-800">
+                              {item.annee?.nom ?? "Annee non renseignee"} - {item.finance_status ?? "A facturer"}
+                            </p>
+                            {requiresRegularization ? (
+                              <p className="mt-1 text-xs text-amber-900">
+                                Changement d'affectation avec impact tarifaire a regulariser.
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="min-w-[16rem] max-w-full space-y-2">
+                            {requiresRegularization ? (
+                              <button
+                                type="button"
+                                onClick={() => void handleProcessTransportRegularization(item)}
+                                disabled={processingTransportRegularizationId === item.id}
+                                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <FiRepeat />
+                                {processingTransportRegularizationId === item.id
+                                  ? "Regularisation..."
+                                  : "Generer la regularisation"}
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleProcessTransportBilling(item)}
+                                  disabled={processingTransportBillingId === item.id}
+                                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <FiFileText />
+                                  {processingTransportBillingId === item.id
+                                    ? "Facturation..."
+                                    : item.prorata_ratio != null && item.prorata_ratio > 0 && item.prorata_ratio < 1
+                                      ? "Generer la facture proratisée"
+                                      : "Generer la facturation"}
+                                </button>
+                                {item.prorata_ratio != null && item.prorata_ratio > 0 && item.prorata_ratio < 1 ? (
+                                  <p className="text-xs text-amber-900">
+                                    Prorata detecte: {(item.prorata_ratio * 100).toFixed(0)}% sur la periode d&apos;usage.
+                                  </p>
+                                ) : null}
+                                <select
+                                  value={transportFactureSelection[item.id] ?? ""}
+                                  onChange={(event) =>
+                                    setTransportFactureSelection((current) => ({
+                                      ...current,
+                                      [item.id]: event.target.value,
+                                    }))
+                                  }
+                                  disabled={linkingTransportId === item.id}
+                                  className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                                >
+                                  <option value="">
+                                    {candidates.length > 0
+                                      ? "Selectionner une facture existante si besoin"
+                                      : "Aucune facture correspondante"}
+                                  </option>
+                                  {candidates.map((facture) => (
+                                    <option key={facture.id} value={facture.id}>
+                                      {getFactureDisplayLabel(facture)} - {formatMoney(toNumber(facture.total_montant), facture.devise ?? "MGA")}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleLinkTransportFacture(item)}
+                                  disabled={linkingTransportId === item.id || candidates.length === 0}
+                                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <FiFileText />
+                                  {linkingTransportId === item.id ? "Rattachement..." : "Rattacher la facture"}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {!isLoading && pendingTransportBilling.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Aucune demande transport en attente de facturation.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "synthese" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <FiFileText className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Cantine a facturer</h3>
+                    <p className="text-sm text-slate-500">
+                      Demandes cantine en attente de prise en charge ou de validation Finance.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {pendingCantineBilling.slice(0, 6).map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-[22px] border border-amber-200 bg-amber-50/80 px-4 py-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {getAbonnementCantineDisplayLabel(item)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {item.formule?.nom ?? "Formule non renseignee"}
+                          </p>
+                          <p className="mt-1 text-xs text-amber-800">
+                            {item.annee?.nom ?? "Annee non renseignee"} - {item.finance_status ?? "EN_ATTENTE_VALIDATION_FINANCIERE"}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void handleProcessCantineBilling(item)}
+                          disabled={processingCantineBillingId === item.id}
+                          className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <FiFileText />
+                          {processingCantineBillingId === item.id ? "Facturation..." : "Generer la facturation"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {!isLoading && pendingCantineBilling.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Aucune demande cantine en attente de facturation.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "retards" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <FiTruck className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Transport a suspendre</h3>
+                    <p className="text-sm text-slate-500">
+                      Dossiers transport encore ouverts avec situation financiere en attente de reglement.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {transportSuspensionCandidates.slice(0, 8).map((item) => {
+                    const status = (item.statut ?? "").toUpperCase();
+                    const history = getLatestTransportHistory(item);
+                    const historyDetails = getTransportHistoryDetails(item);
+                    const regularizationPending =
+                      history?.impact_tarifaire === true &&
+                      historyDetails.notification_finance === true &&
+                      !historyDetails.finance_processed_at;
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-[22px] border border-rose-200 bg-rose-50/80 px-4 py-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {getAbonnementTransportDisplayLabel(item)}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {item.ligne?.nom ?? "Ligne non renseignee"}
+                              {item.arret?.nom ? ` - ${item.arret.nom}` : ""}
+                              {item.zone_transport ? ` - ${item.zone_transport}` : ""}
+                            </p>
+                            <p className="mt-1 text-xs text-rose-800">
+                              {item.annee?.nom ?? "Annee non renseignee"} - {item.finance_status ?? "En attente de reglement"}
+                            </p>
+                            {regularizationPending ? (
+                              <p className="mt-1 text-xs text-amber-700">
+                                Defaut de regularisation detecte apres changement d&apos;affectation transport.
+                              </p>
+                            ) : null}
+                            <p className="mt-1 text-xs text-slate-500">
+                              Statut service: {item.statut ?? "Non renseigne"}
+                            </p>
+                            {status === "EN_ATTENTE_SUSPENSION_FINANCIERE" ? (
+                              <p className="mt-1 text-xs text-amber-700">
+                                Suspension transmise a Transport et en attente de validation humaine.
+                              </p>
+                            ) : null}
+                            {status === "SUSPENDU_FINANCE" ? (
+                              <p className="mt-1 text-xs text-rose-700">
+                                Suspension financiere deja appliquee.
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleSignalTransportSuspension(item)}
+                              disabled={
+                                signalingTransportSuspensionId === item.id ||
+                                status === "EN_ATTENTE_SUSPENSION_FINANCIERE" ||
+                                status === "SUSPENDU_FINANCE"
+                              }
+                              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <FiAlertCircle />
+                              {signalingTransportSuspensionId === item.id
+                                ? "Signalement..."
+                                : status === "EN_ATTENTE_SUSPENSION_FINANCIERE"
+                                  ? "Validation transport en attente"
+                                  : status === "SUSPENDU_FINANCE"
+                                    ? "Deja suspendu"
+                                    : "Signaler la suspension"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {!isLoading && transportSuspensionCandidates.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Aucun dossier transport a suspendre pour impaye actuellement.
+                    </p>
+                  ) : null}
                 </div>
               </div>
             ) : null}

@@ -1,0 +1,2 @@
+ALTER TABLE abonnements_transport
+ADD COLUMN a_facturer BOOLEAN NOT NULL DEFAULT FALSE;

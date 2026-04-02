@@ -68,6 +68,27 @@ class InscriptionApp {
         return this.router;
     }
 
+    private parseLigneTransportSettings(value: Prisma.JsonValue | null | undefined) {
+        if (!value || typeof value !== "object" || Array.isArray(value)) {
+            return {
+                zones: [] as string[],
+                inscriptions_ouvertes: true,
+            };
+        }
+
+        const raw = value as Record<string, unknown>;
+        const zones = Array.isArray(raw.zones)
+            ? raw.zones
+                .map((item) => (typeof item === "string" ? item.trim() : ""))
+                .filter((item): item is string => Boolean(item))
+            : [];
+
+        return {
+            zones,
+            inscriptions_ouvertes: raw.inscriptions_ouvertes !== false,
+        };
+    }
+
     private async create(req: Request, res: R, next: NextFunction): Promise<void> {
         try {
             const data: Inscription = req.body;
@@ -542,10 +563,12 @@ class InscriptionApp {
             const passTuteur = generateRandomPassword(9);
             const transportActive = this.toBool(services?.transport_active, false);
             const cantineActive = this.toBool(services?.cantine_active, false);
-            const transportBillingMode = this.normalizeServiceBillingMode(services?.transport_mode_facturation);
             const cantineBillingMode = this.normalizeServiceBillingMode(services?.cantine_mode_facturation);
             const transportLineId = this.toNullableString(services?.ligne_transport_id);
             const transportStopId = this.toNullableString(services?.arret_transport_id);
+            const transportZone = this.toNullableString(services?.zone_transport);
+            const transportStartDate = this.toNullableString(services?.date_debut_service);
+            const transportEndDate = this.toNullableString(services?.date_fin_service);
             const cantineFormulaId = this.toNullableString(services?.formule_cantine_id);
             const factureDateEmission = scolarite?.date_inscription
                 ? new Date(scolarite.date_inscription)
@@ -558,6 +581,7 @@ class InscriptionApp {
                 select: {
                     id: true,
                     date_debut: true,
+                    date_fin: true,
                 },
             });
             const classe = await this.prisma.classe.findFirst({
@@ -584,20 +608,31 @@ class InscriptionApp {
             if (cantineActive && !cantineFormulaId) {
                 return Response.error(res, "Activez une formule de cantine pour ouvrir le service cantine.", 400, new Error());
             }
-            let transportLineRecord: { id: string; catalogue_frais_id: string | null } | null = null;
+            let transportLineRecord: {
+                id: string;
+                catalogue_frais_id: string | null;
+                infos_vehicule_json: Prisma.JsonValue | null;
+            } | null = null;
             if (transportLineId) {
                 transportLineRecord = await this.prisma.ligneTransport.findFirst({
                     where: {
                         id: transportLineId,
                         etablissement_id,
                     },
-                    select: { id: true, catalogue_frais_id: true },
+                    select: { id: true, catalogue_frais_id: true, infos_vehicule_json: true },
                 });
                 if (!transportLineRecord) {
                     return Response.error(res, "La ligne de transport selectionnee n'appartient pas a cet etablissement.", 400, new Error());
                 }
-                if (transportActive && !transportLineRecord.catalogue_frais_id) {
-                    return Response.error(res, "La ligne de transport selectionnee n'est reliee a aucun frais catalogue.", 400, new Error());
+                const lineSettings = this.parseLigneTransportSettings(transportLineRecord.infos_vehicule_json);
+                if (transportActive && !lineSettings.inscriptions_ouvertes) {
+                    return Response.error(res, "La ligne de transport selectionnee n'est pas ouverte aux nouvelles demandes.", 400, new Error());
+                }
+                if (transportActive && !transportZone) {
+                    return Response.error(res, "Selectionnez une zone de transport.", 400, new Error());
+                }
+                if (transportActive && transportZone && !lineSettings.zones.includes(transportZone)) {
+                    return Response.error(res, "La zone de transport selectionnee n'est pas parametree sur cette ligne.", 400, new Error());
                 }
             }
             if (transportStopId) {
@@ -614,6 +649,23 @@ class InscriptionApp {
                 if (!transportStop) {
                     return Response.error(res, "L'arret de transport selectionne n'appartient pas a la ligne choisie.", 400, new Error());
                 }
+            }
+            const transportDateDebut = transportStartDate ? new Date(transportStartDate) : null;
+            const transportDateFin = transportEndDate ? new Date(transportEndDate) : null;
+            if (transportDateDebut && Number.isNaN(transportDateDebut.getTime())) {
+                return Response.error(res, "La date de debut du transport est invalide.", 400, new Error());
+            }
+            if (transportDateFin && Number.isNaN(transportDateFin.getTime())) {
+                return Response.error(res, "La date de fin du transport est invalide.", 400, new Error());
+            }
+            if (transportDateDebut && transportDateFin && transportDateFin < transportDateDebut) {
+                return Response.error(res, "La date de fin du transport doit etre posterieure a la date de debut.", 400, new Error());
+            }
+            if (transportDateDebut && (transportDateDebut < anneeScolaire.date_debut || transportDateDebut > anneeScolaire.date_fin)) {
+                return Response.error(res, "La date de debut du transport doit etre incluse dans l'annee scolaire.", 400, new Error());
+            }
+            if (transportDateFin && (transportDateFin < anneeScolaire.date_debut || transportDateFin > anneeScolaire.date_fin)) {
+                return Response.error(res, "La date de fin du transport doit etre incluse dans l'annee scolaire.", 400, new Error());
             }
             let cantineFormulaRecord: { id: string; catalogue_frais_id: string | null } | null = null;
             if (cantineFormulaId) {
@@ -646,13 +698,9 @@ class InscriptionApp {
             const resolvedFinance = {
                 ...(finance ?? {}),
                 catalogue_frais_transport_id:
-                    transportActive && transportBillingMode === "SERVICE_AND_BILL"
-                        ? transportLineRecord?.catalogue_frais_id ?? null
-                        : null,
+                    null,
                 catalogue_frais_cantine_id:
-                    cantineActive && cantineBillingMode === "SERVICE_AND_BILL"
-                        ? cantineFormulaRecord?.catalogue_frais_id ?? null
-                        : null,
+                    null,
             };
             const invoiceLines = await this.buildInvoiceLines(
                 this.prisma,
@@ -846,9 +894,16 @@ class InscriptionApp {
                             annee_scolaire_id,
                             ligne_transport_id: transportLineId,
                             arret_transport_id: transportStopId,
-                            statut: "ACTIF",
+                            statut: "EN_ATTENTE_VALIDATION_INTERNE",
                         },
                     });
+                    await tx.$executeRaw(
+                        Prisma.sql`UPDATE abonnements_transport
+                          SET zone_transport = ${transportZone},
+                              date_debut_service = ${transportDateDebut},
+                              date_fin_service = ${transportDateFin}
+                          WHERE id = ${abonnementTransport.id}`,
+                    );
                 }
 
                 let abonnementCantine = null;
@@ -858,9 +913,14 @@ class InscriptionApp {
                             eleve_id: eleveCreated.id,
                             annee_scolaire_id,
                             formule_cantine_id: cantineFormulaId,
-                            statut: "ACTIF",
+                            statut: "EN_ATTENTE_VALIDATION_FINANCIERE",
                         },
                     });
+                    await tx.$executeRaw(
+                        Prisma.sql`UPDATE abonnements_cantine
+                          SET date_effet = ${factureDateEmission}
+                          WHERE id = ${abonnementCantine.id}`,
+                    );
                 }
 
                 let facture = null;
@@ -918,24 +978,6 @@ class InscriptionApp {
                         })),
                     });
 
-                    if (abonnementTransport && transportBillingMode === "SERVICE_AND_BILL") {
-                        abonnementTransport = await tx.abonnementTransport.update({
-                            where: { id: abonnementTransport.id },
-                            data: {
-                                facture_id: facture.id,
-                            },
-                        });
-                    }
-
-                    if (abonnementCantine && cantineBillingMode === "SERVICE_AND_BILL") {
-                        abonnementCantine = await tx.abonnementCantine.update({
-                            where: { id: abonnementCantine.id },
-                            data: {
-                                facture_id: facture.id,
-                            },
-                        });
-                    }
-
                     for (const line of finalInvoiceLines) {
                         await createRecurringExecutionIfNeeded(tx, {
                             tenantId: etablissement_id,
@@ -984,11 +1026,14 @@ class InscriptionApp {
                         echeances: paymentSchedule,
                         services: {
                             transport_active: transportActive,
-                            transport_mode_facturation: transportActive ? transportBillingMode : null,
+                            transport_mode_facturation: transportActive ? "SERVICE_ONLY" : null,
                             ligne_transport_id: transportActive ? transportLineId : null,
                             arret_transport_id: transportActive ? transportStopId : null,
+                            zone_transport: transportActive ? transportZone : null,
+                            date_debut_service: transportActive ? transportDateDebut?.toISOString() ?? null : null,
+                            date_fin_service: transportActive ? transportDateFin?.toISOString() ?? null : null,
                             cantine_active: cantineActive,
-                            cantine_mode_facturation: cantineActive ? cantineBillingMode : null,
+                            cantine_mode_facturation: cantineActive ? "SERVICE_ONLY" : null,
                             formule_cantine_id: cantineActive ? cantineFormulaId : null,
                         },
                         finance: {
@@ -996,22 +1041,15 @@ class InscriptionApp {
                             catalogue_frais_inscription_nombre_tranches: this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_inscription_nombre_tranches),
                             catalogue_frais_scolarite_id: this.toNullableString(finance?.catalogue_frais_scolarite_id),
                             catalogue_frais_scolarite_nombre_tranches: this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_scolarite_nombre_tranches),
-                            catalogue_frais_transport_id: transportActive ? resolvedFinance.catalogue_frais_transport_id : null,
-                            catalogue_frais_transport_nombre_tranches: transportActive
-                                && transportBillingMode === "SERVICE_AND_BILL"
-                                ? this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_transport_nombre_tranches)
-                                : 1,
-                            catalogue_frais_cantine_id: cantineActive ? resolvedFinance.catalogue_frais_cantine_id : null,
-                            catalogue_frais_cantine_nombre_tranches: cantineActive
-                                && cantineBillingMode === "SERVICE_AND_BILL"
-                                ? this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_cantine_nombre_tranches)
-                                : 1,
+                            catalogue_frais_transport_id: null,
+                            catalogue_frais_cantine_id: null,
+                            catalogue_frais_cantine_nombre_tranches: 1,
                             remise_id: appliedRemise?.id ?? this.toNullableString(finance?.remise_id),
                             remise_nom: appliedRemise?.nom ?? null,
                             frais_inscription: this.extractFinanceLineAmount(invoiceLines, "catalogue_frais_inscription_id", finance),
                             frais_scolarite: this.extractFinanceLineAmount(invoiceLines, "catalogue_frais_scolarite_id", finance),
-                            frais_transport: this.extractFinanceLineAmount(invoiceLines, "catalogue_frais_transport_id", resolvedFinance),
-                            frais_cantine: this.extractFinanceLineAmount(invoiceLines, "catalogue_frais_cantine_id", resolvedFinance),
+                            frais_transport: 0,
+                            frais_cantine: null,
                             remise_type: appliedRemise?.type ?? finance?.remise_type ?? "AUCUNE",
                             remise_valeur: appliedRemise?.valeur ?? this.toMoney(finance?.remise_valeur),
                             remise_montant: remiseMontant,
@@ -1147,20 +1185,6 @@ class InscriptionApp {
                 fallback_label: "Frais de scolarite",
                 enabled: true,
                 allowed_scopes: ["GENERAL", "SCOLARITE"],
-            },
-            {
-                source_key: "catalogue_frais_transport_id",
-                tranche_key: "catalogue_frais_transport_nombre_tranches",
-                fallback_label: "Frais de transport",
-                enabled: servicesState.transportActive,
-                allowed_scopes: ["GENERAL", "TRANSPORT"],
-            },
-            {
-                source_key: "catalogue_frais_cantine_id",
-                tranche_key: "catalogue_frais_cantine_nombre_tranches",
-                fallback_label: "Frais de cantine",
-                enabled: servicesState.cantineActive,
-                allowed_scopes: ["GENERAL", "CANTINE"],
             },
         ] as const;
 

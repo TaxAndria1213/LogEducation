@@ -12,6 +12,20 @@ type LigneTransportPayload = {
   infos_vehicule_json: unknown;
 };
 
+type LigneTransportSettings = {
+  zones: string[];
+  zone_tarifs: Record<string, number>;
+  inscriptions_ouvertes: boolean;
+  prorata_mode: "MONTH" | "SCHOOL_YEAR";
+  access_rules: {
+    bloquer_si_a_facturer: boolean;
+    bloquer_si_en_attente_reglement: boolean;
+    bloquer_si_suspension_financiere: boolean;
+    autoriser_avant_date_debut: boolean;
+    validation_humaine_suspension_financiere: boolean;
+  };
+};
+
 class LigneTransportApp {
   public app: Application;
   public router: Router;
@@ -57,6 +71,69 @@ class LigneTransportApp {
     return { AND: [existingWhere, { etablissement_id: tenantId }] };
   }
 
+  private parseLineSettings(raw: Record<string, unknown>): LigneTransportSettings {
+    const rawZones = raw.zones_transport;
+    const zones: string[] = [];
+    const zoneTarifs: Record<string, number> = {};
+    const sourceZones =
+      Array.isArray(rawZones)
+        ? rawZones
+        : typeof rawZones === "string"
+          ? rawZones.split(",")
+          : [];
+
+    sourceZones.forEach((item) => {
+      if (typeof item !== "string") return;
+      const [rawLabel, rawAmount] = item.split(":");
+      const label = rawLabel?.trim();
+      if (!label) return;
+      zones.push(label);
+      if (rawAmount != null && rawAmount.trim()) {
+        const parsedAmount = Number(rawAmount.trim());
+        if (Number.isFinite(parsedAmount) && parsedAmount >= 0) {
+          zoneTarifs[label] = Math.round(parsedAmount * 100) / 100;
+        }
+      }
+    });
+
+    return {
+      zones,
+      zone_tarifs: zoneTarifs,
+      inscriptions_ouvertes:
+        raw.inscriptions_ouvertes === false ||
+        raw.inscriptions_ouvertes === "false" ||
+        raw.inscriptions_ouvertes === 0 ||
+        raw.inscriptions_ouvertes === "0"
+          ? false
+          : true,
+      prorata_mode:
+        raw.prorata_mode === "SCHOOL_YEAR" || raw.prorata_mode === "ANNEE_SCOLAIRE"
+          ? "SCHOOL_YEAR"
+          : "MONTH",
+      access_rules: {
+        bloquer_si_a_facturer:
+          raw.bloquer_si_a_facturer === false || raw.bloquer_si_a_facturer === "false"
+            ? false
+            : true,
+        bloquer_si_en_attente_reglement:
+          raw.bloquer_si_en_attente_reglement === false ||
+          raw.bloquer_si_en_attente_reglement === "false"
+            ? false
+            : true,
+        bloquer_si_suspension_financiere:
+          raw.bloquer_si_suspension_financiere === false ||
+          raw.bloquer_si_suspension_financiere === "false"
+            ? false
+            : true,
+        autoriser_avant_date_debut:
+          raw.autoriser_avant_date_debut === true || raw.autoriser_avant_date_debut === "true",
+        validation_humaine_suspension_financiere:
+          raw.validation_humaine_suspension_financiere === true ||
+          raw.validation_humaine_suspension_financiere === "true",
+      },
+    };
+  }
+
   private async normalizePayload(raw: Record<string, unknown>, tenantId: string): Promise<LigneTransportPayload> {
     const nom = typeof raw.nom === "string" ? raw.nom.trim() : "";
     const catalogue_frais_id =
@@ -92,11 +169,32 @@ class LigneTransportApp {
       throw new Error("Le frais selectionne n'est pas compatible avec le transport.");
     }
 
+    const settings = this.parseLineSettings(raw);
+    if (settings.zones.length === 0) {
+      throw new Error("Au moins une zone de transport doit etre parametree.");
+    }
+
     return {
       etablissement_id: tenantId,
       nom,
       catalogue_frais_id,
-      infos_vehicule_json: raw.infos_vehicule_json ?? null,
+      infos_vehicule_json: {
+        ...(raw.infos_vehicule_json && typeof raw.infos_vehicule_json === "object" && !Array.isArray(raw.infos_vehicule_json)
+          ? (raw.infos_vehicule_json as Record<string, unknown>)
+          : {}),
+        zones: settings.zones,
+        zone_tarifs: settings.zone_tarifs,
+        inscriptions_ouvertes: settings.inscriptions_ouvertes,
+        prorata_mode: settings.prorata_mode,
+        bloquer_si_a_facturer: settings.access_rules.bloquer_si_a_facturer,
+        bloquer_si_en_attente_reglement:
+          settings.access_rules.bloquer_si_en_attente_reglement,
+        bloquer_si_suspension_financiere:
+          settings.access_rules.bloquer_si_suspension_financiere,
+        autoriser_avant_date_debut: settings.access_rules.autoriser_avant_date_debut,
+        validation_humaine_suspension_financiere:
+          settings.access_rules.validation_humaine_suspension_financiere,
+      },
     };
   }
 

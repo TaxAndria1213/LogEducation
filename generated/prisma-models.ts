@@ -1207,8 +1207,13 @@ export interface AbonnementTransport {
   annee_scolaire_id: string;
   ligne_transport_id: string;
   arret_transport_id: string | null;
+  zone_transport: string | null;
   facture_id: string | null;
+  a_facturer: boolean;
   statut: string | null;
+  date_debut_service: Date | null;
+  date_fin_service: Date | null;
+  prorata_ratio: Decimal | null;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;
@@ -1216,6 +1221,26 @@ export interface AbonnementTransport {
   ligne?: LigneTransport;
   arret?: ArretTransport | null;
   facture?: Facture | null;
+  historiquesAffectation?: HistoriqueAffectationTransport[];
+}
+
+export interface HistoriqueAffectationTransport {
+  id: string;
+  abonnement_transport_id: string;
+  ancienne_ligne_transport_id: string;
+  ancien_arret_transport_id: string | null;
+  ancienne_zone_transport: string | null;
+  nouvelle_ligne_transport_id: string;
+  nouvel_arret_transport_id: string | null;
+  nouvelle_zone_transport: string | null;
+  date_effet: Date;
+  impact_tarifaire: boolean;
+  ancien_statut: string | null;
+  nouveau_statut: string | null;
+  details_json: JsonValue | null;
+  created_at: Date;
+  updated_at: Date;
+  abonnementTransport?: AbonnementTransport;
 }
 
 export interface FormuleCantine {
@@ -1236,6 +1261,7 @@ export interface AbonnementCantine {
   formule_cantine_id: string;
   facture_id: string | null;
   statut: string | null;
+  date_effet: Date | null;
   solde_prepaye: Decimal;
   solde_min_alerte: Decimal;
   dernier_rechargement_le: Date | null;

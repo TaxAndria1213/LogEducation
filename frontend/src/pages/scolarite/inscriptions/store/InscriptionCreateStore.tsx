@@ -18,7 +18,9 @@ import ClasseService from "../../../../services/classe.service";
 import CatalogueFraisService, { isApprovedCatalogueFrais } from "../../../../services/catalogueFrais.service";
 import FormuleCantineService from "../../../../services/formuleCantine.service";
 import InscriptionService from "../../../../services/inscription.service";
-import LigneTransportService from "../../../../services/ligneTransport.service";
+import LigneTransportService, {
+  getLigneTransportSettings,
+} from "../../../../services/ligneTransport.service";
 import RemiseService from "../../../../services/remise.service";
 import ParentTuteurService from "../../../../services/parentTuteur.service";
 
@@ -38,7 +40,13 @@ type State = {
 
   scolariteInitialData: Partial<InscriptionScolarite> | null;
   classeOptions: Array<Option & { niveau_scolaire_id?: string | null }>;
-  transportLineOptions: Array<Option & { catalogue_frais_id?: string | null }>;
+  transportLineOptions: Array<
+    Option & {
+      catalogue_frais_id?: string | null;
+      zones?: string[];
+      inscriptions_ouvertes?: boolean;
+    }
+  >;
   transportStopOptions: Array<Option & { ligne_transport_id?: string | null }>;
   cantineFormulaOptions: Array<Option & { catalogue_frais_id?: string | null }>;
   catalogueFraisOptions: Array<
@@ -210,6 +218,8 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
                   .filter(Boolean)
                   .join(" - "),
                 catalogue_frais_id: ligne.catalogue_frais_id ?? null,
+                zones: getLigneTransportSettings(ligne).zones,
+                inscriptions_ouvertes: getLigneTransportSettings(ligne).inscriptions_ouvertes,
               }),
             )
           : [];

@@ -7,7 +7,9 @@ import { useAuth } from "../../../../../hooks/useAuth";
 import { useInfo } from "../../../../../hooks/useInfo";
 import { FieldWrapper } from "../../../../../components/Form/fields/FieldWrapper";
 import { getInputClassName } from "../../../../../components/Form/fields/inputStyles";
-import LigneTransportService from "../../../../../services/ligneTransport.service";
+import LigneTransportService, {
+  getLigneTransportSettings,
+} from "../../../../../services/ligneTransport.service";
 import ArretTransportService from "../../../../../services/arretTransport.service";
 import AbonnementTransportService from "../../../../../services/abonnementTransport.service";
 import CatalogueFraisService, {
@@ -27,7 +29,14 @@ import type {
 const lineSchema = z.object({
   nom: z.string().min(1, "Le nom est obligatoire."),
   catalogue_frais_id: z.string().min(1, "Le frais catalogue est obligatoire."),
-  infos_vehicule_json: z.string().optional(),
+  zones_transport: z.string().min(1, "Au moins une zone est obligatoire."),
+  inscriptions_ouvertes: z.boolean().default(true),
+  prorata_mode: z.enum(["MONTH", "SCHOOL_YEAR"]).default("MONTH"),
+  bloquer_si_a_facturer: z.boolean().default(true),
+  bloquer_si_en_attente_reglement: z.boolean().default(true),
+  bloquer_si_suspension_financiere: z.boolean().default(true),
+  autoriser_avant_date_debut: z.boolean().default(false),
+  validation_humaine_suspension_financiere: z.boolean().default(false),
 });
 
 const stopSchema = z.object({
@@ -40,9 +49,10 @@ const subscriptionSchema = z.object({
   eleve_id: z.string().min(1, "L'eleve est obligatoire."),
   ligne_transport_id: z.string().min(1, "La ligne est obligatoire."),
   arret_transport_id: z.string().optional(),
+  zone_transport: z.string().min(1, "La zone est obligatoire."),
   date_debut_service: z.string().optional(),
   date_fin_service: z.string().optional(),
-  statut: z.string().default("EN_ATTENTE_VALIDATION_FINANCIERE"),
+  statut: z.string().default("EN_ATTENTE_VALIDATION_INTERNE"),
 }).superRefine((data, ctx) => {
   if (data.date_debut_service && data.date_fin_service) {
     const start = new Date(data.date_debut_service);
@@ -58,16 +68,6 @@ const subscriptionSchema = z.object({
 });
 
 type TransportAction = "line" | "stop" | "subscription";
-
-function parseVehicleInfo(value?: string) {
-  const trimmed = value?.trim();
-  if (!trimmed) return null;
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    throw new Error("Le champ infos vehicule doit contenir un JSON valide.");
-  }
-}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
@@ -163,7 +163,18 @@ export default function TransportForm() {
   const [submittingAction, setSubmittingAction] = useState<TransportAction | null>(null);
   const lineForm = useForm<z.infer<typeof lineSchema>>({
     resolver: zodResolver(lineSchema),
-    defaultValues: { nom: "", catalogue_frais_id: "", infos_vehicule_json: "" },
+    defaultValues: {
+      nom: "",
+      catalogue_frais_id: "",
+      zones_transport: "",
+      inscriptions_ouvertes: true,
+      prorata_mode: "MONTH",
+      bloquer_si_a_facturer: true,
+      bloquer_si_en_attente_reglement: true,
+      bloquer_si_suspension_financiere: true,
+      autoriser_avant_date_debut: false,
+      validation_humaine_suspension_financiere: false,
+    },
   });
   const stopForm = useForm<z.infer<typeof stopSchema>>({
     resolver: zodResolver(stopSchema),
@@ -175,9 +186,10 @@ export default function TransportForm() {
       eleve_id: "",
       ligne_transport_id: "",
       arret_transport_id: "",
+      zone_transport: "",
       date_debut_service: "",
       date_fin_service: "",
-      statut: "EN_ATTENTE_VALIDATION_FINANCIERE",
+      statut: "EN_ATTENTE_VALIDATION_INTERNE",
     },
   });
 
@@ -187,6 +199,10 @@ export default function TransportForm() {
   const selectedLine = useMemo(
     () => lignes.find((item) => item.id === selectedLineForSubscription) ?? null,
     [lignes, selectedLineForSubscription],
+  );
+  const selectedLineSettings = useMemo(
+    () => getLigneTransportSettings(selectedLine),
+    [selectedLine],
   );
 
   const load = useMemo(
@@ -238,6 +254,10 @@ export default function TransportForm() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    subscriptionForm.setValue("zone_transport", "");
+  }, [selectedLineForSubscription, subscriptionForm]);
+
   const visibleStops = useMemo(
     () =>
       arrets.filter(
@@ -269,10 +289,29 @@ export default function TransportForm() {
                 etablissement_id,
                 nom: data.nom,
                 catalogue_frais_id: data.catalogue_frais_id,
-                infos_vehicule_json: parseVehicleInfo(data.infos_vehicule_json),
+                zones_transport: data.zones_transport,
+                inscriptions_ouvertes: data.inscriptions_ouvertes,
+                prorata_mode: data.prorata_mode,
+                bloquer_si_a_facturer: data.bloquer_si_a_facturer,
+                bloquer_si_en_attente_reglement: data.bloquer_si_en_attente_reglement,
+                bloquer_si_suspension_financiere: data.bloquer_si_suspension_financiere,
+                autoriser_avant_date_debut: data.autoriser_avant_date_debut,
+                validation_humaine_suspension_financiere:
+                  data.validation_humaine_suspension_financiere,
               });
               info("Ligne creee.", "success");
-              lineForm.reset({ nom: "", catalogue_frais_id: "", infos_vehicule_json: "" });
+              lineForm.reset({
+                nom: "",
+                catalogue_frais_id: "",
+                zones_transport: "",
+                inscriptions_ouvertes: true,
+                prorata_mode: "MONTH",
+                bloquer_si_a_facturer: true,
+                bloquer_si_en_attente_reglement: true,
+                bloquer_si_suspension_financiere: true,
+                autoriser_avant_date_debut: false,
+                validation_humaine_suspension_financiere: false,
+              });
               await load();
             } catch (error) {
               info(getErrorMessage(error), "error");
@@ -338,21 +377,186 @@ export default function TransportForm() {
 
           <Controller
             control={lineForm.control}
-            name="infos_vehicule_json"
+            name="zones_transport"
             render={({ field, fieldState }) => (
               <FieldWrapper
-                id="transport_line_infos"
-                label="Infos vehicule JSON"
+                id="transport_line_zones"
+                label="Zones"
                 error={fieldState.error?.message}
+                hint="Separe les zones par des virgules. Tu peux aussi fixer un tarif par zone avec le format Nom:Montant. Exemple: Nord:15000, Centre:12000, Sud."
               >
-                <textarea
+                <input
                   {...field}
                   disabled={loading || submittingAction === "line"}
                   className={getInputClassName(Boolean(fieldState.error))}
+                  placeholder="Nord, Centre, Sud"
                 />
               </FieldWrapper>
             )}
           />
+
+          <Controller
+            control={lineForm.control}
+            name="prorata_mode"
+            render={({ field, fieldState }) => (
+              <FieldWrapper
+                id="transport_line_prorata_mode"
+                label="Mode de prorata"
+                error={fieldState.error?.message}
+                hint="Choisis si le prorata doit etre calcule sur le mois courant ou sur toute l'annee scolaire."
+              >
+                <select
+                  {...field}
+                  disabled={loading || submittingAction === "line"}
+                  className={getInputClassName(Boolean(fieldState.error))}
+                >
+                  <option value="MONTH">Mensuel</option>
+                  <option value="SCHOOL_YEAR">Annee scolaire</option>
+                </select>
+              </FieldWrapper>
+            )}
+          />
+
+          <Controller
+            control={lineForm.control}
+            name="inscriptions_ouvertes"
+            render={({ field }) => (
+              <label className="flex items-start gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={(event) => field.onChange(event.target.checked)}
+                  disabled={loading || submittingAction === "line"}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                />
+                <span>
+                  Inscriptions ouvertes
+                  <span className="mt-1 block text-xs text-slate-500">
+                    Decoche pour fermer temporairement cette ligne aux nouvelles demandes.
+                  </span>
+                </span>
+              </label>
+            )}
+          />
+
+          <div className="md:col-span-2 rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+            <p className="text-sm font-semibold text-slate-900">Regles d'eligibilite</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Ces reglages pilotent le droit d'acces transport selon la situation transmise par Finance.
+            </p>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <Controller
+                control={lineForm.control}
+                name="bloquer_si_a_facturer"
+                render={({ field }) => (
+                  <label className="flex items-start gap-3 rounded-[18px] border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.target.checked)}
+                      disabled={loading || submittingAction === "line"}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                    />
+                    <span>
+                      Bloquer si le dossier est a facturer
+                      <span className="mt-1 block text-xs text-slate-500">
+                        L'acces reste en attente tant que Finance n'a pas encore pris le dossier en charge.
+                      </span>
+                    </span>
+                  </label>
+                )}
+              />
+
+              <Controller
+                control={lineForm.control}
+                name="bloquer_si_en_attente_reglement"
+                render={({ field }) => (
+                  <label className="flex items-start gap-3 rounded-[18px] border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.target.checked)}
+                      disabled={loading || submittingAction === "line"}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                    />
+                    <span>
+                      Bloquer si le reglement est en attente
+                      <span className="mt-1 block text-xs text-slate-500">
+                        A laisser actif seulement si l'etablissement autorise l'usage avant paiement complet.
+                      </span>
+                    </span>
+                  </label>
+                )}
+              />
+
+              <Controller
+                control={lineForm.control}
+                name="bloquer_si_suspension_financiere"
+                render={({ field }) => (
+                  <label className="flex items-start gap-3 rounded-[18px] border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.target.checked)}
+                      disabled={loading || submittingAction === "line"}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                    />
+                    <span>
+                      Bloquer si Finance suspend le dossier
+                      <span className="mt-1 block text-xs text-slate-500">
+                        La suspension financiere devient alors directement bloquante pour l'acces.
+                      </span>
+                    </span>
+                  </label>
+                )}
+              />
+
+              <Controller
+                control={lineForm.control}
+                name="autoriser_avant_date_debut"
+                render={({ field }) => (
+                  <label className="flex items-start gap-3 rounded-[18px] border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.target.checked)}
+                      disabled={loading || submittingAction === "line"}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                    />
+                    <span>
+                      Autoriser avant la date de debut
+                      <span className="mt-1 block text-xs text-slate-500">
+                        Permet l'acces immediat si le service est deja valide, meme avant la date planifiee.
+                      </span>
+                    </span>
+                  </label>
+                )}
+              />
+
+              <Controller
+                control={lineForm.control}
+                name="validation_humaine_suspension_financiere"
+                render={({ field }) => (
+                  <label className="flex items-start gap-3 rounded-[18px] border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={(event) => field.onChange(event.target.checked)}
+                      disabled={loading || submittingAction === "line"}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                    />
+                    <span>
+                      Validation humaine avant suspension financiere
+                      <span className="mt-1 block text-xs text-slate-500">
+                        Si active, le responsable transport devra confirmer la suspension apres le signal de Finance.
+                      </span>
+                    </span>
+                  </label>
+                )}
+              />
+            </div>
+          </div>
 
           <div className="md:col-span-2 flex justify-end">
             <button
@@ -492,21 +696,23 @@ export default function TransportForm() {
                 annee_scolaire_id: currentYear.id,
                 ligne_transport_id: data.ligne_transport_id,
                 arret_transport_id: data.arret_transport_id || null,
+                zone_transport: data.zone_transport || null,
                 date_debut_service: data.date_debut_service || null,
                 date_fin_service: data.date_fin_service || null,
-                statut: "EN_ATTENTE_VALIDATION_FINANCIERE",
+                statut: "EN_ATTENTE_VALIDATION_INTERNE",
               });
               info(
-                "Abonnement transport cree. Le service reste en attente de validation financiere.",
+                "Abonnement transport cree. La demande reste en attente de validation interne.",
                 "success",
               );
               subscriptionForm.reset({
                 eleve_id: "",
                 ligne_transport_id: "",
                 arret_transport_id: "",
+                zone_transport: "",
                 date_debut_service: "",
                 date_fin_service: "",
-                statut: "EN_ATTENTE_VALIDATION_FINANCIERE",
+                statut: "EN_ATTENTE_VALIDATION_INTERNE",
               });
               await load();
             } catch (error) {
@@ -619,13 +825,54 @@ export default function TransportForm() {
 
           <Controller
             control={subscriptionForm.control}
+            name="zone_transport"
+            render={({ field, fieldState }) => (
+              <FieldWrapper
+                id="transport_subscription_zone"
+                label="Zone"
+                required
+                error={fieldState.error?.message}
+                hint={
+                  selectedLineSettings.zones.length > 0
+                    ? "Choisis une zone parametree sur la ligne."
+                    : "Parametre d'abord les zones sur la ligne choisie."
+                }
+              >
+                <select
+                  {...field}
+                  disabled={
+                    loading ||
+                    submittingAction === "subscription" ||
+                    selectedLineSettings.zones.length === 0
+                  }
+                  className={getInputClassName(Boolean(fieldState.error))}
+                >
+                  <option value="">
+                    {selectedLineSettings.zones.length > 0
+                      ? "Selectionner une zone"
+                      : "Aucune zone parametree"}
+                  </option>
+                  {selectedLineSettings.zones.map((zone) => (
+                    <option key={zone} value={zone}>
+                      {zone}
+                    </option>
+                  ))}
+                </select>
+              </FieldWrapper>
+            )}
+          />
+
+          <Controller
+            control={subscriptionForm.control}
             name="date_debut_service"
             render={({ field, fieldState }) => (
               <FieldWrapper
                 id="transport_subscription_start_date"
                 label="Debut du service"
                 error={fieldState.error?.message}
-                hint="Optionnel. Permet de calculer automatiquement un prorata si l'eleve commence en cours de mois."
+                hint={`Optionnel. Permet de calculer automatiquement un prorata si l'eleve commence en cours de ${
+                  selectedLineSettings.prorataMode === "SCHOOL_YEAR" ? "periode scolaire" : "mois"
+                }.`}
               >
                 <input
                   type="date"
@@ -645,7 +892,9 @@ export default function TransportForm() {
                 id="transport_subscription_end_date"
                 label="Fin du service"
                 error={fieldState.error?.message}
-                hint="Optionnel. Utilise pour limiter la periode d'usage ou calculer un prorata de sortie."
+                hint={`Optionnel. Utilise pour limiter la periode d'usage ou calculer un prorata de sortie sur la ${
+                  selectedLineSettings.prorataMode === "SCHOOL_YEAR" ? "periode scolaire" : "periode mensuelle"
+                }.`}
               >
                 <input
                   type="date"
@@ -661,28 +910,44 @@ export default function TransportForm() {
             <div className="md:col-span-2 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
               <p className="font-semibold">Periode d'usage transmise a Finance</p>
               <p className="mt-1">
-                La periode saisie servira au prorata lors de la facturation faite ensuite dans Finance.
+                La periode saisie servira au prorata lors de la facturation faite ensuite dans Finance, selon le mode{" "}
+                <span className="font-semibold">
+                  {selectedLineSettings.prorataMode === "SCHOOL_YEAR" ? "annee scolaire" : "mensuel"}
+                </span>
+                .
               </p>
             </div>
           ) : null}
 
           <div className="md:col-span-2 rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-            <p className="font-semibold">Statut initial</p>
-            <p className="mt-1">
-              L'inscription est creee en <span className="font-semibold">attente de validation financiere</span>.
-              Elle deviendra active apres confirmation par Finance.
-            </p>
+              <p className="font-semibold">Statut initial</p>
+              <p className="mt-1">
+              L'inscription est creee en <span className="font-semibold">attente de validation interne</span>.
+              Apres validation par le responsable transport, elle passe en attente Finance puis devient active apres confirmation financiere.
+              </p>
             <p className="mt-2 text-xs text-amber-800">
               {selectedLine?.frais
                 ? `Tarif de reference: ${selectedLine.frais.nom} - ${getCatalogueFraisSecondaryLabel(selectedLine.frais as CatalogueFraisWithRelations)}`
                 : "Choisis une ligne reliee a un frais catalogue transport."}
+            </p>
+            <p className="mt-2 text-xs text-amber-800">
+              {selectedLine
+                ? selectedLineSettings.inscriptions_ouvertes
+                  ? "La ligne accepte actuellement les nouvelles demandes."
+                  : "Cette ligne est fermee aux nouvelles demandes tant que le service n'est pas rouvert."
+                : "Choisis d'abord une ligne transport pour verifier ses zones et son ouverture."}
             </p>
           </div>
 
           <div className="md:col-span-2 flex justify-end">
             <button
               type="submit"
-              disabled={!currentYear?.id || loading || submittingAction === "subscription"}
+              disabled={
+                !currentYear?.id ||
+                loading ||
+                submittingAction === "subscription" ||
+                Boolean(selectedLine && !selectedLineSettings.inscriptions_ouvertes)
+              }
               className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submittingAction === "subscription"

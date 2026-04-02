@@ -113,7 +113,10 @@ export default function CantineTable() {
   const financePendingCount = useMemo(
     () =>
       abonnements.filter(
-        (item) => (item.statut ?? "ACTIF").toUpperCase() === "ACTIF" && !item.facture_id,
+        (item) =>
+          ["EN_ATTENTE_VALIDATION_FINANCIERE", "EN_ATTENTE_REGLEMENT"].includes(
+            (item.finance_status ?? item.statut ?? "").toUpperCase(),
+          ),
       ).length,
     [abonnements],
   );
@@ -211,8 +214,8 @@ export default function CantineTable() {
           <div className="mt-4 space-y-3">
             {abonnements.map((item) => {
               const financeLinked = Boolean(item.facture_id);
-              const financeStatus = item.facture?.statut ?? null;
-              const serviceStatus = (item.statut ?? "ACTIF").toUpperCase();
+              const financeStatus = (item.finance_status ?? item.facture?.statut ?? "N/A").toUpperCase();
+              const serviceStatus = (item.statut ?? "EN_ATTENTE_VALIDATION_FINANCIERE").toUpperCase();
 
               return (
                 <div
@@ -228,16 +231,20 @@ export default function CantineTable() {
                         {item.formule?.nom} - {item.annee?.nom ?? "Annee"}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
-                        Statut service: {item.statut ?? "ACTIF"}
+                        Date d'effet: {item.date_effet ? new Date(item.date_effet).toLocaleDateString("fr-FR") : "Non renseignee"}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Statut service: {item.statut ?? "EN_ATTENTE_VALIDATION_FINANCIERE"}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
                         {financeLinked
-                          ? `Finance: ${item.facture?.numero_facture ?? "Facture"} - ${financeStatus ?? "EMISE"}`
-                          : "Finance: service actif, facture non encore rattachee"}
+                          ? `Finance: ${item.facture?.numero_facture ?? "Facture"} - ${financeStatus}`
+                          : `Finance: ${financeStatus}`}
                       </p>
-                      {!financeLinked && serviceStatus === "ACTIF" ? (
+                      {!financeLinked &&
+                      ["EN_ATTENTE_VALIDATION_FINANCIERE", "EN_ATTENTE_REGLEMENT"].includes(serviceStatus) ? (
                         <p className="mt-1 text-xs font-medium text-amber-700">
-                          Ce service doit etre regularise depuis Finance.
+                          Ce service est en attente de prise en charge ou de validation Finance.
                         </p>
                       ) : null}
                     </div>

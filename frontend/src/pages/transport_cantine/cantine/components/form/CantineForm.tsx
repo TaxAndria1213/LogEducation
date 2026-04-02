@@ -26,7 +26,7 @@ const formuleSchema = z.object({
 const abonnementSchema = z.object({
   eleve_id: z.string().min(1, "L'eleve est obligatoire."),
   formule_cantine_id: z.string().min(1, "La formule est obligatoire."),
-  statut: z.string().default("ACTIF"),
+  date_effet: z.coerce.date(),
 });
 
 type CantineAction = "formule" | "abonnement";
@@ -126,7 +126,7 @@ export default function CantineForm() {
     defaultValues: {
       eleve_id: "",
       formule_cantine_id: "",
-      statut: "ACTIF",
+      date_effet: new Date(),
     },
   });
   const selectedFormuleId = abonnementForm.watch("formule_cantine_id");
@@ -294,13 +294,13 @@ export default function CantineForm() {
                 eleve_id: data.eleve_id,
                 annee_scolaire_id: currentYear.id,
                 formule_cantine_id: data.formule_cantine_id,
-                statut: data.statut || "ACTIF",
+                date_effet: data.date_effet,
               });
-              info("Abonnement cantine cree. La facturation se gere ensuite dans Finance.", "success");
+              info("Abonnement cantine cree et transmis a Finance.", "success");
               abonnementForm.reset({
                 eleve_id: "",
                 formule_cantine_id: "",
-                statut: "ACTIF",
+                date_effet: new Date(),
               });
               await load();
             } catch (error) {
@@ -386,6 +386,27 @@ export default function CantineForm() {
             )}
           />
 
+          <Controller
+            control={abonnementForm.control}
+            name="date_effet"
+            render={({ field, fieldState }) => (
+              <FieldWrapper
+                id="cantine_subscription_effective_date"
+                label="Date d'effet"
+                required
+                error={fieldState.error?.message}
+              >
+                <input
+                  type="date"
+                  value={field.value instanceof Date ? field.value.toISOString().slice(0, 10) : ""}
+                  onChange={(event) => field.onChange(event.target.value ? new Date(event.target.value) : null)}
+                  disabled={loading || submittingAction === "abonnement"}
+                  className={getInputClassName(Boolean(fieldState.error))}
+                />
+              </FieldWrapper>
+            )}
+          />
+
           <div className="md:col-span-2 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
             <p className="font-semibold">Tarif et suivi financier dans Finance</p>
             <p className="mt-1">
@@ -394,7 +415,7 @@ export default function CantineForm() {
                 : "Choisis une formule reliee a un frais catalogue cantine."}
             </p>
             <p className="mt-2 text-xs text-sky-800">
-              Ici tu actives seulement le service. La facture et les paiements se gerent ensuite depuis Finance.
+              Ici tu enregistres la demande cantine. La facture et les paiements se gerent ensuite depuis Finance.
             </p>
           </div>
 

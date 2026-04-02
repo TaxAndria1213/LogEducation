@@ -83,7 +83,10 @@ export default function CantineOverview({ mode = "overview" }: Props) {
   const pendingFinance = useMemo(
     () =>
       abonnements.filter(
-        (item) => (item.statut ?? "ACTIF").toUpperCase() === "ACTIF" && !item.facture_id,
+        (item) =>
+          ["EN_ATTENTE_VALIDATION_FINANCIERE", "EN_ATTENTE_REGLEMENT"].includes(
+            (item.finance_status ?? item.statut ?? "").toUpperCase(),
+          ),
       ).length,
     [abonnements],
   );
@@ -181,8 +184,8 @@ export default function CantineOverview({ mode = "overview" }: Props) {
                     <p className="mt-1 text-xs text-slate-500">{item.formule?.nom}</p>
                     <p className="mt-1 text-xs text-slate-500">
                       {item.facture?.numero_facture
-                        ? `Finance: ${item.facture.numero_facture} - ${item.facture.statut ?? "EMISE"}`
-                        : "Finance: en attente de rattachement"}
+                        ? `Finance: ${item.facture.numero_facture} - ${item.finance_status ?? item.facture.statut ?? "EMISE"}`
+                        : `Finance: ${item.finance_status ?? "EN_ATTENTE_VALIDATION_FINANCIERE"}`}
                     </p>
                   </div>
                 ))}

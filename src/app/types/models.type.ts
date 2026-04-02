@@ -1008,6 +1008,13 @@ export interface AbonnementTransport {
   arret_transport_id: string | null;
   facture_id: string | null;
   statut: string | null;
+  zone_transport?: string | null;
+  date_debut_service?: Date | null;
+  date_fin_service?: Date | null;
+  prorata_ratio?: number | null;
+  finance_status?: string | null;
+  access_status?: string | null;
+  derniere_reactivation_financiere?: Date | null;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;
@@ -1035,6 +1042,7 @@ export interface AbonnementCantine {
   formule_cantine_id: string;
   facture_id: string | null;
   statut: string | null;
+  date_effet: Date | null;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;

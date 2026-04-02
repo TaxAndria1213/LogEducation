@@ -101,12 +101,7 @@ export default function InscriptionForm() {
   const [selectedNiveauId, setSelectedNiveauId] = useState<string | null>(null);
   const [selectedTransportActive, setSelectedTransportActive] = useState(false);
   const [selectedCantineActive, setSelectedCantineActive] = useState(false);
-  const [selectedTransportBillingMode, setSelectedTransportBillingMode] = useState<
-    "SERVICE_ONLY" | "SERVICE_AND_BILL"
-  >("SERVICE_ONLY");
-  const [selectedCantineBillingMode, setSelectedCantineBillingMode] = useState<
-    "SERVICE_ONLY" | "SERVICE_AND_BILL"
-  >("SERVICE_ONLY");
+  const [selectedCantineBillingMode, setSelectedCantineBillingMode] = useState<"SERVICE_ONLY">("SERVICE_ONLY");
   const [selectedTransportLineId, setSelectedTransportLineId] = useState<string | null>(null);
   const [referentialCatalog, setReferentialCatalog] = useState<
     ReferentialCatalogItem[]
@@ -151,6 +146,29 @@ export default function InscriptionForm() {
       ]),
     [referentialCatalog],
   );
+
+  const selectedTransportLine = useMemo(
+    () =>
+      transportLineOptions.find((option) => option.value === selectedTransportLineId) ??
+      null,
+    [selectedTransportLineId, transportLineOptions],
+  );
+
+  const selectedTransportZoneOptions = useMemo(
+    () =>
+      (selectedTransportLine?.zones ?? []).map((zone) => ({
+        value: zone,
+        label: zone,
+      })),
+    [selectedTransportLine],
+  );
+
+  const filteredTransportStopOptions = useMemo(() => {
+    if (!selectedTransportLineId) return transportStopOptions;
+    return transportStopOptions.filter(
+      (option) => option.ligne_transport_id === selectedTransportLineId,
+    );
+  }, [selectedTransportLineId, transportStopOptions]);
 
   const eleveSchema = useMemo(
     () =>
@@ -547,11 +565,14 @@ export default function InscriptionForm() {
       z
         .object({
           transport_active: z.boolean().default(false),
-          transport_mode_facturation: z.string().default("SERVICE_ONLY"),
+          transport_mode_facturation: z.literal("SERVICE_ONLY").default("SERVICE_ONLY"),
           ligne_transport_id: z.string().optional().nullable(),
           arret_transport_id: z.string().optional().nullable(),
+          zone_transport: z.string().optional().nullable(),
+          date_debut_service: z.coerce.date().optional().nullable(),
+          date_fin_service: z.coerce.date().optional().nullable(),
           cantine_active: z.boolean().default(false),
-          cantine_mode_facturation: z.string().default("SERVICE_ONLY"),
+          cantine_mode_facturation: z.literal("SERVICE_ONLY").default("SERVICE_ONLY"),
           formule_cantine_id: z.string().optional().nullable(),
         })
         .superRefine((data, ctx) => {
@@ -560,6 +581,28 @@ export default function InscriptionForm() {
               code: z.ZodIssueCode.custom,
               path: ["ligne_transport_id"],
               message: "Selectionnez une ligne de transport.",
+            });
+          }
+
+          if (data.transport_active && !data.zone_transport) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["zone_transport"],
+              message: "Selectionnez une zone de transport.",
+            });
+          }
+
+          if (
+            data.transport_active &&
+            data.date_debut_service &&
+            data.date_fin_service &&
+            data.date_fin_service < data.date_debut_service
+          ) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["date_fin_service"],
+              message:
+                "La date de fin du service transport doit etre posterieure a la date de debut.",
             });
           }
 
@@ -579,11 +622,14 @@ export default function InscriptionForm() {
       getFieldsFromZodObjectSchema(servicesSchema, {
         labelByField: {
           transport_active: "Activer le transport",
-          transport_mode_facturation: "Facturation transport",
+          transport_mode_facturation: "Activation transport",
           ligne_transport_id: "Ligne de transport",
           arret_transport_id: "Arret de transport",
+          zone_transport: "Zone de transport",
+          date_debut_service: "Debut du service transport",
+          date_fin_service: "Fin du service transport",
           cantine_active: "Activer la cantine",
-          cantine_mode_facturation: "Facturation cantine",
+          cantine_mode_facturation: "Activation cantine",
           formule_cantine_id: "Formule de cantine",
         },
         metaByField: {
@@ -598,34 +644,63 @@ export default function InscriptionForm() {
             fieldProps: {
               className: "md:col-span-1",
               emptyLabel: "Choisir une ligne",
-              description: selectedTransportActive
-                ? "Choisissez la ligne a ouvrir dans le dossier eleve."
-                : "Active d'abord le transport pour rattacher une ligne.",
+              description: !selectedTransportActive
+                ? "Active d'abord le transport pour rattacher une ligne."
+                : selectedTransportLine && selectedTransportLine.inscriptions_ouvertes === false
+                  ? "Cette ligne est actuellement fermee aux nouvelles demandes."
+                  : "Choisissez la ligne a ouvrir dans le dossier eleve.",
             },
           },
           transport_mode_facturation: {
             relation: {
-              options: [
-                { value: "SERVICE_ONLY", label: "Activer seulement" },
-                { value: "SERVICE_AND_BILL", label: "Activer et facturer" },
-              ],
+              options: [{ value: "SERVICE_ONLY", label: "Activer seulement" }],
             },
             fieldProps: {
               className: "md:col-span-1",
               emptyLabel: "Choisir",
               description:
-                "Sans facture immediate = le service est ouvert maintenant. Si le frais lie est recurrent, la facturation automatique future pourra ensuite s'appliquer tant que le service reste actif.",
+                "L'inscription transport est creee sans encaissement local. La facturation sera reprise plus tard par Finance apres validation transport.",
             },
           },
           arret_transport_id: {
             relation: {
-              options: transportStopOptions,
+              options: filteredTransportStopOptions,
             },
             fieldProps: {
               className: "md:col-span-1",
               emptyLabel: "Choisir un arret",
               description:
                 "Optionnel si seul l'abonnement a la ligne doit etre ouvert. Les arrets sont presentes avec leur ligne pour rester lisibles.",
+            },
+          },
+          zone_transport: {
+            relation: {
+              options: selectedTransportZoneOptions,
+            },
+            fieldProps: {
+              className: "md:col-span-1",
+              emptyLabel: "Choisir une zone",
+              description: selectedTransportLineId
+                ? selectedTransportZoneOptions.length > 0
+                  ? "La zone doit etre coherente avec la ligne choisie."
+                  : "Aucune zone n'est encore parametree sur cette ligne."
+                : "Choisissez d'abord une ligne pour afficher les zones disponibles.",
+            },
+          },
+          date_debut_service: {
+            dateMode: "date",
+            fieldProps: {
+              className: "md:col-span-1",
+              description:
+                "Date a partir de laquelle l'eleve commence effectivement a utiliser le transport.",
+            },
+          },
+          date_fin_service: {
+            dateMode: "date",
+            fieldProps: {
+              className: "md:col-span-1",
+              description:
+                "Optionnel. Renseignez-la si le service doit s'arreter avant la fin de l'annee.",
             },
           },
           cantine_active: {
@@ -636,16 +711,13 @@ export default function InscriptionForm() {
           },
           cantine_mode_facturation: {
             relation: {
-              options: [
-                { value: "SERVICE_ONLY", label: "Activer seulement" },
-                { value: "SERVICE_AND_BILL", label: "Activer et facturer" },
-              ],
+              options: [{ value: "SERVICE_ONLY", label: "Activer seulement" }],
             },
             fieldProps: {
               className: "md:col-span-2",
               emptyLabel: "Choisir",
               description:
-                "Sans facture immediate = le service est ouvert maintenant. Si le frais lie est recurrent, la facturation automatique future pourra ensuite s'appliquer tant que le service reste actif.",
+                "L'inscription cantine est creee sans encaissement local. La facturation sera reprise par Finance apres validation du service.",
             },
           },
           formule_cantine_id: {
@@ -663,9 +735,12 @@ export default function InscriptionForm() {
       }),
     [
       cantineFormulaOptions,
+      filteredTransportStopOptions,
       servicesSchema,
+      selectedTransportLine,
+      selectedTransportLineId,
+      selectedTransportZoneOptions,
       transportLineOptions,
-      transportStopOptions,
     ],
   );
 
@@ -677,8 +752,6 @@ export default function InscriptionForm() {
           catalogue_frais_inscription_nombre_tranches: z.coerce.number().int().min(1).default(1),
           catalogue_frais_scolarite_id: z.string().optional().nullable(),
           catalogue_frais_scolarite_nombre_tranches: z.coerce.number().int().min(1).default(1),
-          catalogue_frais_transport_nombre_tranches: z.coerce.number().int().min(1).default(1),
-          catalogue_frais_cantine_nombre_tranches: z.coerce.number().int().min(1).default(1),
           remise_id: z.string().optional().nullable(),
           remise_type: z.string().default("AUCUNE"),
           remise_valeur: z.coerce.number().min(0).default(0),
@@ -722,8 +795,6 @@ export default function InscriptionForm() {
           catalogue_frais_inscription_nombre_tranches: "Tranches inscription",
           catalogue_frais_scolarite_id: "Frais de scolarite",
           catalogue_frais_scolarite_nombre_tranches: "Tranches scolarite",
-          catalogue_frais_transport_nombre_tranches: "Tranches transport",
-          catalogue_frais_cantine_nombre_tranches: "Tranches cantine",
           remise_id: "Remise preconfiguree",
           remise_type: "Type de remise",
           remise_valeur: "Valeur de la remise",
@@ -767,28 +838,6 @@ export default function InscriptionForm() {
               description: "Nombre de paiements uniquement pour les frais de scolarite.",
             },
           },
-          catalogue_frais_transport_nombre_tranches: {
-            fieldProps: {
-              className: "md:col-span-2",
-              placeholder: "1",
-              description: !selectedTransportActive
-                ? "Active d'abord le transport. Le tarif viendra automatiquement de la ligne choisie."
-                : selectedTransportBillingMode !== "SERVICE_AND_BILL"
-                  ? "Le service sera ouvert sans facturation immediate. Si le frais est recurrent, les futures campagnes automatiques pourront ensuite le facturer."
-                  : "Nombre de paiements uniquement pour le transport. Le frais officiel vient automatiquement de la ligne de transport choisie.",
-            },
-          },
-          catalogue_frais_cantine_nombre_tranches: {
-            fieldProps: {
-              className: "md:col-span-2",
-              placeholder: "1",
-              description: !selectedCantineActive
-                ? "Active d'abord la cantine. Le tarif viendra automatiquement de la formule choisie."
-                : selectedCantineBillingMode !== "SERVICE_AND_BILL"
-                  ? "Le service sera ouvert sans facturation immediate. Si le frais est recurrent, les futures campagnes automatiques pourront ensuite le facturer."
-                  : "Nombre de paiements uniquement pour la cantine. Le frais officiel vient automatiquement de la formule de cantine choisie.",
-            },
-          },
           remise_id: {
             relation: {
               options: [{ value: "", label: "Aucune remise" }, ...remiseOptions],
@@ -830,7 +879,6 @@ export default function InscriptionForm() {
       selectedCantineBillingMode,
       selectedNiveauId,
       selectedTransportActive,
-      selectedTransportBillingMode,
     ],
   );
 
@@ -972,8 +1020,6 @@ export default function InscriptionForm() {
           catalogue_frais_inscription_nombre_tranches: 1,
           catalogue_frais_scolarite_id: "",
           catalogue_frais_scolarite_nombre_tranches: 1,
-          catalogue_frais_transport_nombre_tranches: 1,
-          catalogue_frais_cantine_nombre_tranches: 1,
           remise_id: "",
           remise_type: "AUCUNE",
           remise_valeur: 0,
@@ -1055,21 +1101,24 @@ export default function InscriptionForm() {
 
       const normalizedServices = {
         transport_active: Boolean(finalData.services?.transport_active),
-        transport_mode_facturation:
-          String(finalData.services?.transport_mode_facturation ?? "SERVICE_ONLY").toUpperCase() === "SERVICE_ONLY"
-            ? "SERVICE_ONLY"
-            : "SERVICE_AND_BILL",
+        transport_mode_facturation: "SERVICE_ONLY" as const,
         ligne_transport_id: normalizeOptionalString(
           finalData.services?.ligne_transport_id,
         ),
         arret_transport_id: normalizeOptionalString(
           finalData.services?.arret_transport_id,
         ),
+        zone_transport: normalizeOptionalString(finalData.services?.zone_transport),
+        date_debut_service:
+          finalData.services?.date_debut_service instanceof Date
+            ? finalData.services.date_debut_service.toISOString().slice(0, 10)
+            : normalizeOptionalString(finalData.services?.date_debut_service),
+        date_fin_service:
+          finalData.services?.date_fin_service instanceof Date
+            ? finalData.services.date_fin_service.toISOString().slice(0, 10)
+            : normalizeOptionalString(finalData.services?.date_fin_service),
         cantine_active: Boolean(finalData.services?.cantine_active),
-        cantine_mode_facturation:
-          String(finalData.services?.cantine_mode_facturation ?? "SERVICE_ONLY").toUpperCase() === "SERVICE_ONLY"
-            ? "SERVICE_ONLY"
-            : "SERVICE_AND_BILL",
+        cantine_mode_facturation: "SERVICE_ONLY",
         formule_cantine_id: normalizeOptionalString(
           finalData.services?.formule_cantine_id,
         ),
@@ -1078,10 +1127,14 @@ export default function InscriptionForm() {
       if (!normalizedServices.transport_active) {
         normalizedServices.ligne_transport_id = null;
         normalizedServices.arret_transport_id = null;
+        normalizedServices.zone_transport = null;
+        normalizedServices.date_debut_service = null;
+        normalizedServices.date_fin_service = null;
       }
 
       if (!normalizedServices.ligne_transport_id) {
         normalizedServices.arret_transport_id = null;
+        normalizedServices.zone_transport = null;
       }
 
       if (!normalizedServices.cantine_active) {
@@ -1103,20 +1156,6 @@ export default function InscriptionForm() {
           1,
           Number(finalData.finance?.catalogue_frais_scolarite_nombre_tranches ?? 1),
         ),
-        catalogue_frais_transport_nombre_tranches: normalizedServices.transport_active
-          && normalizedServices.transport_mode_facturation === "SERVICE_AND_BILL"
-          ? Math.max(
-              1,
-              Number(finalData.finance?.catalogue_frais_transport_nombre_tranches ?? 1),
-            )
-          : 1,
-        catalogue_frais_cantine_nombre_tranches: normalizedServices.cantine_active
-          && normalizedServices.cantine_mode_facturation === "SERVICE_AND_BILL"
-          ? Math.max(
-              1,
-              Number(finalData.finance?.catalogue_frais_cantine_nombre_tranches ?? 1),
-            )
-          : 1,
         remise_id: normalizeOptionalString(finalData.finance?.remise_id),
         remise_type: finalData.finance?.remise_type ?? "AUCUNE",
         remise_valeur: Number(finalData.finance?.remise_valeur ?? 0),
@@ -1201,16 +1240,7 @@ export default function InscriptionForm() {
         setSelectedNiveauId(selectedClasse?.niveau_scolaire_id ?? null);
         setSelectedTransportActive(Boolean(allData?.services?.transport_active));
         setSelectedCantineActive(Boolean(allData?.services?.cantine_active));
-        setSelectedTransportBillingMode(
-          String(allData?.services?.transport_mode_facturation ?? "SERVICE_ONLY").toUpperCase() === "SERVICE_ONLY"
-            ? "SERVICE_ONLY"
-            : "SERVICE_AND_BILL",
-        );
-        setSelectedCantineBillingMode(
-          String(allData?.services?.cantine_mode_facturation ?? "SERVICE_ONLY").toUpperCase() === "SERVICE_ONLY"
-            ? "SERVICE_ONLY"
-            : "SERVICE_AND_BILL",
-        );
+        setSelectedCantineBillingMode("SERVICE_ONLY");
         setSelectedTransportLineId(
           normalizeOptionalString(allData?.services?.ligne_transport_id),
         );

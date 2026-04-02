@@ -34,6 +34,8 @@ export type AbonnementCantineWithRelations = AbonnementCantine & {
     created_at?: string | Date;
     updated_at?: string | Date;
   }> | null;
+  finance_status?: string | null;
+  access_status?: string | null;
 };
 
 export type AbonnementCantineWalletResponse = {
@@ -104,6 +106,19 @@ class AbonnementCantineService extends Service {
 
   async getWallet(id: string) {
     return this.get(`${id}/wallet`);
+  }
+
+  async getPendingFinanceBilling(etablissementId: string) {
+    return Http.get(
+      ["/api", this.url, "pending-finance-billing"].join("/"),
+      {
+        where: JSON.stringify({ eleve: { is: { etablissement_id: etablissementId } } }),
+      },
+    );
+  }
+
+  async processFinanceBilling(id: string) {
+    return Http.post(["/api", this.url, id, "process-finance-billing"].join("/"), {});
   }
 
   async recharge(

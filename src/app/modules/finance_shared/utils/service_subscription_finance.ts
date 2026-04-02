@@ -40,6 +40,7 @@ type RegularizeServiceSubscriptionFactureArgs = {
   serviceLabel: string;
   createdByUtilisateurId?: string | null;
   motif?: string | null;
+  montantOverride?: number | null;
 };
 
 function toDateKey(value: Date | string | null | undefined) {
@@ -568,9 +569,10 @@ export async function regularizeServiceSubscriptionFacture(
         });
 
   const targetLines = fallbackLines.filter((line) => toMoney(line.montant) > 0);
-  const requestedAmount = roundMoney(
-    targetLines.reduce((sum, line) => sum + toMoney(line.montant), 0),
-  );
+  const requestedAmount =
+    args.montantOverride != null
+      ? roundMoney(Math.max(0, toMoney(args.montantOverride)))
+      : roundMoney(targetLines.reduce((sum, line) => sum + toMoney(line.montant), 0));
 
   if (requestedAmount <= 0) {
     return {

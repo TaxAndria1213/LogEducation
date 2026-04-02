@@ -14,15 +14,7 @@ type AbonnementCantinePayload = {
   annee_scolaire_id: string;
   formule_cantine_id: string;
   statut: string;
-};
-
-type AbonnementCantineBillingPayload = {
-  facturer_maintenant: boolean;
-  catalogue_frais_id: string | null;
-  mode_paiement: string;
-  nombre_tranches: number;
-  jour_paiement_mensuel: number | null;
-  date_echeance: Date | null;
+  date_effet: Date | null;
 };
 
 type CantineRechargePayload = {
@@ -59,8 +51,10 @@ class AbonnementCantineApp {
   public routes(): Router {
     this.router.post("/", this.create.bind(this));
     this.router.get("/", this.getAll.bind(this));
+    this.router.get("/pending-finance-billing", this.getPendingFinanceBilling.bind(this));
     this.router.get("/:id", this.getOne.bind(this));
     this.router.get("/:id/wallet", this.getWallet.bind(this));
+    this.router.post("/:id/process-finance-billing", this.processFinanceBilling.bind(this));
     this.router.post("/:id/recharge", this.recharge.bind(this));
     this.router.post("/:id/consume", this.consume.bind(this));
     this.router.delete("/:id", this.delete.bind(this));
@@ -118,64 +112,43 @@ class AbonnementCantineApp {
     return candidates[0];
   }
 
-  private normalizePayload(raw: Partial<AbonnementCantine>): AbonnementCantinePayload {
+  private normalizePayload(raw: Record<string, unknown>): AbonnementCantinePayload {
     const eleve_id = typeof raw.eleve_id === "string" ? raw.eleve_id.trim() : "";
     const annee_scolaire_id =
       typeof raw.annee_scolaire_id === "string" ? raw.annee_scolaire_id.trim() : "";
     const formule_cantine_id =
       typeof raw.formule_cantine_id === "string" ? raw.formule_cantine_id.trim() : "";
     const requestedStatus =
-      typeof raw.statut === "string" && raw.statut.trim() ? raw.statut.trim().toUpperCase() : "ACTIF";
-    const statut = ["ACTIF", "SUSPENDU", "INACTIF", "ANNULE", "RESILIE"].includes(requestedStatus)
+      typeof raw.statut === "string" && raw.statut.trim()
+        ? raw.statut.trim().toUpperCase()
+        : "EN_ATTENTE_VALIDATION_FINANCIERE";
+    const statut = [
+      "EN_ATTENTE_VALIDATION_FINANCIERE",
+      "EN_ATTENTE_REGLEMENT",
+      "ACTIF",
+      "SUSPENDU",
+      "INACTIF",
+      "ANNULE",
+      "RESILIE",
+    ].includes(requestedStatus)
       ? requestedStatus
-      : "ACTIF";
+      : "EN_ATTENTE_VALIDATION_FINANCIERE";
+    const rawDateEffet =
+      raw.date_effet instanceof Date
+        ? raw.date_effet
+        : typeof raw.date_effet === "string" && raw.date_effet.trim()
+          ? new Date(raw.date_effet)
+          : null;
 
     if (!eleve_id || !annee_scolaire_id || !formule_cantine_id) {
       throw new Error("L'eleve, l'annee scolaire et la formule de cantine sont requis.");
     }
 
-    return { eleve_id, annee_scolaire_id, formule_cantine_id, statut };
-  }
-
-  private normalizeBillingPayload(raw: Record<string, unknown>): AbonnementCantineBillingPayload {
-    const facturer_maintenant =
-      raw.facturer_maintenant === true ||
-      raw.facturer_maintenant === "true" ||
-      raw.facturer_maintenant === 1 ||
-      raw.facturer_maintenant === "1";
-    const catalogue_frais_id =
-      typeof raw.catalogue_frais_id === "string" && raw.catalogue_frais_id.trim()
-        ? raw.catalogue_frais_id.trim()
-        : null;
-    const mode_paiement =
-      typeof raw.mode_paiement === "string" && raw.mode_paiement.trim().toUpperCase() === "ECHELONNE"
-        ? "ECHELONNE"
-        : "COMPTANT";
-    const parsedTranches = Number.parseInt(String(raw.nombre_tranches ?? 1), 10);
-    const nombre_tranches = Number.isFinite(parsedTranches) && parsedTranches > 0 ? parsedTranches : 1;
-    const parsedJour = Number.parseInt(String(raw.jour_paiement_mensuel ?? ""), 10);
-    const jour_paiement_mensuel =
-      Number.isFinite(parsedJour) && parsedJour >= 1
-        ? Math.max(1, Math.min(28, parsedJour))
-        : null;
-    const date_echeance_raw =
-      typeof raw.date_echeance === "string" && raw.date_echeance.trim()
-        ? raw.date_echeance.trim()
-        : null;
-    const date_echeance = date_echeance_raw ? new Date(date_echeance_raw) : null;
-
-    if (date_echeance_raw && Number.isNaN(date_echeance?.getTime())) {
-      throw new Error("La date d'echeance du service cantine est invalide.");
+    if (rawDateEffet && Number.isNaN(rawDateEffet.getTime())) {
+      throw new Error("La date d'effet du service cantine est invalide.");
     }
 
-    return {
-      facturer_maintenant,
-      catalogue_frais_id,
-      mode_paiement,
-      nombre_tranches,
-      jour_paiement_mensuel,
-      date_echeance,
-    };
+    return { eleve_id, annee_scolaire_id, formule_cantine_id, statut, date_effet: rawDateEffet ?? new Date() };
   }
 
   private normalizeRechargePayload(raw: Record<string, unknown>): CantineRechargePayload {
@@ -299,10 +272,10 @@ class AbonnementCantineApp {
   private async attachFinanceMetadata<T extends { id: string }>(records: T[]) {
     if (records.length === 0) return records.map((item) => ({ ...item, facture_id: null, facture: null }));
     const ids = records.map((item) => item.id);
-    const rows = await this.prisma.$queryRaw<Array<{ id: string; facture_id: string | null }>>(
-      Prisma.sql`SELECT id, facture_id FROM abonnements_cantine WHERE id IN (${Prisma.join(ids)})`,
+    const rows = await this.prisma.$queryRaw<Array<{ id: string; facture_id: string | null; date_effet: Date | null }>>(
+      Prisma.sql`SELECT id, facture_id, date_effet FROM abonnements_cantine WHERE id IN (${Prisma.join(ids)})`,
     );
-    const factureIdByRecord = new Map(rows.map((item) => [item.id, item.facture_id ?? null]));
+    const recordById = new Map(rows.map((item) => [item.id, item]));
     const factureIds = rows
       .map((item) => item.facture_id)
       .filter((value): value is string => Boolean(value));
@@ -314,11 +287,38 @@ class AbonnementCantineApp {
       : [];
     const facturesById = new Map(factures.map((item) => [item.id, item]));
     return records.map((item) => {
-      const facture_id = factureIdByRecord.get(item.id) ?? null;
+      const row = recordById.get(item.id);
+      const facture_id = row?.facture_id ?? null;
+      const facture = facture_id ? facturesById.get(facture_id) ?? null : null;
+      const statut = String((item as Record<string, unknown>).statut ?? "").toUpperCase();
+      const factureStatus = String(facture?.statut ?? "").toUpperCase();
+      const finance_status =
+        factureStatus === "PAYEE"
+          ? "REGLE"
+          : statut === "EN_ATTENTE_VALIDATION_FINANCIERE"
+            ? "EN_ATTENTE_VALIDATION_FINANCIERE"
+            : statut === "EN_ATTENTE_REGLEMENT"
+              ? "EN_ATTENTE_REGLEMENT"
+              : facture_id
+                ? "EN_ATTENTE_REGLEMENT"
+                : statut === "ACTIF"
+                  ? "ACTIF"
+                  : statut || null;
+      const access_status =
+        statut === "SUSPENDU"
+          ? "SUSPENDU"
+          : ["ANNULE", "RESILIE", "INACTIF"].includes(statut)
+            ? "EXPIRE"
+            : statut === "ACTIF" && ["REGLE", "ACTIF"].includes(finance_status ?? "")
+              ? "AUTORISE"
+              : "EN_ATTENTE";
       return {
         ...item,
         facture_id,
-        facture: facture_id ? facturesById.get(facture_id) ?? null : null,
+        date_effet: row?.date_effet ?? ((item as Record<string, unknown>).date_effet as Date | null | undefined) ?? null,
+        facture,
+        finance_status,
+        access_status,
       };
     });
   }
@@ -408,63 +408,6 @@ class AbonnementCantineApp {
     });
   }
 
-  private async createScopedSubscriptionWithOptionalBilling(
-    tenantId: string,
-    data: AbonnementCantinePayload,
-    billing: AbonnementCantineBillingPayload,
-    actorId: string | null,
-  ) {
-    return this.prisma.$transaction(async (tx) => {
-      const formule = await tx.formuleCantine.findFirst({
-        where: { id: data.formule_cantine_id, etablissement_id: tenantId },
-        select: { nom: true, catalogue_frais_id: true },
-      });
-      const abonnement = await tx.abonnementCantine.create({
-        data: {
-          eleve_id: data.eleve_id,
-          annee_scolaire_id: data.annee_scolaire_id,
-          formule_cantine_id: data.formule_cantine_id,
-          statut: data.statut,
-          solde_prepaye: new Prisma.Decimal(0),
-          solde_min_alerte: new Prisma.Decimal(0),
-        },
-      });
-
-      let factureId: string | null = null;
-
-      const resolvedCatalogueFraisId = billing.catalogue_frais_id ?? formule?.catalogue_frais_id ?? null;
-
-      if (billing.facturer_maintenant) {
-        if (!resolvedCatalogueFraisId) {
-          throw new Error("La formule de cantine selectionnee n'est reliee a aucun frais catalogue.");
-        }
-
-        const { facture } = await createServiceSubscriptionFacture(tx, {
-          tenantId,
-          eleveId: data.eleve_id,
-          anneeScolaireId: data.annee_scolaire_id,
-          catalogueFraisId: resolvedCatalogueFraisId,
-          allowedScopes: ["GENERAL", "CANTINE"],
-          libelle: `Cantine - ${formule?.nom ?? "service"}`,
-          modePaiement: billing.mode_paiement,
-          nombreTranches: billing.nombre_tranches,
-          jourPaiementMensuel: billing.jour_paiement_mensuel,
-          createdByUtilisateurId: actorId,
-          dateEcheance: billing.date_echeance,
-        });
-        factureId = facture.id;
-        await tx.$executeRaw(
-          Prisma.sql`UPDATE abonnements_cantine SET facture_id = ${facture.id} WHERE id = ${abonnement.id}`,
-        );
-      }
-
-      return {
-        ...abonnement,
-        facture_id: factureId,
-      };
-    });
-  }
-
   private buildWalletResponse(existing: NonNullable<AbonnementCantineScopedRecord>) {
     const history = (existing.operationsFinancieres ?? []).map((item) => ({
       id: item.id,
@@ -499,19 +442,102 @@ class AbonnementCantineApp {
     try {
       const tenantId = await this.resolveTenantIdForWrite(req);
       const data = this.normalizePayload(req.body);
-      const billing = this.normalizeBillingPayload(req.body as Record<string, unknown>);
       await this.ensureScopedRelations(data, tenantId);
-      const result = billing.facturer_maintenant
-        ? await this.createScopedSubscriptionWithOptionalBilling(
-            tenantId,
-            data,
-            billing,
-            (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
-          )
-        : await this.abonnementCantine.create(data);
+      const created = await this.prisma.abonnementCantine.create({
+        data: {
+          eleve_id: data.eleve_id,
+          annee_scolaire_id: data.annee_scolaire_id,
+          formule_cantine_id: data.formule_cantine_id,
+          statut: "EN_ATTENTE_VALIDATION_FINANCIERE",
+        },
+      });
+      await this.prisma.$executeRaw(
+        Prisma.sql`UPDATE abonnements_cantine SET date_effet = ${data.date_effet} WHERE id = ${created.id}`,
+      );
+      const result = await this.getScopedRecord(created.id, tenantId);
       Response.success(res, "Abonnement cantine cree.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de l'abonnement cantine", 400, error as Error);
+      next(error);
+    }
+  }
+
+  private async getPendingFinanceBilling(req: Request, res: R, next: NextFunction) {
+    try {
+      const tenantId = this.resolveTenantId(req);
+      const records = await this.prisma.abonnementCantine.findMany({
+        where: {
+          eleve: { is: { etablissement_id: tenantId } },
+          statut: { in: ["EN_ATTENTE_VALIDATION_FINANCIERE", "EN_ATTENTE_REGLEMENT"] },
+        },
+        include: {
+          eleve: { include: { utilisateur: { include: { profil: true } } } },
+          annee: true,
+          formule: true,
+          facture: true,
+        },
+        orderBy: { created_at: "desc" },
+      });
+      const data = await this.attachFinanceMetadata(records);
+      Response.success(res, "Abonnements cantine en attente de prise en charge Finance.", data);
+    } catch (error) {
+      Response.error(res, "Erreur lors de la recuperation des abonnements cantine a facturer", 400, error as Error);
+      next(error);
+    }
+  }
+
+  private async processFinanceBilling(req: Request, res: R, next: NextFunction) {
+    try {
+      const tenantId = this.resolveTenantId(req);
+      const existing = await this.getScopedRecord(req.params.id, tenantId);
+      if (!existing) throw new Error("Abonnement cantine introuvable.");
+      if (existing.facture && (existing.facture.statut ?? "").toUpperCase() !== "ANNULEE") {
+        throw new Error(
+          `Cet abonnement cantine est deja facture par ${existing.facture.numero_facture}.`,
+        );
+      }
+
+      const formule = await this.prisma.formuleCantine.findFirst({
+        where: { id: existing.formule_cantine_id, etablissement_id: tenantId },
+        select: { nom: true, catalogue_frais_id: true },
+      });
+      if (!formule?.catalogue_frais_id) {
+        throw new Error("La formule de cantine selectionnee n'est reliee a aucun frais catalogue.");
+      }
+
+      const result = await this.prisma.$transaction(async (tx) => {
+        const { facture } = await createServiceSubscriptionFacture(tx, {
+          tenantId,
+          eleveId: existing.eleve_id,
+          anneeScolaireId: existing.annee_scolaire_id,
+          catalogueFraisId: formule.catalogue_frais_id as string,
+          allowedScopes: ["GENERAL", "CANTINE"],
+          libelle: `Cantine - ${formule.nom ?? "service"}`,
+          modePaiement: "COMPTANT",
+          nombreTranches: 1,
+          jourPaiementMensuel: null,
+          createdByUtilisateurId: (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
+          dateEcheance: ((existing as Record<string, unknown>).date_effet as Date | null | undefined) ?? null,
+        });
+
+        return tx.abonnementCantine.update({
+          where: { id: existing.id },
+          data: {
+            facture_id: facture.id,
+            statut: (facture.statut ?? "").toUpperCase() === "PAYEE" ? "ACTIF" : "EN_ATTENTE_REGLEMENT",
+          },
+          include: {
+            eleve: { include: { utilisateur: { include: { profil: true } } } },
+            annee: true,
+            formule: true,
+            facture: true,
+          },
+        });
+      });
+
+      Response.success(res, "Facturation cantine generee par Finance.", result);
+    } catch (error) {
+      Response.error(res, "Erreur lors de la generation de la facturation cantine", 400, error as Error);
       next(error);
     }
   }

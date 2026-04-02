@@ -1645,7 +1645,9 @@ model AbonnementTransport {
   annee_scolaire_id  String
   ligne_transport_id String
   arret_transport_id String?
+  zone_transport     String?
   facture_id         String?
+  a_facturer         Boolean @default(false)
   statut             String?
   date_debut_service DateTime?
   date_fin_service   DateTime?
@@ -1659,10 +1661,35 @@ model AbonnementTransport {
   ligne LigneTransport  @relation(fields: [ligne_transport_id], references: [id])
   arret ArretTransport? @relation(fields: [arret_transport_id], references: [id])
   facture Facture?      @relation(fields: [facture_id], references: [id], onDelete: SetNull)
+  historiquesAffectation HistoriqueAffectationTransport[]
 
   @@index([eleve_id])
   @@index([facture_id], map: "idx_abt_facture")
   @@map("abonnements_transport")
+}
+
+model HistoriqueAffectationTransport {
+  id                         String   @id @default(uuid())
+  abonnement_transport_id    String
+  ancienne_ligne_transport_id String
+  ancien_arret_transport_id  String?
+  ancienne_zone_transport    String?
+  nouvelle_ligne_transport_id String
+  nouvel_arret_transport_id  String?
+  nouvelle_zone_transport    String?
+  date_effet                 DateTime
+  impact_tarifaire           Boolean  @default(false)
+  ancien_statut              String?
+  nouveau_statut             String?
+  details_json               Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  abonnementTransport AbonnementTransport @relation(fields: [abonnement_transport_id], references: [id])
+
+  @@index([abonnement_transport_id])
+  @@map("historiques_affectation_transport")
 }
 
 model FormuleCantine {
@@ -1689,6 +1716,7 @@ model AbonnementCantine {
   formule_cantine_id String
   facture_id         String?
   statut             String?
+  date_effet         DateTime?
   solde_prepaye      Decimal @default(0) @db.Decimal(12, 2)
   solde_min_alerte   Decimal @default(0) @db.Decimal(12, 2)
   dernier_rechargement_le DateTime?
