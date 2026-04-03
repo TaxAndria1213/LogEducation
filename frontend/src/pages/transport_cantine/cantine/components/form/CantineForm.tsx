@@ -7,7 +7,10 @@ import { useAuth } from "../../../../../hooks/useAuth";
 import { useInfo } from "../../../../../hooks/useInfo";
 import { FieldWrapper } from "../../../../../components/Form/fields/FieldWrapper";
 import { getInputClassName } from "../../../../../components/Form/fields/inputStyles";
-import FormuleCantineService from "../../../../../services/formuleCantine.service";
+import FormuleCantineService, {
+  getCantineAbsenceRegularizationModeLabel,
+  getFormuleCantineTypeLabel,
+} from "../../../../../services/formuleCantine.service";
 import AbonnementCantineService from "../../../../../services/abonnementCantine.service";
 import CatalogueFraisService, {
   type CatalogueFraisWithRelations,
@@ -20,7 +23,12 @@ import type { AnneeScolaire, CatalogueFrais, FormuleCantine } from "../../../../
 
 const formuleSchema = z.object({
   nom: z.string().min(1, "Le nom est obligatoire."),
+  type_formule: z.enum(["FORFAIT", "REPAS_UNITAIRE", "ABONNEMENT", "AUTRE"]),
   catalogue_frais_id: z.string().min(1, "Le frais catalogue est obligatoire."),
+  transmettre_consommations_finance: z.boolean(),
+  max_repas_par_jour: z.coerce.number().int().min(1, "Le plafond journalier doit etre au moins de 1 repas."),
+  regulariser_absence_annulation: z.boolean(),
+  mode_regularisation_absence: z.enum(["AVOIR", "REPORT", "REMBOURSEMENT", "AJUSTEMENT"]),
 });
 
 const abonnementSchema = z.object({
@@ -30,6 +38,13 @@ const abonnementSchema = z.object({
 });
 
 type CantineAction = "formule" | "abonnement";
+
+const formuleTypeOptions = [
+  { value: "FORFAIT", label: "Forfait", description: "Tarif global applique sur une periode definie." },
+  { value: "REPAS_UNITAIRE", label: "Repas unitaire", description: "Facturation a l'unite ou au repas consomme." },
+  { value: "ABONNEMENT", label: "Abonnement", description: "Adhesion recurrente avec acces a la cantine." },
+  { value: "AUTRE", label: "Autre", description: "Cas particulier ou formule specifique locale." },
+] as const;
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
@@ -119,7 +134,15 @@ export default function CantineForm() {
   const [submittingAction, setSubmittingAction] = useState<CantineAction | null>(null);
   const formuleForm = useForm<z.infer<typeof formuleSchema>>({
     resolver: zodResolver(formuleSchema),
-    defaultValues: { nom: "", catalogue_frais_id: "" },
+    defaultValues: {
+      nom: "",
+      type_formule: "FORFAIT",
+      catalogue_frais_id: "",
+      transmettre_consommations_finance: true,
+      max_repas_par_jour: 1,
+      regulariser_absence_annulation: false,
+      mode_regularisation_absence: "AVOIR",
+    },
   });
   const abonnementForm = useForm<z.infer<typeof abonnementSchema>>({
     resolver: zodResolver(abonnementSchema),
@@ -200,10 +223,23 @@ export default function CantineForm() {
               await new FormuleCantineService().create({
                 etablissement_id,
                 nom: data.nom,
+                type_formule: data.type_formule,
                 catalogue_frais_id: data.catalogue_frais_id,
+                transmettre_consommations_finance: data.transmettre_consommations_finance,
+                max_repas_par_jour: data.max_repas_par_jour,
+                regulariser_absence_annulation: data.regulariser_absence_annulation,
+                mode_regularisation_absence: data.mode_regularisation_absence,
               });
               info("Formule creee.", "success");
-              formuleForm.reset({ nom: "", catalogue_frais_id: "" });
+              formuleForm.reset({
+                nom: "",
+                type_formule: "FORFAIT",
+                catalogue_frais_id: "",
+                transmettre_consommations_finance: true,
+                max_repas_par_jour: 1,
+                regulariser_absence_annulation: false,
+                mode_regularisation_absence: "AVOIR",
+              });
               await load();
             } catch (error) {
               info(getErrorMessage(error), "error");
@@ -241,6 +277,35 @@ export default function CantineForm() {
 
           <Controller
             control={formuleForm.control}
+            name="type_formule"
+            render={({ field, fieldState }) => (
+              <FieldWrapper
+                id="cantine_formule_type"
+                label="Type de formule"
+                required
+                error={fieldState.error?.message}
+                hint="Ce type rend explicite le mode d'adhesion cantine."
+              >
+                <select
+                  {...field}
+                  disabled={loading || submittingAction === "formule"}
+                  className={getInputClassName(Boolean(fieldState.error))}
+                >
+                  {formuleTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-slate-500">
+                  {formuleTypeOptions.find((option) => option.value === field.value)?.description}
+                </p>
+              </FieldWrapper>
+            )}
+          />
+
+          <Controller
+            control={formuleForm.control}
             name="catalogue_frais_id"
             render={({ field, fieldState }) => (
               <FieldWrapper
@@ -259,6 +324,105 @@ export default function CantineForm() {
                   {catalogueFrais.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.nom} - {getCatalogueFraisSecondaryLabel(item)}
+                    </option>
+                  ))}
+                </select>
+              </FieldWrapper>
+            )}
+          />
+
+          <Controller
+            control={formuleForm.control}
+            name="transmettre_consommations_finance"
+            render={({ field }) => (
+              <FieldWrapper
+                id="cantine_formule_transmission_finance"
+                label="Transmission des consommations"
+                hint="Active l'envoi des repas servis a Finance pour controle ou valorisation."
+              >
+                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(field.value)}
+                    onChange={(event) => field.onChange(event.target.checked)}
+                    disabled={loading || submittingAction === "formule"}
+                    className="mt-1 h-4 w-4 rounded border-slate-300"
+                  />
+                  <span className="text-sm text-slate-700">
+                    Transmettre les consommations de cette formule a Finance
+                  </span>
+                </label>
+              </FieldWrapper>
+            )}
+          />
+
+          <Controller
+            control={formuleForm.control}
+            name="max_repas_par_jour"
+            render={({ field, fieldState }) => (
+              <FieldWrapper
+                id="cantine_formule_max_repas_par_jour"
+                label="Plafond journalier"
+                required
+                error={fieldState.error?.message}
+                hint="Nombre maximal de repas que cette formule autorise sur une meme journee."
+              >
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={field.value ?? 1}
+                  onChange={(event) => field.onChange(event.target.value)}
+                  disabled={loading || submittingAction === "formule"}
+                  className={getInputClassName(Boolean(fieldState.error))}
+                />
+              </FieldWrapper>
+            )}
+          />
+
+          <Controller
+            control={formuleForm.control}
+            name="regulariser_absence_annulation"
+            render={({ field }) => (
+              <FieldWrapper
+                id="cantine_formule_regulariser_absence_annulation"
+                label="Reglement des absences"
+                hint="Definit si une absence ou une annulation de repas doit etre examinee par Finance."
+              >
+                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(field.value)}
+                    onChange={(event) => field.onChange(event.target.checked)}
+                    disabled={loading || submittingAction === "formule"}
+                    className="mt-1 h-4 w-4 rounded border-slate-300"
+                  />
+                  <span className="text-sm text-slate-700">
+                    Ouvrir une regularisation Finance en cas d&apos;absence ou d&apos;annulation recevable
+                  </span>
+                </label>
+              </FieldWrapper>
+            )}
+          />
+
+          <Controller
+            control={formuleForm.control}
+            name="mode_regularisation_absence"
+            render={({ field, fieldState }) => (
+              <FieldWrapper
+                id="cantine_formule_mode_regularisation_absence"
+                label="Traitement suggere"
+                error={fieldState.error?.message}
+                hint="Finance garde la decision finale, mais la formule propose le traitement habituel."
+              >
+                <select
+                  {...field}
+                  disabled={loading || submittingAction === "formule"}
+                  className={getInputClassName(Boolean(fieldState.error))}
+                >
+                  {(["AVOIR", "REPORT", "REMBOURSEMENT", "AJUSTEMENT"] as const).map((mode) => (
+                    <option key={mode} value={mode}>
+                      {getCantineAbsenceRegularizationModeLabel(mode)}
                     </option>
                   ))}
                 </select>
@@ -378,7 +542,7 @@ export default function CantineForm() {
                   <option value="">Selectionner une formule</option>
                   {formules.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.nom}
+                      {item.nom} - {getFormuleCantineTypeLabel(item.type_formule)}
                     </option>
                   ))}
                 </select>
@@ -409,6 +573,9 @@ export default function CantineForm() {
 
           <div className="md:col-span-2 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
             <p className="font-semibold">Tarif et suivi financier dans Finance</p>
+            <p className="mt-1 text-xs font-medium uppercase tracking-[0.08em] text-sky-800">
+              Type de formule: {getFormuleCantineTypeLabel(selectedFormule?.type_formule)}
+            </p>
             <p className="mt-1">
               {selectedFormule?.frais
                 ? `${selectedFormule.frais.nom} - ${getCatalogueFraisSecondaryLabel(selectedFormule.frais as CatalogueFraisWithRelations)}`

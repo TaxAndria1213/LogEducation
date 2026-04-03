@@ -8,8 +8,16 @@ import FormuleCantineModel from "../models/formule_cantine.model";
 type FormuleCantinePayload = {
   etablissement_id: string;
   nom: string;
+  type_formule: "FORFAIT" | "REPAS_UNITAIRE" | "ABONNEMENT" | "AUTRE";
   catalogue_frais_id: string;
+  transmettre_consommations_finance: boolean;
+  max_repas_par_jour: number;
+  regulariser_absence_annulation: boolean;
+  mode_regularisation_absence: "AVOIR" | "REPORT" | "REMBOURSEMENT" | "AJUSTEMENT";
 };
+
+const ALLOWED_FORMULE_TYPES = ["FORFAIT", "REPAS_UNITAIRE", "ABONNEMENT", "AUTRE"] as const;
+const ALLOWED_ABSENCE_REGULARIZATION_MODES = ["AVOIR", "REPORT", "REMBOURSEMENT", "AJUSTEMENT"] as const;
 
 class FormuleCantineApp {
   public app: Application;
@@ -57,13 +65,51 @@ class FormuleCantineApp {
 
   private async normalizePayload(raw: Record<string, unknown>, tenantId: string): Promise<FormuleCantinePayload> {
     const nom = typeof raw.nom === "string" ? raw.nom.trim() : "";
+    const type_formule =
+      typeof raw.type_formule === "string" && raw.type_formule.trim()
+        ? raw.type_formule.trim().toUpperCase()
+        : "";
     const catalogue_frais_id =
       typeof raw.catalogue_frais_id === "string" && raw.catalogue_frais_id.trim()
         ? raw.catalogue_frais_id.trim()
         : "";
+    const transmettre_consommations_finance =
+      typeof raw.transmettre_consommations_finance === "boolean"
+        ? raw.transmettre_consommations_finance
+        : true;
+    const max_repas_par_jour_raw =
+      typeof raw.max_repas_par_jour === "number"
+        ? raw.max_repas_par_jour
+        : typeof raw.max_repas_par_jour === "string" && raw.max_repas_par_jour.trim()
+          ? Number(raw.max_repas_par_jour)
+          : 1;
+    const regulariser_absence_annulation =
+      typeof raw.regulariser_absence_annulation === "boolean"
+        ? raw.regulariser_absence_annulation
+        : false;
+    const mode_regularisation_absence =
+      typeof raw.mode_regularisation_absence === "string" && raw.mode_regularisation_absence.trim()
+        ? raw.mode_regularisation_absence.trim().toUpperCase()
+        : "AVOIR";
 
     if (!nom) {
       throw new Error("Le nom de la formule de cantine est obligatoire.");
+    }
+
+    if (!ALLOWED_FORMULE_TYPES.includes(type_formule as (typeof ALLOWED_FORMULE_TYPES)[number])) {
+      throw new Error("Le type de formule de cantine est obligatoire.");
+    }
+
+    if (
+      !ALLOWED_ABSENCE_REGULARIZATION_MODES.includes(
+        mode_regularisation_absence as (typeof ALLOWED_ABSENCE_REGULARIZATION_MODES)[number],
+      )
+    ) {
+      throw new Error("Le mode de regularisation des absences cantine est invalide.");
+    }
+
+    if (!Number.isInteger(max_repas_par_jour_raw) || max_repas_par_jour_raw <= 0) {
+      throw new Error("Le nombre maximal de repas par jour doit etre un entier superieur a zero.");
     }
 
     if (!catalogue_frais_id) {
@@ -96,7 +142,13 @@ class FormuleCantineApp {
     return {
       etablissement_id: tenantId,
       nom,
+      type_formule: type_formule as FormuleCantinePayload["type_formule"],
       catalogue_frais_id,
+      transmettre_consommations_finance,
+      max_repas_par_jour: max_repas_par_jour_raw,
+      regulariser_absence_annulation,
+      mode_regularisation_absence:
+        mode_regularisation_absence as FormuleCantinePayload["mode_regularisation_absence"],
     };
   }
 

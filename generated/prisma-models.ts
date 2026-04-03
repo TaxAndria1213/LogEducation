@@ -1247,11 +1247,18 @@ export interface FormuleCantine {
   id: string;
   etablissement_id: string;
   nom: string;
+  type_formule: string;
   catalogue_frais_id: string | null;
+  transmettre_consommations_finance: boolean;
+  max_repas_par_jour: number;
+  regulariser_absence_annulation: boolean;
+  mode_regularisation_absence: string;
   created_at: Date;
   updated_at: Date;
   abonnements?: AbonnementCantine[];
   frais?: CatalogueFrais | null;
+  historiquesAncienneFormule?: HistoriqueFormuleCantine[];
+  historiquesNouvelleFormule?: HistoriqueFormuleCantine[];
 }
 
 export interface AbonnementCantine {
@@ -1272,6 +1279,63 @@ export interface AbonnementCantine {
   formule?: FormuleCantine;
   facture?: Facture | null;
   operationsFinancieres?: OperationFinanciere[];
+  historiquesFormule?: HistoriqueFormuleCantine[];
+  consommations?: ConsommationCantine[];
+  absences?: AbsenceCantine[];
+}
+
+export interface HistoriqueFormuleCantine {
+  id: string;
+  abonnement_cantine_id: string;
+  ancienne_formule_cantine_id: string;
+  nouvelle_formule_cantine_id: string;
+  date_effet: Date;
+  impact_tarifaire: boolean;
+  ancien_statut: string | null;
+  nouveau_statut: string | null;
+  details_json: JsonValue | null;
+  created_at: Date;
+  updated_at: Date;
+  abonnement?: AbonnementCantine;
+  ancienneFormule?: FormuleCantine;
+  nouvelleFormule?: FormuleCantine;
+}
+
+export interface ConsommationCantine {
+  id: string;
+  abonnement_cantine_id: string;
+  type_repas: string;
+  note: string | null;
+  consommation_le: Date;
+  statut_acces: string;
+  motif_acces: string | null;
+  finance_status_snapshot: string | null;
+  transmission_finance: boolean;
+  finance_processed_at: Date | null;
+  details_json: JsonValue | null;
+  created_at: Date;
+  updated_at: Date;
+  abonnement?: AbonnementCantine;
+}
+
+export interface AbsenceCantine {
+  id: string;
+  abonnement_cantine_id: string;
+  type_evenement: string;
+  date_repas: Date;
+  etat_metier: string;
+  note: string | null;
+  statut_acces_snapshot: string | null;
+  finance_status_snapshot: string | null;
+  ouvre_droit_regularisation: boolean;
+  mode_regularisation_suggere: string | null;
+  transmission_finance: boolean;
+  finance_processed_at: Date | null;
+  decision_finance: string | null;
+  details_json: JsonValue | null;
+  created_at: Date;
+  updated_at: Date;
+  abonnement?: AbonnementCantine;
 }
 
 /**

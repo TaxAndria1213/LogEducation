@@ -71,6 +71,13 @@ export type TransportControlAnomalyRow = {
   tracking_status: "OUVERTE" | "RESOLUE" | "IGNOREE";
 };
 
+export type TransportControlAnomalySummary = {
+  total: number;
+  transportes_sans_droit_financier: number;
+  payes_sans_affectation_transport: number;
+  suspendus_encore_planifies: number;
+};
+
 function parseObjectParam(value: unknown): Record<string, unknown> | undefined {
   if (!value) return undefined;
   if (typeof value === "object") return value as Record<string, unknown>;
@@ -101,6 +108,61 @@ export function getAbonnementTransportProrataLabel(record?: Partial<AbonnementTr
       : Number(record?.prorata_ratio ?? 0);
   if (!Number.isFinite(ratio) || ratio <= 0 || ratio >= 1) return "Plein tarif";
   return `Prorata ${(ratio * 100).toFixed(0)}%`;
+}
+
+export function getAbonnementTransportFinanceStatusLabel(status?: string | null) {
+  switch ((status ?? "").toUpperCase()) {
+    case "VALIDATION_INTERNE":
+      return "Validation interne";
+    case "A_FACTURER":
+      return "A facturer";
+    case "EN_ATTENTE_REGLEMENT":
+      return "En attente de reglement";
+    case "PARTIELLEMENT_REGLE":
+      return "Partiellement regle";
+    case "IMPAYE":
+      return "Impaye";
+    case "SUSPENSION_SIGNALEE":
+      return "Suspension signalee";
+    case "REGLE":
+      return "Regle";
+    case "REGULARISE":
+      return "Regularise";
+    case "ACTIF":
+      return "Actif";
+    case "SUSPENDU":
+      return "Suspendu";
+    case "RESILIE":
+      return "Resilie";
+    default:
+      return status || "Non renseigne";
+  }
+}
+
+export function getTransportControlAnomalyLabel(code?: TransportControlAnomalyRow["code"] | null) {
+  switch (code) {
+    case "TRANSPORTE_SANS_DROIT_FINANCIER":
+      return "Transporte sans droit financier";
+    case "PAYE_SANS_AFFECTATION_TRANSPORT":
+      return "Paye sans affectation";
+    case "SUSPENDU_AVEC_USAGE_REEL":
+      return "Suspendu avec usage reel";
+    default:
+      return code || "Anomalie transport";
+  }
+}
+
+export function getTransportControlTrackingLabel(
+  status?: TransportControlAnomalyRow["tracking_status"] | null,
+) {
+  switch (status) {
+    case "RESOLUE":
+      return "Resolue";
+    case "IGNOREE":
+      return "Ignoree";
+    default:
+      return "Ouverte";
+  }
 }
 
 class AbonnementTransportService extends Service {

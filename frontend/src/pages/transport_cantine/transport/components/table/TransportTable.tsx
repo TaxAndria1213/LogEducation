@@ -11,6 +11,7 @@ import {
   type CatalogueFraisWithRelations,
 } from "../../../../../services/catalogueFrais.service";
 import AbonnementTransportService, {
+  getAbonnementTransportFinanceStatusLabel,
   getAbonnementTransportProrataLabel,
   type AbonnementTransportWithRelations,
   type OperationalTransportRow,
@@ -147,7 +148,7 @@ function getOperationalStatusTone(value: EligibilityOperationalStatus) {
 
 function isFinanciallyAuthorized(financeStatus?: string | null) {
   const normalized = (financeStatus ?? "").toUpperCase();
-  return normalized === "REGLE" || normalized === "ACTIF";
+  return ["REGLE", "ACTIF", "REGULARISE"].includes(normalized);
 }
 
 function toCsvValue(value: unknown) {
@@ -212,24 +213,7 @@ function getServiceStatusLabel(value?: string | null) {
 }
 
 function getFinanceStatusLabel(value?: string | null) {
-  switch ((value ?? "").toUpperCase()) {
-    case "VALIDATION_INTERNE":
-      return "Validation interne";
-    case "A_FACTURER":
-      return "A facturer";
-    case "EN_ATTENTE_REGLEMENT":
-      return "En attente de reglement";
-    case "SUSPENSION_SIGNALEE":
-      return "Suspension signalee";
-    case "REGLE":
-      return "Regle";
-    case "SUSPENDU":
-      return "Suspendu";
-    case "RESILIE":
-      return "Resilie";
-    default:
-      return value || "Non renseigne";
-  }
+  return getAbonnementTransportFinanceStatusLabel(value);
 }
 
 function getAccessStatusLabel(value?: string | null) {
@@ -651,7 +635,10 @@ export default function TransportTable() {
     if (financeStatus === "A_FACTURER" && rules.bloquer_si_a_facturer) {
       return "EN_ATTENTE";
     }
-    if (financeStatus === "EN_ATTENTE_REGLEMENT" && rules.bloquer_si_en_attente_reglement) {
+    if (
+      ["EN_ATTENTE_REGLEMENT", "PARTIELLEMENT_REGLE", "IMPAYE"].includes(financeStatus) &&
+      rules.bloquer_si_en_attente_reglement
+    ) {
       return "EN_ATTENTE";
     }
     if (
@@ -660,7 +647,8 @@ export default function TransportTable() {
         "EN_ATTENTE_VALIDATION_FINANCIERE",
         "EN_ATTENTE_REGLEMENT",
         "EN_ATTENTE_SUSPENSION_FINANCIERE",
-      ].includes(serviceStatus)
+      ].includes(serviceStatus) ||
+      ["PARTIELLEMENT_REGLE", "IMPAYE", "VALIDATION_INTERNE", "SUSPENSION_SIGNALEE"].includes(financeStatus)
     ) {
       return "EN_ATTENTE";
     }

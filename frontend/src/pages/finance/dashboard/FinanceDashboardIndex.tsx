@@ -54,12 +54,26 @@ import RemiseService, {
 } from "../../../services/remise.service";
 import AbonnementTransportService, {
   getAbonnementTransportDisplayLabel,
+  getAbonnementTransportFinanceStatusLabel,
+  getTransportControlAnomalyLabel,
+  getTransportControlTrackingLabel,
   type AbonnementTransportWithRelations,
+  type TransportControlAnomalyRow,
+  type TransportControlAnomalySummary,
 } from "../../../services/abonnementTransport.service";
 import AbonnementCantineService, {
+  type AbsenceCantineWithRelations,
+  type CantineControlAnomalyRow,
+  type CantineControlAnomalySummary,
+  type ConsommationCantineWithRelations,
+  getCantineAbsenceEventLabel,
+  getAbonnementCantineFinanceStatusLabel,
   getAbonnementCantineDisplayLabel,
+  getCantineControlAnomalyLabel,
+  getCantineControlTrackingLabel,
   type AbonnementCantineWithRelations,
 } from "../../../services/abonnementCantine.service";
+import { getCantineAbsenceRegularizationModeLabel } from "../../../services/formuleCantine.service";
 import NotFound from "../../NotFound";
 import type { componentId } from "../../../types/types";
 
@@ -165,6 +179,20 @@ type TransportHistoryDetails = {
 };
 
 type FinanceDashboardTab = "synthese" | "retards" | "activite" | "automatisation" | "reporting";
+
+type ServiceBillingRequestRow =
+  | {
+      kind: "TRANSPORT";
+      key: string;
+      subscription: AbonnementTransportWithRelations;
+      requiresRegularization: boolean;
+    }
+  | {
+      kind: "CANTINE";
+      key: string;
+      subscription: AbonnementCantineWithRelations;
+      requiresRegularization: false;
+    };
 
 function getErrorMessage(error: unknown) {
   if (
@@ -284,6 +312,52 @@ function getTransportHistoryDetails(item: AbonnementTransportWithRelations): Tra
   };
 }
 
+function extractControlPayload<TRow, TSummary extends object>(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return {
+      rows: [] as TRow[],
+      summary: {} as Partial<TSummary>,
+    };
+  }
+
+  const record = payload as Record<string, unknown>;
+  const source =
+    record.data && typeof record.data === "object" && !Array.isArray(record.data)
+      ? (record.data as Record<string, unknown>)
+      : record;
+
+  return {
+    rows: Array.isArray(source.rows) ? (source.rows as TRow[]) : ([] as TRow[]),
+    summary:
+      source.summary && typeof source.summary === "object"
+        ? (source.summary as Partial<TSummary>)
+        : ({} as Partial<TSummary>),
+  };
+}
+
+function getTransportControlAnomalyTone(code: TransportControlAnomalyRow["code"]) {
+  switch (code) {
+    case "TRANSPORTE_SANS_DROIT_FINANCIER":
+      return "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-900";
+    case "PAYE_SANS_AFFECTATION_TRANSPORT":
+      return "border-amber-200 bg-amber-50 text-amber-900";
+    case "SUSPENDU_AVEC_USAGE_REEL":
+    default:
+      return "border-rose-200 bg-rose-50 text-rose-900";
+  }
+}
+
+function getTransportControlTrackingTone(status: TransportControlAnomalyRow["tracking_status"]) {
+  switch (status) {
+    case "RESOLUE":
+      return "bg-emerald-100 text-emerald-800";
+    case "IGNOREE":
+      return "bg-slate-200 text-slate-700";
+    default:
+      return "bg-white/70 text-slate-800";
+  }
+}
+
 function getInscriptionForYear(
   inscriptions?: DashboardInscriptionRelation[] | null,
   anneeId?: string | null,
@@ -322,7 +396,25 @@ export default function FinanceDashboardIndex() {
   const [remises, setRemises] = useState<RemiseWithRelations[]>([]);
   const [pendingTransportBilling, setPendingTransportBilling] = useState<AbonnementTransportWithRelations[]>([]);
   const [transportSubscriptions, setTransportSubscriptions] = useState<AbonnementTransportWithRelations[]>([]);
+  const [transportControlAnomalies, setTransportControlAnomalies] = useState<TransportControlAnomalyRow[]>([]);
+  const [transportControlSummary, setTransportControlSummary] = useState<TransportControlAnomalySummary>({
+    total: 0,
+    transportes_sans_droit_financier: 0,
+    payes_sans_affectation_transport: 0,
+    suspendus_encore_planifies: 0,
+  });
   const [pendingCantineBilling, setPendingCantineBilling] = useState<AbonnementCantineWithRelations[]>([]);
+  const [pendingCantineRegularization, setPendingCantineRegularization] = useState<AbonnementCantineWithRelations[]>([]);
+  const [pendingCantineSuspension, setPendingCantineSuspension] = useState<AbonnementCantineWithRelations[]>([]);
+  const [pendingCantineConsumptionControl, setPendingCantineConsumptionControl] = useState<ConsommationCantineWithRelations[]>([]);
+  const [pendingCantineAbsenceRegularization, setPendingCantineAbsenceRegularization] = useState<AbsenceCantineWithRelations[]>([]);
+  const [cantineControlAnomalies, setCantineControlAnomalies] = useState<CantineControlAnomalyRow[]>([]);
+  const [cantineControlSummary, setCantineControlSummary] = useState<CantineControlAnomalySummary>({
+    total: 0,
+    repas_sans_autorisation_active: 0,
+    payes_sans_consommation: 0,
+    consommations_superieures_aux_droits: 0,
+  });
   const [relances, setRelances] = useState<FinanceRelanceHistoryItem[]>([]);
   const [facturationsRecurrentes, setFacturationsRecurrentes] = useState<FacturationRecurrenteHistoryItem[]>([]);
   const [recurringReadiness, setRecurringReadiness] = useState<FacturationRecurrenteReadiness | null>(null);
@@ -333,9 +425,16 @@ export default function FinanceDashboardIndex() {
   const [linkingTransportId, setLinkingTransportId] = useState<string | null>(null);
   const [processingTransportBillingId, setProcessingTransportBillingId] = useState<string | null>(null);
   const [processingCantineBillingId, setProcessingCantineBillingId] = useState<string | null>(null);
+  const [processingCantineRegularizationId, setProcessingCantineRegularizationId] = useState<string | null>(null);
+  const [signalingCantineSuspensionId, setSignalingCantineSuspensionId] = useState<string | null>(null);
+  const [processingCantineConsumptionId, setProcessingCantineConsumptionId] = useState<string | null>(null);
+  const [processingCantineAbsenceId, setProcessingCantineAbsenceId] = useState<string | null>(null);
+  const [busyTransportAnomalyId, setBusyTransportAnomalyId] = useState<string | null>(null);
+  const [busyCantineAnomalyId, setBusyCantineAnomalyId] = useState<string | null>(null);
   const [processingTransportRegularizationId, setProcessingTransportRegularizationId] = useState<string | null>(null);
   const [signalingTransportSuspensionId, setSignalingTransportSuspensionId] = useState<string | null>(null);
   const [transportFactureSelection, setTransportFactureSelection] = useState<Record<string, string>>({});
+  const [cantineAbsenceDecisionSelection, setCantineAbsenceDecisionSelection] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<FinanceDashboardTab>("retards");
 
   const canAccess = useMemo(() => {
@@ -383,7 +482,13 @@ export default function FinanceDashboardIndex() {
           recurringReadinessResult,
           pendingTransportResult,
           transportSubscriptionsResult,
+          transportControlAnomaliesResult,
           pendingCantineResult,
+          pendingCantineRegularizationResult,
+          pendingCantineSuspensionResult,
+          pendingCantineConsumptionControlResult,
+          pendingCantineAbsenceRegularizationResult,
+          cantineControlAnomaliesResult,
         ] =
           await Promise.all([
             factureService.getForEtablissement(etablissement_id, {
@@ -477,7 +582,13 @@ export default function FinanceDashboardIndex() {
                 facture: true,
               }),
             }),
+            transportService.getControlAnomalies(etablissement_id),
             cantineService.getPendingFinanceBilling(etablissement_id),
+            cantineService.getPendingFinanceRegularization(etablissement_id),
+            cantineService.getPendingFinanceSuspension(etablissement_id),
+            cantineService.getPendingFinanceConsumptionControl(etablissement_id),
+            cantineService.getPendingFinanceAbsenceRegularization(etablissement_id),
+            cantineService.getControlAnomalies(etablissement_id),
           ]);
 
         if (!active) return;
@@ -509,11 +620,58 @@ export default function FinanceDashboardIndex() {
             ? ((transportSubscriptionsResult.data.data as AbonnementTransportWithRelations[]) ?? [])
             : [],
         );
+        const transportAnomaliesPayload = extractControlPayload<
+          TransportControlAnomalyRow,
+          TransportControlAnomalySummary
+        >(transportControlAnomaliesResult?.status.success ? transportControlAnomaliesResult.data : null);
+        setTransportControlAnomalies(transportAnomaliesPayload.rows);
+        setTransportControlSummary({
+          total: transportAnomaliesPayload.summary?.total ?? 0,
+          transportes_sans_droit_financier:
+            transportAnomaliesPayload.summary?.transportes_sans_droit_financier ?? 0,
+          payes_sans_affectation_transport:
+            transportAnomaliesPayload.summary?.payes_sans_affectation_transport ?? 0,
+          suspendus_encore_planifies:
+            transportAnomaliesPayload.summary?.suspendus_encore_planifies ?? 0,
+        });
         setPendingCantineBilling(
           pendingCantineResult?.status.success
             ? ((pendingCantineResult.data as AbonnementCantineWithRelations[]) ?? [])
             : [],
         );
+        setPendingCantineRegularization(
+          pendingCantineRegularizationResult?.status.success
+            ? ((pendingCantineRegularizationResult.data as AbonnementCantineWithRelations[]) ?? [])
+            : [],
+        );
+        setPendingCantineSuspension(
+          pendingCantineSuspensionResult?.status.success
+            ? ((pendingCantineSuspensionResult.data as AbonnementCantineWithRelations[]) ?? [])
+            : [],
+        );
+        setPendingCantineConsumptionControl(
+          pendingCantineConsumptionControlResult?.status.success
+            ? ((pendingCantineConsumptionControlResult.data as ConsommationCantineWithRelations[]) ?? [])
+            : [],
+        );
+        setPendingCantineAbsenceRegularization(
+          pendingCantineAbsenceRegularizationResult?.status.success
+            ? ((pendingCantineAbsenceRegularizationResult.data as AbsenceCantineWithRelations[]) ?? [])
+            : [],
+        );
+        const cantineAnomaliesPayload = extractControlPayload<
+          CantineControlAnomalyRow,
+          CantineControlAnomalySummary
+        >(cantineControlAnomaliesResult?.status.success ? cantineControlAnomaliesResult.data : null);
+        setCantineControlAnomalies(cantineAnomaliesPayload.rows);
+        setCantineControlSummary({
+          total: cantineAnomaliesPayload?.summary?.total ?? 0,
+          repas_sans_autorisation_active:
+            cantineAnomaliesPayload?.summary?.repas_sans_autorisation_active ?? 0,
+          payes_sans_consommation: cantineAnomaliesPayload?.summary?.payes_sans_consommation ?? 0,
+          consommations_superieures_aux_droits:
+            cantineAnomaliesPayload?.summary?.consommations_superieures_aux_droits ?? 0,
+        });
         setRelances(
           relancesResult?.status.success
             ? ((relancesResult.data as FinanceRelanceHistoryItem[]) ?? [])
@@ -578,7 +736,7 @@ export default function FinanceDashboardIndex() {
   //   [factures],
   // );
 
-  const collectionRate = totalFacture > 0 ? Math.min(100, (totalEncaisse / totalFacture) * 100) : 0;
+  // const collectionRate = totalFacture > 0 ? Math.min(100, (totalEncaisse / totalFacture) * 100) : 0;
 
   const echeances = useMemo<DashboardEcheance[]>(() => {
     const factureRows = factures.flatMap((facture) =>
@@ -772,6 +930,42 @@ export default function FinanceDashboardIndex() {
     return grouped;
   }, [factures, pendingTransportBilling]);
 
+  const serviceBillingRequests = useMemo<ServiceBillingRequestRow[]>(() => {
+    const transportRequests: ServiceBillingRequestRow[] = pendingTransportBilling.map((item) => {
+      const history = getLatestTransportHistory(item);
+      const historyDetails = getTransportHistoryDetails(item);
+      const requiresRegularization =
+        history?.impact_tarifaire === true &&
+        historyDetails.notification_finance === true &&
+        !historyDetails.finance_processed_at;
+      return {
+        kind: "TRANSPORT",
+        key: `transport::${item.id}`,
+        subscription: item,
+        requiresRegularization,
+      };
+    });
+
+    const cantineRequests: ServiceBillingRequestRow[] = pendingCantineBilling.map((item) => ({
+      kind: "CANTINE",
+      key: `cantine::${item.id}`,
+      subscription: item,
+      requiresRegularization: false,
+    }));
+
+    return [...transportRequests, ...cantineRequests].sort((left, right) => {
+      const leftLabel =
+        left.kind === "TRANSPORT"
+          ? getAbonnementTransportDisplayLabel(left.subscription)
+          : getAbonnementCantineDisplayLabel(left.subscription);
+      const rightLabel =
+        right.kind === "TRANSPORT"
+          ? getAbonnementTransportDisplayLabel(right.subscription)
+          : getAbonnementCantineDisplayLabel(right.subscription);
+      return leftLabel.localeCompare(rightLabel);
+    });
+  }, [pendingTransportBilling, pendingCantineBilling]);
+
   const transportSuspensionCandidates = useMemo(
     () =>
       transportSubscriptions.filter((item) => {
@@ -785,9 +979,14 @@ export default function FinanceDashboardIndex() {
           !historyDetails.finance_processed_at;
         if (["RESILIE", "ANNULE", "INACTIF"].includes(status)) return false;
         if (["SUSPENDU_FINANCE", "EN_ATTENTE_SUSPENSION_FINANCIERE"].includes(status)) return false;
-        return financeStatus === "EN_ATTENTE_REGLEMENT" || regularizationPending;
+        return ["EN_ATTENTE_REGLEMENT", "PARTIELLEMENT_REGLE", "IMPAYE"].includes(financeStatus) || regularizationPending;
       }),
     [transportSubscriptions],
+  );
+
+  const totalServiceControlAnomalies = useMemo(
+    () => transportControlSummary.total + cantineControlSummary.total,
+    [transportControlSummary.total, cantineControlSummary.total],
   );
 
   const remiseStats = useMemo(
@@ -1097,14 +1296,14 @@ export default function FinanceDashboardIndex() {
     }
   };
 
-  const financeRoleNames = (roles ?? [])
-    .map((assignment) => assignment.role?.nom?.trim())
-    .filter(Boolean) as string[];
+  // const financeRoleNames = (roles ?? [])
+  //   .map((assignment) => assignment.role?.nom?.trim())
+  //   .filter(Boolean) as string[];
 
-  const financePersonaLabel =
-    financeRoleNames.find((roleName) =>
-      ["DIRECTION", "COMPTABLE", "CAISSIER", "SECRETAIRE", "AUDITEUR"].includes(roleName.toUpperCase()),
-    ) ?? "Equipe finance";
+  // const financePersonaLabel =
+  //   financeRoleNames.find((roleName) =>
+  //     ["DIRECTION", "COMPTABLE", "CAISSIER", "SECRETAIRE", "AUDITEUR"].includes(roleName.toUpperCase()),
+  //   ) ?? "Equipe finance";
 
   const pendingReconciliationCount = reconciliationStats
     .filter((item) => item.key !== "Rapproche")
@@ -1120,7 +1319,7 @@ export default function FinanceDashboardIndex() {
 
   const refreshTransportFinanceData = async () => {
     const service = new AbonnementTransportService();
-    const [refreshedPending, refreshedSubscriptions] = await Promise.all([
+    const [refreshedPending, refreshedSubscriptions, refreshedAnomalies] = await Promise.all([
       service.getPendingFinanceBilling(etablissement_id ?? ""),
       service.getForEtablissement(etablissement_id ?? "", {
         page: 1,
@@ -1133,6 +1332,7 @@ export default function FinanceDashboardIndex() {
           facture: true,
         }),
       }),
+      service.getControlAnomalies(etablissement_id ?? ""),
     ]);
     setPendingTransportBilling(
       refreshedPending?.status.success
@@ -1144,16 +1344,75 @@ export default function FinanceDashboardIndex() {
         ? ((refreshedSubscriptions.data.data as AbonnementTransportWithRelations[]) ?? [])
         : [],
     );
+    const anomaliesPayload = extractControlPayload<
+      TransportControlAnomalyRow,
+      TransportControlAnomalySummary
+    >(refreshedAnomalies?.status.success ? refreshedAnomalies.data : null);
+    setTransportControlAnomalies(anomaliesPayload.rows);
+    setTransportControlSummary({
+      total: anomaliesPayload.summary?.total ?? 0,
+      transportes_sans_droit_financier:
+        anomaliesPayload.summary?.transportes_sans_droit_financier ?? 0,
+      payes_sans_affectation_transport:
+        anomaliesPayload.summary?.payes_sans_affectation_transport ?? 0,
+      suspendus_encore_planifies: anomaliesPayload.summary?.suspendus_encore_planifies ?? 0,
+    });
   };
 
   const refreshCantineFinanceData = async () => {
     const service = new AbonnementCantineService();
-    const refreshedPending = await service.getPendingFinanceBilling(etablissement_id ?? "");
+    const [
+      refreshedPending,
+      refreshedRegularization,
+      refreshedSuspension,
+      refreshedConsumptionControl,
+      refreshedAbsenceRegularization,
+      refreshedAnomalies,
+    ] = await Promise.all([
+      service.getPendingFinanceBilling(etablissement_id ?? ""),
+      service.getPendingFinanceRegularization(etablissement_id ?? ""),
+      service.getPendingFinanceSuspension(etablissement_id ?? ""),
+      service.getPendingFinanceConsumptionControl(etablissement_id ?? ""),
+      service.getPendingFinanceAbsenceRegularization(etablissement_id ?? ""),
+      service.getControlAnomalies(etablissement_id ?? ""),
+    ]);
     setPendingCantineBilling(
       refreshedPending?.status.success
         ? ((refreshedPending.data as AbonnementCantineWithRelations[]) ?? [])
         : [],
     );
+    setPendingCantineRegularization(
+      refreshedRegularization?.status.success
+        ? ((refreshedRegularization.data as AbonnementCantineWithRelations[]) ?? [])
+        : [],
+    );
+    setPendingCantineSuspension(
+      refreshedSuspension?.status.success
+        ? ((refreshedSuspension.data as AbonnementCantineWithRelations[]) ?? [])
+        : [],
+    );
+    setPendingCantineConsumptionControl(
+      refreshedConsumptionControl?.status.success
+        ? ((refreshedConsumptionControl.data as ConsommationCantineWithRelations[]) ?? [])
+        : [],
+    );
+    setPendingCantineAbsenceRegularization(
+      refreshedAbsenceRegularization?.status.success
+        ? ((refreshedAbsenceRegularization.data as AbsenceCantineWithRelations[]) ?? [])
+        : [],
+    );
+    const anomaliesPayload = extractControlPayload<
+      CantineControlAnomalyRow,
+      CantineControlAnomalySummary
+    >(refreshedAnomalies?.status.success ? refreshedAnomalies.data : null);
+    setCantineControlAnomalies(anomaliesPayload.rows);
+    setCantineControlSummary({
+      total: anomaliesPayload?.summary?.total ?? 0,
+      repas_sans_autorisation_active: anomaliesPayload?.summary?.repas_sans_autorisation_active ?? 0,
+      payes_sans_consommation: anomaliesPayload?.summary?.payes_sans_consommation ?? 0,
+      consommations_superieures_aux_droits:
+        anomaliesPayload?.summary?.consommations_superieures_aux_droits ?? 0,
+    });
   };
 
   const handleLinkTransportFacture = async (item: AbonnementTransportWithRelations) => {
@@ -1215,6 +1474,138 @@ export default function FinanceDashboardIndex() {
     }
   };
 
+  const handleProcessCantineRegularization = async (item: AbonnementCantineWithRelations) => {
+    try {
+      setProcessingCantineRegularizationId(item.id);
+      await new AbonnementCantineService().processFinanceRegularization(item.id);
+      info("Regularisation cantine generee par Finance.", "success");
+      await refreshCantineFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setProcessingCantineRegularizationId(null);
+    }
+  };
+
+  const handleSignalCantineSuspension = async (item: AbonnementCantineWithRelations) => {
+    try {
+      setSignalingCantineSuspensionId(item.id);
+      await new AbonnementCantineService().signalFinanceSuspension(item.id, {
+        source: "FINANCE_DASHBOARD",
+        motif: "Impaye ou autorisation refusee signale depuis Finance",
+        finance_status: item.finance_status ?? null,
+      });
+      info("Suspension cantine signalee au module Cantine.", "success");
+      await refreshCantineFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setSignalingCantineSuspensionId(null);
+    }
+  };
+
+  const handleProcessCantineConsumptionControl = async (item: ConsommationCantineWithRelations) => {
+    try {
+      setProcessingCantineConsumptionId(item.id);
+      await new AbonnementCantineService().processFinanceConsumptionControl(item.id);
+      info("Consommation cantine controlee par Finance.", "success");
+      await refreshCantineFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setProcessingCantineConsumptionId(null);
+    }
+  };
+
+  const handleProcessCantineAbsenceRegularization = async (item: AbsenceCantineWithRelations) => {
+    try {
+      setProcessingCantineAbsenceId(item.id);
+      const decision =
+        cantineAbsenceDecisionSelection[item.id] ??
+        item.mode_regularisation_suggere ??
+        "AVOIR";
+      await new AbonnementCantineService().processFinanceAbsenceRegularization(item.id, {
+        decision_finance: decision as
+          | "AVOIR"
+          | "REPORT"
+          | "REMBOURSEMENT"
+          | "AJUSTEMENT"
+          | "REFUS_REGULARISATION",
+      });
+      info("Regularisation d'absence cantine traitee par Finance.", "success");
+      await refreshCantineFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setProcessingCantineAbsenceId(null);
+    }
+  };
+
+  const handleMarkCantineAnomaly = async (
+    item: CantineControlAnomalyRow,
+    decision: "RESOLVED" | "IGNORED",
+  ) => {
+    try {
+      setBusyCantineAnomalyId(item.anomaly_id);
+      await new AbonnementCantineService().markControlAnomaly(etablissement_id ?? "", {
+        anomaly_id: item.anomaly_id,
+        decision,
+      });
+      info(
+        decision === "RESOLVED"
+          ? "Anomalie cantine marquee comme resolue."
+          : "Anomalie cantine ignoree.",
+        "success",
+      );
+      await refreshCantineFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setBusyCantineAnomalyId(null);
+    }
+  };
+
+  const handleMarkTransportAnomaly = async (
+    item: TransportControlAnomalyRow,
+    decision: "RESOLVED" | "IGNORED",
+  ) => {
+    try {
+      setBusyTransportAnomalyId(item.anomaly_id);
+      await new AbonnementTransportService().markControlAnomaly(etablissement_id ?? "", {
+        anomaly_id: item.anomaly_id,
+        decision,
+      });
+      info(
+        decision === "RESOLVED"
+          ? "Anomalie transport marquee comme resolue."
+          : "Anomalie transport ignoree.",
+        "success",
+      );
+      await refreshTransportFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setBusyTransportAnomalyId(null);
+    }
+  };
+
+  const handleSuspendTransportFromAnomaly = async (item: TransportControlAnomalyRow) => {
+    if (!item.abonnement_transport_id) return;
+    try {
+      setBusyTransportAnomalyId(item.anomaly_id);
+      await new AbonnementTransportService().signalFinanceSuspension(item.abonnement_transport_id, {
+        source: "CONTROLE_TRANSPORT_FINANCE",
+        motif: "Anomalie de controle: eleve transporte sans droit financier actif.",
+      });
+      info("Suspension transport signalee depuis le rapprochement Finance.", "success");
+      await refreshTransportFinanceData();
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setBusyTransportAnomalyId(null);
+    }
+  };
+
   const handleSignalTransportSuspension = async (item: AbonnementTransportWithRelations) => {
     try {
       setSignalingTransportSuspensionId(item.id);
@@ -1231,36 +1622,36 @@ export default function FinanceDashboardIndex() {
     }
   };
 
-  const dashboardHighlights = [
-    {
-      id: "collection-rate",
-      label: "Taux de recouvrement",
-      value: `${collectionRate.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%`,
-      helper: `${activePaiementsCount} paiement(s) actifs`,
-      tone: (collectionRate >= 80 ? "success" : collectionRate >= 60 ? "warning" : "danger") as const,
-    },
-    {
-      id: "encaisse",
-      label: "Encaisse",
-      value: formatMoney(totalEncaisse),
-      helper: `${reversedPaiementsCount} operation(s) regularisee(s)`,
-      tone: "info" as const,
-    },
-    {
-      id: "reste",
-      label: "Reste a recouvrer",
-      value: formatMoney(resteARecouvrer),
-      helper: `${partiallyPaidInvoices} facture(s) partielle(s)`,
-      tone: overdueEcheances.length > 0 ? ("warning" as const) : ("default" as const),
-    },
-    {
-      id: "retards",
-      label: "Retards critiques",
-      value: String(overdueEcheances.length),
-      helper: `${overdueStudents.length} eleve(s) concernes`,
-      tone: overdueEcheances.length > 0 ? ("danger" as const) : ("default" as const),
-    },
-  ];
+  // const dashboardHighlights = [
+  //   {
+  //     id: "collection-rate",
+  //     label: "Taux de recouvrement",
+  //     value: `${collectionRate.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%`,
+  //     helper: `${activePaiementsCount} paiement(s) actifs`,
+  //     tone: (collectionRate >= 80 ? "success" : collectionRate >= 60 ? "warning" : "danger") as const,
+  //   },
+  //   {
+  //     id: "encaisse",
+  //     label: "Encaisse",
+  //     value: formatMoney(totalEncaisse),
+  //     helper: `${reversedPaiementsCount} operation(s) regularisee(s)`,
+  //     tone: "info" as const,
+  //   },
+  //   {
+  //     id: "reste",
+  //     label: "Reste a recouvrer",
+  //     value: formatMoney(resteARecouvrer),
+  //     helper: `${partiallyPaidInvoices} facture(s) partielle(s)`,
+  //     tone: overdueEcheances.length > 0 ? ("warning" as const) : ("default" as const),
+  //   },
+  //   {
+  //     id: "retards",
+  //     label: "Retards critiques",
+  //     value: String(overdueEcheances.length),
+  //     helper: `${overdueStudents.length} eleve(s) concernes`,
+  //     tone: overdueEcheances.length > 0 ? ("danger" as const) : ("default" as const),
+  //   },
+  // ];
   if (!canAccess) return <NotFound />;
 
   return (
@@ -1473,7 +1864,7 @@ export default function FinanceDashboardIndex() {
                               {formatDayKeyLabel(item.dayKey)}
                             </p>
                             <p className="mt-1 text-xs text-slate-500">
-                              {item.count} encaissement(s) � {formatMoney(item.cash)} caisse �{' '}
+                              {item.count} encaissement(s) - {formatMoney(item.cash)} caisse -{' '}
                               {formatMoney(item.bank)} banque
                             </p>
                           </div>
@@ -1569,14 +1960,14 @@ export default function FinanceDashboardIndex() {
                           <div>
                             <p className="text-sm font-semibold text-slate-900">{item.label}</p>
                             <p className="mt-1 text-xs text-slate-500">
-                              {item.studentsCount} eleve(s) � {item.invoicesCount} facture(s) �{' '}
+                              {item.studentsCount} eleve(s) - {item.invoicesCount} facture(s) -{' '}
                               {item.niveauLabel ?? "Niveau non renseigne"}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-semibold text-slate-900">{formatMoney(item.totalFacture)}</p>
                             <p className="text-xs text-slate-500">
-                              Encaisse {formatMoney(item.totalEncaisse)} � Reste {formatMoney(item.restant)}
+                              Encaisse {formatMoney(item.totalEncaisse)} - Reste {formatMoney(item.restant)}
                             </p>
                           </div>
                         </div>
@@ -1651,6 +2042,169 @@ export default function FinanceDashboardIndex() {
             {activeTab === "synthese" ? (
               <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center gap-3">
+                  <FiFileText className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Demandes de facturation de service</h3>
+                    <p className="text-sm text-slate-500">
+                      File transverse des demandes de prise en charge financiere emises par les modules Transport et Cantine.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {serviceBillingRequests.slice(0, 10).map((request) => {
+                    if (request.kind === "TRANSPORT") {
+                      const item = request.subscription;
+                      const candidateKey = `${item.eleve_id}::${item.annee_scolaire_id}`;
+                      const candidates = transportBillingCandidates.get(candidateKey) ?? [];
+                      return (
+                        <div
+                          key={request.key}
+                          className="rounded-[22px] border border-amber-200 bg-amber-50/80 px-4 py-4"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                Transport
+                              </p>
+                              <p className="mt-1 text-sm font-semibold text-slate-900">
+                                {getAbonnementTransportDisplayLabel(item)}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                {item.ligne?.nom ?? "Ligne non renseignee"}
+                                {item.arret?.nom ? ` - ${item.arret.nom}` : ""}
+                                {item.zone_transport ? ` - ${item.zone_transport}` : ""}
+                              </p>
+                              <p className="mt-1 text-xs text-amber-800">
+                                {item.annee?.nom ?? "Annee non renseignee"} - {getAbonnementTransportFinanceStatusLabel(
+                                  item.finance_status ?? "A_FACTURER",
+                                )}
+                              </p>
+                              {request.requiresRegularization ? (
+                                <p className="mt-1 text-xs text-amber-900">
+                                  Changement d'affectation avec impact tarifaire a regulariser.
+                                </p>
+                              ) : null}
+                            </div>
+                            <div className="min-w-[16rem] max-w-full space-y-2">
+                              {request.requiresRegularization ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleProcessTransportRegularization(item)}
+                                  disabled={processingTransportRegularizationId === item.id}
+                                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <FiRepeat />
+                                  {processingTransportRegularizationId === item.id
+                                    ? "Regularisation..."
+                                    : "Generer la regularisation"}
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleProcessTransportBilling(item)}
+                                    disabled={processingTransportBillingId === item.id}
+                                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    <FiFileText />
+                                    {processingTransportBillingId === item.id
+                                      ? "Facturation..."
+                                      : item.prorata_ratio != null && item.prorata_ratio > 0 && item.prorata_ratio < 1
+                                        ? "Generer la facture proratiee"
+                                        : "Generer la facturation"}
+                                  </button>
+                                  {item.prorata_ratio != null && item.prorata_ratio > 0 && item.prorata_ratio < 1 ? (
+                                    <p className="text-xs text-amber-900">
+                                      Prorata detecte: {(item.prorata_ratio * 100).toFixed(0)}% sur la periode d'usage.
+                                    </p>
+                                  ) : null}
+                                  <select
+                                    value={transportFactureSelection[item.id] ?? ""}
+                                    onChange={(event) =>
+                                      setTransportFactureSelection((current) => ({
+                                        ...current,
+                                        [item.id]: event.target.value,
+                                      }))
+                                    }
+                                    disabled={linkingTransportId === item.id}
+                                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                                  >
+                                    <option value="">
+                                      {candidates.length > 0
+                                        ? "Selectionner une facture existante si besoin"
+                                        : "Aucune facture correspondante"}
+                                    </option>
+                                    {candidates.map((facture) => (
+                                      <option key={facture.id} value={facture.id}>
+                                        {getFactureDisplayLabel(facture)} - {formatMoney(toNumber(facture.total_montant), facture.devise ?? "MGA")}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleLinkTransportFacture(item)}
+                                    disabled={linkingTransportId === item.id || candidates.length === 0}
+                                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    <FiFileText />
+                                    {linkingTransportId === item.id ? "Rattachement..." : "Rattacher la facture"}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const item = request.subscription;
+                    return (
+                      <div
+                        key={request.key}
+                        className="rounded-[22px] border border-amber-200 bg-amber-50/80 px-4 py-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              Cantine
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {getAbonnementCantineDisplayLabel(item)}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {item.formule?.nom ?? "Formule non renseignee"}
+                            </p>
+                            <p className="mt-1 text-xs text-amber-800">
+                              {item.annee?.nom ?? "Annee non renseignee"} - {getAbonnementCantineFinanceStatusLabel(
+                                item.finance_status ?? "EN_ATTENTE_VALIDATION_FINANCIERE",
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void handleProcessCantineBilling(item)}
+                            disabled={processingCantineBillingId === item.id}
+                            className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <FiFileText />
+                            {processingCantineBillingId === item.id ? "Facturation..." : "Generer la facturation"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {!isLoading && serviceBillingRequests.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Aucune demande de facturation de service en attente.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "synthese" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
                   <FiTruck className="text-slate-500" />
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900">Transport a facturer</h3>
@@ -1685,7 +2239,9 @@ export default function FinanceDashboardIndex() {
                               {item.zone_transport ? ` - ${item.zone_transport}` : ""}
                             </p>
                             <p className="mt-1 text-xs text-amber-800">
-                              {item.annee?.nom ?? "Annee non renseignee"} - {item.finance_status ?? "A facturer"}
+                              {item.annee?.nom ?? "Annee non renseignee"} - {getAbonnementTransportFinanceStatusLabel(
+                                item.finance_status ?? "A_FACTURER",
+                              )}
                             </p>
                             {requiresRegularization ? (
                               <p className="mt-1 text-xs text-amber-900">
@@ -1799,7 +2355,9 @@ export default function FinanceDashboardIndex() {
                             {item.formule?.nom ?? "Formule non renseignee"}
                           </p>
                           <p className="mt-1 text-xs text-amber-800">
-                            {item.annee?.nom ?? "Annee non renseignee"} - {item.finance_status ?? "EN_ATTENTE_VALIDATION_FINANCIERE"}
+                            {item.annee?.nom ?? "Annee non renseignee"} - {getAbonnementCantineFinanceStatusLabel(
+                              item.finance_status ?? "EN_ATTENTE_VALIDATION_FINANCIERE",
+                            )}
                           </p>
                         </div>
                         <button
@@ -1817,6 +2375,504 @@ export default function FinanceDashboardIndex() {
                   {!isLoading && pendingCantineBilling.length === 0 ? (
                     <p className="text-sm text-slate-500">
                       Aucune demande cantine en attente de facturation.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "synthese" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <FiFileText className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Cantine a regulariser</h3>
+                    <p className="text-sm text-slate-500">
+                      Changements de formule cantine avec impact tarifaire a traiter par Finance.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {pendingCantineRegularization.slice(0, 6).map((item) => {
+                    const latestHistory = item.historiquesFormule?.[0] ?? null;
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-[22px] border border-amber-200 bg-amber-50/80 px-4 py-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {getAbonnementCantineDisplayLabel(item)}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {latestHistory?.ancienneFormule?.nom ?? "Ancienne formule"} {" -> "} {latestHistory?.nouvelleFormule?.nom ?? item.formule?.nom ?? "Nouvelle formule"}
+                            </p>
+                            <p className="mt-1 text-xs text-amber-800">
+                              {item.annee?.nom ?? "Annee non renseignee"} - {getAbonnementCantineFinanceStatusLabel(
+                                item.finance_status ?? "EN_ATTENTE_REGLEMENT",
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void handleProcessCantineRegularization(item)}
+                            disabled={processingCantineRegularizationId === item.id}
+                            className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <FiFileText />
+                            {processingCantineRegularizationId === item.id ? "Regularisation..." : "Generer la regularisation"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {!isLoading && pendingCantineRegularization.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Aucun changement de formule cantine en attente de regularisation.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "synthese" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <FiBell className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Consommations cantine a controler</h3>
+                    <p className="text-sm text-slate-500">
+                      Repas servis traces par la cantine et transmis a Finance pour controle ou valorisation.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {pendingCantineConsumptionControl.slice(0, 8).map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-[22px] border border-amber-200 bg-amber-50/80 px-4 py-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {getAbonnementCantineDisplayLabel(item.abonnement ?? null)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {item.abonnement?.formule?.nom ?? "Formule non renseignee"} - {item.type_repas}
+                          </p>
+                          <p className="mt-1 text-xs text-amber-800">
+                            {formatDate(item.consommation_le)} - Finance: {getAbonnementCantineFinanceStatusLabel(
+                              item.finance_status_snapshot ?? item.abonnement?.finance_status ?? "N/A",
+                            )}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Statut d'acces lors du service: {item.statut_acces}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void handleProcessCantineConsumptionControl(item)}
+                          disabled={processingCantineConsumptionId === item.id}
+                          className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <FiBell />
+                          {processingCantineConsumptionId === item.id ? "Controle..." : "Marquer controlee"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {!isLoading && pendingCantineConsumptionControl.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Aucune consommation cantine en attente de controle Finance.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "synthese" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <FiAlertCircle className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Controle transverse Services vs Finance</h3>
+                    <p className="text-sm text-slate-500">
+                      Synthese commune des ecarts detectes entre Finance, Transport et Cantine.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 grid gap-3 md:grid-cols-4">
+                  <div className="rounded-2xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-fuchsia-700">Total</p>
+                    <p className="mt-2 text-2xl font-semibold text-fuchsia-950">{totalServiceControlAnomalies}</p>
+                  </div>
+                  <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">Transport</p>
+                    <p className="mt-2 text-2xl font-semibold text-sky-950">{transportControlSummary.total}</p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">Cantine</p>
+                    <p className="mt-2 text-2xl font-semibold text-amber-950">{cantineControlSummary.total}</p>
+                  </div>
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-rose-700">Critiques</p>
+                    <p className="mt-2 text-2xl font-semibold text-rose-950">
+                      {transportControlSummary.transportes_sans_droit_financier +
+                        cantineControlSummary.repas_sans_autorisation_active}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "synthese" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <FiTruck className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Anomalies Transport vs Finance</h3>
+                    <p className="text-sm text-slate-500">
+                      Rapprochement des eleves transportes, des reglements Finance et des situations suspendues.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 grid gap-3 md:grid-cols-4">
+                  <div className="rounded-2xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-fuchsia-700">Total</p>
+                    <p className="mt-2 text-2xl font-semibold text-fuchsia-950">{transportControlSummary.total}</p>
+                  </div>
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-rose-700">Sans droit</p>
+                    <p className="mt-2 text-2xl font-semibold text-rose-950">
+                      {transportControlSummary.transportes_sans_droit_financier}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">Payes sans affectation</p>
+                    <p className="mt-2 text-2xl font-semibold text-amber-950">
+                      {transportControlSummary.payes_sans_affectation_transport}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">Suspendus avec usage</p>
+                    <p className="mt-2 text-2xl font-semibold text-sky-950">
+                      {transportControlSummary.suspendus_encore_planifies}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {transportControlAnomalies.slice(0, 8).map((item) => (
+                    <div
+                      key={item.anomaly_id}
+                      className={`rounded-[22px] border px-4 py-4 ${getTransportControlAnomalyTone(item.code)}`}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold">{item.eleve_label}</p>
+                          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] opacity-80">
+                            {getTransportControlAnomalyLabel(item.code)}
+                          </p>
+                          <p className="mt-1 text-xs opacity-80">
+                            {item.ligne_label ? `Ligne ${item.ligne_label}` : "Aucune ligne transport active"}
+                            {item.arret_label ? ` - ${item.arret_label}` : ""}
+                            {item.facture_numero ? ` - Facture ${item.facture_numero}` : ""}
+                          </p>
+                          <p className="mt-1 text-xs opacity-80">
+                            Finance: {getAbonnementTransportFinanceStatusLabel(item.finance_status ?? "N/A")}
+                            {" - "}Service: {item.service_status ?? "N/A"}
+                            {" - "}Exploitation: {item.operational_status ?? "N/A"}
+                          </p>
+                          <p className="mt-1 text-xs opacity-80">{item.motif}</p>
+                        </div>
+                        <div className="flex min-w-[12rem] flex-col items-end gap-2">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${getTransportControlTrackingTone(item.tracking_status)}`}
+                          >
+                            {getTransportControlTrackingLabel(item.tracking_status)}
+                          </span>
+                          {item.code === "TRANSPORTE_SANS_DROIT_FINANCIER" && item.abonnement_transport_id ? (
+                            <button
+                              type="button"
+                              onClick={() => void handleSuspendTransportFromAnomaly(item)}
+                              disabled={busyTransportAnomalyId === item.anomaly_id}
+                              className="inline-flex items-center justify-center rounded-full border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {busyTransportAnomalyId === item.anomaly_id ? "Traitement..." : "Suspendre le service"}
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => void handleMarkTransportAnomaly(item, "RESOLVED")}
+                            disabled={busyTransportAnomalyId === item.anomaly_id}
+                            className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {busyTransportAnomalyId === item.anomaly_id ? "Traitement..." : "Marquer resolue"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleMarkTransportAnomaly(item, "IGNORED")}
+                            disabled={busyTransportAnomalyId === item.anomaly_id}
+                            className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {busyTransportAnomalyId === item.anomaly_id ? "Traitement..." : "Ignorer"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {!isLoading && transportControlAnomalies.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Aucune anomalie de rapprochement detectee entre le transport et la situation Finance.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "synthese" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <FiAlertCircle className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Anomalies Cantine vs Finance</h3>
+                    <p className="text-sm text-slate-500">
+                      Rapprochement entre repas servis, autorisations financieres et droits journaliers de la formule.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 grid gap-3 md:grid-cols-4">
+                  <div className="rounded-2xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-fuchsia-700">Total</p>
+                    <p className="mt-2 text-2xl font-semibold text-fuchsia-950">{cantineControlSummary.total}</p>
+                  </div>
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-rose-700">Sans autorisation</p>
+                    <p className="mt-2 text-2xl font-semibold text-rose-950">
+                      {cantineControlSummary.repas_sans_autorisation_active}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">Payes sans repas</p>
+                    <p className="mt-2 text-2xl font-semibold text-amber-950">
+                      {cantineControlSummary.payes_sans_consommation}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">Surconsommations</p>
+                    <p className="mt-2 text-2xl font-semibold text-sky-950">
+                      {cantineControlSummary.consommations_superieures_aux_droits}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {cantineControlAnomalies.slice(0, 8).map((item) => (
+                    <div
+                      key={item.anomaly_id}
+                      className="rounded-[22px] border border-amber-200 bg-amber-50/80 px-4 py-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{item.eleve_label}</p>
+                          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-800">
+                            {getCantineControlAnomalyLabel(item.code)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {item.formule_label ?? "Formule non renseignee"}
+                            {item.consommation_le ? ` - ${formatDate(item.consommation_le)}` : ""}
+                          </p>
+                          <p className="mt-1 text-xs text-amber-800">
+                            Finance: {getAbonnementCantineFinanceStatusLabel(item.finance_status ?? "N/A")}
+                            {" - "}Service: {item.service_status ?? "N/A"}
+                            {" - "}Acces: {item.access_status ?? "N/A"}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">{item.motif}</p>
+                          {typeof item.consommation_count === "number" ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                              Consommations: {item.consommation_count}
+                              {typeof item.allowed_count === "number" ? ` - Droit prevu: ${item.allowed_count}` : ""}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="flex min-w-[12rem] flex-col items-end gap-2">
+                          <span className="rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                            {getCantineControlTrackingLabel(item.tracking_status)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => void handleMarkCantineAnomaly(item, "RESOLVED")}
+                            disabled={busyCantineAnomalyId === item.anomaly_id}
+                            className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {busyCantineAnomalyId === item.anomaly_id ? "Traitement..." : "Marquer resolue"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleMarkCantineAnomaly(item, "IGNORED")}
+                            disabled={busyCantineAnomalyId === item.anomaly_id}
+                            className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {busyCantineAnomalyId === item.anomaly_id ? "Traitement..." : "Ignorer"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {!isLoading && cantineControlAnomalies.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Aucune anomalie de rapprochement detectee entre la cantine et la situation Finance.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "synthese" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <FiRepeat className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Absences cantine a regulariser</h3>
+                    <p className="text-sm text-slate-500">
+                      Absences et annulations de repas signalees par la cantine et ouvrant droit a traitement Finance.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {pendingCantineAbsenceRegularization.slice(0, 8).map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-[22px] border border-amber-200 bg-amber-50/80 px-4 py-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {getAbonnementCantineDisplayLabel(item.abonnement ?? null)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {getCantineAbsenceEventLabel(item.type_evenement)} du {formatDate(item.date_repas)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {item.abonnement?.formule?.nom ?? "Formule non renseignee"} - Suggestion:{" "}
+                            {getCantineAbsenceRegularizationModeLabel(item.mode_regularisation_suggere)}
+                          </p>
+                          <p className="mt-1 text-xs text-amber-800">
+                            Finance: {getAbonnementCantineFinanceStatusLabel(
+                              item.finance_status_snapshot ?? item.abonnement?.finance_status ?? "N/A",
+                            )}
+                          </p>
+                          {item.note ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                              Note: {item.note}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="min-w-[16rem] max-w-full space-y-2">
+                          <select
+                            value={
+                              cantineAbsenceDecisionSelection[item.id] ??
+                              item.mode_regularisation_suggere ??
+                              "AVOIR"
+                            }
+                            onChange={(event) =>
+                              setCantineAbsenceDecisionSelection((current) => ({
+                                ...current,
+                                [item.id]: event.target.value,
+                              }))
+                            }
+                            disabled={processingCantineAbsenceId === item.id}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                          >
+                            {(["AVOIR", "REPORT", "REMBOURSEMENT", "AJUSTEMENT", "REFUS_REGULARISATION"] as const).map(
+                              (decision) => (
+                                <option key={decision} value={decision}>
+                                  {decision === "REFUS_REGULARISATION"
+                                    ? "Refuser la regularisation"
+                                    : getCantineAbsenceRegularizationModeLabel(decision)}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => void handleProcessCantineAbsenceRegularization(item)}
+                            disabled={processingCantineAbsenceId === item.id}
+                            className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <FiRepeat />
+                            {processingCantineAbsenceId === item.id
+                              ? "Traitement..."
+                              : "Traiter la regularisation"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {!isLoading && pendingCantineAbsenceRegularization.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Aucune absence ou annulation cantine en attente de regularisation Finance.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "retards" ? (
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <FiBell className="text-slate-500" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">Cantine a suspendre</h3>
+                    <p className="text-sm text-slate-500">
+                      Dossiers cantine avec situation financiere bloquante a transmettre au module Cantine.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {pendingCantineSuspension.slice(0, 8).map((item) => {
+                    const status = (item.statut ?? "").toUpperCase();
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-[22px] border border-rose-200 bg-rose-50/80 px-4 py-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {getAbonnementCantineDisplayLabel(item)}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {item.formule?.nom ?? "Formule non renseignee"}
+                            </p>
+                            <p className="mt-1 text-xs text-rose-800">
+                              {item.annee?.nom ?? "Annee non renseignee"} - {getAbonnementCantineFinanceStatusLabel(
+                                item.finance_status ?? "EN_ATTENTE_REGLEMENT",
+                              )}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              Statut service: {item.statut ?? "Non renseigne"}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void handleSignalCantineSuspension(item)}
+                            disabled={signalingCantineSuspensionId === item.id || status === "SUSPENDU"}
+                            className="inline-flex items-center gap-2 rounded-full bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <FiBell />
+                            {signalingCantineSuspensionId === item.id
+                              ? "Signalement..."
+                              : status === "SUSPENDU"
+                                ? "Deja suspendu"
+                                : "Suspendre le service"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {!isLoading && pendingCantineSuspension.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      Aucun dossier cantine a suspendre pour impaye actuellement.
                     </p>
                   ) : null}
                 </div>
@@ -1859,7 +2915,9 @@ export default function FinanceDashboardIndex() {
                               {item.zone_transport ? ` - ${item.zone_transport}` : ""}
                             </p>
                             <p className="mt-1 text-xs text-rose-800">
-                              {item.annee?.nom ?? "Annee non renseignee"} - {item.finance_status ?? "En attente de reglement"}
+                              {item.annee?.nom ?? "Annee non renseignee"} - {getAbonnementTransportFinanceStatusLabel(
+                                item.finance_status ?? "EN_ATTENTE_REGLEMENT",
+                              )}
                             </p>
                             {regularizationPending ? (
                               <p className="mt-1 text-xs text-amber-700">

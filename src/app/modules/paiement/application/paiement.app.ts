@@ -346,17 +346,15 @@ class PaiementApp {
       select: { id: true, facture_id: true, eleve_id: true, ligne_transport_id: true, statut: true },
     });
 
-    if (subscriptions.length === 0) return;
-
-    await tx.abonnementTransport.updateMany({
-      where: { id: { in: subscriptions.map((item) => item.id) } },
-      data: {
-        statut: "ACTIF",
-        facture_id: facture.id,
-      },
-    });
-
     if (subscriptions.length > 0) {
+      await tx.abonnementTransport.updateMany({
+        where: { id: { in: subscriptions.map((item) => item.id) } },
+        data: {
+          statut: "ACTIF",
+          facture_id: facture.id,
+        },
+      });
+
       await tx.$executeRaw(
         Prisma.sql`UPDATE abonnements_transport
           SET a_facturer = ${false}
@@ -376,15 +374,39 @@ class PaiementApp {
         eleve_id: facture.eleve_id,
         annee_scolaire_id: facture.annee_scolaire_id,
         statut: {
-          in: ["EN_ATTENTE_VALIDATION_FINANCIERE", "EN_ATTENTE_REGLEMENT"],
+          in: ["EN_ATTENTE_VALIDATION_FINANCIERE", "EN_ATTENTE_REGLEMENT", "SUSPENDU"],
         },
       },
-      select: { id: true },
+      select: { id: true, statut: true, eleve_id: true, formule_cantine_id: true, facture_id: true },
     });
 
-    if (cantineSubscriptions.length > 0) {
+    const cantineSuspensionAudits =
+      cantineSubscriptions.length > 0
+        ? await tx.journalAudit.findMany({
+            where: {
+              action: "CANTINE_SUSPENSION_FINANCIERE",
+              type_entite: "ABONNEMENT_CANTINE",
+              id_entite: { in: cantineSubscriptions.map((item) => item.id) },
+            },
+            select: {
+              id_entite: true,
+            },
+          })
+        : [];
+    const cantineFinanceSuspendedIds = new Set(
+      cantineSuspensionAudits
+        .map((item) => item.id_entite)
+        .filter((value): value is string => Boolean(value)),
+    );
+    const cantineToReactivate = cantineSubscriptions.filter(
+      (item) =>
+        ["EN_ATTENTE_VALIDATION_FINANCIERE", "EN_ATTENTE_REGLEMENT"].includes((item.statut ?? "").toUpperCase()) ||
+        cantineFinanceSuspendedIds.has(item.id),
+    );
+
+    if (cantineToReactivate.length > 0) {
       await tx.abonnementCantine.updateMany({
-        where: { id: { in: cantineSubscriptions.map((item) => item.id) } },
+        where: { id: { in: cantineToReactivate.map((item) => item.id) } },
         data: {
           statut: "ACTIF",
           facture_id: facture.id,
@@ -392,37 +414,9 @@ class PaiementApp {
       });
     }
 
-    if (reactivatedSubscriptions.length === 0) return;
-
-    for (const subscription of reactivatedSubscriptions) {
-      await tx.journalAudit.create({
-        data: {
-          etablissement_id: facture.etablissement_id,
-          acteur_utilisateur_id: actorId ?? null,
-          action: "TRANSPORT_REACTIVATION_FINANCIERE",
-          type_entite: "ABONNEMENT_TRANSPORT",
-          id_entite: subscription.id,
-          avant_json: {
-            statut: subscription.statut ?? null,
-            facture_id: subscription.facture_id ?? null,
-          } as Prisma.InputJsonValue,
-          apres_json: {
-            statut: "ACTIF",
-            facture_id: facture.id,
-            source: "PAIEMENT_FINANCE",
-          } as Prisma.InputJsonValue,
-          ip: ip ?? null,
-        } as never,
-      });
-    }
-
-    const transportPermissionCodes = [
-      "TC.TRANSPORT.MENUACTION",
-      "TC.TRANSPORT.MENUACTION.LIST",
-      "TC.TRANSPORT.MENUACTION.PARAMETRE",
-      "TC.TRANSPORT.MENUACTION.DASHBOARD",
-      "TC.TRANSPORT.MENUACTION.ADD",
-    ];
+    const cantineReactivatedSubscriptions = cantineToReactivate.filter((item) =>
+      cantineFinanceSuspendedIds.has(item.id),
+    );
 
     const parentLinks = await tx.eleveParentTuteur.findMany({
       where: {
@@ -439,6 +433,38 @@ class PaiementApp {
         },
       },
     });
+
+    if (reactivatedSubscriptions.length > 0) {
+      for (const subscription of reactivatedSubscriptions) {
+        await tx.journalAudit.create({
+          data: {
+            etablissement_id: facture.etablissement_id,
+            acteur_utilisateur_id: actorId ?? null,
+            action: "TRANSPORT_REACTIVATION_FINANCIERE",
+            type_entite: "ABONNEMENT_TRANSPORT",
+            id_entite: subscription.id,
+            avant_json: {
+              statut: subscription.statut ?? null,
+              facture_id: subscription.facture_id ?? null,
+            } as Prisma.InputJsonValue,
+            apres_json: {
+              statut: "ACTIF",
+              facture_id: facture.id,
+              source: "PAIEMENT_FINANCE",
+            } as Prisma.InputJsonValue,
+            ip: ip ?? null,
+          } as never,
+        });
+      }
+    }
+
+    const transportPermissionCodes = [
+      "TC.TRANSPORT.MENUACTION",
+      "TC.TRANSPORT.MENUACTION.LIST",
+      "TC.TRANSPORT.MENUACTION.PARAMETRE",
+      "TC.TRANSPORT.MENUACTION.DASHBOARD",
+      "TC.TRANSPORT.MENUACTION.ADD",
+    ];
 
     const transportAssignments = await tx.utilisateurRole.findMany({
       where: {
@@ -476,23 +502,109 @@ class PaiementApp {
       ),
     );
 
-    if (recipientIds.length === 0) return;
+    if (recipientIds.length > 0 && reactivatedSubscriptions.length > 0) {
+      await tx.notification.createMany({
+        data: reactivatedSubscriptions.flatMap((subscription) =>
+          recipientIds.map((utilisateur_id) => ({
+            utilisateur_id,
+            type: "TRANSPORT_REACTIVATION_ACTIVEE",
+            payload_json: {
+              abonnement_transport_id: subscription.id,
+              eleve_id: subscription.eleve_id,
+              ligne_transport_id: subscription.ligne_transport_id,
+              facture_id: facture.id,
+              source: "PAIEMENT_FINANCE",
+            } as Prisma.InputJsonValue,
+          })),
+        ),
+      });
+    }
 
-    await tx.notification.createMany({
-      data: reactivatedSubscriptions.flatMap((subscription) =>
-        recipientIds.map((utilisateur_id) => ({
-          utilisateur_id,
-          type: "TRANSPORT_REACTIVATION_ACTIVEE",
-          payload_json: {
-            abonnement_transport_id: subscription.id,
-            eleve_id: subscription.eleve_id,
-            ligne_transport_id: subscription.ligne_transport_id,
-            facture_id: facture.id,
-            source: "PAIEMENT_FINANCE",
-          } as Prisma.InputJsonValue,
-        })),
-      ),
+    if (cantineReactivatedSubscriptions.length > 0) {
+      for (const subscription of cantineReactivatedSubscriptions) {
+        await tx.journalAudit.create({
+          data: {
+            etablissement_id: facture.etablissement_id,
+            acteur_utilisateur_id: actorId ?? null,
+            action: "CANTINE_REACTIVATION_FINANCIERE",
+            type_entite: "ABONNEMENT_CANTINE",
+            id_entite: subscription.id,
+            avant_json: {
+              statut: subscription.statut ?? null,
+              facture_id: subscription.facture_id ?? null,
+            } as Prisma.InputJsonValue,
+            apres_json: {
+              statut: "ACTIF",
+              facture_id: facture.id,
+              source: "PAIEMENT_FINANCE",
+            } as Prisma.InputJsonValue,
+            ip: ip ?? null,
+          } as never,
+        });
+      }
+    }
+
+    const cantinePermissionCodes = [
+      "TC.CANTINE.MENUACTION",
+      "TC.CANTINE.MENUACTION.LIST",
+      "TC.CANTINE.MENUACTION.PARAMETRE",
+      "TC.CANTINE.MENUACTION.DASHBOARD",
+      "TC.CANTINE.MENUACTION.ADD",
+    ];
+
+    const cantineAssignments = await tx.utilisateurRole.findMany({
+      where: {
+        utilisateur: {
+          etablissement_id: facture.etablissement_id,
+        },
+        role: {
+          permissions: {
+            some: {
+              permission: {
+                code: {
+                  in: cantinePermissionCodes,
+                },
+              },
+            },
+          },
+        },
+      },
+      select: {
+        utilisateur_id: true,
+      },
     });
+
+    const cantineRecipientIds = Array.from(
+      new Set(
+        [
+          ...parentLinks
+            .map((item) => item.parent_tuteur?.utilisateur_id)
+            .filter((value): value is string => Boolean(value)),
+          ...cantineAssignments
+            .map((item) => item.utilisateur_id)
+            .filter((value): value is string => Boolean(value)),
+          ...(actorId ? [actorId] : []),
+        ],
+      ),
+    );
+
+    if (cantineRecipientIds.length > 0 && cantineReactivatedSubscriptions.length > 0) {
+      await tx.notification.createMany({
+        data: cantineReactivatedSubscriptions.flatMap((subscription) =>
+          cantineRecipientIds.map((utilisateur_id) => ({
+            utilisateur_id,
+            type: "CANTINE_REACTIVATION_ACTIVEE",
+            payload_json: {
+              abonnement_cantine_id: subscription.id,
+              eleve_id: subscription.eleve_id,
+              formule_cantine_id: subscription.formule_cantine_id,
+              facture_id: facture.id,
+              source: "PAIEMENT_FINANCE",
+            } as Prisma.InputJsonValue,
+          })),
+        ),
+      });
+    }
   }
 
   private getActivePaiements<

@@ -270,7 +270,7 @@ export default function AppLayout() {
         </main>
 
         <footer className="px-6 pb-4 text-center text-[11px] text-slate-400">
-          {new Date().getFullYear()} EducAr � ERP scolaire � Powered by ArhexiaMG
+          {new Date().getFullYear()} EducAr - ERP scolaire - Powered by ArhexiaMG
         </footer>
       </div>
     </div>

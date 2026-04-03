@@ -563,7 +563,6 @@ class InscriptionApp {
             const passTuteur = generateRandomPassword(9);
             const transportActive = this.toBool(services?.transport_active, false);
             const cantineActive = this.toBool(services?.cantine_active, false);
-            const cantineBillingMode = this.normalizeServiceBillingMode(services?.cantine_mode_facturation);
             const transportLineId = this.toNullableString(services?.ligne_transport_id);
             const transportStopId = this.toNullableString(services?.arret_transport_id);
             const transportZone = this.toNullableString(services?.zone_transport);
@@ -1043,7 +1042,6 @@ class InscriptionApp {
                             catalogue_frais_scolarite_nombre_tranches: this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_scolarite_nombre_tranches),
                             catalogue_frais_transport_id: null,
                             catalogue_frais_cantine_id: null,
-                            catalogue_frais_cantine_nombre_tranches: 1,
                             remise_id: appliedRemise?.id ?? this.toNullableString(finance?.remise_id),
                             remise_nom: appliedRemise?.nom ?? null,
                             frais_inscription: this.extractFinanceLineAmount(invoiceLines, "catalogue_frais_inscription_id", finance),
@@ -1380,12 +1378,6 @@ class InscriptionApp {
         const normalized = (mode ?? "").trim().toUpperCase();
         if (normalized === "COMPTANT") return "COMPTANT";
         return "ECHELONNE";
-    }
-
-    private normalizeServiceBillingMode(mode: unknown): "SERVICE_ONLY" | "SERVICE_AND_BILL" {
-        return String(mode ?? "SERVICE_AND_BILL").trim().toUpperCase() === "SERVICE_ONLY"
-            ? "SERVICE_ONLY"
-            : "SERVICE_AND_BILL";
     }
 
     private resolveFinanceLineTrancheCount(value: unknown): number {

@@ -603,7 +603,10 @@ class AbonnementTransportApp {
     if (financeStatus === "A_FACTURER" && rules.bloquer_si_a_facturer) {
       return "EN_ATTENTE";
     }
-    if (financeStatus === "EN_ATTENTE_REGLEMENT" && rules.bloquer_si_en_attente_reglement) {
+    if (
+      ["EN_ATTENTE_REGLEMENT", "PARTIELLEMENT_REGLE", "IMPAYE"].includes(financeStatus) &&
+      rules.bloquer_si_en_attente_reglement
+    ) {
       return "EN_ATTENTE";
     }
     if (
@@ -675,7 +678,7 @@ class AbonnementTransportApp {
 
   private isFinanceAuthorized(financeStatus?: string | null) {
     const normalized = (financeStatus ?? "").toUpperCase();
-    return normalized === "REGLE" || normalized === "ACTIF";
+    return ["REGLE", "ACTIF", "REGULARISE"].includes(normalized);
   }
 
   private parseLigneTransportSettings(value: unknown): LigneTransportSettings {
@@ -767,6 +770,7 @@ class AbonnementTransportApp {
     a_facturer?: boolean | null;
     facture_id?: string | null;
     facture?: { statut?: string | null } | null;
+    derniere_regularisation_financiere?: Date | null;
   }) {
     const statut = (record.statut ?? "").toUpperCase();
     const factureStatut = (record.facture?.statut ?? "").toUpperCase();
@@ -775,11 +779,17 @@ class AbonnementTransportApp {
     if (statut === "EN_ATTENTE_SUSPENSION_FINANCIERE") return "SUSPENSION_SIGNALEE";
     if (["EN_ATTENTE_VALIDATION_FINANCIERE", "EN_ATTENTE_REGLEMENT"].includes(statut)) {
       if (factureStatut === "PAYEE") return "REGLE";
+      if (factureStatut === "PARTIELLE") return "PARTIELLEMENT_REGLE";
+      if (factureStatut === "EN_RETARD") return "IMPAYE";
       return "EN_ATTENTE_REGLEMENT";
     }
     if (statut === "ACTIF") {
-      if (factureStatut === "PAYEE") return "REGLE";
-      if (["EMISE", "PARTIELLE", "EN_RETARD"].includes(factureStatut)) return "EN_ATTENTE_REGLEMENT";
+      if (factureStatut === "PAYEE") {
+        return record.derniere_regularisation_financiere ? "REGULARISE" : "REGLE";
+      }
+      if (factureStatut === "PARTIELLE") return "PARTIELLEMENT_REGLE";
+      if (factureStatut === "EN_RETARD") return "IMPAYE";
+      if (factureStatut === "EMISE") return "EN_ATTENTE_REGLEMENT";
       return record.facture_id ? "ACTIF" : "ACTIF";
     }
     if (["SUSPENDU", "SUSPENDU_FINANCE"].includes(statut)) return "SUSPENDU";
@@ -825,7 +835,10 @@ class AbonnementTransportApp {
     if (financeStatus === "A_FACTURER" && rules.bloquer_si_a_facturer) {
       return "EN_ATTENTE";
     }
-    if (financeStatus === "EN_ATTENTE_REGLEMENT" && rules.bloquer_si_en_attente_reglement) {
+    if (
+      ["EN_ATTENTE_REGLEMENT", "PARTIELLEMENT_REGLE", "IMPAYE"].includes(financeStatus) &&
+      rules.bloquer_si_en_attente_reglement
+    ) {
       return "EN_ATTENTE";
     }
     if (
@@ -835,11 +848,13 @@ class AbonnementTransportApp {
         "EN_ATTENTE_REGLEMENT",
         "EN_ATTENTE_SUSPENSION_FINANCIERE",
       ].includes(statut) ||
-      ["VALIDATION_INTERNE", "SUSPENSION_SIGNALEE"].includes(financeStatus)
+      ["VALIDATION_INTERNE", "SUSPENSION_SIGNALEE", "PARTIELLEMENT_REGLE", "IMPAYE"].includes(
+        financeStatus,
+      )
     ) {
       return "EN_ATTENTE";
     }
-    if (statut === "ACTIF" && ["REGLE", "ACTIF"].includes(financeStatus)) {
+    if (statut === "ACTIF" && ["REGLE", "ACTIF", "REGULARISE"].includes(financeStatus)) {
       return "AUTORISE";
     }
     return "EN_ATTENTE";
@@ -1010,6 +1025,28 @@ class AbonnementTransportApp {
         latestBySubscription.set(row.id_entite, row.date_action);
       }
     });
+    return latestBySubscription;
+  }
+
+  private async getLatestProcessedFinanceRegularizationDates(subscriptionIds: string[]) {
+    if (subscriptionIds.length === 0) return new Map<string, Date>();
+
+    const historyRows = await this.getAffectationHistoryRows(subscriptionIds);
+    const latestBySubscription = new Map<string, Date>();
+
+    historyRows.forEach((rows, subscriptionId) => {
+      rows.forEach((row) => {
+        const details = this.parseHistoryDetails(row.details_json ?? null);
+        if (!details.finance_processed_at) return;
+        const processedAt = new Date(details.finance_processed_at);
+        if (Number.isNaN(processedAt.getTime())) return;
+        const current = latestBySubscription.get(subscriptionId);
+        if (!current || processedAt > current) {
+          latestBySubscription.set(subscriptionId, processedAt);
+        }
+      });
+    });
+
     return latestBySubscription;
   }
 
@@ -1201,10 +1238,22 @@ class AbonnementTransportApp {
       : [];
     const facturesById = new Map(factures.map((item) => [item.id, item]));
     const rowsById = new Map(rows.map((item) => [item.id, item]));
-    const latestReactivationBySubscription = await this.getLatestFinancialReactivationDates(ids);
+    const [latestReactivationBySubscription, latestProcessedRegularizationBySubscription] = await Promise.all([
+      this.getLatestFinancialReactivationDates(ids),
+      this.getLatestProcessedFinanceRegularizationDates(ids),
+    ]);
     return records.map((item) => {
       const facture_id = factureIdByRecord.get(item.id) ?? null;
       const row = rowsById.get(item.id);
+      const latestReactivation = latestReactivationBySubscription.get(item.id) ?? null;
+      const latestProcessedRegularization =
+        latestProcessedRegularizationBySubscription.get(item.id) ?? null;
+      const latestFinancialRegularization =
+        latestReactivation && latestProcessedRegularization
+          ? latestReactivation > latestProcessedRegularization
+            ? latestReactivation
+            : latestProcessedRegularization
+          : latestReactivation ?? latestProcessedRegularization;
       const lineSettings = this.parseLigneTransportSettings(
         (item as { ligne?: { infos_vehicule_json?: unknown } | null }).ligne?.infos_vehicule_json,
       );
@@ -1213,6 +1262,7 @@ class AbonnementTransportApp {
         a_facturer: Boolean(row?.a_facturer),
         facture_id,
         facture: facture_id ? facturesById.get(facture_id) ?? null : null,
+        derniere_regularisation_financiere: latestFinancialRegularization,
       });
       return {
         ...item,
@@ -1224,8 +1274,7 @@ class AbonnementTransportApp {
         prorata_ratio: row?.prorata_ratio != null ? Number(row.prorata_ratio) : null,
         a_facturer: Boolean(row?.a_facturer),
         finance_status,
-        derniere_reactivation_financiere:
-          latestReactivationBySubscription.get(item.id) ?? null,
+        derniere_reactivation_financiere: latestReactivation,
         access_status: this.deriveAccessStatus({
           statut: (item as { statut?: string | null }).statut ?? null,
           finance_status,
@@ -1652,7 +1701,7 @@ class AbonnementTransportApp {
         latestHistoryDetails.notification_finance === true &&
         !latestHistoryDetails.finance_processed_at;
 
-      if (financeStatus !== "EN_ATTENTE_REGLEMENT" && !regularizationPending) {
+      if (!["EN_ATTENTE_REGLEMENT", "PARTIELLEMENT_REGLE", "IMPAYE"].includes(financeStatus) && !regularizationPending) {
         throw new Error(
           "La suspension transport pour impaye requiert un dossier en attente de reglement ou une regularisation Finance non soldee.",
         );

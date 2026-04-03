@@ -22,6 +22,40 @@ export function getFormuleCantineDisplayLabel(record?: Partial<FormuleCantine> |
   return record.nom?.trim() || "Formule non renseignee";
 }
 
+export function getFormuleCantineTypeLabel(type?: string | null) {
+  switch ((type ?? "AUTRE").toUpperCase()) {
+    case "FORFAIT":
+      return "Forfait";
+    case "REPAS_UNITAIRE":
+      return "Repas unitaire";
+    case "ABONNEMENT":
+      return "Abonnement";
+    default:
+      return "Autre";
+  }
+}
+
+export function getCantineAbsenceRegularizationModeLabel(mode?: string | null) {
+  switch ((mode ?? "AVOIR").toUpperCase()) {
+    case "REPORT":
+      return "Report";
+    case "REMBOURSEMENT":
+      return "Remboursement";
+    case "AJUSTEMENT":
+      return "Ajustement";
+    case "REFUS_REGULARISATION":
+      return "Refus de regularisation";
+    default:
+      return "Avoir";
+  }
+}
+
+export function getCantineDailyMealLimitLabel(limit?: number | null) {
+  const normalized = Number(limit ?? 0);
+  if (!Number.isFinite(normalized) || normalized <= 1) return "1 repas par jour";
+  return `${normalized.toLocaleString("fr-FR")} repas par jour`;
+}
+
 class FormuleCantineService extends Service {
   constructor() {
     super("formule-cantine");

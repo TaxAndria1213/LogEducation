@@ -101,7 +101,6 @@ export default function InscriptionForm() {
   const [selectedNiveauId, setSelectedNiveauId] = useState<string | null>(null);
   const [selectedTransportActive, setSelectedTransportActive] = useState(false);
   const [selectedCantineActive, setSelectedCantineActive] = useState(false);
-  const [selectedCantineBillingMode, setSelectedCantineBillingMode] = useState<"SERVICE_ONLY">("SERVICE_ONLY");
   const [selectedTransportLineId, setSelectedTransportLineId] = useState<string | null>(null);
   const [referentialCatalog, setReferentialCatalog] = useState<
     ReferentialCatalogItem[]
@@ -876,7 +875,6 @@ export default function InscriptionForm() {
       remiseOptions,
       scolariteFeeOptions,
       selectedCantineActive,
-      selectedCantineBillingMode,
       selectedNiveauId,
       selectedTransportActive,
     ],
@@ -1240,7 +1238,6 @@ export default function InscriptionForm() {
         setSelectedNiveauId(selectedClasse?.niveau_scolaire_id ?? null);
         setSelectedTransportActive(Boolean(allData?.services?.transport_active));
         setSelectedCantineActive(Boolean(allData?.services?.cantine_active));
-        setSelectedCantineBillingMode("SERVICE_ONLY");
         setSelectedTransportLineId(
           normalizeOptionalString(allData?.services?.ligne_transport_id),
         );

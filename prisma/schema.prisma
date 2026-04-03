@@ -1696,13 +1696,20 @@ model FormuleCantine {
   id               String  @id @default(uuid())
   etablissement_id String
   nom              String
+  type_formule     String  @default("AUTRE")
   catalogue_frais_id String?
+  transmettre_consommations_finance Boolean @default(true)
+  max_repas_par_jour Int @default(1)
+  regulariser_absence_annulation Boolean @default(false)
+  mode_regularisation_absence String @default("AVOIR")
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   abonnements AbonnementCantine[]
   frais       CatalogueFrais? @relation(fields: [catalogue_frais_id], references: [id], onDelete: SetNull)
+  historiquesAncienneFormule HistoriqueFormuleCantine[] @relation("historique_formule_cantine_ancienne")
+  historiquesNouvelleFormule HistoriqueFormuleCantine[] @relation("historique_formule_cantine_nouvelle")
 
   @@index([etablissement_id])
   @@index([catalogue_frais_id], map: "idx_formulecantine_frais")
@@ -1729,10 +1736,88 @@ model AbonnementCantine {
   formule FormuleCantine @relation(fields: [formule_cantine_id], references: [id])
   facture Facture?       @relation(fields: [facture_id], references: [id], onDelete: SetNull)
   operationsFinancieres OperationFinanciere[]
+  historiquesFormule HistoriqueFormuleCantine[]
+  consommations      ConsommationCantine[]
+  absences           AbsenceCantine[]
 
   @@index([eleve_id])
   @@index([facture_id], map: "idx_abc_facture")
   @@map("abonnements_cantine")
+}
+
+model HistoriqueFormuleCantine {
+  id                        String   @id @default(uuid())
+  abonnement_cantine_id     String
+  ancienne_formule_cantine_id String
+  nouvelle_formule_cantine_id String
+  date_effet                DateTime
+  impact_tarifaire          Boolean  @default(false)
+  ancien_statut             String?
+  nouveau_statut            String?
+  details_json              Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  abonnement      AbonnementCantine @relation(fields: [abonnement_cantine_id], references: [id])
+  ancienneFormule FormuleCantine @relation("historique_formule_cantine_ancienne", fields: [ancienne_formule_cantine_id], references: [id])
+  nouvelleFormule FormuleCantine @relation("historique_formule_cantine_nouvelle", fields: [nouvelle_formule_cantine_id], references: [id])
+
+  @@index([abonnement_cantine_id], map: "idx_histformcant_abonnement")
+  @@index([ancienne_formule_cantine_id], map: "idx_histformcant_ancienne")
+  @@index([nouvelle_formule_cantine_id], map: "idx_histformcant_nouvelle")
+  @@map("historiques_formule_cantine")
+}
+
+model ConsommationCantine {
+  id                      String   @id @default(uuid())
+  abonnement_cantine_id   String
+  type_repas              String   @default("repas")
+  note                    String?
+  consommation_le         DateTime
+  statut_acces            String
+  motif_acces             String?
+  finance_status_snapshot String?
+  transmission_finance    Boolean  @default(true)
+  finance_processed_at    DateTime?
+  details_json            Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  abonnement AbonnementCantine @relation(fields: [abonnement_cantine_id], references: [id])
+
+  @@index([abonnement_cantine_id], map: "idx_conscant_abonnement")
+  @@index([consommation_le], map: "idx_conscant_le")
+  @@index([finance_processed_at], map: "idx_conscant_finance_processed")
+  @@map("consommations_cantine")
+}
+
+model AbsenceCantine {
+  id                         String   @id @default(uuid())
+  abonnement_cantine_id      String
+  type_evenement             String   @default("ABSENCE")
+  date_repas                 DateTime
+  etat_metier                String   @default("SIGNALEE")
+  note                       String?
+  statut_acces_snapshot      String?
+  finance_status_snapshot    String?
+  ouvre_droit_regularisation Boolean  @default(false)
+  mode_regularisation_suggere String?
+  transmission_finance       Boolean  @default(false)
+  finance_processed_at       DateTime?
+  decision_finance           String?
+  details_json               Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  abonnement AbonnementCantine @relation(fields: [abonnement_cantine_id], references: [id])
+
+  @@index([abonnement_cantine_id], map: "idx_abscant_abonnement")
+  @@index([date_repas], map: "idx_abscant_date")
+  @@index([finance_processed_at], map: "idx_abscant_finance_processed")
+  @@map("absences_cantine")
 }
 
 /**
