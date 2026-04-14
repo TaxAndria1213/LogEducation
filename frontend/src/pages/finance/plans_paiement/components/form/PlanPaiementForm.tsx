@@ -223,7 +223,7 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
             motif: data.notes?.trim() || "Reechelonnement demande depuis le module plans de paiement.",
           });
           info("La demande de reechelonnement a ete envoyee pour validation.", "success");
-          setRenderedComponent("detail");
+          setRenderedComponent("list");
           return;
         }
 
@@ -621,7 +621,7 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
               {mode === "edit" ? (
                 <button
                   type="button"
-                  onClick={() => setRenderedComponent("detail")}
+                  onClick={() => setRenderedComponent("list")}
                   className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
                 >
                   Annuler

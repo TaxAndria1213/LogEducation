@@ -1,14 +1,20 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FiBookOpen,
+  FiCopy,
   FiLayers,
-  FiSettings,
   FiUserCheck,
   FiUsers,
 } from "react-icons/fi";
+import { useInfo } from "../../../../../hooks/useInfo";
 import { useAuth } from "../../../../../hooks/useAuth";
 import EnseignantService from "../../../../../services/enseignant.service";
-import type { Enseignant } from "../../../../../types/models";
+import RoleService from "../../../../../services/role.service";
+import type { Enseignant, Role } from "../../../../../types/models";
+import {
+  buildAccountCreationUrl,
+  findRoleByTemplate,
+} from "../../../../../utils/accountCreationLink";
 
 type Props = {
   mode?: "overview" | "settings";
@@ -75,8 +81,11 @@ function getEnseignantLabel(enseignant: EnseignantRecord) {
 
 function EnseignantOverview({ mode = "overview" }: Props) {
   const { etablissement_id } = useAuth();
+  const { info } = useInfo();
   const [enseignants, setEnseignants] = useState<EnseignantRecord[]>([]);
+  const [teacherRole, setTeacherRole] = useState<Role | null>(null);
   const [loading, setLoading] = useState(false);
+  const [teacherRoleLoading, setTeacherRoleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -141,12 +150,55 @@ function EnseignantOverview({ mode = "overview" }: Props) {
     };
   }, [etablissement_id]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadTeacherRole = async () => {
+      if (!etablissement_id) {
+        setTeacherRole(null);
+        return;
+      }
+
+      setTeacherRoleLoading(true);
+
+      try {
+        const service = new RoleService();
+        const result = await service.getAll({
+          page: 1,
+          take: 200,
+          where: JSON.stringify({ etablissement_id }),
+          orderBy: JSON.stringify([{ created_at: "desc" }]),
+        });
+
+        if (!active) return;
+
+        const roles = result?.status.success ? ((result.data.data as Role[]) ?? []) : [];
+        setTeacherRole(findRoleByTemplate(roles, "ENSEIGNANT"));
+      } catch (error) {
+        if (!active) return;
+        console.warn("Impossible de charger le role enseignant.", error);
+        setTeacherRole(null);
+      } finally {
+        if (active) {
+          setTeacherRoleLoading(false);
+        }
+      }
+    };
+
+    void loadTeacherRole();
+
+    return () => {
+      active = false;
+    };
+  }, [etablissement_id]);
+
   const linkedUsers = useMemo(
     () =>
       enseignants.filter((enseignant) => Boolean(enseignant.personnel?.utilisateur_id))
         .length,
     [enseignants],
   );
+
   const coveredDepartments = useMemo(
     () =>
       new Set(
@@ -156,8 +208,10 @@ function EnseignantOverview({ mode = "overview" }: Props) {
       ).size,
     [enseignants],
   );
+
   const withCourses = useMemo(
-    () => enseignants.filter((enseignant) => (enseignant.cours?.length ?? 0) > 0).length,
+    () =>
+      enseignants.filter((enseignant) => (enseignant.cours?.length ?? 0) > 0).length,
     [enseignants],
   );
 
@@ -189,8 +243,92 @@ function EnseignantOverview({ mode = "overview" }: Props) {
       .slice(0, 5);
   }, [enseignants]);
 
+  const teacherRoleLabel = teacherRole?.nom?.trim() || "Role enseignant";
+
+  const copyTeacherCreationLink = async () => {
+    if (!teacherRole || !etablissement_id) {
+      info(
+        "Aucun role enseignant exploitable n'est encore configure pour cet etablissement.",
+        "warning",
+      );
+      return;
+    }
+
+    try {
+      const finalUrl = buildAccountCreationUrl({
+        roleId: teacherRole.id,
+        etablissementId: etablissement_id,
+        roleName: teacherRole.nom,
+      });
+
+      await navigator.clipboard.writeText(finalUrl);
+      info(
+        `Lien de creation utilisateur pour ${teacherRoleLabel} copie dans le presse-papiers.`,
+        "success",
+      );
+    } catch (error) {
+      console.warn("Impossible de copier le lien de creation enseignant.", error);
+      info("Impossible de copier le lien de creation enseignant.", "error");
+    }
+  };
+
+  const creationLinkDisabled = teacherRoleLoading || !teacherRole || !etablissement_id;
+
   return (
-    <div className="space-y-6">      {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Chargement...</div> : null}      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">
+      {loading ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          Chargement...
+        </div>
+      ) : null}
+
+      {errorMessage ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {errorMessage}
+        </div>
+      ) : null}
+
+      <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Creation rapide enseignant
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Copie un lien de creation deja rattache au role enseignant de
+              l'etablissement.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                teacherRole
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-amber-50 text-amber-700"
+              }`}
+            >
+              {teacherRoleLoading
+                ? "Recherche du role enseignant..."
+                : teacherRole
+                  ? teacherRoleLabel
+                  : "Role enseignant a configurer"}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => void copyTeacherCreationLink()}
+              disabled={creationLinkDisabled}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-900 hover:text-slate-900 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+            >
+              <FiCopy />
+              <span>Copier le lien de creation</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiUsers />
@@ -236,7 +374,8 @@ function EnseignantOverview({ mode = "overview" }: Props) {
                 Enseignants recents
               </h3>
               <p className="text-sm text-slate-500">
-                Les derniers profils enseignants crees avec leur rattachement principal.
+                Les derniers profils enseignants crees avec leur rattachement
+                principal.
               </p>
             </div>
 
@@ -258,6 +397,7 @@ function EnseignantOverview({ mode = "overview" }: Props) {
                         Departement: {enseignant.departement?.nom || "Non renseigne"}
                       </p>
                     </div>
+
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
                       <span className="rounded-full bg-white px-3 py-1 font-medium text-slate-700">
                         {enseignant.personnel?.statut || "Statut non renseigne"}
@@ -315,7 +455,8 @@ function EnseignantOverview({ mode = "overview" }: Props) {
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-slate-500">
-                    Aucun departement n'est encore visible sur les fiches enseignants.
+                    Aucun departement n'est encore visible sur les fiches
+                    enseignants.
                   </p>
                 )}
               </div>
@@ -340,7 +481,8 @@ function EnseignantOverview({ mode = "overview" }: Props) {
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-slate-500">
-                    Les statuts apparaitront ici quand les fiches seront completees.
+                    Les statuts apparaitront ici quand les fiches seront
+                    completees.
                   </p>
                 )}
               </div>
@@ -353,5 +495,3 @@ function EnseignantOverview({ mode = "overview" }: Props) {
 }
 
 export default EnseignantOverview;
-
-

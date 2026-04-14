@@ -1,5 +1,5 @@
 import { Application, NextFunction, Request, Response as R, Router } from "express";
-import { Prisma, PrismaClient, type AbonnementCantine } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";

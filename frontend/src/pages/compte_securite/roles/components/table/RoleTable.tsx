@@ -1,18 +1,19 @@
 import React from "react";
-import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserPen } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
+import TableTooltip from "../../../../../components/alert/TableTooltip";
+import { useAuth } from "../../../../../auth/AuthContext";
+import { useInfo } from "../../../../../hooks/useInfo";
+import RoleService from "../../../../../services/role.service";
 import {
   DataTable,
   type DataTableHandle,
 } from "../../../../../shared/table/DataTable";
-import type { Role } from "../../../../../types/models";
-import RoleService from "../../../../../services/role.service";
-import { useAuth } from "../../../../../auth/AuthContext";
-import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
-import TableTooltip from "../../../../../components/alert/TableTooltip";
-import { useInfo } from "../../../../../hooks/useInfo";
+import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
 import { styles } from "../../../../../styles/styles";
+import type { Role } from "../../../../../types/models";
+import { buildAccountCreationUrl } from "../../../../../utils/accountCreationLink";
 
 export default function RoleList() {
   const { info } = useInfo();
@@ -30,7 +31,7 @@ export default function RoleList() {
     },
     {
       key: "created_at",
-      header: "Créé le",
+      header: "Cree le",
       accessor: "created_at",
       sortable: true,
       sortKey: "created_at",
@@ -58,45 +59,32 @@ export default function RoleList() {
       },
       onClick: async (row) => {
         await service.delete(row.id);
-        // DataTable refresh auto? (ici non) -> on préfère passer action via hook,
-        // mais simplest: on force reload via window ou via un ref.
         tableRef.current?.refresh();
       },
     },
     {
-      label: "Copier lien de création",
+      label: "Copier lien de creation",
       render: (row) => (
-        <TableTooltip
-          info={`Copier le lien de création d'utilisateur dans ${row.nom}`}
-        >
+        <TableTooltip info={`Copier le lien de creation d'utilisateur dans ${row.nom}`}>
           <FontAwesomeIcon icon={faUserPen} color={styles.color.primary} />
         </TableTooltip>
       ),
-      onClick: (row) => {
-        const roleId = row?.id;
-        const etabId = etablissement_id;
+      onClick: async (row) => {
+        try {
+          const finalUrl = buildAccountCreationUrl({
+            roleId: row.id,
+            etablissementId: etablissement_id,
+            roleName: row.nom,
+          });
 
-        if (roleId == null || etabId == null) {
-          // à toi de choisir : throw, return, toast, etc.
-          console.warn(
-            "Impossible de générer l’URL : role_id ou etablissement_id manquant",
-            {
-              roleId,
-              etabId,
-            },
-          );
-        } else {
-          const url = new URL("/compte/creation/", window.location.origin);
-          url.searchParams.set("role_id", String(roleId));
-          url.searchParams.set("etablissement_id", String(etabId));
-          url.searchParams.set("role_name", row.nom);
-
-          const finalUrl = url.toString();
-          navigator.clipboard.writeText(finalUrl);
+          await navigator.clipboard.writeText(finalUrl);
           info(
-            `Lien de création d'utilisateur de ${row.nom} copié dans le presse papier.`,
+            `Lien de creation d'utilisateur de ${row.nom} copie dans le presse-papiers.`,
             "info",
           );
+        } catch (error) {
+          console.warn("Impossible de copier le lien de creation du role.", error);
+          info("Impossible de copier le lien de creation de ce role.", "error");
         }
       },
     },
@@ -108,13 +96,10 @@ export default function RoleList() {
       service={service}
       columns={columns}
       actions={actions}
-      getRowId={(r) => r.id}
+      getRowId={(row) => row.id}
       initialQuery={{
         page: 1,
         take: 10,
-        // Exemple: includes relationnelles
-        // includeAll: true,
-        // includes: ["etablissement"],
         where: { etablissement_id },
       }}
       showSearch

@@ -37,8 +37,8 @@ export default function PaiementTable() {
   const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new PaiementService(), []);
+  const selectedPaiement = usePaiementStore((state) => state.selectedPaiement);
   const setSelectedPaiement = usePaiementStore((state) => state.setSelectedPaiement);
-  const setRenderedComponent = usePaiementStore((state) => state.setRenderedComponent);
 
   const columns: ColumnDef<PaiementWithRelations>[] = [
     {
@@ -130,11 +130,9 @@ export default function PaiementTable() {
   const actions: RowAction<PaiementWithRelations>[] = [
     {
       label: "Voir",
+      kind: "view",
       variant: "secondary",
-      onClick: async (row) => {
-        setSelectedPaiement(row);
-        setRenderedComponent("detail");
-      },
+      onClick: async () => {},
     },
     {
       label: "Annuler le recu",
@@ -235,6 +233,12 @@ export default function PaiementTable() {
       columns={columns}
       actions={actions}
       getRowId={(row) => row.id}
+      detailView={{
+        getTitle: (row) => getPaiementDisplayLabel(row),
+        selectedRow: selectedPaiement,
+        onSelectedRowChange: setSelectedPaiement,
+        openOnRowClick: true,
+      }}
       initialQuery={{
         page: 1,
         take: 10,
@@ -257,10 +261,6 @@ export default function PaiementTable() {
         },
       }}
       showSearch
-      onRowClick={(row) => {
-        setSelectedPaiement(row);
-        setRenderedComponent("detail");
-      }}
       onSearchBuildWhere={(text) => ({
         AND: [
           ...(etablissement_id ? [{ facture: { is: { etablissement_id } } }] : []),

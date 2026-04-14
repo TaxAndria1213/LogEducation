@@ -6,8 +6,9 @@ import {
   FiSearch,
   FiGrid,
   FiChevronLeft,
+  FiX,
 } from "react-icons/fi";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { modules } from "../../routes/modules";
 import Header from "./Header";
@@ -43,6 +44,8 @@ export default function AppLayout() {
   const [openModule, setOpenModule] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [search, setSearch] = useState("");
+  const sidebarScrollRef = useRef<HTMLDivElement | null>(null);
+  const moduleGroupRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const activeModuleKey = useMemo(() => {
     const found = modules.find((module) =>
@@ -61,10 +64,60 @@ export default function AppLayout() {
       .filter((module): module is menu => Boolean(module));
   }, [search]);
 
+  const orderedModules = useMemo(() => {
+    if (!openModule) {
+      return filteredModules;
+    }
+
+    const expandedModuleIndex = filteredModules.findIndex(
+      (module) => module.key === openModule,
+    );
+
+    if (expandedModuleIndex <= 0) {
+      return filteredModules;
+    }
+
+    const expandedItem = filteredModules[expandedModuleIndex];
+    return [
+      expandedItem,
+      ...filteredModules.filter((module) => module.key !== openModule),
+    ];
+  }, [filteredModules, openModule]);
+
   const expandedModule = openModule ?? activeModuleKey;
   const appShellStyle = {
     "--app-sidebar-offset": collapsed ? "88px" : "340px",
   } as CSSProperties;
+
+  useEffect(() => {
+    if (!openModule || collapsed) return;
+
+    let firstFrame = 0;
+    let secondFrame = 0;
+
+    firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        const scrollContainer = sidebarScrollRef.current;
+        const moduleElement = moduleGroupRefs.current[openModule];
+
+        if (!scrollContainer || !moduleElement) return;
+
+        const scrollContainerRect = scrollContainer.getBoundingClientRect();
+        const moduleRect = moduleElement.getBoundingClientRect();
+        const topGap = 10;
+        const nextTop = Math.max(
+          0,
+          scrollContainer.scrollTop + (moduleRect.top - scrollContainerRect.top) - topGap,
+        );
+        scrollContainer.scrollTo({ top: nextTop, behavior: "smooth" });
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [collapsed, openModule, orderedModules]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800" style={appShellStyle}>
@@ -112,9 +165,19 @@ export default function AppLayout() {
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-10 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-10 py-2.5 pr-11 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
                   placeholder="Rechercher un module ou une section"
                 />
+                {search ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute right-3 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    aria-label="Effacer la recherche"
+                  >
+                    <FiX className="text-[14px]" />
+                  </button>
+                ) : null}
               </div>
               <div className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 shadow-sm">
                 <span className="truncate">{modules.length} module(s)</span>
@@ -126,9 +189,12 @@ export default function AppLayout() {
           ) : null}
         </div>
 
-        <div className={`mt-4 flex-1 overflow-y-auto ${collapsed ? "hide-scrollbar pr-0" : "pr-1"}`}>
+        <div
+          ref={sidebarScrollRef}
+          className={`mt-4 flex-1 overflow-y-auto ${collapsed ? "hide-scrollbar pr-0" : "pr-1"}`}
+        >
           <div className={`space-y-2 ${collapsed ? "px-0.5" : ""}`}>
-            {filteredModules.map((module) => {
+            {orderedModules.map((module) => {
               const hasChildren = Boolean(module.submodules?.length);
               const isExpanded = expandedModule === module.key;
               const isModuleActive =
@@ -140,7 +206,17 @@ export default function AppLayout() {
                 : "mx-auto flex h-12 w-12 items-center justify-center rounded-[18px] border border-transparent bg-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900";
 
               return (
-                <div key={module.key} className="space-y-2">
+                <div
+                  key={module.key}
+                  ref={(node) => {
+                    moduleGroupRefs.current[module.key] = node;
+                  }}
+                  className={
+                    hasChildren && isExpanded && !collapsed
+                      ? "space-y-2 rounded-[28px] border-2 border-sky-300 bg-gradient-to-br from-sky-50 via-white to-sky-50/70 p-2 shadow-[0_14px_34px_rgba(14,165,233,0.12)] ring-1 ring-sky-100"
+                      : "space-y-2"
+                  }
+                >
                   {hasChildren ? (
                     <button
                       type="button"
@@ -157,6 +233,8 @@ export default function AppLayout() {
                           : `flex w-full items-center gap-3 rounded-[24px] border px-3 py-3 text-left transition ${
                               isModuleActive
                                 ? "border-slate-900 bg-slate-900 text-white shadow-[0_18px_28px_rgba(15,23,42,0.18)]"
+                                : isExpanded
+                                  ? "border-sky-200 bg-white text-slate-900 shadow-sm"
                                 : "border-transparent bg-white/62 text-slate-700 hover:border-slate-200 hover:bg-white"
                             }`
                       }
@@ -167,18 +245,38 @@ export default function AppLayout() {
                         <>
                           <span
                             className={`grid h-11 w-11 shrink-0 place-items-center rounded-[18px] text-sm ${
-                              isModuleActive ? "bg-white/12 text-white" : "bg-slate-100 text-slate-700"
+                              isModuleActive
+                                ? "bg-white/12 text-white"
+                                : isExpanded
+                                  ? "bg-sky-100 text-sky-700"
+                                  : "bg-slate-100 text-slate-700"
                             }`}
                           >
                             {module.icon ?? <FiGrid />}
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-semibold">{module.name}</span>
-                            <span className={`block text-xs ${isModuleActive ? "text-slate-300" : "text-slate-500"}`}>
+                            <span
+                              className={`block text-xs ${
+                                isModuleActive
+                                  ? "text-slate-300"
+                                  : isExpanded
+                                    ? "text-sky-700"
+                                    : "text-slate-500"
+                              }`}
+                            >
                               {module.submodules?.length ?? 0} section(s)
                             </span>
                           </span>
-                          <span className={`text-sm ${isModuleActive ? "text-slate-200" : "text-slate-400"}`}>
+                          <span
+                            className={`text-sm ${
+                              isModuleActive
+                                ? "text-slate-200"
+                                : isExpanded
+                                  ? "text-sky-600"
+                                  : "text-slate-400"
+                            }`}
+                          >
                             {isExpanded ? <FiChevronDown /> : <FiChevronRight />}
                           </span>
                         </>

@@ -235,7 +235,7 @@ export default function FactureForm({ mode = "create" }: Props) {
       if (mode === "edit" && selectedFacture?.id) {
         const response = await service.update(selectedFacture.id, payload);
         setSelectedFacture(response?.data?.data ?? selectedFacture);
-        setRenderedComponent("detail");
+        setRenderedComponent("list");
         info("Facture mise a jour avec succes !", "success");
         return;
       }

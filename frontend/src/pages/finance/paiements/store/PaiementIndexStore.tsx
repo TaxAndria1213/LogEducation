@@ -5,14 +5,12 @@ import PaiementOverview from "../components/dashboard/PaiementOverview";
 import PaiementForm from "../components/form/PaiementForm";
 import PaiementTable from "../components/table/PaiementTable";
 import type { PaiementWithRelations } from "../../../../services/paiement.service";
-import PaiementDetail from "../components/detail/PaiementDetail";
 
 const renderList = [
   { id: "dashboard", component: <PaiementOverview />, renderState: 0 },
   { id: "list", component: <PaiementTable />, renderState: 1 },
   { id: "parametre", component: <PaiementOverview mode="settings" />, renderState: 2 },
   { id: "add", component: <PaiementForm />, renderState: 3 },
-  { id: "detail", component: <PaiementDetail />, renderState: 4 },
 ];
 
 type State = {
@@ -41,7 +39,7 @@ export const usePaiementStore = create<State>((set) => ({
         renderedComponent: found.component,
         renderState: found.renderState,
         selectedPaiement:
-          value === "dashboard" || value === "list" || value === "parametre" || value === "add"
+          value === "dashboard" || value === "parametre" || value === "add"
             ? null
             : state.selectedPaiement,
       }));

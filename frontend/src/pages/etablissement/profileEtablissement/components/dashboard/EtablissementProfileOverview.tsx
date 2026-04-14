@@ -1,19 +1,14 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FiClock,
   FiCode,
+  FiHome,
   FiSettings,
   FiSliders,
 } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import EtablissementService from "../../../../../services/etablissement.service";
 import type { Etablissement } from "../../../../../types/models";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBuilding } from "@fortawesome/free-solid-svg-icons";
-
-type Props = {
-  mode?: "overview" | "settings";
-};
 
 function formatDate(value?: Date | string | null) {
   if (!value) return "Non renseigne";
@@ -29,7 +24,11 @@ function formatDate(value?: Date | string | null) {
 }
 
 function formatParamValue(value: unknown) {
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
     return String(value);
   }
 
@@ -59,7 +58,7 @@ function getErrorMessage(error: unknown) {
   return "Impossible de charger le profil de l'etablissement.";
 }
 
-function EtablissementProfileOverview({ mode = "overview" }: Props) {
+function EtablissementProfileOverview() {
   const { user, etablissement_id } = useAuth();
   const service = useMemo(() => new EtablissementService(), []);
 
@@ -100,11 +99,16 @@ function EtablissementProfileOverview({ mode = "overview" }: Props) {
   }, [etablissement_id, service]);
 
   const settingsEntries = useMemo(() => {
-    if (!etablissement?.parametres_json || typeof etablissement.parametres_json !== "object") {
+    if (
+      !etablissement?.parametres_json ||
+      typeof etablissement.parametres_json !== "object"
+    ) {
       return [];
     }
 
-    return Object.entries(etablissement.parametres_json as Record<string, unknown>);
+    return Object.entries(
+      etablissement.parametres_json as Record<string, unknown>,
+    );
   }, [etablissement?.parametres_json]);
 
   if (!etablissement_id && !user?.etablissement) {
@@ -116,7 +120,67 @@ function EtablissementProfileOverview({ mode = "overview" }: Props) {
   }
 
   return (
-    <div className="space-y-6">      {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Chargement...</div> : null}      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">
+      {loading ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          Chargement...
+        </div>
+      ) : null}
+
+      {errorMessage ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {errorMessage}
+        </div>
+      ) : null}
+
+      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-slate-100 text-slate-700">
+              <FiHome className="text-xl" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Profil proprietaire de l'etablissement
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+                {etablissement?.nom ?? "Nom non renseigne"}
+              </h2>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
+                Cette vue est reservee a l'utilisateur proprietaire de
+                l'enregistrement rattache a son compte. Les operations globales
+                de gestion des etablissements doivent etre effectuees depuis la
+                plateforme administrateur.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Parametres detectes
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-slate-900">
+              {settingsEntries.length}
+            </p>
+            <p className="mt-2 leading-6">
+              Valeurs techniques ou fonctionnelles actuellement rattachees a
+              l'etablissement.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3 text-slate-500">
+            <FiHome />
+            <span className="text-sm font-medium">Nom</span>
+          </div>
+          <p className="mt-3 text-lg font-semibold text-slate-900">
+            {etablissement?.nom ?? "Non renseigne"}
+          </p>
+        </div>
+
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiCode />
@@ -139,16 +203,6 @@ function EtablissementProfileOverview({ mode = "overview" }: Props) {
 
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
-            <FontAwesomeIcon icon={faBuilding} />
-            <span className="text-sm font-medium">Cree le</span>
-          </div>
-          <p className="mt-3 text-sm font-semibold text-slate-900">
-            {formatDate(etablissement?.created_at)}
-          </p>
-        </div>
-
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3 text-slate-500">
             <FiSettings />
             <span className="text-sm font-medium">Mis a jour le</span>
           </div>
@@ -165,12 +219,11 @@ function EtablissementProfileOverview({ mode = "overview" }: Props) {
           </div>
           <div>
             <h3 className="text-lg font-semibold text-slate-900">
-              {mode === "settings" ? "Parametres de l'etablissement" : "Resume technique"}
+              Parametres de l'etablissement
             </h3>
             <p className="text-sm text-slate-500">
-              {mode === "settings"
-                ? "Les parametres enregistres pour cet etablissement sont resumes ci-dessous."
-                : "Informations techniques utiles pour verifier la configuration actuelle."}
+              Les parametres enregistres pour cet etablissement sont resumes
+              ci-dessous.
             </p>
           </div>
         </div>
@@ -197,9 +250,45 @@ function EtablissementProfileOverview({ mode = "overview" }: Props) {
           </div>
         )}
       </section>
+
+      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+            <FiClock />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">
+              Historique du profil
+            </h3>
+            <p className="text-sm text-slate-500">
+              Informations temporelles utiles pour suivre la creation et
+              l'actualisation de l'enregistrement.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Cree le
+            </p>
+            <p className="mt-3 text-sm font-semibold text-slate-900">
+              {formatDate(etablissement?.created_at)}
+            </p>
+          </div>
+
+          <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Derniere mise a jour
+            </p>
+            <p className="mt-3 text-sm font-semibold text-slate-900">
+              {formatDate(etablissement?.updated_at)}
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
 export default EtablissementProfileOverview;
-

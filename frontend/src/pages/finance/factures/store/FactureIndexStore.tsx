@@ -4,7 +4,6 @@ import NotFound from "../../../NotFound";
 import FactureOverview from "../components/dashboard/FactureOverview";
 import FactureForm from "../components/form/FactureForm";
 import FactureTable from "../components/table/FactureTable";
-import FactureDetail from "../components/detail/FactureDetail";
 import type { FactureWithRelations } from "../../../../services/facture.service";
 
 const renderList = [
@@ -12,8 +11,7 @@ const renderList = [
   { id: "list", component: <FactureTable />, renderState: 1 },
   { id: "parametre", component: <FactureOverview mode="settings" />, renderState: 2 },
   { id: "add", component: <FactureForm />, renderState: 3 },
-  { id: "detail", component: <FactureDetail />, renderState: 4 },
-  { id: "edit", component: <FactureForm mode="edit" />, renderState: 5 },
+  { id: "edit", component: <FactureForm mode="edit" />, renderState: 4 },
 ];
 
 type State = {
@@ -42,7 +40,7 @@ export const useFactureStore = create<State>((set) => ({
         renderedComponent: found.component,
         renderState: found.renderState,
         selectedFacture:
-          value === "dashboard" || value === "list" || value === "parametre" || value === "add"
+          value === "dashboard" || value === "parametre" || value === "add"
             ? null
             : state.selectedFacture,
       }));

@@ -17,6 +17,7 @@ export default function PlanPaiementTable() {
   const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new PlanPaiementEleveService(), []);
+  const selectedPlanPaiement = usePlanPaiementStore((state) => state.selectedPlanPaiement);
   const setSelectedPlanPaiement = usePlanPaiementStore((state) => state.setSelectedPlanPaiement);
   const setRenderedComponent = usePlanPaiementStore((state) => state.setRenderedComponent);
 
@@ -69,11 +70,9 @@ export default function PlanPaiementTable() {
   const actions: RowAction<PlanPaiementEleveWithRelations>[] = [
     {
       label: "Voir",
+      kind: "view",
       variant: "secondary",
-      onClick: async (row) => {
-        setSelectedPlanPaiement(row);
-        setRenderedComponent("detail");
-      },
+      onClick: async () => {},
     },
     {
       label: "Modifier",
@@ -101,6 +100,16 @@ export default function PlanPaiementTable() {
       columns={columns}
       actions={actions}
       getRowId={(row) => row.id}
+      detailView={{
+        getTitle: (row) => getPlanPaiementDisplayLabel(row),
+        selectedRow: selectedPlanPaiement,
+        onSelectedRowChange: setSelectedPlanPaiement,
+        openOnRowClick: true,
+        onEdit: (row) => {
+          setSelectedPlanPaiement(row);
+          setRenderedComponent("edit");
+        },
+      }}
       initialQuery={{
         page: 1,
         take: 10,
@@ -113,10 +122,6 @@ export default function PlanPaiementTable() {
         },
       }}
       showSearch
-      onRowClick={(row) => {
-        setSelectedPlanPaiement(row);
-        setRenderedComponent("detail");
-      }}
       onSearchBuildWhere={(text) => ({
         AND: [
           ...(etablissement_id ? [{ eleve: { is: { etablissement_id } } }] : []),

@@ -4,7 +4,6 @@ import NotFound from "../../../NotFound";
 import PlanPaiementOverview from "../components/dashboard/PlanPaiementOverview";
 import PlanPaiementForm from "../components/form/PlanPaiementForm";
 import PlanPaiementTable from "../components/table/PlanPaiementTable";
-import PlanPaiementDetail from "../components/detail/PlanPaiementDetail";
 import type { PlanPaiementEleveWithRelations } from "../../../../services/planPaiementEleve.service";
 
 const renderList = [
@@ -12,8 +11,7 @@ const renderList = [
   { id: "list", component: <PlanPaiementTable />, renderState: 1 },
   { id: "parametre", component: <PlanPaiementOverview mode="settings" />, renderState: 2 },
   { id: "add", component: <PlanPaiementForm />, renderState: 3 },
-  { id: "detail", component: <PlanPaiementDetail />, renderState: 4 },
-  { id: "edit", component: <PlanPaiementForm mode="edit" />, renderState: 5 },
+  { id: "edit", component: <PlanPaiementForm mode="edit" />, renderState: 4 },
 ];
 
 type State = {
@@ -42,7 +40,7 @@ export const usePlanPaiementStore = create<State>((set) => ({
         renderedComponent: found.component,
         renderState: found.renderState,
         selectedPlanPaiement:
-          value === "dashboard" || value === "list" || value === "parametre" || value === "add"
+          value === "dashboard" || value === "parametre" || value === "add"
             ? null
             : state.selectedPlanPaiement,
       }));

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 type OrderBy = Record<string, "asc" | "desc"> | Array<Record<string, "asc" | "desc">>;
 
@@ -43,6 +43,33 @@ type PaginatedResult<T> = {
 
 // ✅ relationsMap: whitelist des relations par modèle (parents/enfants)
 type RelationsMap = Partial<Record<string, string[]>>;
+
+type PrismaRelationGraph = Record<string, Record<string, string>>;
+
+function toDelegateModelName(modelName: string): string {
+  if (!modelName) return modelName;
+  return modelName.charAt(0).toLowerCase() + modelName.slice(1);
+}
+
+function buildPrismaRelationGraph(): PrismaRelationGraph {
+  const graph: PrismaRelationGraph = {};
+  const models = Prisma.dmmf?.datamodel?.models ?? [];
+
+  for (const model of models) {
+    const relationFields = Object.fromEntries(
+      model.fields
+        .filter((field) => field.kind === "object")
+        .map((field) => [field.name, toDelegateModelName(String(field.type))]),
+    );
+
+    graph[model.name] = relationFields;
+    graph[toDelegateModelName(model.name)] = relationFields;
+  }
+
+  return graph;
+}
+
+const PRISMA_RELATION_GRAPH = buildPrismaRelationGraph();
 
 class PrismaService {
   private prisma: PrismaClient;
@@ -262,7 +289,7 @@ class PrismaService {
       this.deepMerge(base, options.includeSpec);
     }
 
-    return Object.keys(base).length ? base : undefined;
+    return this.sanitizeIncludeTree(base, String(this.modelName));
   }
 
   /**
@@ -326,6 +353,61 @@ class PrismaService {
       }
     }
     return target;
+  }
+
+  private sanitizeIncludeTree(includeTree: any, modelName: string): any {
+    if (!includeTree || typeof includeTree !== "object" || Array.isArray(includeTree)) {
+      return undefined;
+    }
+
+    const allowedRelations = PRISMA_RELATION_GRAPH[modelName] ?? {};
+    const sanitized: Record<string, any> = {};
+
+    for (const [key, value] of Object.entries(includeTree)) {
+      const relatedModelName = allowedRelations[key];
+      if (!relatedModelName) {
+        continue;
+      }
+
+      if (value === true) {
+        sanitized[key] = true;
+        continue;
+      }
+
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        sanitized[key] = true;
+        continue;
+      }
+
+      const relationIncludeSpec = value as Record<string, any>;
+      const nextValue: Record<string, any> = {};
+
+      for (const [nestedKey, nestedValue] of Object.entries(relationIncludeSpec)) {
+        if (nestedKey === "include") {
+          continue;
+        }
+
+        nextValue[nestedKey] = nestedValue;
+      }
+
+      if (
+        relationIncludeSpec.include &&
+        typeof relationIncludeSpec.include === "object" &&
+        !Array.isArray(relationIncludeSpec.include)
+      ) {
+        const nestedInclude = this.sanitizeIncludeTree(
+          relationIncludeSpec.include,
+          relatedModelName,
+        );
+        if (nestedInclude && Object.keys(nestedInclude).length > 0) {
+          nextValue.include = nestedInclude;
+        }
+      }
+
+      sanitized[key] = Object.keys(nextValue).length > 0 ? nextValue : true;
+    }
+
+    return Object.keys(sanitized).length > 0 ? sanitized : undefined;
   }
 
   private clampTake(take: number, maxTake: number): number {

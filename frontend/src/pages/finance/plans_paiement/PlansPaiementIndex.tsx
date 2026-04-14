@@ -38,7 +38,7 @@ export default function PlansPaiementIndex() {
         if (pending.record) {
           if (cancelled) return;
           setSelectedPlanPaiement(pending.record as PlanPaiementEleveWithRelations);
-          setRenderedComponent("detail");
+          setRenderedComponent("list");
           clearFinanceNavigationTarget();
           return;
         }
@@ -68,7 +68,7 @@ export default function PlansPaiementIndex() {
 
         if (record) {
           setSelectedPlanPaiement(record);
-          setRenderedComponent("detail");
+          setRenderedComponent("list");
         }
       } finally {
         clearFinanceNavigationTarget();
@@ -96,6 +96,7 @@ export default function PlansPaiementIndex() {
       id: "list",
       label: "Liste",
       onClick: () => {
+        setSelectedPlanPaiement(null);
         setRenderState("list");
         setRenderedComponent("list");
       },

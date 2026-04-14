@@ -36,7 +36,7 @@ export default function PaiementsIndex() {
         if (pending.record) {
           if (cancelled) return;
           setSelectedPaiement(pending.record as PaiementWithRelations);
-          setRenderedComponent("detail");
+          setRenderedComponent("list");
           clearFinanceNavigationTarget();
           return;
         }
@@ -74,7 +74,7 @@ export default function PaiementsIndex() {
 
         if (record) {
           setSelectedPaiement(record);
-          setRenderedComponent("detail");
+          setRenderedComponent("list");
         }
       } finally {
         clearFinanceNavigationTarget();
@@ -102,6 +102,7 @@ export default function PaiementsIndex() {
       id: "list",
       label: "Historique",
       onClick: () => {
+        setSelectedPaiement(null);
         setRenderState("list");
         setRenderedComponent("list");
       },

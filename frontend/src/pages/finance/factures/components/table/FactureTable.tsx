@@ -15,6 +15,7 @@ export default function FactureTable() {
   const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new FactureService(), []);
+  const selectedFacture = useFactureStore((state) => state.selectedFacture);
   const setSelectedFacture = useFactureStore((state) => state.setSelectedFacture);
   const setRenderedComponent = useFactureStore((state) => state.setRenderedComponent);
 
@@ -69,11 +70,9 @@ export default function FactureTable() {
   const actions: RowAction<FactureWithRelations>[] = [
     {
       label: "Voir",
+      kind: "view",
       variant: "secondary",
-      onClick: async (row) => {
-        setSelectedFacture(row);
-        setRenderedComponent("detail");
-      },
+      onClick: async () => {},
     },
     {
       label: "Modifier",
@@ -168,6 +167,16 @@ export default function FactureTable() {
       columns={columns}
       actions={actions}
       getRowId={(row) => row.id}
+      detailView={{
+        getTitle: (row) => getFactureDisplayLabel(row),
+        selectedRow: selectedFacture,
+        onSelectedRowChange: setSelectedFacture,
+        openOnRowClick: true,
+        onEdit: (row) => {
+          setSelectedFacture(row);
+          setRenderedComponent("edit");
+        },
+      }}
       initialQuery={{
         page: 1,
         take: 10,
@@ -197,10 +206,6 @@ export default function FactureTable() {
           },
         ],
       })}
-      onRowClick={(row) => {
-        setSelectedFacture(row);
-        setRenderedComponent("detail");
-      }}
     />
   );
 }

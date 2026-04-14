@@ -67,6 +67,7 @@ export type ColumnDef<T> = {
 export type RowAction<T> = {
   label: string;
   onClick: (row: T) => void | Promise<void>;
+  kind?: "view" | "edit" | "delete" | "custom";
   /** optionnel: masquer selon row */
   show?: (row: T) => boolean;
   /** optionnel: style bouton */

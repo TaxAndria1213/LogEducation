@@ -36,7 +36,7 @@ export default function FacturesIndex() {
         if (pending.record) {
           if (cancelled) return;
           setSelectedFacture(pending.record as FactureWithRelations);
-          setRenderedComponent("detail");
+          setRenderedComponent("list");
           clearFinanceNavigationTarget();
           return;
         }
@@ -68,7 +68,7 @@ export default function FacturesIndex() {
 
         if (record) {
           setSelectedFacture(record);
-          setRenderedComponent("detail");
+          setRenderedComponent("list");
         }
       } finally {
         clearFinanceNavigationTarget();
@@ -96,6 +96,7 @@ export default function FacturesIndex() {
       id: "list",
       label: "Liste des factures",
       onClick: () => {
+        setSelectedFacture(null);
         setRenderState("list");
         setRenderedComponent("list");
       },
