@@ -115,7 +115,7 @@ export default function ReferentielForm() {
               {selectedCategory.description}
             </p>
             <p className="mt-2 text-xs text-slate-400">
-              {selectedCategory.fieldTargets.join(" â€¢ ")}
+              {selectedCategory.fieldTargets.join(" | ")}
             </p>
           </div>
         ) : null}

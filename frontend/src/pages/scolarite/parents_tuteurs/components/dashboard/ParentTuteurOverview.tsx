@@ -606,7 +606,7 @@ function ParentTuteurOverview({ mode = "overview" }: Props) {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span>
                             {child.nom_complet || "Eleve"}
-                            {child.sibling_rank ? ` â€¢ Rang ${child.sibling_rank}` : ""}
+                            {child.sibling_rank ? ` | Rang ${child.sibling_rank}` : ""}
                           </span>
                           <span className="font-medium text-slate-900">
                             {child.total_du.toLocaleString("fr-FR")} MGA

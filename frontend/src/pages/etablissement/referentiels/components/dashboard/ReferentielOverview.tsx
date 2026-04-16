@@ -137,7 +137,7 @@ export default function ReferentielOverview({ mode = "overview" }: Props) {
                     {item.titre}
                   </p>
                   <p className="mt-1 text-xs text-amber-800">
-                    {item.fieldTargets.join(" â€¢ ")}
+                    {item.fieldTargets.join(" | ")}
                   </p>
                 </div>
               ))

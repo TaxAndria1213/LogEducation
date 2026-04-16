@@ -52,9 +52,6 @@ function UtilisateursIndex() {
       const DashboardButton = getComponentById(
         "CS.UTILISATEURS.MENUACTION.DASHBOARD",
       );
-      const ApprobationButton = getComponentById(
-        "CS.UTILISATEURS.MENUACTION.APPROV.LIST",
-      );
 
       const sidebarComponents = [
         hasAccess(
@@ -85,15 +82,6 @@ function UtilisateursIndex() {
           utilisateurRoles,
           "CS.UTILISATEURS.MENUACTION.ADD",
         ) && <AddButtonComponent onClick={() => setRenderedComponent("add")} />,
-        hasAccess(
-          utilisateur,
-          utilisateurRoles,
-          "CS.UTILISATEURS.MENUACTION.APPROV.LIST",
-        ) && (
-          <ApprobationButton
-            onClick={() => setRenderedComponent("approbation")}
-          />
-        ),
       ].filter(Boolean) as JSX.Element[];
 
       setRenderList(sidebarComponents);

@@ -4,7 +4,6 @@ import type { JSX } from "react";
 import UtilisateurDashboard from "../components/dashboard/UtilisateurDashboard";
 import UtilisateurList from "../components/table/UtilisateursTable";
 import UtilisateurForm from "../components/form/UtilisateurForm";
-import ApprobationList from "../components/table/Utilisateur.AprobationTable";
 import UtilisateurSettings from "../components/settings/UtilisateurSettings";
 
 type menuItemToComponentType = {
@@ -24,10 +23,6 @@ const renderList: menuItemToComponentType[] = [
   {
     id: "list",
     component: <UtilisateurList />,
-  },
-  {
-    id: "approbation",
-    component: <ApprobationList />,
   },
   {
     id: "parametre",

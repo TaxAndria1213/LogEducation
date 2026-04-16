@@ -134,7 +134,7 @@ export default function ReferentielTable() {
                   {item.description}
                 </p>
                 <p className="mt-2 text-xs text-slate-400">
-                  {item.fieldTargets.join(" â€¢ ")}
+                  {item.fieldTargets.join(" | ")}
                 </p>
               </div>
               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">

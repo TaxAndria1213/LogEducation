@@ -8,6 +8,7 @@ import { siteComponents } from "../pages/etablissement/sites/components/CI.sites
 import { utilisateurComponents } from "../pages/compte_securite/utilisateurs/components/CI.utilisateur";
 import { salleComponents } from "../pages/etablissement/salles/components/CI.salle";
 import { anneeScolaireComponents } from "../pages/etablissement/anneeScolaire/components/CI.AnneeScolaire";
+import { initialisationEtablissementComponents } from "../pages/etablissement/initialisation/components/CI.initialisationEtablissement";
 import { periodeComponents } from "../pages/etablissement/periodes/components/CI.periode";
 import { referentielComponents } from "../pages/etablissement/referentiels/components/CI.referentiel";
 import { roleComponents } from "../pages/compte_securite/roles/components/CI.role";
@@ -75,6 +76,7 @@ const components: ComponentIdentifierType[] = [
   ...utilisateurComponents,
   ...salleComponents,
   ...anneeScolaireComponents,
+  ...initialisationEtablissementComponents,
   ...periodeComponents,
   ...referentielComponents,
   ...roleComponents,

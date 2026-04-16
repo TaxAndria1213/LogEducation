@@ -47,6 +47,12 @@ export type componentId =
   | 'ET.ANNEESCOLAIRES.MENUACTION.PARAMETRE'
   | 'ET.ANNEESCOLAIRES.MENUACTION.ADD'
   | 'ET.ANNEESCOLAIRES.MENUACTION.DASHBOARD'
+  //// initialisation
+  | 'ET.INIT.MENUACTION'
+  | 'ET.INIT.MENUACTION.LIST'
+  | 'ET.INIT.MENUACTION.PARAMETRE'
+  | 'ET.INIT.MENUACTION.ADD'
+  | 'ET.INIT.MENUACTION.DASHBOARD'
   //// Période
   | 'ET.PERIODES.MENUACTION'
   | 'ET.PERIODES.MENUACTION.LIST'
@@ -67,7 +73,6 @@ export type componentId =
   | 'CS.UTILISATEURS.MENUACTION.PARAMETRE'
   | 'CS.UTILISATEURS.MENUACTION.ADD'
   | 'CS.UTILISATEURS.MENUACTION.DASHBOARD'
-  | 'CS.UTILISATEURS.MENUACTION.APPROV.LIST'
   //// roles
   | 'CS.ROLES.MENUACTION'
   | 'CS.ROLES.MENUACTION.LIST'
@@ -301,14 +306,6 @@ export type componentId =
   | 'BI.EMPRUNTS.MENUACTION.ADD'
   | 'BI.EMPRUNTS.MENUACTION.DASHBOARD'
 ;
-
-
-
-export type AproveUserDataType = {
-  etablissement: Pick<Etablissement, "nom">;
-  utilisateur: Pick<Utilisateur, "email" | "telephone" | "mot_de_passe_hash">;
-  profil: Pick<Profil, "prenom" | "nom" | "date_naissance" | "genre" | "adresse">;
-}
 
 export type WizardDataUserPersonnel = {
   etablissement?: {

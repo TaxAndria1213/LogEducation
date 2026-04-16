@@ -10,6 +10,7 @@ import AuthApp from "../modules/auth/application/auth.app";
 import { tenantMiddleware } from "../../middleware/tenant";
 import SalleApp from "../modules/salle/application/salle.app";
 import AnneeScolaireApp from "../modules/annee_scolaire/application/anneeScolaire.app";
+import InitialisationEtablissementApp from "../modules/initialisation_etablissement/application/initialisation_etablissement.app";
 import PeriodeApp from "../modules/periode/application/periode.app";
 import ReferencielApp from "../modules/referenciel/application/referenciel.app";
 import InscriptionApp from "../modules/inscription/application/inscription.app";
@@ -71,6 +72,7 @@ export class ApiRoutes {
   private site: SiteApp;
   private salle: SalleApp;
   private anneeScolaire: AnneeScolaireApp;
+  private initialisationEtablissement: InitialisationEtablissementApp;
   private periode: PeriodeApp;
   private referenciel: ReferencielApp;
 
@@ -133,6 +135,7 @@ export class ApiRoutes {
     this.site = new SiteApp(app);
     this.salle = new SalleApp(app);
     this.anneeScolaire = new AnneeScolaireApp(app);
+    this.initialisationEtablissement = new InitialisationEtablissementApp(app);
     this.periode = new PeriodeApp(app);
     this.referenciel = new ReferencielApp(app);
     this.inscription = new InscriptionApp(app);
@@ -195,6 +198,10 @@ export class ApiRoutes {
     this.router.use("/site", this.site.routes());
     this.router.use("/salle", this.salle.routes());
     this.router.use("/annee-scolaire", this.anneeScolaire.routes());
+    this.router.use(
+      "/initialisation-etablissement",
+      this.initialisationEtablissement.routes(),
+    );
     this.router.use("/periode", this.periode.routes());
     this.router.use("/referenciel", this.referenciel.routes());
 

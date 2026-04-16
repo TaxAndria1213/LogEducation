@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { authService } from "../../app/api/authService";
 import { useAuth } from "../../auth/AuthContext";
 import Spin from "../../components/anim/Spin";
@@ -20,21 +20,29 @@ export default function Login() {
 
   useEffect(() => {
     if (user && token && rolesAccessList) {
-      login(JSON.parse(user), JSON.parse(rolesAccessList), { accessToken: token, refreshToken: localStorage.getItem("refreshToken") as string });
+      login(JSON.parse(user), JSON.parse(rolesAccessList), {
+        accessToken: token,
+        refreshToken: localStorage.getItem("refreshToken") as string,
+      });
       navigate(from, { replace: true });
     }
   }, [user, token, rolesAccessList, from, navigate, login]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+
     try {
       const data = await authService.login(username, password);
-      console.log("🚀 ~ handleSubmit ~ data:", data);
-      login(data.user, data.rolesAccessList, { accessToken: data.result.accessToken, refreshToken: data.result.refreshToken });
+      console.log("Login.handleSubmit.data", data);
+      login(data.user, data.rolesAccessList, {
+        accessToken: data.result.accessToken,
+        refreshToken: data.result.refreshToken,
+      });
       navigate(from, { replace: true });
     } catch (err) {
       console.error(err);
-      alert("Échec de la connexion");
+      alert("Echec de la connexion");
     } finally {
       setLoading(false);
     }
@@ -46,6 +54,7 @@ export default function Login() {
         <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">
           Connexion
         </h1>
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label
@@ -74,7 +83,7 @@ export default function Login() {
             <input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="........"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
@@ -91,12 +100,12 @@ export default function Login() {
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          Vous n'avez pas de compte ?{" "}
+          Vous ouvrez un nouvel etablissement ?{" "}
           <a
             href="/register"
-            className="text-indigo-600 hover:underline font-medium"
+            className="font-medium text-indigo-600 hover:underline"
           >
-            Créez-en un
+            Demander un compte proprietaire
           </a>
         </p>
       </div>

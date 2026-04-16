@@ -35,7 +35,10 @@ class Server {
         this.systemApp.use(express.json());
         this.systemApp.use(express.urlencoded({ extended: true }));
         this.systemApp.use("/system-api", (req, res, next) => {
-            if ((req.path === "/user/create" && req.method === "POST") || (req.path === "/user/login" && req.method === "POST")) {
+            if (
+                (req.path === "/user/create-owner-registration" && req.method === "POST") ||
+                (req.path === "/user/login" && req.method === "POST")
+            ) {
                 return next();
             }
             Promise.resolve(authGuard.handle(req, res, next)).catch(next);

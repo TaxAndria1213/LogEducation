@@ -66,8 +66,8 @@ class Server {
     this.app.use(
       "/api",
       (req, res, next) => {
-        // Skip authGuard for public account creation and auth routes.
-        if ((req.path === "/user/create" && req.method === "POST") ||
+        // Keep auth routes and invitation-based account creation public.
+        if ((req.path === "/user/create-owner-registration" && req.method === "POST") ||
             (req.path === "/user/create-from-link" && req.method === "POST") ||
             (req.path === "/auth/login" && req.method === "POST") ||
             (req.path === "/auth/refresh" && req.method === "POST")) {

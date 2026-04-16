@@ -256,7 +256,7 @@ export interface UtilisateurRole {
 /**
  * *
  *  * =========================
- *  * 3) SCOLARITÃ‰
+ *  * 3) SCOLARITE
  *  * =========================
  */
 export interface Eleve {
@@ -431,7 +431,7 @@ export interface Departement {
 /**
  * *
  *  * =========================
- *  * 5) PÃ‰DAGOGIE
+ *  * 5) PEDAGOGIE
  *  * =========================
  */
 export interface Matiere {
@@ -639,7 +639,7 @@ export interface EvenementCalendrier {
 /**
  * *
  *  * =========================
- *  * 7) PRÃ‰SENCES
+ *  * 7) PRESENCES
  *  * =========================
  */
 export interface SessionAppel {
@@ -1136,7 +1136,7 @@ export interface DossierRecouvrement {
 /**
  * *
  *  * =========================
- *  * 11) BIBLIOTHÃˆQUE
+ *  * 11) BIBLIOTHEQUE
  *  * =========================
  */
 export interface RessourceBibliotheque {
@@ -1375,7 +1375,7 @@ export interface LienFichier {
 /**
  * *
  *  * =========================
- *  * 14) AUDIT & INTÃ‰GRATIONS
+ *  * 14) AUDIT & INTEGRATIONS
  *  * =========================
  */
 export interface JournalAudit {

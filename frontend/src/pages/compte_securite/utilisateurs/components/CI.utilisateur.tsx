@@ -29,10 +29,4 @@ export const utilisateurComponents: ComponentIdentifierType[] = [
     name: "Utilisateurs - menu action - ajouter",
     component: menuItem(FiPlus, "Ajouter"),
   },
-  {
-    id: "CS.UTILISATEURS.MENUACTION.APPROV.LIST",
-    name: "Utilisateurs - menu action - list approbation",
-    component: menuItem(FiMenu, "List d'approbation"),
-    adminOnly: true,
-  }
 ];

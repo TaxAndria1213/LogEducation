@@ -9,8 +9,8 @@ import Login from "../pages/auth/Login";
 import { AuthProvider } from "../auth/AuthProvider";
 import { InfoProvider } from "../provider/InfoProvider";
 import { RelationOptionsProvider } from "../components/Form/RelationOptionsProvider";
-import CreateAccount from "../pages/account/CreateAccount";
 import CompteInactif from "../pages/CompteInactif";
+import CreateAccount from "../pages/account/CreateAccount";
 import CreateAccountFromLink from "../pages/account/CreateAccountFromLink";
 
 initializeApp();
@@ -35,7 +35,13 @@ const router = createBrowserRouter([
   },
   {
     path: "register",
-    element: <CreateAccount />,
+    element: (
+      <div className="min-h-screen bg-slate-100 px-4 py-8">
+        <div className="mx-auto max-w-6xl">
+          <CreateAccount mode="request" />
+        </div>
+      </div>
+    ),
   },
   {
     path: "/compte/creation/",

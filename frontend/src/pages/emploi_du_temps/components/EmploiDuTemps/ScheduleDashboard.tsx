@@ -5,6 +5,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   FiBookOpen,
   FiCheck,
@@ -384,8 +385,9 @@ export default function ScheduleDashboard() {
   const [bulkSalleId, setBulkSalleId] = useState("");
   const [manualLockedPlanningMode, setManualLockedPlanningMode] =
     useState<PlanningMode | null>(null);
-  const [isGridHovered, setIsGridHovered] = useState(false);
-  const [isShortcutHovered, setIsShortcutHovered] = useState(false);
+  const [headerShortcutAnchor, setHeaderShortcutAnchor] = useState<HTMLElement | null>(
+    null,
+  );
 
   const loading = useEmploiDuTempsDashboardStore((state) => state.loading);
   const loadingPlanning = useEmploiDuTempsDashboardStore(
@@ -432,6 +434,42 @@ export default function ScheduleDashboard() {
       initialize(etablissement_id);
     }
   }, [etablissement_id, initialize]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+
+    const resolveAnchor = () => {
+      const anchor = document.querySelector(
+        '[data-erp-header-action-trigger="true"]',
+      );
+      setHeaderShortcutAnchor(anchor instanceof HTMLElement ? anchor : null);
+    };
+
+    resolveAnchor();
+
+    const rafId = window.requestAnimationFrame(resolveAnchor);
+    window.addEventListener("resize", resolveAnchor);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", resolveAnchor);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!bulkEditorOpen || typeof document === "undefined") return undefined;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [bulkEditorOpen]);
 
   const selectedClasse = useMemo(
     () => classes.find((item) => item.id === selectedClasseId) ?? null,
@@ -612,7 +650,6 @@ export default function ScheduleDashboard() {
   );
   const isGridRendered =
     Boolean(selectedClasseId) && (loadingPlanning || creneaux.length > 0);
-  const isShortcutVisible = isGridRendered && (isGridHovered || isShortcutHovered);
 
   const courseUsageMinutesById = useMemo(() => {
     return Object.entries(planner).reduce<Record<string, number>>((acc, [key, cell]) => {
@@ -836,6 +873,13 @@ export default function ScheduleDashboard() {
     () => computeConflicts(planningDraftEntries),
     [entriesToReplaceIds, planningDraftEntries, relatedEntries],
   );
+  const isHeaderSaveDisabled =
+    !selectedClasseId ||
+    loadingPlanning ||
+    saving ||
+    planningConflicts.length > 0;
+  const isHeaderPdfDisabled =
+    !selectedClasseId || loadingPlanning || saving || plannedMinutes === 0;
 
   const bulkPreviewPlanner = useMemo(() => {
     if (!selectedCellKeys.length) return planner;
@@ -1552,15 +1596,11 @@ export default function ScheduleDashboard() {
       </div>
       </div>
 
-      <section className="min-w-0">
-        <div
-          className="min-w-0 space-y-6"
-          onMouseEnter={() => setIsGridHovered(true)}
-          onMouseLeave={() => setIsGridHovered(false)}
-        >
-          <SectionCard
-            title="Grille hebdomadaire"
-            description={
+        <section className="min-w-0">
+          <div className="min-w-0 space-y-6">
+            <SectionCard
+              title="Grille hebdomadaire"
+              description={
               planningMode === "specific_week"
                 ? "Glisse sur plusieurs cases pour ouvrir une affectation groupee de la semaine datee."
                 : "Glisse sur plusieurs cases pour affecter rapidement un cours et une salle sur la semaine type."
@@ -1949,180 +1989,211 @@ export default function ScheduleDashboard() {
         </aside>
       </section>
 
-      {isGridRendered && !bulkEditorOpen ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-10 z-40 flex justify-end px-4 sm:px-6 xl:px-8">
-          <div
-            onMouseEnter={() => setIsShortcutHovered(true)}
-            onMouseLeave={() => setIsShortcutHovered(false)}
-            className={`flex items-center gap-3 rounded-[22px] border border-slate-200 bg-white/95 px-3 py-3 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur transition-all duration-200 ease-out ${
-              isShortcutVisible
-                ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-                : "pointer-events-none translate-y-3 scale-95 opacity-0"
-            }`}
-          >
-            <div className="hidden sm:block">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Raccourci
-              </p>
-              <p className="mt-1 text-xs text-slate-600">
-                {planningConflicts.length > 0
-                  ? `${planningConflicts.length} conflit(s) a corriger`
-                  : "Enregistrement accessible depuis la grille"}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => void handleSave()}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={
-                !selectedClasseId ||
-                loadingPlanning ||
-                saving ||
-                planningConflicts.length > 0
-              }
-            >
-              {saving ? <Spin inline /> : <FiSave />}
-              {planningMode === "specific_week"
-                ? "Enregistrer la semaine"
-                : "Enregistrer le planning"}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {bulkEditorOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_28px_80px_-32px_rgba(15,23,42,0.6)]">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
-                  Affectation groupee
-                </p>
-                <h3 className="mt-2 text-xl font-semibold text-slate-900">
-                  Attribuer un cours a la selection
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  {selectedCellKeys.length} case(s) seront mises a jour en une seule action.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={closeBulkEditor}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
-              >
-                <FiX />
-              </button>
-            </div>
-
-            <div className="mt-6 space-y-4">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Cours
-                </span>
+      {headerShortcutAnchor
+        ? createPortal(
+            <div className="absolute right-[calc(100%+0.5rem)] top-1/2 z-10 -translate-y-1/2">
+              <div className="flex items-center gap-2">
+                <label className="sr-only" htmlFor="planning-header-classe-select">
+                  Classe a planifier
+                </label>
                 <select
-                  value={bulkCourseId}
+                  id="planning-header-classe-select"
+                  value={selectedClasseId}
                   onChange={(event) => {
-                    setBulkCourseId(event.target.value);
-                    if (!event.target.value || event.target.value === PAUSE_COURSE_ID) {
-                      setBulkSalleId("");
-                    }
+                    void selectClasse(event.target.value);
                   }}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+                  aria-label="Classe a planifier"
+                  title="Classe a planifier"
+                  className="min-w-[220px] max-w-[280px] rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={loadingPlanning || saving || classes.length === 0}
                 >
-                  <option value="">Aucun cours</option>
-                  <option value={PAUSE_COURSE_ID}>Pause</option>
-                  {courses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {getCourseLabel(course)}
+                  <option value="">Choisir une classe</option>
+                  {classes.map((classe) => (
+                    <option key={classe.id} value={classe.id}>
+                      {classe.nom}
                     </option>
                   ))}
                 </select>
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Salle
-                </span>
-                <select
-                  value={bulkSalleId}
-                  onChange={(event) => setBulkSalleId(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={!bulkCourseId || bulkCourseId === PAUSE_COURSE_ID}
+                <button
+                  type="button"
+                  onClick={handleGeneratePdf}
+                  aria-label="Exporter le PDF du planning"
+                  title="Exporter le PDF du planning"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isHeaderPdfDisabled}
                 >
-                  <option value="">Salle non definie</option>
-                  {salles.map((room) => (
-                    <option key={room.id} value={room.id}>
-                      {getRoomLabel(room)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <FiDownload />
+                  Exporter PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSave()}
+                  aria-label={
+                    planningMode === "specific_week"
+                      ? "Enregistrer la semaine de planning"
+                      : "Enregistrer le planning"
+                  }
+                  title={
+                    planningMode === "specific_week"
+                      ? "Enregistrer la semaine de planning"
+                      : "Enregistrer le planning"
+                  }
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isHeaderSaveDisabled}
+                >
+                  {saving ? <Spin inline /> : <FiSave />}
+                  {planningMode === "specific_week"
+                    ? "Enregistrer semaine"
+                    : "Enregistrer"}
+                </button>
+              </div>
+            </div>,
+            headerShortcutAnchor,
+          )
+        : null}
 
-              {bulkCourseId && bulkCourseId !== PAUSE_COURSE_ID && bulkPreviewConflicts.length > 0 ? (
-                <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-900">
-                  <p className="font-semibold">
-                    Des conflits bloquent cette affectation
-                  </p>
-                  <div className="mt-3 grid gap-2">
-                    {bulkPreviewConflicts.slice(0, 4).map((conflict) => (
-                      <div
-                        key={conflict.key}
-                        className="rounded-2xl border border-rose-200 bg-white px-3 py-3"
-                      >
-                        <p className="text-sm font-semibold text-rose-900">
-                          {conflict.title}
-                        </p>
-                        <p className="mt-1 text-xs leading-5 text-rose-700">
-                          {conflict.message}
-                        </p>
-                      </div>
-                    ))}
-                    {bulkPreviewConflicts.length > 4 ? (
-                      <p className="text-xs text-rose-700">
-                        ... et {bulkPreviewConflicts.length - 4} autre(s) conflit(s).
+      {bulkEditorOpen && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/45 backdrop-blur-sm">
+              <div className="flex min-h-full items-start justify-center p-4 sm:items-center sm:p-6">
+                <div className="my-6 w-full max-w-lg rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_28px_80px_-32px_rgba(15,23,42,0.6)]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
+                        Affectation groupee
                       </p>
+                      <h3 className="mt-2 text-xl font-semibold text-slate-900">
+                        Attribuer un cours a la selection
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        {selectedCellKeys.length} case(s) seront mises a jour en une seule action.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeBulkEditor}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
+                    >
+                      <FiX />
+                    </button>
+                  </div>
+
+                  <div className="mt-6 space-y-4">
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-medium text-slate-700">
+                        Cours
+                      </span>
+                      <select
+                        value={bulkCourseId}
+                        onChange={(event) => {
+                          setBulkCourseId(event.target.value);
+                          if (
+                            !event.target.value ||
+                            event.target.value === PAUSE_COURSE_ID
+                          ) {
+                            setBulkSalleId("");
+                          }
+                        }}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+                      >
+                        <option value="">Aucun cours</option>
+                        <option value={PAUSE_COURSE_ID}>Pause</option>
+                        {courses.map((course) => (
+                          <option key={course.id} value={course.id}>
+                            {getCourseLabel(course)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-medium text-slate-700">
+                        Salle
+                      </span>
+                      <select
+                        value={bulkSalleId}
+                        onChange={(event) => setBulkSalleId(event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={!bulkCourseId || bulkCourseId === PAUSE_COURSE_ID}
+                      >
+                        <option value="">Salle non definie</option>
+                        {salles.map((room) => (
+                          <option key={room.id} value={room.id}>
+                            {getRoomLabel(room)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    {bulkCourseId &&
+                    bulkCourseId !== PAUSE_COURSE_ID &&
+                    bulkPreviewConflicts.length > 0 ? (
+                      <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-900">
+                        <p className="font-semibold">
+                          Des conflits bloquent cette affectation
+                        </p>
+                        <div className="mt-3 grid gap-2">
+                          {bulkPreviewConflicts.slice(0, 4).map((conflict) => (
+                            <div
+                              key={conflict.key}
+                              className="rounded-2xl border border-rose-200 bg-white px-3 py-3"
+                            >
+                              <p className="text-sm font-semibold text-rose-900">
+                                {conflict.title}
+                              </p>
+                              <p className="mt-1 text-xs leading-5 text-rose-700">
+                                {conflict.message}
+                              </p>
+                            </div>
+                          ))}
+                          {bulkPreviewConflicts.length > 4 ? (
+                            <p className="text-xs text-rose-700">
+                              ... et {bulkPreviewConflicts.length - 4} autre(s) conflit(s).
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
                     ) : null}
                   </div>
-                </div>
-              ) : null}
-            </div>
 
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
-              <button
-                type="button"
-                onClick={clearBulkSelection}
-                className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
-              >
-                <FiTrash2 />
-                Vider la selection
-              </button>
-              <button
-                type="button"
-                onClick={closeBulkEditor}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                onClick={applyBulkSelection}
-                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={
-                  Boolean(
-                    bulkCourseId &&
-                      bulkCourseId !== PAUSE_COURSE_ID &&
-                      bulkPreviewConflicts.length > 0,
-                  )
-                }
-              >
-                <FiCheck />
-                Appliquer
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+                  <div className="mt-6 flex flex-wrap justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={clearBulkSelection}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+                    >
+                      <FiTrash2 />
+                      Vider la selection
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeBulkEditor}
+                      className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={applyBulkSelection}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={
+                        Boolean(
+                          bulkCourseId &&
+                            bulkCourseId !== PAUSE_COURSE_ID &&
+                            bulkPreviewConflicts.length > 0,
+                        )
+                      }
+                    >
+                      <FiCheck />
+                      Appliquer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

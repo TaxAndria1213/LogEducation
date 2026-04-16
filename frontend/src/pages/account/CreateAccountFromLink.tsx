@@ -301,18 +301,18 @@ export default function CreateAccountFromLink() {
 
             <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.5 }}>
               {completed[0]
-                ? "âœ“ Utilisateur renseigne"
-                : "â€¢ Utilisateur a completer"}
+                ? "OK Utilisateur renseigne"
+                : "- Utilisateur a completer"}
               <br />
-              {completed[1] ? "âœ“ Profil renseigne" : "â€¢ Profil a completer"}
+              {completed[1] ? "OK Profil renseigne" : "- Profil a completer"}
               <br />
               {shouldCreatePersonnel
-                ? "âœ“ Un personnel sera cree automatiquement"
-                : "â€¢ Aucun personnel supplementaire prevu"}
+                ? "OK Un personnel sera cree automatiquement"
+                : "- Aucun personnel supplementaire prevu"}
               <br />
               {shouldCreateEnseignant
-                ? "âœ“ Un enseignant sera cree automatiquement"
-                : "â€¢ Aucun profil enseignant prevu"}
+                ? "OK Un enseignant sera cree automatiquement"
+                : "- Aucun profil enseignant prevu"}
             </div>
 
             {(completed[0] || completed[1]) && (
@@ -357,7 +357,7 @@ export default function CreateAccountFromLink() {
                   className="cursor-pointer rounded bg-gray-100 px-3 py-2 font-bold text-black hover:bg-gray-200"
                   style={{ opacity: step === 0 ? 0.5 : 1 }}
                 >
-                  â† Retour
+                  {"<- Retour"}
                 </button>
               </div>
             </header>

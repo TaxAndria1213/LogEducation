@@ -33,7 +33,7 @@ export default function UtilisateurSettings() {
           Parametres utilisateurs
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          Rappels utiles pour les creations manuelles, les liens d'invitation et l'approbation.
+          Rappels utiles pour les creations manuelles, les liens d'invitation et les affectations de comptes.
         </p>
       </section>
 

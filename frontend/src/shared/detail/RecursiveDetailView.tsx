@@ -2232,6 +2232,8 @@ export default function RecursiveDetailView<T extends DetailViewRecord>({
 
   const currentNode = stack[stack.length - 1] ?? null;
   const currentRow = currentNode?.value ?? null;
+  const resolvedCurrentRow = (currentRow ?? {}) as DetailViewRecord;
+  const currentNodeId = currentNode?.id ?? "detail-root";
   const fallbackParentRecord = React.useMemo(
     () => (stack.length > 1 ? stack[stack.length - 2]?.value ?? null : null),
     [stack],
@@ -2468,41 +2470,30 @@ export default function RecursiveDetailView<T extends DetailViewRecord>({
     onBack?.();
   };
 
-  if (!currentRow) {
-    return (
-      <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900">{emptyTitle}</h3>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-          {emptyDescription}
-        </p>
-      </div>
-    );
-  }
-
   const { businessEntries, technicalEntries } = deriveScalarEntries(
-    currentRow,
+    resolvedCurrentRow,
     hiddenKeySet,
     fieldLabels,
     fieldFormatters,
   );
-  const jsonSections = deriveJsonSections(currentRow, hiddenKeySet, fieldLabels);
-  const objectSections = deriveObjectSections(currentRow, hiddenKeySet, fieldLabels);
-  const arraySections = deriveArraySections(currentRow, hiddenKeySet, fieldLabels);
+  const jsonSections = deriveJsonSections(resolvedCurrentRow, hiddenKeySet, fieldLabels);
+  const objectSections = deriveObjectSections(resolvedCurrentRow, hiddenKeySet, fieldLabels);
+  const arraySections = deriveArraySections(resolvedCurrentRow, hiddenKeySet, fieldLabels);
   const relationSections = deriveRelationSections(
-    currentRow,
+    resolvedCurrentRow,
     hiddenKeySet,
     fieldLabels,
   );
   const missingScalarFieldSections = deriveMissingScalarFieldSections(
-    currentRow,
+    resolvedCurrentRow,
     hiddenKeySet,
     fieldLabels,
   );
   const selectedReloadRelation = selectedReloadRelationKey
-    ? resolveRelationSectionDescriptor(currentRow, selectedReloadRelationKey, fieldLabels)
+    ? resolveRelationSectionDescriptor(resolvedCurrentRow, selectedReloadRelationKey, fieldLabels)
     : null;
   const selectedReloadRelationValue = selectedReloadRelation
-    ? currentRow[selectedReloadRelation.key]
+    ? resolvedCurrentRow[selectedReloadRelation.key]
     : undefined;
   const selectedReloadRelationDetailRow =
     selectedReloadRelation
@@ -2515,14 +2506,14 @@ export default function RecursiveDetailView<T extends DetailViewRecord>({
       currentNode?.loading || currentNode?.forceIncludeKeys?.includes(selectedReloadRelation.key),
     );
   const { groups: groupedEntries, remainingEntries } = resolveFieldGroups(
-    currentRow,
+    resolvedCurrentRow,
     businessEntries,
     fieldGroups,
   );
-  const heroBadges = deriveHeroBadges(currentRow, fieldLabels, previewSettings);
+  const heroBadges = deriveHeroBadges(resolvedCurrentRow, fieldLabels, previewSettings);
   const spotlightEntries = deriveSpotlightEntries(
     remainingEntries.length > 0 ? remainingEntries : businessEntries,
-    currentRow,
+    resolvedCurrentRow,
     previewSettings,
   );
   const canGoBack = stack.length > 1 || Boolean(onBack);
@@ -2554,15 +2545,15 @@ export default function RecursiveDetailView<T extends DetailViewRecord>({
     "xl:min-h-0 xl:max-h-[calc(100vh-10rem)] xl:overflow-y-auto xl:pl-1";
   const currentSectionIds = React.useMemo(
     () => [
-      ...jsonSections.map((section) => `json-${currentNode.id}-${section.key}`),
-      ...objectSections.map((section) => `object-${currentNode.id}-${section.key}`),
-      ...arraySections.map((section) => `array-${currentNode.id}-${section.key}`),
-      ...(missingScalarFieldSections.length > 0 ? [`missing-scalars-${currentNode.id}`] : []),
-      ...(technicalEntries.length > 0 ? [`technical-${currentNode.id}`] : []),
+      ...jsonSections.map((section) => `json-${currentNodeId}-${section.key}`),
+      ...objectSections.map((section) => `object-${currentNodeId}-${section.key}`),
+      ...arraySections.map((section) => `array-${currentNodeId}-${section.key}`),
+      ...(missingScalarFieldSections.length > 0 ? [`missing-scalars-${currentNodeId}`] : []),
+      ...(technicalEntries.length > 0 ? [`technical-${currentNodeId}`] : []),
     ],
     [
       arraySections,
-      currentNode.id,
+      currentNodeId,
       jsonSections,
       missingScalarFieldSections.length,
       objectSections,
@@ -2586,6 +2577,17 @@ export default function RecursiveDetailView<T extends DetailViewRecord>({
     if (!showAllContent || currentSectionIds.length === 0) return;
     expandAllSections();
   }, [currentSectionIds, expandAllSections, showAllContent]);
+
+  if (!currentRow) {
+    return (
+      <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-900">{emptyTitle}</h3>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+          {emptyDescription}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div ref={viewRootRef} className="space-y-6">

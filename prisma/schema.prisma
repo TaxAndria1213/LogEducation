@@ -384,7 +384,7 @@ model UtilisateurRole {
 
 /**
  * =========================
- * 3) SCOLARITÃ‰
+ * 3) SCOLARITE
  * =========================
  */
 model Eleve {
@@ -448,7 +448,7 @@ model ParentTuteur {
 model EleveParentTuteur {
   eleve_id              String
   parent_tuteur_id      String
-  relation              String? // pÃ¨re/mÃ¨re/tuteur
+  relation              String? // pere/mere/tuteur
   est_principal         Boolean @default(false)
   autorise_recuperation Boolean @default(true)
 
@@ -484,7 +484,7 @@ model Classe {
   niveau_scolaire_id      String
   site_id                 String?
   nom                     String // ex: 3A
-  enseignant_principal_id String? // rÃ©fÃ©rence vers Enseignant
+  enseignant_principal_id String? // référence vers Enseignant
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -612,7 +612,7 @@ model Departement {
 
 /**
  * =========================
- * 5) PÃ‰DAGOGIE
+ * 5) PEDAGOGIE
  * =========================
  */
 model Matiere {
@@ -748,7 +748,7 @@ model Note {
   score         Float
   commentaire   String?
   note_le       DateTime?
-  note_par      String? // id utilisateur/enseignant, simplifiÃ©
+  note_par      String? // id utilisateur/enseignant, simplifié
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -888,7 +888,7 @@ model EvenementCalendrier {
 
 /**
  * =========================
- * 7) PRÃ‰SENCES
+ * 7) PRESENCES
  * =========================
  */
 model SessionAppel {
@@ -1554,7 +1554,7 @@ model DossierRecouvrement {
 
 /**
  * =========================
- * 11) BIBLIOTHÃˆQUE
+ * 11) BIBLIOTHEQUE
  * =========================
  */
 model RessourceBibliotheque {
@@ -1865,7 +1865,7 @@ model LienFichier {
 
 /**
  * =========================
- * 14) AUDIT & INTÃ‰GRATIONS
+ * 14) AUDIT & INTEGRATIONS
  * =========================
  */
 model JournalAudit {
@@ -1922,4 +1922,3 @@ model JetonIntegration {
   @@index([etablissement_id])
   @@map("jetons_integrations")
 }
-

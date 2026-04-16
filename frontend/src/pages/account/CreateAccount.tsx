@@ -1,43 +1,89 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, useState } from "react";
 import { Form } from "../../components/Form/Form";
+import { getFieldsFromZodObjectSchema } from "../../components/Form/fields";
+import { useInfo } from "../../hooks/useInfo";
 import {
   ProfilSchema,
   UtilisateurSchema,
-  type Utilisateur,
 } from "../../generated/zod";
 import {
   etablissementFields,
   etablissementSchema,
 } from "../etablissement/profileEtablissement/components/form/schema/EtablissementSchemas";
-import { getFieldsFromZodObjectSchema } from "../../components/Form/fields";
-import UtilisateurService from "../../services/utilisateur.service";
-import FlyPopup from "../../components/popup/FlyPopup";
-import Spin from "../../components/anim/Spin";
-import { styles } from "../../styles/styles";
+import UtilisateurService, {
+  type AdminOwnerCreationPayload,
+} from "../../services/utilisateur.service";
 
-type WizardData = {
-  etablissement?: any;
-  utilisateur?: any;
-  profil?: any;
+type CreateAccountProps = {
+  mode?: "admin" | "request";
+  onSuccess?: (result: {
+    etablissement?: { id?: string; nom?: string | null } | null;
+  } | null) => void;
 };
+
+type WizardData = AdminOwnerCreationPayload;
 
 const steps = [
   {
     key: "etablissement",
-    title: "Ã‰tablissement",
-    desc: "Infos de lâ€™organisation",
+    title: "Etablissement",
+    desc: "Identite de l'organisation",
   },
-  { key: "utilisateur", title: "Utilisateur", desc: "Compte de connexion" },
-  { key: "profil", title: "Profil", desc: "Informations personnelles" },
+  {
+    key: "utilisateur",
+    title: "Proprietaire",
+    desc: "Compte de connexion principal",
+  },
+  {
+    key: "profil",
+    title: "Profil",
+    desc: "Informations personnelles",
+  },
 ] as const;
 
-export default function CreateAccount() {
+function getErrorMessage(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "data" in error.response &&
+    typeof error.response.data === "object" &&
+    error.response.data !== null &&
+    "status" in error.response.data &&
+    typeof error.response.data.status === "object" &&
+    error.response.data.status !== null &&
+    "message" in error.response.data.status &&
+    typeof error.response.data.status.message === "string"
+  ) {
+    return error.response.data.status.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return "Une erreur est survenue pendant la creation.";
+}
+
+export default function CreateAccount({
+  mode = "admin",
+  onSuccess,
+}: CreateAccountProps) {
+  const isAdminMode = mode === "admin";
+  const { info } = useInfo();
+  const service = useMemo(() => new UtilisateurService(), []);
+
   const [step, setStep] = useState<0 | 1 | 2>(0);
-  const [allData, setAllData] = useState<WizardData>({});
+  const [allData, setAllData] = useState<Partial<WizardData>>({});
   const [loading, setLoading] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState<string>("");
-  const [openConfirmationPopup, setOpenConfirmationPopup] = useState(false);
   const [completed, setCompleted] = useState<{
     0?: boolean;
     1?: boolean;
@@ -48,18 +94,15 @@ export default function CreateAccount() {
     () => allData.etablissement ?? {},
     [allData.etablissement],
   );
-
   const utilisateurInitialValues = useMemo(
     () => allData.utilisateur ?? {},
     [allData.utilisateur],
   );
-
   const profilInitialValues = useMemo(
     () => allData.profil ?? {},
     [allData.profil],
   );
 
-  // ---------- schemas/fields ----------
   const utilisateurField = useMemo(
     () =>
       getFieldsFromZodObjectSchema(UtilisateurSchema, {
@@ -74,7 +117,7 @@ export default function CreateAccount() {
         ],
         labelByField: {
           mot_de_passe_hash: "Mot de passe",
-          telephone: "TÃ©lÃ©phone",
+          telephone: "Telephone",
         },
         metaByField: {
           mot_de_passe_hash: {
@@ -138,76 +181,89 @@ export default function CreateAccount() {
     [],
   );
 
-  // ---------- computed ----------
   const progress = useMemo(() => ((step + 1) / steps.length) * 100, [step]);
   const current = steps[step];
-
-  const canJumpTo = (s: 0 | 1 | 2) => s <= step || !!completed[s];
-
-  // ---------- navigation ----------
-  const goBack = () => setStep((s) => (s === 0 ? s : ((s - 1) as any)));
-  const jumpTo = (s: 0 | 1 | 2) => {
-    if (canJumpTo(s)) setStep(s);
-  };
-
-  // ---------- handlers ----------
-  const nextFromEtablissement = (data: any) => {
-    setAllData((prev) => ({ ...prev, etablissement: data }));
-    setCompleted((c) => ({ ...c, 0: true }));
-    setStep(1);
-  };
-
-  const nextFromUtilisateur = (data: any) => {
-    setAllData((prev) => ({ ...prev, utilisateur: data }));
-    setCompleted((c) => ({ ...c, 1: true }));
-    setStep(2);
-  };
-
-  const finishFromProfil = async (data: any) => {
-    const finalData: WizardData = { ...allData, profil: data };
-    setLoading(true);
-    setOpenConfirmationPopup(true);
-    setAllData(finalData);
-    setCompleted((c) => ({ ...c, 2: true }));
-
-    // âœ… Ici: un seul objet final
-    console.log("âœ… DONNÃ‰ES FINALES :", finalData);
-    const dataToSend: Pick<
-      Utilisateur,
-      "email" | "mot_de_passe_hash" | "telephone" | "statut" | "scope_json"
-    > = {
-      email: finalData.utilisateur.email,
-      mot_de_passe_hash: finalData.utilisateur.mot_de_passe_hash,
-      telephone: finalData.utilisateur.telephone || null,
-      statut: "INACTIF",
-      scope_json: JSON.stringify({
-        option: "En attente de validation",
-        data: finalData,
-      }),
-    };
-    // Exemple : ouvrir une page de confirmation / dÃ©clencher un call API
-    const service = new UtilisateurService();
-    const result = await service.createDirectionAccount(dataToSend);
-    if (result?.status.success === true) {
-      setLoading(false);
-      setSubmitMessage(
-        "Compte crÃ©Ã© avec succÃ¨s ! Un administrateur doit encore lâ€™activer.",
-      );
-    } else {
-      setSubmitMessage(
-        "Une erreur est survenue lors de la crÃ©ation du compte.",
-      );
-    }
-  };
+  const canJumpTo = (target: 0 | 1 | 2) => target <= step || Boolean(completed[target]);
 
   const resetAll = () => {
     setAllData({});
     setCompleted({});
     setStep(0);
+    setLoading(false);
   };
 
-  // ---------- UI helpers ----------
-  const StepDot = ({
+  const goBack = () => setStep((s) => (s === 0 ? s : ((s - 1) as 0 | 1 | 2)));
+
+  const jumpTo = (target: 0 | 1 | 2) => {
+    if (canJumpTo(target)) {
+      setStep(target);
+    }
+  };
+
+  const nextFromEtablissement = (data: WizardData["etablissement"]) => {
+    setAllData((prev) => ({ ...prev, etablissement: data }));
+    setCompleted((prev) => ({ ...prev, 0: true }));
+    setStep(1);
+  };
+
+  const nextFromUtilisateur = (data: WizardData["utilisateur"]) => {
+    setAllData((prev) => ({ ...prev, utilisateur: data }));
+    setCompleted((prev) => ({ ...prev, 1: true }));
+    setStep(2);
+  };
+
+  const finishFromProfil = async (data: WizardData["profil"]) => {
+    const finalData: WizardData = {
+      etablissement: {
+        nom: allData.etablissement?.nom ?? "",
+      },
+      utilisateur: {
+        email: allData.utilisateur?.email ?? null,
+        telephone: allData.utilisateur?.telephone ?? null,
+        mot_de_passe_hash: allData.utilisateur?.mot_de_passe_hash ?? null,
+      },
+      profil: {
+        prenom: data.prenom ?? "",
+        nom: data.nom ?? "",
+        date_naissance: data.date_naissance ?? null,
+        genre: data.genre ?? null,
+        adresse: data.adresse ?? null,
+      },
+    };
+
+    setLoading(true);
+    setAllData(finalData);
+    setCompleted((prev) => ({ ...prev, 2: true }));
+
+    try {
+      const result = isAdminMode
+        ? await service.createOwnerByAdmin(finalData)
+        : await service.createOwnerRegistrationRequest(finalData);
+
+      info(
+        isAdminMode
+          ? "Etablissement et proprietaire crees avec succes."
+          : "Demande proprietaire enregistree avec succes.",
+        "success",
+      );
+
+      onSuccess?.(
+        (result?.data as {
+          etablissement?: { id?: string; nom?: string | null } | null;
+        } | null) ?? null,
+      );
+
+      if (!onSuccess) {
+        resetAll();
+      }
+    } catch (error) {
+      info(getErrorMessage(error), "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const StepCard = ({
     index,
     title,
     desc,
@@ -217,7 +273,7 @@ export default function CreateAccount() {
     desc: string;
   }) => {
     const isActive = step === index;
-    const isDone = !!completed[index];
+    const isDone = Boolean(completed[index]);
     const enabled = canJumpTo(index);
 
     return (
@@ -225,324 +281,157 @@ export default function CreateAccount() {
         type="button"
         onClick={() => jumpTo(index)}
         disabled={!enabled}
-        style={{
-          all: "unset",
-          cursor: enabled ? "pointer" : "not-allowed",
-          opacity: enabled ? 1 : 0.5,
-          display: "grid",
-          gridTemplateColumns: "24px 1fr",
-          gap: 10,
-          alignItems: "start",
-          padding: "10px 12px",
-          borderRadius: 10,
-          border: isActive
-            ? "1px solid rgba(59,130,246,.6)"
-            : "1px solid rgba(0,0,0,.08)",
-          background: isActive ? "rgba(59,130,246,.06)" : "white",
-        }}
-        aria-current={isActive ? "step" : undefined}
+        className={`grid w-full grid-cols-[1.75rem_minmax(0,1fr)] gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+          isActive
+            ? "border-sky-300 bg-sky-50"
+            : "border-slate-200 bg-white hover:border-slate-300"
+        } disabled:cursor-not-allowed disabled:opacity-50`}
       >
         <div
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 999,
-            display: "grid",
-            placeItems: "center",
-            border: isActive
-              ? "2px solid rgba(59,130,246,1)"
-              : "2px solid rgba(0,0,0,.15)",
-            background: isDone ? "rgba(34,197,94,.12)" : "transparent",
-            fontSize: 12,
-          }}
+          className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold ${
+            isActive
+              ? "border-sky-500 text-sky-700"
+              : isDone
+                ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                : "border-slate-300 text-slate-500"
+          }`}
         >
-          {isDone ? "âœ“" : index + 1}
+          {isDone ? "OK" : index + 1}
         </div>
-
-        <div style={{ display: "grid", gap: 2 }}>
-          <div style={{ lineHeight: 1.1 }}>{title}</div>
-          <div style={{ fontSize: 12, opacity: 0.7 }}>{desc}</div>
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-slate-900">{title}</div>
+          <div className="mt-1 text-xs text-slate-500">{desc}</div>
         </div>
       </button>
     );
   };
 
   return (
-    <>
-      <div
-        style={{
-          minHeight: "100vh",
-          background:
-            "#f8fafc",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1100,
-            margin: "0 auto",
-            padding: "28px 18px 90px",
-            display: "grid",
-            gridTemplateColumns: "320px 1fr",
-            gap: 18,
-          }}
-        >
-          {/* LEFT: Stepper / progress */}
-          <aside
-            style={{
-              position: "sticky",
-              top: 18,
-              alignSelf: "start",
-              border: "1px solid rgba(0,0,0,.08)",
-              borderRadius: 14,
-              background: "white",
-              padding: 14,
-              display: "grid",
-              gap: 12,
-            }}
-          >
-            <div style={{ display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 16 }}>
-                CrÃ©ation de compte
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>
-                ComplÃ©tez les Ã©tapes. Vous pouvez revenir en arriÃ¨re Ã  tout
-                moment.
-              </div>
-            </div>
+    <div className="space-y-6">
+      <div className="rounded-[28px] border border-slate-200 bg-slate-50 px-5 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+              {isAdminMode
+                ? "Nouvel etablissement et proprietaire"
+                : "Demande de creation d'etablissement"}
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+              {isAdminMode
+                ? "Creation directe de l'etablissement, de son compte proprietaire et du role DIRECTION."
+                : "Le dossier sera enregistre puis valide par un administrateur."}
+            </p>
+          </div>
 
-            {/* progress bar */}
-            <div style={{ display: "grid", gap: 6 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: 12,
-                  opacity: 0.7,
-                }}
-              >
-                <span>Progression</span>
-                <span>{Math.round(progress)}%</span>
-              </div>
-              <div
-                style={{
-                  height: 8,
-                  borderRadius: 999,
-                  background: "rgba(0,0,0,.08)",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${progress}%`,
-                    background: "rgba(59,130,246,1)",
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gap: 10 }}>
-              <StepDot index={0} title={steps[0].title} desc={steps[0].desc} />
-              <StepDot index={1} title={steps[1].title} desc={steps[1].desc} />
-              <StepDot index={2} title={steps[2].title} desc={steps[2].desc} />
-            </div>
-
-            {/* quick summary */}
-            <div
-              style={{
-                borderTop: "1px solid rgba(0,0,0,.08)",
-                paddingTop: 10,
-                display: "grid",
-                gap: 8,
-              }}
-            >
-              <div style={{ fontSize: 13 }}>RÃ©sumÃ©</div>
-              <div style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.4 }}>
-                {completed[0]
-                  ? "âœ“ Ã‰tablissement renseignÃ©"
-                  : "â€¢ Ã‰tablissement Ã  complÃ©ter"}
-                <br />
-                {completed[1]
-                  ? "âœ“ Utilisateur renseignÃ©"
-                  : "â€¢ Utilisateur Ã  complÃ©ter"}
-                <br />
-                {completed[2] ? "âœ“ Profil renseignÃ©" : "â€¢ Profil Ã  complÃ©ter"}
-              </div>
-
-              {(completed[0] || completed[1] || completed[2]) && (
-                <button
-                  type="button"
-                  onClick={resetAll}
-                  className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-3 rounded"
-                  style={{ justifySelf: "start", fontSize: 13 }}
-                >
-                  RÃ©initialiser
-                </button>
-              )}
-            </div>
-          </aside>
-
-          {/* RIGHT: Form card */}
-          <main
-            style={{
-              border: "1px solid rgba(0,0,0,.08)",
-              borderRadius: 14,
-              background: "white",
-              padding: 18,
-              gap: 14,
-            }}
-          >
-            <header style={{ display: "grid", gap: 6 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 18 }}>
-                    {current.title}
-                  </div>
-                  <div style={{ fontSize: 12, opacity: 0.7 }}>
-                    {current.desc}
-                  </div>
-                </div>
-
-                {/* back button top-right */}
-                <button
-                  type="button"
-                  onClick={goBack}
-                  disabled={step === 0}
-                  className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-3 rounded"
-                  style={{ opacity: step === 0 ? 0.5 : 1 }}
-                >
-                  â† Retour
-                </button>
-              </div>
-            </header>
-
-            <div style={{ marginTop: 20 }}>
-              {/* form */}
-              {step === 0 && (
-                <Form
-                  schema={etablissementSchema}
-                  fields={etablissementFields}
-                  initialValues={etablissementInitialValues}
-                  dataOnly={nextFromEtablissement}
-                  labelMessage={"Etablissement"}
-                />
-              )}
-
-              {step === 1 && (
-                <Form
-                  schema={utilisateurSchema}
-                  fields={utilisateurField}
-                  initialValues={utilisateurInitialValues}
-                  dataOnly={nextFromUtilisateur}
-                  labelMessage={"Utilisateur"}
-                />
-              )}
-
-              {step === 2 && (
-                <Form
-                  schema={profileSchema}
-                  fields={profileField}
-                  initialValues={profilInitialValues}
-                  dataOnly={finishFromProfil}
-                  labelMessage={"Profil"}
-                />
-              )}
-            </div>
-          </main>
-        </div>
-
-        {/* Sticky footer actions (SaaS style) */}
-        <div
-          style={{
-            position: "fixed",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderTop: "1px solid rgba(0,0,0,.08)",
-            background: "rgba(255,255,255,.92)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 1100,
-              margin: "0 auto",
-              padding: "12px 18px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            <div style={{ fontSize: 12, opacity: 0.75 }}>
-              Ã‰tape <b>{step + 1}</b> sur <b>{steps.length}</b>
-            </div>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                type="button"
-                onClick={goBack}
-                disabled={step === 0}
-                className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black font-bold py-2 px-4 rounded"
-                style={{ opacity: step === 0 ? 0.5 : 1 }}
-              >
-                Retour
-              </button>
-
-              {/* bouton de navigation vers la page connexion */}
-              <a
-                style={{
-                  background: styles.color.primary,
-                  color: "white",
-                }}
-                href="/login"
-                className={`cursor-pointer hover:bg-gray-200 py-2 px-4 rounded`}
-              >
-                Connexion
-              </a>
-
-              {/* CTA hint: lâ€™action â€œSuivantâ€ est le submit du Form */}
-              <div
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 10,
-                  background: "rgba(59,130,246,.06)",
-                  border: "1px solid rgba(59,130,246,.2)",
-                  fontSize: 12,
-                  opacity: 0.85,
-                }}
-              >
-                Cliquez sur <b>Enregistrer</b> pour passer Ã  lâ€™Ã©tape suivante.
-              </div>
-            </div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
+              Etape {step + 1}/{steps.length}
+            </span>
+            {loading ? (
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800 ring-1 ring-amber-200">
+                Creation...
+              </span>
+            ) : null}
           </div>
         </div>
       </div>
 
-      <FlyPopup
-        isOpen={openConfirmationPopup}
-        setIsOpen={setOpenConfirmationPopup}
-      >
-        {loading && <Spin size={100} />}
-        {submitMessage && (
-          <div
-            style={{ fontSize: 16, textAlign: "center" }}
-            className="flex flex-col items-center gap-6"
-          >
-            <div>{submitMessage}</div>
-            <a href="/login">
-              <span style={{ color: "blue" }}>Se connecter</span>
-            </a>
+      <div className="grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside className="space-y-4 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Progression</p>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-sky-500 transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-slate-500">
+              {Math.round(progress)}% complete
+            </p>
           </div>
-        )}
-      </FlyPopup>
-    </>
+
+          <div className="space-y-3">
+            <StepCard index={0} title={steps[0].title} desc={steps[0].desc} />
+            <StepCard index={1} title={steps[1].title} desc={steps[1].desc} />
+            <StepCard index={2} title={steps[2].title} desc={steps[2].desc} />
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <p className="font-semibold text-slate-900">Resume</p>
+            <p className="mt-2">{completed[0] ? "OK Etablissement renseigne" : "- Etablissement a completer"}</p>
+            <p>{completed[1] ? "OK Proprietaire renseigne" : "- Proprietaire a completer"}</p>
+            <p>{completed[2] ? "OK Profil renseigne" : "- Profil a completer"}</p>
+          </div>
+
+          {(completed[0] || completed[1] || completed[2]) && (
+            <button
+              type="button"
+              onClick={resetAll}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Reinitialiser
+            </button>
+          )}
+        </aside>
+
+        <main className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Etape courante
+              </p>
+              <h3 className="mt-2 text-lg font-semibold text-slate-900">
+                {current.title}
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">{current.desc}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={goBack}
+              disabled={step === 0 || loading}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Retour
+            </button>
+          </div>
+
+          {step === 0 && (
+            <Form
+              schema={etablissementSchema}
+              fields={etablissementFields}
+              initialValues={etablissementInitialValues}
+              dataOnly={nextFromEtablissement}
+              labelMessage="Etablissement"
+            />
+          )}
+
+          {step === 1 && (
+            <Form
+              schema={utilisateurSchema}
+              fields={utilisateurField}
+              initialValues={utilisateurInitialValues}
+              dataOnly={nextFromUtilisateur}
+              labelMessage="Utilisateur"
+            />
+          )}
+
+          {step === 2 && (
+            <Form
+              schema={profileSchema}
+              fields={profileField}
+              initialValues={profilInitialValues}
+              dataOnly={finishFromProfil}
+              labelMessage="Profil"
+            />
+          )}
+
+          <div className="mt-6 border-t border-slate-100 pt-4 text-xs text-slate-500">
+            Utilisez le bouton <span className="font-semibold text-slate-700">Enregistrer</span> du formulaire pour passer a l'etape suivante.
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }

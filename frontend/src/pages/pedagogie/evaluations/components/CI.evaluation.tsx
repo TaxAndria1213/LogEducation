@@ -6,27 +6,27 @@ import { menuItem, withAccess } from "../../../../components/accessComponent";
 export const evaluationComponents: ComponentIdentifierType[] = [
   {
     id: "PD.EVALUATIONS.MENUACTION",
-    name: "�valuations - menu action",
+    name: "Evaluations - menu action",
     component: withAccess(() => <IconButton icon={<FiMenu />} w={40} h={40} />),
   },
   {
     id: "PD.EVALUATIONS.MENUACTION.DASHBOARD",
-    name: "�valuations - menu action - tableau de bord",
+    name: "Evaluations - menu action - tableau de bord",
     component: menuItem(FiBarChart2, "Dashboard"),
   },
   {
     id: "PD.EVALUATIONS.MENUACTION.LIST",
-    name: "�valuations - menu action - liste",
+    name: "Evaluations - menu action - liste",
     component: menuItem(FiMenu, "Liste"),
   },
   {
     id: "PD.EVALUATIONS.MENUACTION.PARAMETRE",
-    name: "�valuations - menu action - paramètre",
-    component: menuItem(FiSettings, "Paramètre"),
+    name: "Evaluations - menu action - parametre",
+    component: menuItem(FiSettings, "Parametre"),
   },
   {
     id: "PD.EVALUATIONS.MENUACTION.ADD",
-    name: "�valuations - menu action - ajouter",
+    name: "Evaluations - menu action - ajouter",
     component: menuItem(FiPlus, "Ajouter"),
   },
 ];
