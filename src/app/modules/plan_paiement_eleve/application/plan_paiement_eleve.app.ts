@@ -1,8 +1,9 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient, type PlanPaiementEleve, type Prisma } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
+import { prisma } from "../../../service/prisma";
 import {
   allocatePaiementsToFactureEcheances,
   hydratePlanEcheancesFromLegacyJson,
@@ -53,7 +54,7 @@ class PlanPaiementEleveApp {
     this.app = app;
     this.router = Router();
     this.planPaiement = new PlanPaiementEleveModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -836,6 +837,7 @@ class PlanPaiementEleveApp {
 }
 
 export default PlanPaiementEleveApp;
+
 
 
 

@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { z } from "zod";
+import Service from "../../app/api/Service";
+import type { TableQuery } from "../../shared/table/types";
 import {
   BigIntField,
   BooleanField,
@@ -43,7 +45,24 @@ type UnwrapInfo = {
 
 type FieldMeta = {
   widget?: "password" | "textarea" | "text" | "json" | "bytes";
-  relation?: { multiple?: boolean; options?: Array<{ value: string; label: string }> };
+  relation?: {
+    multiple?: boolean;
+    options?: Array<{ value: string | number; label: string; disabled?: boolean }>;
+    service?: Service;
+    initialQuery?: TableQuery;
+    onSearchBuildWhere?: (text: string) => Record<string, unknown>;
+    mapOption?: (row: Record<string, unknown>) => {
+      value: string | number;
+      label: string;
+      disabled?: boolean;
+    };
+    getOptionLabel?: (row: Record<string, unknown>) => string;
+    getOptionValue?: (row: Record<string, unknown>) => string | number;
+    emptyLabel?: string;
+    searchPlaceholder?: string;
+    noResultsLabel?: string;
+    loadingLabel?: string;
+  };
   enumLabels?: Record<string, string>;
   dateMode?: "date" | "datetime" | "time";
   decimalMode?: "decimal";
@@ -213,6 +232,16 @@ export function resolveFieldComponent(
       nullable,
       props: {
         options: meta.relation.options ?? [],
+        service: meta.relation.service,
+        initialQuery: meta.relation.initialQuery,
+        onSearchBuildWhere: meta.relation.onSearchBuildWhere,
+        mapOption: meta.relation.mapOption,
+        getOptionLabel: meta.relation.getOptionLabel,
+        getOptionValue: meta.relation.getOptionValue,
+        emptyLabel: meta.relation.emptyLabel,
+        searchPlaceholder: meta.relation.searchPlaceholder,
+        noResultsLabel: meta.relation.noResultsLabel,
+        loadingLabel: meta.relation.loadingLabel,
         ...extraProps,
       },
     };

@@ -1,8 +1,9 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient, type Prisma, type StatutFacture } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
+import { prisma } from "../../../service/prisma";
 import {
   applyCreditToFactureEcheances,
   ensureFactureEcheances,
@@ -85,7 +86,7 @@ class FactureApp {
     this.app = app;
     this.router = Router();
     this.facture = new FactureModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -1638,3 +1639,4 @@ class FactureApp {
 }
 
 export default FactureApp;
+

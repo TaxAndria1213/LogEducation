@@ -1,10 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
 import {
-  FiCalendar,
-  FiCheckCircle,
-  FiCopy,
-  FiRefreshCw,
-} from "react-icons/fi";
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { FiCalendar, FiCheckCircle, FiCopy, FiRefreshCw } from "react-icons/fi";
+import { BooleanField } from "../../../../../components/Form/fields/BooleanField";
+import { TextField } from "../../../../../components/Form/fields/TextField";
 import { useInfo } from "../../../../../hooks/useInfo";
 import InitialisationEtablissementService from "../../../../../services/initialisationEtablissement.service";
 import type {
@@ -16,13 +21,21 @@ import type {
 import GenerationReport from "../shared/GenerationReport";
 import ResumeDiffPanel from "../shared/ResumeDiffPanel";
 import BlockActionSelector from "../shared/BlockActionSelector";
+import InitialisationDateInput from "../shared/InitialisationDateInput";
 
 type Props = {
   etablissementId: string;
   status: InitialisationStatus | null;
   onClose: () => void;
-  onCompleted: (result: InitialisationCommitResult) => void;
+  onCompleted: (result: InitialisationCommitResult) => void | Promise<void>;
+  onHeaderActionsChange?: (actions: ReactNode | null) => void;
+  onScrollTopRequest?: () => void;
 };
+
+type FormValues = Pick<
+  NouvelleAnneeDraft,
+  "nom" | "source_annee_id" | "copy_periodes" | "close_current_year"
+>;
 
 function buildDraft(
   etablissementId: string,
@@ -44,6 +57,15 @@ function buildDraft(
     references_mode: "REPRISE",
     finance_mode: "PLUS_TARD",
     services_mode: "PLUS_TARD",
+  };
+}
+
+function getValuesFromDraft(draft: NouvelleAnneeDraft): FormValues {
+  return {
+    nom: draft.nom,
+    source_annee_id: draft.source_annee_id,
+    copy_periodes: draft.copy_periodes,
+    close_current_year: draft.close_current_year,
   };
 }
 
@@ -71,23 +93,59 @@ export default function NouvelleAnneeWizard({
   status,
   onClose,
   onCompleted,
+  onHeaderActionsChange,
+  onScrollTopRequest,
 }: Props) {
   const { info } = useInfo();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<NouvelleAnneeDraft>(
     buildDraft(etablissementId, status),
   );
+  const form = useForm<FormValues>({
+    defaultValues: getValuesFromDraft(buildDraft(etablissementId, status)),
+  });
+  const watchedValues = useWatch({ control: form.control });
+  const lastFormSyncRef = useRef(JSON.stringify(getValuesFromDraft(draft)));
   const [preview, setPreview] = useState<InitialisationPreview | null>(null);
   const [report, setReport] = useState<InitialisationCommitResult | null>(null);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
 
   useEffect(() => {
-    setDraft(buildDraft(etablissementId, status));
+    const nextDraft = buildDraft(etablissementId, status);
+    setDraft(nextDraft);
+    lastFormSyncRef.current = JSON.stringify(getValuesFromDraft(nextDraft));
+    form.reset(getValuesFromDraft(nextDraft));
     setStep(0);
     setPreview(null);
     setReport(null);
-  }, [etablissementId, status]);
+  }, [etablissementId, form, status]);
+
+  useEffect(() => {
+    const nextValues = getValuesFromDraft(draft);
+    const nextKey = JSON.stringify(nextValues);
+
+    if (nextKey === lastFormSyncRef.current) return;
+
+    lastFormSyncRef.current = nextKey;
+    form.reset(nextValues);
+  }, [draft, form]);
+
+  useEffect(() => {
+    const nextValues = {
+      ...getValuesFromDraft(draft),
+      ...watchedValues,
+    };
+    const nextKey = JSON.stringify(nextValues);
+
+    if (nextKey === lastFormSyncRef.current) return;
+
+    lastFormSyncRef.current = nextKey;
+    setDraft((current) => ({
+      ...current,
+      ...nextValues,
+    }));
+  }, [draft, watchedValues]);
 
   const steps = useMemo(
     () => [
@@ -98,106 +156,56 @@ export default function NouvelleAnneeWizard({
         content: (
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-3">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Libelle</span>
-                <input
-                  value={draft.nom}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, nom: event.target.value }))
-                  }
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
-                />
-              </label>
+              <TextField<FormValues>
+                control={form.control}
+                name="nom"
+                label="Libelle"
+              />
 
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Date debut</span>
-                <input
-                  type="date"
-                  value={draft.date_debut}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      date_debut: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Date fin</span>
-                <input
-                  type="date"
-                  value={draft.date_fin}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, date_fin: event.target.value }))
-                  }
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
-                />
-              </label>
-            </div>
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-slate-700">
-                Annee source
-              </span>
-              <input
-                value={draft.source_annee_id}
-                onChange={(event) =>
+              <InitialisationDateInput
+                id="nouvelle-annee-date-debut"
+                label="Date debut"
+                value={draft.date_debut}
+                onChange={(value) =>
                   setDraft((current) => ({
                     ...current,
-                    source_annee_id: event.target.value,
+                    date_debut: value,
                   }))
                 }
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
-                placeholder="ID de l'annee source"
               />
-            </label>
+
+              <InitialisationDateInput
+                id="nouvelle-annee-date-fin"
+                label="Date fin"
+                value={draft.date_fin}
+                min={draft.date_debut}
+                onChange={(value) =>
+                  setDraft((current) => ({ ...current, date_fin: value }))
+                }
+              />
+            </div>
+
+            <TextField<FormValues>
+              control={form.control}
+              name="source_annee_id"
+              label="Annee source"
+              placeholder="ID de l'annee source"
+            />
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-4">
-                <input
-                  type="checkbox"
-                  checked={draft.copy_periodes}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      copy_periodes: event.target.checked,
-                    }))
-                  }
-                  className="mt-1 h-4 w-4 rounded border-slate-300"
-                />
-                <span>
-                  <span className="block text-sm font-semibold text-slate-900">
-                    Reprendre les periodes
-                  </span>
-                  <span className="mt-1 block text-sm text-slate-600">
-                    Recale les periodes de l'annee source sur la nouvelle plage.
-                  </span>
-                </span>
-              </label>
+              <BooleanField<FormValues>
+                control={form.control}
+                name="copy_periodes"
+                label="Reprendre les periodes"
+                description="Recale les periodes de l'annee source sur la nouvelle plage."
+              />
 
-              <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-4">
-                <input
-                  type="checkbox"
-                  checked={draft.close_current_year}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      close_current_year: event.target.checked,
-                    }))
-                  }
-                  className="mt-1 h-4 w-4 rounded border-slate-300"
-                />
-                <span>
-                  <span className="block text-sm font-semibold text-slate-900">
-                    Cloturer l'annee active
-                  </span>
-                  <span className="mt-1 block text-sm text-slate-600">
-                    Bascule proprement la reference annuelle sur la nouvelle annee.
-                  </span>
-                </span>
-              </label>
+              <BooleanField<FormValues>
+                control={form.control}
+                name="close_current_year"
+                label="Cloturer l'annee active"
+                description="Bascule proprement la reference annuelle sur la nouvelle annee."
+              />
             </div>
           </div>
         ),
@@ -209,7 +217,8 @@ export default function NouvelleAnneeWizard({
         content: (
           <div className="space-y-4">
             <p className="text-sm leading-6 text-slate-600">
-              La nouvelle annee s'appuie d'abord sur les referentiels stables deja connus.
+              La nouvelle annee s'appuie d'abord sur les referentiels stables
+              deja connus.
             </p>
             <BlockActionSelector
               value={draft.references_mode}
@@ -221,30 +230,16 @@ export default function NouvelleAnneeWizard({
         ),
       },
       {
-        title: "Finance & services",
-        subtitle: "Cadrage de la reprise differenciee",
+        title: "Finance",
+        subtitle: "Cadrage de la reprise financiere",
         icon: <FiRefreshCw />,
         content: (
-          <div className="space-y-6">
-            <div>
-              <p className="mb-3 text-sm font-semibold text-slate-900">Finance</p>
-              <BlockActionSelector
-                value={draft.finance_mode}
-                onChange={(value) =>
-                  setDraft((current) => ({ ...current, finance_mode: value }))
-                }
-              />
-            </div>
-            <div>
-              <p className="mb-3 text-sm font-semibold text-slate-900">Transport & cantine</p>
-              <BlockActionSelector
-                value={draft.services_mode}
-                onChange={(value) =>
-                  setDraft((current) => ({ ...current, services_mode: value }))
-                }
-              />
-            </div>
-          </div>
+          <BlockActionSelector
+            value={draft.finance_mode}
+            onChange={(value) =>
+              setDraft((current) => ({ ...current, finance_mode: value }))
+            }
+          />
         ),
       },
       {
@@ -254,19 +249,20 @@ export default function NouvelleAnneeWizard({
         content: <ResumeDiffPanel preview={preview} />,
       },
     ],
-    [draft, preview],
+    [draft, form.control, preview],
   );
 
   const progress = Math.round(((step + 1) / steps.length) * 100);
   const isLastStep = step === steps.length - 1;
-  const deferredCount = [draft.finance_mode, draft.services_mode].filter(
+  const deferredCount = [draft.finance_mode].filter(
     (mode) => mode === "PLUS_TARD",
   ).length;
 
-  const handlePreview = async () => {
+  const handlePreview = useCallback(async () => {
     setIsPreviewing(true);
     try {
-      const response = await InitialisationEtablissementService.previewNewSchoolYear(draft);
+      const response =
+        await InitialisationEtablissementService.previewNewSchoolYear(draft);
       setPreview((response.data ?? null) as InitialisationPreview | null);
       info("Previsualisation de la nouvelle annee mise a jour.", "success");
     } catch (error) {
@@ -274,39 +270,123 @@ export default function NouvelleAnneeWizard({
     } finally {
       setIsPreviewing(false);
     }
-  };
+  }, [draft, info]);
 
-  const handleCommit = async () => {
+  const handleCommit = useCallback(async () => {
     setIsCommitting(true);
     try {
-      const response = await InitialisationEtablissementService.commitNewSchoolYear(draft);
-      setReport((response.data ?? null) as InitialisationCommitResult | null);
+      const response =
+        await InitialisationEtablissementService.commitNewSchoolYear(draft);
+      const result = (response.data ??
+        null) as InitialisationCommitResult | null;
+      setReport(result);
+      if (result) {
+        void onCompleted(result);
+      }
       info("Nouvelle annee scolaire creee.", "success");
     } catch (error) {
       info(getErrorMessage(error), "error");
     } finally {
       setIsCommitting(false);
     }
-  };
+  }, [draft, info, onCompleted]);
 
-  if (report) {
+  const closeWithReport = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
+  const goToStep = useCallback(
+    (nextStep: number) => {
+      setStep(Math.min(steps.length - 1, Math.max(0, nextStep)));
+
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => {
+          onScrollTopRequest?.();
+        });
+      } else {
+        onScrollTopRequest?.();
+      }
+    },
+    [onScrollTopRequest, steps.length],
+  );
+
+  const headerActions = useMemo(() => {
+    if (report) {
+      return (
+        <button
+          type="button"
+          onClick={closeWithReport}
+          className="rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"
+        >
+          Fermer
+        </button>
+      );
+    }
+
     return (
-      <div className="space-y-6">
-        <GenerationReport report={report} />
-        <div className="flex justify-end">
+      <>
+        <button
+          type="button"
+          onClick={() => goToStep(step - 1)}
+          disabled={step === 0}
+          className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 disabled:opacity-50"
+        >
+          Retour
+        </button>
+
+        {!isLastStep ? (
           <button
             type="button"
-            onClick={() => {
-              onCompleted(report);
-              onClose();
-            }}
-            className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+            onClick={() => goToStep(step + 1)}
+            className="rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"
           >
-            Fermer
+            Suivant
           </button>
-        </div>
-      </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => void handlePreview()}
+              disabled={isPreviewing}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 disabled:opacity-50"
+            >
+              {isPreviewing ? "Previsualisation..." : "Previsualiser"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleCommit()}
+              disabled={isCommitting || !preview}
+              className="rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {isCommitting ? "Generation..." : "Generer"}
+            </button>
+          </>
+        )}
+      </>
     );
+  }, [
+    closeWithReport,
+    goToStep,
+    handleCommit,
+    handlePreview,
+    isCommitting,
+    isLastStep,
+    isPreviewing,
+    preview,
+    report,
+    step,
+  ]);
+
+  useEffect(() => {
+    onHeaderActionsChange?.(headerActions);
+
+    return () => {
+      onHeaderActionsChange?.(null);
+    };
+  }, [headerActions, onHeaderActionsChange]);
+
+  if (report) {
+    return <GenerationReport report={report} />;
   }
 
   return (
@@ -318,8 +398,8 @@ export default function NouvelleAnneeWizard({
           </p>
           <h3 className="mt-3 text-xl font-semibold">Generation N+1</h3>
           <p className="mt-2 text-sm leading-6 text-slate-100/90">
-            On cree la nouvelle annee, on reprend les periodes si besoin, puis on cadre les blocs
-            qui demandent encore une validation metier.
+            On cree la nouvelle annee, on reprend les periodes si besoin, puis
+            on cadre les blocs qui demandent encore une validation metier.
           </p>
 
           <div className="mt-5">
@@ -359,8 +439,12 @@ export default function NouvelleAnneeWizard({
               </p>
             </div>
             <div className="rounded-[18px] bg-slate-50 px-3 py-3">
-              <p className="text-xs font-medium text-slate-500">Blocs differes</p>
-              <p className="mt-1 text-lg font-semibold text-slate-900">{deferredCount}</p>
+              <p className="text-xs font-medium text-slate-500">
+                Blocs differes
+              </p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">
+                {deferredCount}
+              </p>
             </div>
           </div>
         </section>
@@ -375,7 +459,7 @@ export default function NouvelleAnneeWizard({
                 <button
                   key={item.title}
                   type="button"
-                  onClick={() => setStep(index)}
+                  onClick={() => goToStep(index)}
                   className={`flex w-full items-start gap-3 rounded-[20px] px-3 py-3 text-left transition ${
                     active ? "bg-cyan-50" : "hover:bg-slate-50"
                   }`}
@@ -392,8 +476,12 @@ export default function NouvelleAnneeWizard({
                     {item.icon}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{item.subtitle}</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      {item.subtitle}
+                    </p>
                   </div>
                 </button>
               );
@@ -427,56 +515,6 @@ export default function NouvelleAnneeWizard({
 
         <section className="min-w-0 rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] p-6 shadow-sm">
           {steps[step]?.content}
-        </section>
-
-        <section className="min-w-0 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm text-slate-600">
-              {isLastStep
-                ? "Previsualise la creation avant de generer la nouvelle annee."
-                : "Tu peux naviguer librement entre les etapes pour ajuster la reprise."}
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => setStep(Math.max(0, step - 1))}
-                disabled={step === 0}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50"
-              >
-                Retour
-              </button>
-
-              {!isLastStep ? (
-                <button
-                  type="button"
-                  onClick={() => setStep(Math.min(steps.length - 1, step + 1))}
-                  className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
-                >
-                  Suivant
-                </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => void handlePreview()}
-                    disabled={isPreviewing}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50"
-                  >
-                    {isPreviewing ? "Previsualisation..." : "Previsualiser"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleCommit()}
-                    disabled={isCommitting || !preview}
-                    className="rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
-                  >
-                    {isCommitting ? "Generation..." : "Generer"}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
         </section>
       </div>
     </div>

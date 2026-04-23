@@ -760,9 +760,7 @@ export default function InscriptionForm() {
 
   const filteredCatalogueFraisOptions = useMemo(() => {
     if (!selectedNiveauId) {
-      return catalogueFraisOptions.filter(
-        (option) => !option.niveau_scolaire_id,
-      );
+      return catalogueFraisOptions;
     }
     return catalogueFraisOptions.filter(
       (option) =>
@@ -807,8 +805,8 @@ export default function InscriptionForm() {
               className: "md:col-span-1",
               emptyLabel: "Selectionner un frais",
               description: selectedNiveauId
-                ? "Tarif du niveau selectionne ou frais global applicable a toutes les classes."
-                : "Les frais globaux sont deja disponibles. Choisissez une classe pour ajouter aussi les frais du niveau.",
+                ? "Tarif du niveau selectionne ou frais global applicable a toutes les classes. Seuls les frais approuves apparaissent ici."
+                : "Sans classe selectionnee, tous les frais approuves restent visibles. Choisissez une classe pour prioriser automatiquement ceux du niveau.",
             },
           },
           catalogue_frais_inscription_nombre_tranches: {
@@ -826,8 +824,8 @@ export default function InscriptionForm() {
               className: "md:col-span-1",
               emptyLabel: "Selectionner un frais",
               description: selectedNiveauId
-                ? "Tarif standard du niveau selectionne ou frais global."
-                : "Les frais globaux sont deja disponibles. Choisissez une classe pour ajouter aussi les frais du niveau.",
+                ? "Tarif standard du niveau selectionne ou frais global. Seuls les frais approuves apparaissent ici."
+                : "Sans classe selectionnee, tous les frais approuves restent visibles. Choisissez une classe pour prioriser automatiquement ceux du niveau.",
             },
           },
           catalogue_frais_scolarite_nombre_tranches: {
@@ -1059,6 +1057,11 @@ export default function InscriptionForm() {
     ],
   );
 
+  const financeStepIndex = useMemo(
+    () => steps.findIndex((item) => item.key === "finance"),
+    [steps],
+  );
+
   const handleFinish = async (finalData: WizardData) => {
     try {
       setLoading(true);
@@ -1232,7 +1235,11 @@ export default function InscriptionForm() {
       subtitle="Construisez un dossier complet et propre, depuis la fiche eleve jusqu'aux services et au plan financier."
       steps={steps}
       onFinish={handleFinish}
-      onStepChange={(_, allData) => {
+      onStepChange={(stepIndex, allData) => {
+        if (etablissement_id && stepIndex === financeStepIndex) {
+          void getInscriptionOptions(etablissement_id);
+        }
+
         const selectedClasseId = allData?.scolarite?.classe_id;
         const selectedClasse = classeOptions.find((item) => item.value === selectedClasseId);
         setSelectedNiveauId(selectedClasse?.niveau_scolaire_id ?? null);

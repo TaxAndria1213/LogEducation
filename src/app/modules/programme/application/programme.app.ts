@@ -4,6 +4,7 @@ import Response from "../../../common/app/response";
 import ProgrammeModel from "../models/programme.model";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
+import { prisma } from "../../../service/prisma";
 
 type ProgrammeMatierePayload = {
   matiere_id: string;
@@ -28,7 +29,7 @@ class ProgrammeApp {
     this.app = app;
     this.router = Router();
     this.programme = new ProgrammeModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -458,3 +459,4 @@ class ProgrammeApp {
 }
 
 export default ProgrammeApp;
+

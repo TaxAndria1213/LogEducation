@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient, type Prisma } from "@prisma/client";
 import Response from "../../../common/app/response";
+import { prisma } from "../../../service/prisma";
 import { ensureFactureEcheances } from "../../finance_shared/utils/echeance_paiement";
 import {
   calculateRecoveryPenalty,
@@ -75,7 +76,7 @@ class FinanceRelanceApp {
   constructor(app: Application) {
     this.app = app;
     this.router = Router();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 

@@ -1,5 +1,6 @@
 import { Application } from "express";
 import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../../service/prisma";
 import FinanceRelanceApp from "./finance_relance.app";
 
 class FinanceRelanceScheduler {
@@ -9,7 +10,7 @@ class FinanceRelanceScheduler {
   private running = false;
 
   constructor() {
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.relanceApp = new FinanceRelanceApp({} as Application);
   }
 

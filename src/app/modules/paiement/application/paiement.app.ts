@@ -1,8 +1,9 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient, Prisma, type Paiement, type StatutFacture } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
+import { prisma } from "../../../service/prisma";
 import {
   allocatePaiementsToFactureEcheances,
   deriveEcheanceStatus,
@@ -74,7 +75,7 @@ class PaiementApp {
     this.app = app;
     this.router = Router();
     this.paiement = new PaiementModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -171,7 +172,7 @@ class PaiementApp {
       case "virement":
         return "virement";
       case "cheque":
-      case "chèque":
+      case "chÃ¨que":
         return "cheque";
       case "bank":
       case "banque":
@@ -2176,3 +2177,4 @@ class PaiementApp {
 }
 
 export default PaiementApp;
+

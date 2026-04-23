@@ -1,8 +1,11 @@
 import { Controller, type FieldValues } from "react-hook-form";
 import { FieldWrapper } from "./FieldWrapper";
+import { getInputClassName } from "./inputStyles";
 import type { BaseFieldProps } from "./types";
 
-export function PasswordField<TFieldValues extends FieldValues>(props: BaseFieldProps<TFieldValues>) {
+export function PasswordField<TFieldValues extends FieldValues>(
+  props: BaseFieldProps<TFieldValues>,
+) {
   const id = String(props.name);
 
   return (
@@ -27,7 +30,7 @@ export function PasswordField<TFieldValues extends FieldValues>(props: BaseField
             ref={field.ref}
             placeholder={props.placeholder}
             disabled={props.disabled}
-            style={{ padding: 10, border: "1px solid #ccc", borderRadius: 8 }}
+            className={getInputClassName(Boolean(fieldState.error))}
           />
         </FieldWrapper>
       )}

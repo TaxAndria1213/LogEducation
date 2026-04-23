@@ -1,16 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   FiArrowRight,
   FiBookOpen,
   FiCalendar,
-  FiCheckCircle,
+  FiCreditCard,
   FiLayers,
   FiMapPin,
   FiPlayCircle,
   FiRefreshCw,
   FiSettings,
   FiShield,
-  FiTruck,
   FiTrendingUp,
 } from "react-icons/fi";
 import FlyPopup from "../../../../../components/popup/FlyPopup";
@@ -18,7 +24,6 @@ import { useInfo } from "../../../../../hooks/useInfo";
 import { useAuth } from "../../../../../hooks/useAuth";
 import InitialisationEtablissementService from "../../../../../services/initialisationEtablissement.service";
 import type {
-  InitialisationCommitResult,
   InitialisationSession,
   InitialisationStatus,
   InitialisationTemplates,
@@ -58,11 +63,19 @@ export default function InitialisationEtablissementOverview({
   const { info } = useInfo();
   const [status, setStatus] = useState<InitialisationStatus | null>(null);
   const [sessions, setSessions] = useState<InitialisationSession[]>([]);
-  const [templates, setTemplates] = useState<InitialisationTemplates | null>(null);
+  const [templates, setTemplates] = useState<InitialisationTemplates | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [initialWizardOpen, setInitialWizardOpen] = useState(false);
   const [newYearWizardOpen, setNewYearWizardOpen] = useState(false);
+  const [initialWizardHeaderActions, setInitialWizardHeaderActions] =
+    useState<ReactNode | null>(null);
+  const [newYearWizardHeaderActions, setNewYearWizardHeaderActions] =
+    useState<ReactNode | null>(null);
+  const initialWizardScrollRef = useRef<HTMLDivElement | null>(null);
+  const newYearWizardScrollRef = useRef<HTMLDivElement | null>(null);
 
   const loadOverview = useCallback(async () => {
     if (!etablissement_id) {
@@ -75,15 +88,18 @@ export default function InitialisationEtablissementOverview({
     setErrorMessage("");
 
     try {
-      const [statusResponse, sessionsResponse, templatesResponse] = await Promise.all([
-        InitialisationEtablissementService.getStatus(etablissement_id),
-        InitialisationEtablissementService.getSessions(etablissement_id),
-        InitialisationEtablissementService.getTemplates(),
-      ]);
+      const [statusResponse, sessionsResponse, templatesResponse] =
+        await Promise.all([
+          InitialisationEtablissementService.getStatus(etablissement_id),
+          InitialisationEtablissementService.getSessions(etablissement_id),
+          InitialisationEtablissementService.getTemplates(),
+        ]);
 
       setStatus((statusResponse.data ?? null) as InitialisationStatus | null);
       setSessions((sessionsResponse.data as InitialisationSession[]) ?? []);
-      setTemplates((templatesResponse.data ?? null) as InitialisationTemplates | null);
+      setTemplates(
+        (templatesResponse.data ?? null) as InitialisationTemplates | null,
+      );
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -101,9 +117,29 @@ export default function InitialisationEtablissementOverview({
     }
   }, [autoOpenInitialWizard]);
 
-  const handleCompleted = async (_result: InitialisationCommitResult) => {
+  useEffect(() => {
+    if (!initialWizardOpen) {
+      setInitialWizardHeaderActions(null);
+    }
+  }, [initialWizardOpen]);
+
+  useEffect(() => {
+    if (!newYearWizardOpen) {
+      setNewYearWizardHeaderActions(null);
+    }
+  }, [newYearWizardOpen]);
+
+  const handleCompleted = async () => {
     await loadOverview();
   };
+
+  const scrollInitialWizardToTop = useCallback(() => {
+    initialWizardScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const scrollNewYearWizardToTop = useCallback(() => {
+    newYearWizardScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   const readyModules = useMemo(
     () => [
@@ -128,16 +164,14 @@ export default function InitialisationEtablissementOverview({
         icon: <FiBookOpen />,
       },
       {
+        label: "Finance",
+        ready: (status?.counts.catalogue_frais ?? 0) > 0,
+        icon: <FiCreditCard />,
+      },
+      {
         label: "Securite",
         ready: (status?.counts.roles ?? 0) > 0,
         icon: <FiShield />,
-      },
-      {
-        label: "Services annexes",
-        ready:
-          (status?.counts.lignes_transport ?? 0) > 0 ||
-          (status?.counts.formules_cantine ?? 0) > 0,
-        icon: <FiTruck />,
       },
     ],
     [status],
@@ -146,7 +180,8 @@ export default function InitialisationEtablissementOverview({
   if (!etablissement_id) {
     return (
       <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5 text-sm text-slate-600">
-        Aucun etablissement actif n'est selectionne pour lancer l'initialisation.
+        Aucun etablissement actif n'est selectionne pour lancer
+        l'initialisation.
       </div>
     );
   }
@@ -192,10 +227,10 @@ export default function InitialisationEtablissementOverview({
               Initialisation guidee de l'etablissement
             </h3>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Cette vue centralise le demarrage d'un nouvel etablissement et l'ouverture
-              d'une nouvelle annee scolaire. Elle garde une lecture claire de ce qui est
-              deja en place, de ce qui peut etre genere maintenant, et de ce qui reste
-              volontairement differe.
+              Cette vue centralise le demarrage d'un nouvel etablissement et
+              l'ouverture d'une nouvelle annee scolaire. Elle garde une lecture
+              claire de ce qui est deja en place, de ce qui peut etre genere
+              maintenant, et de ce qui reste volontairement differe.
             </p>
 
             <div className="mt-6 rounded-[24px] border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur">
@@ -261,7 +296,8 @@ export default function InitialisationEtablissementOverview({
                     Nouvel etablissement
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Site principal, annee initiale, niveaux et departements de base.
+                    Site principal, annee initiale, niveaux, classes et socle
+                    academique.
                   </p>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700">
@@ -280,7 +316,8 @@ export default function InitialisationEtablissementOverview({
                     Nouvelle annee scolaire
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Creation de l'annee cible, reprise des periodes et cadrage des blocs N+1.
+                    Creation de l'annee cible, reprise des periodes et cadrage
+                    des blocs N+1.
                   </p>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
@@ -330,9 +367,12 @@ export default function InitialisationEtablissementOverview({
         <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">Couverture actuelle</h3>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Couverture actuelle
+              </h3>
               <p className="text-sm text-slate-500">
-                Lecture rapide des briques deja stabilisees dans l'etablissement.
+                Lecture rapide des briques deja stabilisees dans
+                l'etablissement.
               </p>
             </div>
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
@@ -356,7 +396,9 @@ export default function InitialisationEtablissementOverview({
                   >
                     {module.icon}
                   </div>
-                  <span className="text-sm font-medium text-slate-900">{module.label}</span>
+                  <span className="text-sm font-medium text-slate-900">
+                    {module.label}
+                  </span>
                 </div>
                 <span
                   className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
@@ -396,16 +438,6 @@ export default function InitialisationEtablissementOverview({
                 {status?.counts.permissions ?? 0}
               </p>
             </div>
-            <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Services annexes
-              </p>
-              <p className="mt-2 flex items-center gap-2 text-2xl font-semibold text-slate-900">
-                {status?.counts.lignes_transport ?? 0}
-                <span className="text-sm font-medium text-slate-500">transport</span>
-                <FiCheckCircle className="text-slate-300" />
-              </p>
-            </div>
           </div>
         </article>
       </section>
@@ -414,14 +446,20 @@ export default function InitialisationEtablissementOverview({
         isOpen={initialWizardOpen}
         setIsOpen={setInitialWizardOpen}
         title="Initialiser un nouvel etablissement"
+        headerActions={initialWizardHeaderActions}
         panelClassName="max-w-7xl p-0"
       >
-        <div className="max-h-[calc(100vh-8rem)] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        <div
+          ref={initialWizardScrollRef}
+          className="max-h-[calc(100vh-8rem)] overflow-y-auto overflow-x-hidden p-4 sm:p-6"
+        >
           <InitialisationWizard
             etablissementId={etablissement_id}
             templates={templates}
             onClose={() => setInitialWizardOpen(false)}
-            onCompleted={(result) => void handleCompleted(result)}
+            onCompleted={() => void handleCompleted()}
+            onHeaderActionsChange={setInitialWizardHeaderActions}
+            onScrollTopRequest={scrollInitialWizardToTop}
           />
         </div>
       </FlyPopup>
@@ -430,14 +468,20 @@ export default function InitialisationEtablissementOverview({
         isOpen={newYearWizardOpen}
         setIsOpen={setNewYearWizardOpen}
         title="Ouvrir une nouvelle annee scolaire"
+        headerActions={newYearWizardHeaderActions}
         panelClassName="max-w-6xl p-0"
       >
-        <div className="max-h-[calc(100vh-8rem)] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        <div
+          ref={newYearWizardScrollRef}
+          className="max-h-[calc(100vh-8rem)] overflow-y-auto overflow-x-hidden p-4 sm:p-6"
+        >
           <NouvelleAnneeWizard
             etablissementId={etablissement_id}
             status={status}
             onClose={() => setNewYearWizardOpen(false)}
-            onCompleted={(result) => void handleCompleted(result)}
+            onCompleted={() => void handleCompleted()}
+            onHeaderActionsChange={setNewYearWizardHeaderActions}
+            onScrollTopRequest={scrollNewYearWizardToTop}
           />
         </div>
       </FlyPopup>

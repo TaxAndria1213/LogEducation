@@ -2,6 +2,7 @@ import { Application, NextFunction, Request, Response as R, Router } from "expre
 import { randomUUID } from "crypto";
 import { Prisma, PrismaClient, type AbonnementTransport } from "@prisma/client";
 import Response from "../../../common/app/response";
+import { prisma } from "../../../service/prisma";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import AbonnementTransportModel from "../models/abonnement_transport.model";
@@ -166,7 +167,7 @@ class AbonnementTransportApp {
     this.app = app;
     this.router = Router();
     this.abonnementTransport = new AbonnementTransportModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 

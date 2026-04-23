@@ -5,13 +5,44 @@ import { authService } from "../../app/api/authService";
 import { useAuth } from "../../auth/AuthContext";
 import Spin from "../../components/anim/Spin";
 
+function getErrorMessage(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "data" in error.response &&
+    typeof error.response.data === "object" &&
+    error.response.data !== null &&
+    "status" in error.response.data &&
+    typeof error.response.data.status === "object" &&
+    error.response.data.status !== null &&
+    "message" in error.response.data.status &&
+    typeof error.response.data.status.message === "string"
+  ) {
+    return error.response.data.status.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return "Echec de la connexion";
+}
+
 export default function Login() {
   const { login } = useAuth();
   const user = localStorage.getItem("user");
   const token = localStorage.getItem("token");
   const rolesAccessList = localStorage.getItem("rolesAccessList");
 
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -33,7 +64,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const data = await authService.login(username, password);
+      const data = await authService.login(email, password);
       console.log("Login.handleSubmit.data", data);
       login(data.user, data.rolesAccessList, {
         accessToken: data.result.accessToken,
@@ -42,7 +73,19 @@ export default function Login() {
       navigate(from, { replace: true });
     } catch (err) {
       console.error(err);
-      alert("Echec de la connexion");
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        ["inactive_account", "pending_owner_registration", "rejected_owner_registration"].includes(
+          (
+            err as { response?: { data?: { status?: { errorCode?: string } } } }
+          ).response?.data?.status?.errorCode ?? "",
+        )
+      ) {
+        return;
+      }
+      alert(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -58,17 +101,17 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label
-              htmlFor="username"
+              htmlFor="email"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Nom d'utilisateur
+              Email
             </label>
             <input
-              id="username"
-              type="text"
-              placeholder="Entrez votre nom d'utilisateur"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              placeholder="Entrez votre email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
             />
           </div>

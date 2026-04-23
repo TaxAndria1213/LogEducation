@@ -7,6 +7,17 @@ import Response from "../../../common/app/response";
 import { Prisma, PrismaClient, StatutCompte, Utilisateur } from "@prisma/client";
 import { getAllPaginated } from "../../../common/utils/functions";
 import Code from "../../../common/app/code";
+import {
+  mergeScopedWhere,
+  resolveTenantContext,
+  type TenantScopedRequest,
+} from "../../../common/utils/requestTenantScope";
+import {
+  extractRoleNamesFromUser,
+  hasSystemAdminRoleNames,
+} from "../../../service/sessionPolicy";
+import { prisma } from "../../../service/prisma";
+import { sanitizeUserResponse } from "./user.sanitizer";
 
 type CreateAccountFromLinkPayload = {
   etablissement_id?: string | null;
@@ -51,6 +62,23 @@ type NormalizedOwnerProvisioningInput = {
   profilAdresse: string | null;
 };
 
+type OwnerRegistrationLifecycleStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+type OwnerRegistrationScopeData = {
+  status: OwnerRegistrationLifecycleStatus;
+  submittedAt: string | null;
+  decidedAt: string | null;
+  decidedByUserId: string | null;
+  etablissement: {
+    id?: string | null;
+    nom?: string | null;
+    code?: string | null;
+  } | null;
+  data: OwnerProvisioningPayload | null;
+};
+
+const OWNER_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function parseScopeObject(rawScope: unknown): Record<string, unknown> | null {
   if (!rawScope) return null;
 
@@ -84,17 +112,25 @@ function resolveSystemRoleName(
   return template || normalizedRoleName || null;
 }
 
-const prisma = new PrismaClient();
-
 class UserApp {
   public app: Application;
   public router: Router;
   private user: UserModel;
+  private readonly identityInclude: Prisma.UtilisateurInclude;
 
   constructor(app: Application) {
     this.app = app;
     this.user = new UserModel();
     this.router = Router();
+    this.identityInclude = {
+      roles: {
+        include: {
+          role: true,
+        },
+      },
+      profil: true,
+      etablissement: true,
+    };
     this.routes();
   }
 
@@ -110,17 +146,73 @@ class UserApp {
       "/:id/approve-owner-registration",
       this.approveOwnerRegistration.bind(this),
     );
+    this.router.post(
+      "/:id/reject-owner-registration",
+      this.rejectOwnerRegistration.bind(this),
+    );
+    this.router.post(
+      "/owner-registration-status",
+      this.getOwnerRegistrationStatus.bind(this),
+    );
     this.router.put("/:id", this.updateUser.bind(this));
     this.router.delete("/:id", this.deleteUser.bind(this));
+    this.router.get(
+      "/pending-owner-registrations",
+      this.getPendingOwnerRegistrations.bind(this),
+    );
     this.router.get("/", this.getAll.bind(this));
     this.router.get("/:email", this.getUserByEmail.bind(this));
     return this.router;
   }
 
+  private resolveTenant(req: TenantScopedRequest) {
+    return resolveTenantContext(req, {
+      allowBodyTenant: true,
+      missingMessage: "Aucun etablissement actif n'a ete fourni pour les utilisateurs.",
+      conflictMessage: "Conflit d'etablissement detecte pour les utilisateurs.",
+    });
+  }
+
+  private async getScopedUserById(id: string, tenantId: string) {
+    return prisma.utilisateur.findFirst({
+      where: {
+        id,
+        etablissement_id: tenantId,
+      },
+      include: this.identityInclude,
+    });
+  }
+
+  private async getScopedUserByEmail(email: string, tenantId: string) {
+    return prisma.utilisateur.findFirst({
+      where: {
+        email,
+        etablissement_id: tenantId,
+      },
+      include: this.identityInclude,
+    });
+  }
+
   private async getUserByEmail(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
-      const result = await this.user.findByEmail(req.params.email as string);
-      Response.success(res, "Data user.", result)
+      const tenant = this.resolveTenant(req as TenantScopedRequest);
+      if (!tenant.ok) {
+        Response.error(res, tenant.message, tenant.statusCode, new Error("tenant scope error"));
+        return;
+      }
+
+      const result = await this.getScopedUserByEmail(req.params.email as string, tenant.tenantId);
+      if (!result) {
+        Response.error(
+          res,
+          "Utilisateur introuvable dans cet etablissement.",
+          404,
+          new Error("user not found"),
+        );
+        return;
+      }
+
+      Response.success(res, "Data user.", sanitizeUserResponse(result))
     } catch (error) {
       next(error);
     }
@@ -136,22 +228,28 @@ class UserApp {
         true,
       );
 
-      const result = await prisma.utilisateur.create({
-        data: {
-          etablissement_id: null,
-          email: input.email,
-          telephone: input.telephone,
-          mot_de_passe_hash: await bcrypt.hash(input.password as string, 10),
-          statut: StatutCompte.INACTIF,
-          scope_json: this.buildPendingOwnerRegistrationScope(input),
-        },
-        select: {
-          id: true,
-          email: true,
-          statut: true,
-          created_at: true,
-        },
-      });
+      const result = await prisma.$transaction((tx) =>
+        this.withOwnerEmailLock(tx, input.email, async () => {
+          await this.assertOwnerEmailAvailable(input.email, { tx });
+
+          return tx.utilisateur.create({
+            data: {
+              etablissement_id: null,
+              email: input.email,
+              telephone: input.telephone,
+              mot_de_passe_hash: await bcrypt.hash(input.password as string, 10),
+              statut: StatutCompte.INACTIF,
+              scope_json: this.buildPendingOwnerRegistrationScope(input),
+            },
+            select: {
+              id: true,
+              email: true,
+              statut: true,
+              created_at: true,
+            },
+          });
+        }),
+      );
 
       Response.success(
         res,
@@ -181,11 +279,11 @@ class UserApp {
         );
       }
 
-      const isAdmin = await this.userHasSystemRole(actorId, "ADMIN");
+      const isAdmin = await this.userHasSystemAdminRole(actorId);
       if (!isAdmin) {
         return Response.error(
           res,
-          "Seul un administrateur peut creer un etablissement avec son proprietaire.",
+          "Seul un administrateur systeme peut creer un etablissement avec son proprietaire.",
           403,
           new Error("forbidden"),
         );
@@ -197,7 +295,10 @@ class UserApp {
       );
 
       const result = await prisma.$transaction((tx) =>
-        this.provisionOwnerEstablishment(tx, input),
+        this.withOwnerEmailLock(tx, input.email, async () => {
+          await this.assertOwnerEmailAvailable(input.email, { tx });
+          return this.provisionOwnerEstablishment(tx, input);
+        }),
       );
 
       Response.success(res, "Etablissement et proprietaire crees avec succes.", result);
@@ -210,9 +311,18 @@ class UserApp {
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
-      console.log(req.query)
+      const tenant = this.resolveTenant(req as TenantScopedRequest);
+      if (!tenant.ok) {
+        Response.error(res, tenant.message, tenant.statusCode, new Error("tenant scope error"));
+        return;
+      }
+
+      req.query.where = JSON.stringify(
+        mergeScopedWhere(tenant.queryWhere, { etablissement_id: tenant.tenantId }),
+      );
+
       const result = await getAllPaginated(req.query, this.user);
-      Response.success(res, "Data user.", result)
+      Response.success(res, "Data user.", sanitizeUserResponse(result))
     } catch (error) {
       next(error);
     }
@@ -220,16 +330,21 @@ class UserApp {
 
   private async createUser(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
+      const tenant = this.resolveTenant(req as TenantScopedRequest);
+      if (!tenant.ok) {
+        Response.error(res, tenant.message, tenant.statusCode, new Error("tenant scope error"));
+        return;
+      }
+
       const body: Utilisateur = req.body;
-      console.log("🚀 ~ UserApp ~ createUser ~ body:", body)
       const userData: Utilisateur = {
         ...body,
+        etablissement_id: tenant.tenantId,
         mot_de_passe_hash: await bcrypt.hash(body.mot_de_passe_hash as string, 10),
       }
       const result: object = await this.user.create(userData);
-      Response.success(res, "user created successfully", result)
+      Response.success(res, "user created successfully", sanitizeUserResponse(result))
     } catch (error) {
-      console.log("🚀 ~ UserApp ~ createUser ~ error:", error)
       next(error);
     }
   }
@@ -411,71 +526,82 @@ class UserApp {
         );
       }
 
-      const isAdmin = await this.userHasSystemRole(actorId, "ADMIN");
+      const isAdmin = await this.userHasSystemAdminRole(actorId);
       if (!isAdmin) {
         return Response.error(
           res,
-          "Seul un administrateur peut approuver un proprietaire d'etablissement.",
+          "Seul un administrateur systeme peut approuver un proprietaire d'etablissement.",
           403,
           new Error("forbidden"),
         );
       }
 
-      const pendingUser = await prisma.utilisateur.findUnique({
-        where: { id: pendingUserId },
-        select: {
-          id: true,
-          email: true,
-          telephone: true,
-          statut: true,
-          etablissement_id: true,
-          scope_json: true,
-        },
-      });
+      const result = await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+          SELECT id
+          FROM utilisateurs
+          WHERE id = ${pendingUserId}
+          FOR UPDATE
+        `);
 
-      if (!pendingUser) {
-        return Response.error(
-          res,
-          "La demande proprietaire est introuvable.",
-          404,
-          new Error("pending user not found"),
-        );
-      }
-
-      const pendingData = this.parsePendingOwnerRegistrationData(pendingUser.scope_json);
-      if (!pendingData) {
-        return Response.error(
-          res,
-          "Ce compte ne correspond pas a une demande proprietaire approuvable.",
-          400,
-          new Error("invalid pending owner registration"),
-        );
-      }
-
-      if (pendingUser.statut === StatutCompte.ACTIF && pendingUser.etablissement_id) {
-        return Response.error(
-          res,
-          "Cette demande proprietaire a deja ete approuvee.",
-          400,
-          new Error("already approved"),
-        );
-      }
-
-      const input = this.normalizeOwnerProvisioningInput(
-        {
-          etablissement: pendingData.etablissement,
-          utilisateur: {
-            email: pendingData.utilisateur?.email ?? pendingUser.email,
-            telephone: pendingData.utilisateur?.telephone ?? pendingUser.telephone,
+        const pendingUser = await tx.utilisateur.findUnique({
+          where: { id: pendingUserId },
+          select: {
+            id: true,
+            email: true,
+            telephone: true,
+            statut: true,
+            etablissement_id: true,
+            scope_json: true,
           },
-          profil: pendingData.profil,
-        },
-        false,
-      );
+        });
 
-      const result = await prisma.$transaction((tx) =>
-        this.provisionOwnerEstablishment(tx, input, { existingUserId: pendingUser.id }),
-      );
+        if (!pendingUser) {
+          throw new Error("La demande proprietaire est introuvable.");
+        }
+
+        const pendingData = this.parsePendingOwnerRegistrationData(pendingUser.scope_json);
+        const pendingScope = this.parseOwnerRegistrationScope(pendingUser.scope_json);
+        if (!pendingData) {
+          throw new Error("Ce compte ne correspond pas a une demande proprietaire approuvable.");
+        }
+
+        if (pendingUser.statut === StatutCompte.ACTIF && pendingUser.etablissement_id) {
+          throw new Error("Cette demande proprietaire a deja ete approuvee.");
+        }
+
+        if (pendingUser.statut !== StatutCompte.INACTIF || pendingUser.etablissement_id) {
+          throw new Error("Cette demande proprietaire n'est plus dans un etat approuvable.");
+        }
+
+        const input = this.normalizeOwnerProvisioningInput(
+          {
+            etablissement: pendingData.etablissement,
+            utilisateur: {
+              email: pendingData.utilisateur?.email ?? pendingUser.email,
+              telephone: pendingData.utilisateur?.telephone ?? pendingUser.telephone,
+            },
+            profil: pendingData.profil,
+          },
+          false,
+        );
+
+        return this.withOwnerEmailLock(tx, input.email, async () => {
+          await this.assertOwnerEmailAvailable(input.email, {
+            tx,
+            ignoreUserId: pendingUser.id,
+          });
+
+          return this.provisionOwnerEstablishment(tx, input, {
+            existingUserId: pendingUser.id,
+            ownerScope: this.buildOwnerRegistrationScope(input, "APPROVED", {
+              submittedAt: pendingScope?.submittedAt ?? null,
+              decidedAt: new Date().toISOString(),
+              decidedByUserId: actorId,
+            }),
+          });
+        });
+      });
 
       Response.success(res, "Demande proprietaire approuvee avec succes.", result);
     } catch (error) {
@@ -485,12 +611,320 @@ class UserApp {
     }
   }
 
+  private async rejectOwnerRegistration(
+    req: Request,
+    res: R,
+  ): Promise<void> {
+    try {
+      const actorId = (req as Request & { user?: { sub?: string } }).user?.sub?.trim() ?? null;
+      const pendingUserId = req.params.id?.trim();
+
+      if (!actorId) {
+        return Response.error(
+          res,
+          "Authentification requise pour rejeter ce proprietaire.",
+          401,
+          new Error("missing actor"),
+        );
+      }
+
+      if (!pendingUserId) {
+        return Response.error(
+          res,
+          "Identifiant de demande proprietaire manquant.",
+          400,
+          new Error("missing pending user id"),
+        );
+      }
+
+      const isAdmin = await this.userHasSystemAdminRole(actorId);
+      if (!isAdmin) {
+        return Response.error(
+          res,
+          "Seul un administrateur systeme peut rejeter un proprietaire d'etablissement.",
+          403,
+          new Error("forbidden"),
+        );
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+          SELECT id
+          FROM utilisateurs
+          WHERE id = ${pendingUserId}
+          FOR UPDATE
+        `);
+
+        const pendingUser = await tx.utilisateur.findUnique({
+          where: { id: pendingUserId },
+          select: {
+            id: true,
+            email: true,
+            telephone: true,
+            statut: true,
+            etablissement_id: true,
+            scope_json: true,
+          },
+        });
+
+        if (!pendingUser) {
+          throw new Error("La demande proprietaire est introuvable.");
+        }
+
+        const pendingScope = this.parseOwnerRegistrationScope(pendingUser.scope_json);
+        if (!pendingScope || pendingScope.status !== "PENDING") {
+          throw new Error("Ce compte ne correspond pas a une demande proprietaire rejetable.");
+        }
+
+        if (pendingUser.statut !== StatutCompte.INACTIF || pendingUser.etablissement_id) {
+          throw new Error("Cette demande proprietaire n'est plus dans un etat rejetable.");
+        }
+
+        const input = this.normalizeOwnerProvisioningInput(
+          {
+            etablissement: pendingScope.data?.etablissement,
+            utilisateur: {
+              email: pendingScope.data?.utilisateur?.email ?? pendingUser.email,
+              telephone: pendingScope.data?.utilisateur?.telephone ?? pendingUser.telephone,
+            },
+            profil: pendingScope.data?.profil,
+          },
+          false,
+        );
+
+        const updated = await tx.utilisateur.update({
+          where: { id: pendingUser.id },
+          data: {
+            statut: StatutCompte.SUSPENDU,
+            scope_json: this.buildOwnerRegistrationScope(input, "REJECTED", {
+              submittedAt: pendingScope.submittedAt ?? null,
+              decidedAt: new Date().toISOString(),
+              decidedByUserId: actorId,
+            }),
+          },
+          select: {
+            id: true,
+            email: true,
+            statut: true,
+          },
+        });
+
+        return {
+          utilisateur: updated,
+          etablissement: pendingScope.data?.etablissement ?? null,
+        };
+      });
+
+      Response.success(res, "Demande proprietaire rejetee avec succes.", result);
+    } catch (error) {
+      const message = this.getCreationErrorMessage(error);
+      Response.error(res, message, 400, error as Error);
+      return;
+    }
+  }
+
+  private async getPendingOwnerRegistrations(
+    req: Request,
+    res: R,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const actorId = (req as Request & { user?: { sub?: string } }).user?.sub?.trim() ?? null;
+
+      if (!actorId) {
+        Response.error(
+          res,
+          "Authentification requise pour consulter les demandes proprietaires.",
+          401,
+          new Error("missing actor"),
+        );
+        return;
+      }
+
+      const isAdmin = await this.userHasSystemAdminRole(actorId);
+      if (!isAdmin) {
+        Response.error(
+          res,
+          "Seul un administrateur systeme peut consulter les demandes proprietaires.",
+          403,
+          new Error("forbidden"),
+        );
+        return;
+      }
+
+      const rawPage = Number(req.query.page ?? 1);
+      const rawTake = Number(req.query.take ?? 25);
+      const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+      const take = Number.isFinite(rawTake)
+        ? Math.min(Math.max(Math.floor(rawTake), 1), 100)
+        : 25;
+      const skip = (page - 1) * take;
+
+      const pendingOwnerPredicate = Prisma.sql`
+        u.statut = ${StatutCompte.INACTIF}
+        AND u.etablissement_id IS NULL
+        AND LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(u.scope_json, '$.option')), '')) LIKE '%validation%'
+        AND NULLIF(TRIM(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(u.scope_json, '$.data.etablissement.nom')), '')), '') IS NOT NULL
+      `;
+
+      const [countRows, rows] = await Promise.all([
+        prisma.$queryRaw<Array<{ total: unknown }>>(Prisma.sql`
+          SELECT COUNT(*) AS total
+          FROM utilisateurs u
+          WHERE ${pendingOwnerPredicate}
+        `),
+        prisma.$queryRaw<Array<{
+          id: string;
+          email: string | null;
+          telephone: string | null;
+          statut: StatutCompte;
+          scope_json: Prisma.JsonValue | null;
+          created_at: Date;
+        }>>(Prisma.sql`
+          SELECT
+            u.id,
+            u.email,
+            u.telephone,
+            u.statut,
+            u.scope_json,
+            u.created_at
+          FROM utilisateurs u
+          WHERE ${pendingOwnerPredicate}
+          ORDER BY u.created_at DESC
+          LIMIT ${take} OFFSET ${skip}
+        `),
+      ]);
+
+      const total = this.parseMysqlLockResult(countRows[0]?.total);
+
+      Response.success(res, "Demandes proprietaires en attente.", rows, {
+        page,
+        take,
+        total,
+        hasNextPage: skip + rows.length < total,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  private async getOwnerRegistrationStatus(
+    req: Request,
+    res: R,
+  ): Promise<void> {
+    try {
+      const rawEmail =
+        typeof req.body?.email === "string" ? req.body.email : "";
+      const email = rawEmail.trim().toLowerCase();
+
+      if (!email) {
+        return Response.error(
+          res,
+          "L'email est obligatoire pour verifier une demande proprietaire.",
+          400,
+          new Error("missing email"),
+        );
+      }
+
+      if (email.length > 254 || !OWNER_EMAIL_REGEX.test(email)) {
+        return Response.error(
+          res,
+          "L'email fourni est invalide.",
+          400,
+          new Error("invalid email"),
+        );
+      }
+
+      const rows = await prisma.utilisateur.findMany({
+        where: { email },
+        select: {
+          id: true,
+          email: true,
+          statut: true,
+          etablissement_id: true,
+          scope_json: true,
+          updated_at: true,
+        },
+        orderBy: {
+          updated_at: "desc",
+        },
+      });
+
+      const candidate = rows
+        .map((row) => ({
+          row,
+          ownerRegistration: this.parseOwnerRegistrationScope(row.scope_json),
+        }))
+        .find((item) => item.ownerRegistration);
+
+      if (!candidate || !candidate.ownerRegistration) {
+        return Response.error(
+          res,
+          "Aucune demande proprietaire n'a ete retrouvee pour cet email.",
+          404,
+          new Error("owner registration not found"),
+        );
+      }
+
+      const { row, ownerRegistration } = candidate;
+      const statusLabel =
+        ownerRegistration.status === "APPROVED"
+          ? "APPROUVEE"
+          : ownerRegistration.status === "REJECTED"
+            ? "REJETEE"
+            : "EN_ATTENTE";
+      const message =
+        ownerRegistration.status === "APPROVED"
+          ? "Votre demande proprietaire a ete approuvee. Vous pouvez maintenant vous connecter."
+          : ownerRegistration.status === "REJECTED"
+            ? "Votre demande proprietaire a ete rejetee. Contactez l'administrateur pour plus d'informations."
+            : "Votre demande proprietaire est encore en attente de validation.";
+
+      Response.success(res, "Statut de la demande proprietaire.", {
+        id: row.id,
+        email: row.email,
+        status: ownerRegistration.status,
+        statusLabel,
+        message,
+        canLogin: ownerRegistration.status === "APPROVED" && row.statut === StatutCompte.ACTIF,
+        submittedAt: ownerRegistration.submittedAt,
+        decidedAt: ownerRegistration.decidedAt,
+        etablissement: ownerRegistration.etablissement ?? ownerRegistration.data?.etablissement ?? null,
+      });
+    } catch (error) {
+      const message = this.getCreationErrorMessage(error);
+      Response.error(res, message, 400, error as Error);
+      return;
+    }
+  }
+
   private async updateUser(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
+      const tenant = this.resolveTenant(req as TenantScopedRequest);
+      if (!tenant.ok) {
+        Response.error(res, tenant.message, tenant.statusCode, new Error("tenant scope error"));
+        return;
+      }
+
+      const existing = await this.getScopedUserById(req.params.id, tenant.tenantId);
+      if (!existing) {
+        Response.error(
+          res,
+          "Utilisateur introuvable dans cet etablissement.",
+          404,
+          new Error("user not found"),
+        );
+        return;
+      }
+
       const body: Utilisateur = req.body;
       const id: string = req.params.id;
-      const result: any = await this.user.update(id, Utils.omit(body, "id"));
-      Response.success(res, "Database updated successfully", result)
+      const payload = {
+        ...Utils.omit(body, "id"),
+        etablissement_id: tenant.tenantId,
+      };
+      const result: any = await this.user.update(id, payload);
+      Response.success(res, "Database updated successfully", sanitizeUserResponse(result))
     } catch (error) {
       next(error);
     }
@@ -498,8 +932,25 @@ class UserApp {
 
   private async deleteUser(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
+      const tenant = this.resolveTenant(req as TenantScopedRequest);
+      if (!tenant.ok) {
+        Response.error(res, tenant.message, tenant.statusCode, new Error("tenant scope error"));
+        return;
+      }
+
+      const existing = await this.getScopedUserById(req.params.id, tenant.tenantId);
+      if (!existing) {
+        Response.error(
+          res,
+          "Utilisateur introuvable dans cet etablissement.",
+          404,
+          new Error("user not found"),
+        );
+        return;
+      }
+
       const result = await this.user.delete(req.params.id);
-      Response.success(res, "User deleted successfully", result);
+      Response.success(res, "User deleted successfully", sanitizeUserResponse(result));
     } catch (error) {
       next(error);
     }
@@ -514,17 +965,52 @@ class UserApp {
   private parsePendingOwnerRegistrationData(
     rawScope: unknown,
   ): OwnerProvisioningPayload | null {
+    const ownerRegistration = this.parseOwnerRegistrationScope(rawScope);
+    if (!ownerRegistration || ownerRegistration.status !== "PENDING") {
+      return null;
+    }
+
+    return ownerRegistration.data;
+  }
+
+  private parseOwnerRegistrationScope(
+    rawScope: unknown,
+  ): OwnerRegistrationScopeData | null {
     const scopeObject = parseScopeObject(rawScope);
     if (!scopeObject) return null;
+
+    const ownerRegistration =
+      scopeObject.owner_registration &&
+      typeof scopeObject.owner_registration === "object" &&
+      !Array.isArray(scopeObject.owner_registration)
+        ? (scopeObject.owner_registration as Record<string, unknown>)
+        : null;
+
+    const explicitStatus =
+      typeof ownerRegistration?.status === "string"
+        ? ownerRegistration.status.trim().toUpperCase()
+        : "";
 
     const option =
       typeof scopeObject.option === "string"
         ? scopeObject.option.trim().toLowerCase()
         : "";
 
-    if (option && !option.includes("validation")) {
-      return null;
-    }
+    const status = (
+      explicitStatus === "PENDING" ||
+      explicitStatus === "APPROVED" ||
+      explicitStatus === "REJECTED"
+        ? explicitStatus
+        : option.includes("rejet")
+          ? "REJECTED"
+          : option.includes("approuv")
+            ? "APPROVED"
+            : option.includes("validation")
+              ? "PENDING"
+              : null
+    ) as OwnerRegistrationLifecycleStatus | null;
+
+    if (!status) return null;
 
     const data = scopeObject.data;
     if (!data || typeof data !== "object" || Array.isArray(data)) {
@@ -532,20 +1018,42 @@ class UserApp {
     }
 
     const record = data as Record<string, unknown>;
+    const etablissementDecision =
+      ownerRegistration?.etablissement &&
+      typeof ownerRegistration.etablissement === "object" &&
+      !Array.isArray(ownerRegistration.etablissement)
+        ? (ownerRegistration.etablissement as OwnerRegistrationScopeData["etablissement"])
+        : null;
 
     return {
-      etablissement:
-        record.etablissement && typeof record.etablissement === "object" && !Array.isArray(record.etablissement)
-          ? (record.etablissement as OwnerProvisioningPayload["etablissement"])
+      status,
+      submittedAt:
+        typeof ownerRegistration?.submitted_at === "string" ? ownerRegistration.submitted_at : null,
+      decidedAt:
+        typeof ownerRegistration?.decided_at === "string" ? ownerRegistration.decided_at : null,
+      decidedByUserId:
+        typeof ownerRegistration?.decided_by_user_id === "string"
+          ? ownerRegistration.decided_by_user_id
           : null,
-      utilisateur:
-        record.utilisateur && typeof record.utilisateur === "object" && !Array.isArray(record.utilisateur)
-          ? (record.utilisateur as OwnerProvisioningPayload["utilisateur"])
-          : null,
-      profil:
-        record.profil && typeof record.profil === "object" && !Array.isArray(record.profil)
-          ? (record.profil as OwnerProvisioningPayload["profil"])
-          : null,
+      etablissement: etablissementDecision,
+      data: {
+        etablissement:
+          record.etablissement &&
+          typeof record.etablissement === "object" &&
+          !Array.isArray(record.etablissement)
+            ? (record.etablissement as OwnerProvisioningPayload["etablissement"])
+            : null,
+        utilisateur:
+          record.utilisateur &&
+          typeof record.utilisateur === "object" &&
+          !Array.isArray(record.utilisateur)
+            ? (record.utilisateur as OwnerProvisioningPayload["utilisateur"])
+            : null,
+        profil:
+          record.profil && typeof record.profil === "object" && !Array.isArray(record.profil)
+            ? (record.profil as OwnerProvisioningPayload["profil"])
+            : null,
+      },
     };
   }
 
@@ -554,7 +1062,7 @@ class UserApp {
     requirePassword: boolean,
   ): NormalizedOwnerProvisioningInput {
     const etablissementNom = payload.etablissement?.nom?.trim() ?? "";
-    const email = payload.utilisateur?.email?.trim() ?? "";
+    const email = payload.utilisateur?.email?.trim().toLowerCase() ?? "";
     const telephone = payload.utilisateur?.telephone?.trim() || null;
     const password = payload.utilisateur?.mot_de_passe_hash?.trim() || null;
     const profilPrenom = payload.profil?.prenom?.trim() ?? "";
@@ -566,6 +1074,10 @@ class UserApp {
 
     if (!email) {
       throw new Error("L'email du proprietaire est obligatoire.");
+    }
+
+    if (email.length > 254 || !OWNER_EMAIL_REGEX.test(email)) {
+      throw new Error("L'email du proprietaire est invalide.");
     }
 
     if (requirePassword && !password) {
@@ -589,11 +1101,166 @@ class UserApp {
     };
   }
 
+  private parseMysqlLockResult(value: unknown): number {
+    if (typeof value === "bigint") return Number(value);
+    if (typeof value === "number") return value;
+    if (typeof value === "string") return Number(value);
+    return Number.NaN;
+  }
+
+  private async withMysqlNamedLock<T>(
+    tx: Prisma.TransactionClient,
+    lockName: string,
+    callback: () => Promise<T>,
+  ): Promise<T> {
+    const lockRows = await tx.$queryRaw<Array<{ acquired: unknown }>>(Prisma.sql`
+      SELECT GET_LOCK(${lockName}, 10) AS acquired
+    `);
+    const lockStatus = this.parseMysqlLockResult(lockRows[0]?.acquired);
+
+    if (lockStatus !== 1) {
+      throw new Error("Impossible de reserver cette operation pour le moment. Reessayez.");
+    }
+
+    try {
+      return await callback();
+    } finally {
+      try {
+        await tx.$queryRaw(Prisma.sql`
+          SELECT RELEASE_LOCK(${lockName})
+        `);
+      } catch {
+        // The transaction is about to end anyway; avoid masking the original error.
+      }
+    }
+  }
+
+  private async withOwnerEmailLock<T>(
+    tx: Prisma.TransactionClient,
+    email: string,
+    callback: () => Promise<T>,
+  ): Promise<T> {
+    return this.withMysqlNamedLock(tx, `owner-email:${email}`, callback);
+  }
+
+  private async createEtablissementWithUniqueCode(
+    tx: Prisma.TransactionClient,
+    nom: string,
+  ) {
+    return this.withMysqlNamedLock(tx, "etablissement-code-sequence", async () => {
+      const lastEtablissement = await tx.etablissement.findFirst({
+        orderBy: { created_at: "desc" },
+        select: { code: true },
+      });
+      const code = new Code("ET", 3, lastEtablissement?.code ?? "");
+
+      return tx.etablissement.create({
+        data: {
+          nom,
+          code: code.next(),
+          fuseau_horaire: "Indian/Antananarivo",
+        },
+        select: {
+          id: true,
+          nom: true,
+          code: true,
+        },
+      });
+    });
+  }
+
+  private async assertOwnerEmailAvailable(
+    email: string,
+    options?: {
+      tx?: Prisma.TransactionClient | PrismaClient;
+      ignoreUserId?: string;
+    },
+  ) {
+    const db = options?.tx ?? prisma;
+    const existingUsers = await db.utilisateur.findMany({
+      where: {
+        email,
+        ...(options?.ignoreUserId
+          ? {
+              id: {
+                not: options.ignoreUserId,
+              },
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        statut: true,
+        etablissement_id: true,
+        scope_json: true,
+      },
+    });
+
+    if (!existingUsers.length) return;
+
+    const pendingOwnerRequest = existingUsers.find(
+      (user) =>
+        user.statut === StatutCompte.INACTIF &&
+        !user.etablissement_id &&
+        this.parsePendingOwnerRegistrationData(user.scope_json),
+    );
+
+    if (pendingOwnerRequest) {
+      throw new Error("Une demande proprietaire existe deja pour cet email.");
+    }
+
+    const rejectedOwnerRequest = existingUsers.find((user) => {
+      const ownerRegistration = this.parseOwnerRegistrationScope(user.scope_json);
+      return ownerRegistration?.status === "REJECTED";
+    });
+
+    if (rejectedOwnerRequest) {
+      throw new Error(
+        "Une demande proprietaire rejetee existe deja pour cet email. Consultez son statut ou contactez l'administrateur.",
+      );
+    }
+
+    throw new Error("Un compte utilisateur existe deja avec cet email.");
+  }
+
   private buildPendingOwnerRegistrationScope(
     input: NormalizedOwnerProvisioningInput,
   ): Prisma.InputJsonValue {
+    return this.buildOwnerRegistrationScope(input, "PENDING");
+  }
+
+  private buildOwnerRegistrationScope(
+    input: NormalizedOwnerProvisioningInput,
+    status: OwnerRegistrationLifecycleStatus,
+    options?: {
+      submittedAt?: string | null;
+      decidedAt?: string | null;
+      decidedByUserId?: string | null;
+      etablissement?: {
+        id?: string | null;
+        nom?: string | null;
+        code?: string | null;
+      } | null;
+    },
+  ): Prisma.InputJsonValue {
+    const submittedAt = options?.submittedAt ?? new Date().toISOString();
+    const decidedAt = options?.decidedAt ?? null;
+    const optionLabel =
+      status === "APPROVED"
+        ? "Demande proprietaire approuvee"
+        : status === "REJECTED"
+          ? "Demande proprietaire rejetee"
+          : "En attente de validation proprietaire";
+
     return {
-      option: "En attente de validation proprietaire",
+      option: optionLabel,
+      owner_registration: {
+        status,
+        submitted_at: submittedAt,
+        decided_at: decidedAt,
+        decided_by_user_id: options?.decidedByUserId ?? null,
+        etablissement: options?.etablissement ?? null,
+      },
       data: {
         etablissement: {
           nom: input.etablissementNom,
@@ -616,33 +1283,19 @@ class UserApp {
   private async provisionOwnerEstablishment(
     tx: Prisma.TransactionClient,
     input: NormalizedOwnerProvisioningInput,
-    options?: { existingUserId?: string },
+    options?: { existingUserId?: string; ownerScope?: Prisma.InputJsonValue },
   ) {
-    const lastEtablissement = await tx.etablissement.findFirst({
-      orderBy: { created_at: "desc" },
-      select: { code: true },
-    });
-    const code = new Code("ET", 3, lastEtablissement?.code ?? "");
-
-    const createdEtablissement = await tx.etablissement.create({
-      data: {
-        nom: input.etablissementNom,
-        code: code.next(),
-        fuseau_horaire: "Indian/Antananarivo",
-      },
-      select: {
-        id: true,
-        nom: true,
-        code: true,
-      },
-    });
+    const createdEtablissement = await this.createEtablissementWithUniqueCode(
+      tx,
+      input.etablissementNom,
+    );
 
     const persistedUser = options?.existingUserId
       ? await tx.utilisateur.update({
           where: { id: options.existingUserId },
           data: {
             statut: StatutCompte.ACTIF,
-            scope_json: Prisma.JsonNull,
+            scope_json: options?.ownerScope ?? Prisma.JsonNull,
             etablissement_id: createdEtablissement.id,
             email: input.email,
             telephone: input.telephone,
@@ -723,7 +1376,7 @@ class UserApp {
     };
   }
 
-  private async userHasSystemRole(userId: string, expectedRole: string) {
+  private async userHasSystemAdminRole(userId: string) {
     const user = await prisma.utilisateur.findUnique({
       where: { id: userId },
       select: {
@@ -742,13 +1395,8 @@ class UserApp {
 
     if (!user) return false;
 
-    return user.roles.some((assignment) => {
-      const resolved = resolveSystemRoleName(
-        assignment.role?.nom ?? null,
-        assignment.role?.scope_json ?? null,
-      );
-      return resolved === expectedRole;
-    });
+    const roleNames = extractRoleNamesFromUser(user);
+    return hasSystemAdminRoleNames(roleNames);
   }
 
   private getCreationErrorMessage(error: unknown): string {

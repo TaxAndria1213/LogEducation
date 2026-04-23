@@ -75,14 +75,40 @@ export default function InitialisationTemplateSettings() {
         </div>
       </section>
 
+      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-900">Periodes standards</h3>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {(templates?.periodes_standards ?? []).map((template) => (
+            <div
+              key={template.code}
+              className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4"
+            >
+              <p className="text-sm font-semibold text-slate-900">{template.label}</p>
+              <p className="mt-1 text-sm text-slate-600">{template.description}</p>
+              <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                {template.periodes.map((periode) => periode.nom).join(", ")}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-2">
         <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900">Roles standards</h3>
           <div className="mt-4 space-y-3">
             {(templates?.roles_standards ?? []).map((role) => (
               <article key={role.nom} className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
-                <p className="text-sm font-semibold text-slate-900">{role.nom}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-slate-900">{role.label}</p>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    {role.key}
+                  </span>
+                </div>
                 <p className="mt-1 text-sm text-slate-600">{role.description}</p>
+                <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                  Role cree : {role.suggestedName}
+                </p>
               </article>
             ))}
           </div>

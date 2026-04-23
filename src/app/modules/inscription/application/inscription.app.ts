@@ -1,9 +1,10 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import bcrypt from "bcrypt";
 import { Inscription, Prisma, PrismaClient, type StatutFacture } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { generateRandomPassword, getAllPaginated } from "../../../common/utils/functions";
 import PrismaService from "../../../service/prisma_service";
+import { prisma } from "../../../service/prisma";
 import {
     allocatePaiementsToFactureEcheances,
     ensureFactureEcheances,
@@ -52,7 +53,7 @@ class InscriptionApp {
         this.planPaiementEleve = new PrismaService("planPaiementEleve");
         this.facture = new PrismaService("facture");
         this.factureLigne = new PrismaService("factureLigne");
-        this.prisma = new PrismaClient();
+        this.prisma = prisma;
         this.routes();
     }
 
@@ -2117,4 +2118,5 @@ class InscriptionApp {
 }
 
 export default InscriptionApp;
+
 

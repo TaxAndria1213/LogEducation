@@ -35,6 +35,7 @@ export type InitialisationStatus = {
     classes: number;
     departements: number;
     matieres: number;
+    catalogue_frais: number;
     roles: number;
     permissions: number;
     lignes_transport: number;
@@ -62,15 +63,27 @@ export type InitialisationTemplates = {
     cycle: string;
     ordre: number;
   }[];
+  periodes_standards: {
+    code: string;
+    label: string;
+    description: string;
+    periodes: {
+      nom: string;
+      ordre: number;
+    }[];
+  }[];
   roles_standards: {
+    key: string;
+    label: string;
+    suggestedName: string;
     nom: string;
     description: string;
+    permissions: string[];
   }[];
   permissions_standards: {
     code: string;
     description: string;
   }[];
-  departements_standards: string[];
 };
 
 export type InitialisationPreview = {
@@ -124,6 +137,35 @@ export type InitialisationAcademicGroup = {
   subjects: InitialisationAcademicSubject[];
 };
 
+export type InitialisationFinanceCatalogueDraft = {
+  level_code: string;
+  class_name: string;
+  usage_scope: string;
+  nom: string;
+  description: string;
+  montant: string;
+  devise: string;
+  nombre_tranches: string;
+  est_recurrent: boolean;
+  periodicite: string;
+  prorata_eligible: boolean;
+  eligibilite_json: string;
+};
+
+export type InitialisationPeriodDraft = {
+  nom: string;
+  date_debut: string;
+  date_fin: string;
+};
+
+export type InitialisationLevelSelectionPreset =
+  | "PRESCOLAIRE"
+  | "PRIMAIRE"
+  | "COLLEGE"
+  | "LYCEE";
+
+export type InitialisationPeriodStrategy = "STANDARD" | "PERSONNALISE";
+
 export type InitialisationSetupDraft = {
   etablissement_id: string;
   include_site_principal: boolean;
@@ -134,11 +176,17 @@ export type InitialisationSetupDraft = {
   annee_nom: string;
   annee_date_debut: string;
   annee_date_fin: string;
+  periods_strategy: InitialisationPeriodStrategy;
+  periods_template_code: string;
+  custom_periods: InitialisationPeriodDraft[];
+  selected_level_presets: InitialisationLevelSelectionPreset[];
+  manual_selected_level_codes: string[];
   selected_level_codes: string[];
   custom_levels: string;
   classes_by_level: InitialisationClassGroup[];
   academic_by_level: InitialisationAcademicGroup[];
-  create_default_departements: boolean;
+  finance_catalogues: InitialisationFinanceCatalogueDraft[];
+  selected_role_names: string[];
   classes_mode: InitialisationBlockMode;
   academic_mode: InitialisationBlockMode;
   security_mode: InitialisationBlockMode;

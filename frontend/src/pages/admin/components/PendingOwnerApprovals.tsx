@@ -67,6 +67,24 @@ function getErrorMessage(error: unknown) {
     "data" in error.response &&
     typeof error.response.data === "object" &&
     error.response.data !== null &&
+    "status" in error.response.data &&
+    typeof error.response.data.status === "object" &&
+    error.response.data.status !== null &&
+    "message" in error.response.data.status &&
+    typeof error.response.data.status.message === "string"
+  ) {
+    return error.response.data.status.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "data" in error.response &&
+    typeof error.response.data === "object" &&
+    error.response.data !== null &&
     "message" in error.response.data &&
     typeof error.response.data.message === "string"
   ) {
@@ -81,7 +99,10 @@ export default function PendingOwnerApprovals() {
   const service = useMemo(() => new UtilisateurService(), []);
   const [requests, setRequests] = useState<PendingOwnerRequest[]>([]);
   const [loading, setLoading] = useState(false);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [processing, setProcessing] = useState<{
+    id: string;
+    action: "approve" | "reject";
+  } | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadRequests = useCallback(async () => {
@@ -89,14 +110,13 @@ export default function PendingOwnerApprovals() {
     setErrorMessage("");
 
     try {
-      const response = await service.getAll({
+      const response = await service.getPendingOwnerRegistrations({
         page: 1,
         take: 25,
-        where: JSON.stringify({ statut: "INACTIF" }),
       });
 
-      const rows = Array.isArray(response?.data?.data)
-        ? (response.data.data as Utilisateur[])
+      const rows = Array.isArray(response?.data)
+        ? (response.data as Utilisateur[])
         : [];
 
       setRequests(rows.map(parsePendingOwnerRequest).filter(Boolean) as PendingOwnerRequest[]);
@@ -113,7 +133,7 @@ export default function PendingOwnerApprovals() {
 
   const approveRequest = useCallback(
     async (requestId: string) => {
-      setProcessingId(requestId);
+      setProcessing({ id: requestId, action: "approve" });
 
       try {
         await service.approveOwnerRegistration(requestId);
@@ -122,7 +142,29 @@ export default function PendingOwnerApprovals() {
       } catch (error) {
         info(getErrorMessage(error), "error");
       } finally {
-        setProcessingId(null);
+        setProcessing(null);
+      }
+    },
+    [info, service],
+  );
+
+  const rejectRequest = useCallback(
+    async (requestId: string, etablissementNom: string) => {
+      const confirmed = window.confirm(
+        `Rejeter definitivement la demande proprietaire pour ${etablissementNom} ?`,
+      );
+      if (!confirmed) return;
+
+      setProcessing({ id: requestId, action: "reject" });
+
+      try {
+        await service.rejectOwnerRegistration(requestId);
+        setRequests((current) => current.filter((item) => item.id !== requestId));
+        info("Demande proprietaire rejetee avec succes.", "success");
+      } catch (error) {
+        info(getErrorMessage(error), "error");
+      } finally {
+        setProcessing(null);
       }
     },
     [info, service],
@@ -176,14 +218,28 @@ export default function PendingOwnerApprovals() {
                     <p className="mt-1 text-xs text-slate-500">{request.telephone}</p>
                   ) : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void approveRequest(request.id)}
-                  className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={processingId === request.id}
-                >
-                  {processingId === request.id ? "Validation..." : "Approuver"}
-                </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void rejectRequest(request.id, request.etablissementNom)}
+                    className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={processing?.id === request.id}
+                  >
+                    {processing?.id === request.id && processing.action === "reject"
+                      ? "Rejet..."
+                      : "Rejeter"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void approveRequest(request.id)}
+                    className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={processing?.id === request.id}
+                  >
+                    {processing?.id === request.id && processing.action === "approve"
+                      ? "Validation..."
+                      : "Approuver"}
+                  </button>
+                </div>
               </div>
             </article>
           ))}

@@ -4,6 +4,7 @@ import Response from "../../../common/app/response";
 import EvaluationModel from "../models/evaluation.model";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
+import { prisma } from "../../../service/prisma";
 
 type EvaluationPayload = Pick<
   Evaluation,
@@ -29,7 +30,7 @@ class EvaluationApp {
     this.app = app;
     this.router = Router();
     this.evaluation = new EvaluationModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -472,3 +473,4 @@ class EvaluationApp {
 }
 
 export default EvaluationApp;
+

@@ -1,12 +1,15 @@
 import { Controller, type FieldValues } from "react-hook-form";
 import { FieldWrapper } from "./FieldWrapper";
+import { getInputClassName } from "./inputStyles";
 import type { BaseFieldProps } from "./types";
 
 /**
  * Stocke un objet JSON (ou undefined) via un textarea.
  * Saisie = string ; on parse en objet.
  */
-export function JsonField<TFieldValues extends FieldValues>(props: BaseFieldProps<TFieldValues>) {
+export function JsonField<TFieldValues extends FieldValues>(
+  props: BaseFieldProps<TFieldValues>,
+) {
   const id = String(props.name);
 
   return (
@@ -48,7 +51,7 @@ export function JsonField<TFieldValues extends FieldValues>(props: BaseFieldProp
               placeholder={props.placeholder ?? '{ "key": "value" }'}
               disabled={props.disabled}
               rows={8}
-              style={{ padding: 10, border: "1px solid #ccc", borderRadius: 8, fontFamily: "monospace" }}
+              className={`${getInputClassName(Boolean(fieldState.error))} min-h-40 resize-y font-mono`}
             />
           </FieldWrapper>
         );

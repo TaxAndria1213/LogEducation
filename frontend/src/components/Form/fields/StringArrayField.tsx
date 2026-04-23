@@ -1,8 +1,11 @@
 import { Controller, type FieldValues } from "react-hook-form";
 import { FieldWrapper } from "./FieldWrapper";
+import { getInputClassName } from "./inputStyles";
 import type { BaseFieldProps } from "./types";
 
-export function StringArrayField<TFieldValues extends FieldValues>(props: BaseFieldProps<TFieldValues>) {
+export function StringArrayField<TFieldValues extends FieldValues>(
+  props: BaseFieldProps<TFieldValues>,
+) {
   const id = String(props.name);
 
   return (
@@ -36,7 +39,7 @@ export function StringArrayField<TFieldValues extends FieldValues>(props: BaseFi
               ref={field.ref}
               placeholder={props.placeholder ?? "a, b, c"}
               disabled={props.disabled}
-              style={{ padding: 10, border: "1px solid #ccc", borderRadius: 8 }}
+              className={getInputClassName(Boolean(fieldState.error))}
             />
           </FieldWrapper>
         );

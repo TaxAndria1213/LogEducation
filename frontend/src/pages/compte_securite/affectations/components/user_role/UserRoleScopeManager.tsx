@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { FiSearch } from "react-icons/fi";
 import { useAuth } from "../../../../../auth/AuthContext";
+import {
+  SelectionWorkspaceHeaderCard,
+  SelectionWorkspacePanel,
+} from "../../../../../components/page/SelectionWorkspace";
 import RoleService from "../../../../../services/role.service";
 import UtilisateurRoleService from "../../../../../services/utilisateur_role.service";
 import UtilisateurService from "../../../../../services/utilisateur.service";
@@ -31,6 +36,7 @@ export default function UserRoleScopeManager() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
   const [scopes, setScopes] = useState<Record<string, string>>({});
+  const [roleSearch, setRoleSearch] = useState("");
 
   useEffect(() => {
     const run = async () => {
@@ -113,6 +119,14 @@ export default function UserRoleScopeManager() {
     );
   };
 
+  const filteredRoles = useMemo(() => {
+    const normalizedSearch = roleSearch.trim().toLowerCase();
+    if (!normalizedSearch) return roles;
+    return roles.filter((role) => role.nom.toLowerCase().includes(normalizedSearch));
+  }, [roleSearch, roles]);
+
+  const selectedCount = selectedRoleIds.length;
+
   const saveAssignments = async () => {
     if (!selectedUserId) {
       info("Selectionne d'abord un utilisateur.", "warning");
@@ -177,18 +191,15 @@ export default function UserRoleScopeManager() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">
-              Affecter des roles aux utilisateurs
-            </h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              Le scope JSON permet de limiter ou d'enrichir la portee d'un role
-              pour un utilisateur donne.
-            </p>
-          </div>
-
+      <SelectionWorkspaceHeaderCard
+        title="Affecter des roles aux utilisateurs"
+        description={
+          <>
+            Le scope JSON permet de limiter ou d&apos;enrichir la portee d&apos;un role
+            pour un utilisateur donne.
+          </>
+        }
+        actions={
           <label className="grid gap-1 text-sm text-slate-600">
             <span>Utilisateur</span>
             <select
@@ -206,20 +217,55 @@ export default function UserRoleScopeManager() {
                     user.telephone ||
                     user.id}
                 </option>
-              ))}
-            </select>
+                ))}
+              </select>
           </label>
-        </div>
-      </section>
+        }
+      />
 
-      <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
+      <SelectionWorkspacePanel
+        title="Roles attribuables"
+        description={
+          <>
+            Recherche un role, ouvre seulement ceux qui t&apos;interessent, puis
+            enregistre sans redescendre en bas de la page.
+          </>
+        }
+        toolbar={
+          <label className="relative block w-full lg:w-[22rem]">
+            <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              value={roleSearch}
+              onChange={(event) => setRoleSearch(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-2"
+              placeholder="Rechercher un role"
+            />
+          </label>
+        }
+        footerTitle={
+          <>
+            {selectedCount} role{selectedCount > 1 ? "s" : ""} selectionne{selectedCount > 1 ? "s" : ""}
+          </>
+        }
+        footerDescription="Les scopes JSON restent juste sous chaque role active."
+        footerAction={
+          <button
+            type="button"
+            onClick={saveAssignments}
+            disabled={saving || !selectedUserId}
+            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {saving ? "Enregistrement..." : "Enregistrer les affectations"}
+          </button>
+        }
+      >
         {loading ? (
           <p className="text-sm text-slate-500">
             Chargement des utilisateurs et roles...
           </p>
         ) : (
           <div className="grid gap-3">
-            {roles.map((role) => {
+            {filteredRoles.map((role) => {
               const checked = selectedRoleIds.includes(role.id);
               return (
                 <div
@@ -258,20 +304,15 @@ export default function UserRoleScopeManager() {
                 </div>
               );
             })}
+
+            {filteredRoles.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+                Aucun role ne correspond a la recherche.
+              </div>
+            ) : null}
           </div>
         )}
-
-        <div className="mt-5 flex justify-end">
-          <button
-            type="button"
-            onClick={saveAssignments}
-            disabled={saving || !selectedUserId}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {saving ? "Enregistrement..." : "Enregistrer les affectations"}
-          </button>
-        </div>
-      </section>
+      </SelectionWorkspacePanel>
     </div>
   );
 }

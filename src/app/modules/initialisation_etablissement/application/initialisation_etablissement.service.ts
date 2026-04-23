@@ -2,6 +2,7 @@ import InitialisationEtablissementModel from "../models/initialisation_etablisse
 import InitialisationCommitService from "./initialisation_commit.service";
 import InitialisationPreviewService from "./initialisation_preview.service";
 import { defaultPermissionTemplates } from "./templates/default-permissions.template";
+import { defaultPeriodTemplates } from "./templates/default-periods.template";
 import { defaultRoleTemplates } from "./templates/default-roles.template";
 import { standardLevelTemplates } from "./templates/standard-levels.template";
 
@@ -36,19 +37,9 @@ class InitialisationEtablissementService {
   public getTemplates() {
     return {
       niveaux_standards: standardLevelTemplates,
+      periodes_standards: defaultPeriodTemplates,
       roles_standards: defaultRoleTemplates,
       permissions_standards: defaultPermissionTemplates,
-      departements_standards: [
-        "Direction",
-        "Administration",
-        "Scolarite",
-        "Finance",
-        "Pedagogie",
-        "Vie scolaire",
-        "Cantine",
-        "Transport",
-        "Bibliotheque",
-      ],
     };
   }
 

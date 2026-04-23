@@ -36,14 +36,18 @@ export function FieldWrapper({
   className,
   children,
 }: Props) {
+  const wrapperClassName = ["min-w-0 max-w-full space-y-2", className]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={className ?? "space-y-2"}>
+    <div className={wrapperClassName}>
       {label ? (
         <label
           htmlFor={id}
-          className="flex items-center gap-1 text-sm font-semibold text-slate-800"
+          className="flex min-w-0 flex-wrap items-center gap-1 text-sm font-semibold leading-5 text-slate-800"
         >
-          <span>{label}</span>
+          <span className="min-w-0 break-words">{label}</span>
           {required ? (
             <span aria-hidden="true" className="text-rose-500">
               *
@@ -55,11 +59,16 @@ export function FieldWrapper({
       {children}
 
       {description ? (
-        <div className="text-xs leading-5 text-slate-500">{description}</div>
+        <div className="min-w-0 break-words text-xs leading-5 text-slate-500">
+          {description}
+        </div>
       ) : null}
 
       {error ? (
-        <div role="alert" className="text-xs font-medium text-rose-600">
+        <div
+          role="alert"
+          className="min-w-0 break-words text-xs font-medium leading-5 text-rose-600"
+        >
           {friendlyErrorMessage(error)}
         </div>
       ) : null}

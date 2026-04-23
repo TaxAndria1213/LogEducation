@@ -1,5 +1,6 @@
 import { Controller, type FieldValues } from "react-hook-form";
 import { FieldWrapper } from "./FieldWrapper";
+import { getInputClassName } from "./inputStyles";
 import type { BaseFieldProps } from "./types";
 
 type TimeFieldProps<TFieldValues extends FieldValues> =
@@ -52,14 +53,7 @@ export function TimeField<TFieldValues extends FieldValues>(
             max={props.max}
             step={props.step}
             disabled={props.disabled}
-            style={{
-              width: "100%",
-              minHeight: 44,
-              padding: "10px 12px",
-              borderRadius: 8,
-              border: fieldState.error ? "1px solid #d32f2f" : "1px solid #ccc",
-              background: props.disabled ? "#f5f5f5" : "#fff",
-            }}
+            className={getInputClassName(Boolean(fieldState.error))}
           />
         </FieldWrapper>
       )}

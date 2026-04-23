@@ -1,9 +1,10 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient, type RessourceBibliotheque } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import RessourceBibliothequeModel from "../models/ressource_bibliotheque.model";
+import { prisma } from "../../../service/prisma";
 
 type RessourceBibliothequePayload = {
   etablissement_id: string;
@@ -27,7 +28,7 @@ class RessourceBibliothequeApp {
   constructor(app: Application) {
     this.app = app;
     this.router = Router();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.ressourceBibliotheque = new RessourceBibliothequeModel();
     this.routes();
   }
@@ -250,3 +251,4 @@ class RessourceBibliothequeApp {
 }
 
 export default RessourceBibliothequeApp;
+

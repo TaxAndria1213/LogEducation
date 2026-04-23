@@ -2,7 +2,11 @@ import { prisma } from "../../../service/prisma";
 import InitialisationEtablissementModel from "../models/initialisation_etablissement.model";
 import {
   buildInitialSetupPreviewBlocks,
+  getInitialYearWindow,
+  isImmediateCreationMode,
   normalizeInitialSetupPayload,
+  validateInitialSetupFinanceCatalogues,
+  validateInitialSetupPeriods,
 } from "./builders/initial_setup.builder";
 import {
   buildNewSchoolYearPreviewBlocks,
@@ -34,13 +38,31 @@ class InitialisationPreviewService {
       );
     }
 
+    if (payload.create_initial_year) {
+      const yearWindow = getInitialYearWindow(payload);
+
+      if (!yearWindow) {
+        warnings.push(
+          "Renseigne le libelle, la date de debut et la date de fin de l'annee initiale avant la generation.",
+        );
+      } else if (
+        yearWindow.date_debut.getTime() > yearWindow.date_fin.getTime()
+      ) {
+        warnings.push(
+          "La date de debut de l'annee initiale doit preceder la date de fin.",
+        );
+      }
+
+      warnings.push(...validateInitialSetupPeriods(payload));
+    }
+
     if (!payload.selected_level_codes.length && !payload.custom_levels.length) {
       warnings.push(
         "Aucun niveau n'est selectionne. L'etablissement restera peu exploitable sans niveaux.",
       );
     }
 
-    if (payload.classes_mode !== "PLUS_TARD") {
+    if (isImmediateCreationMode(payload.classes_mode)) {
       const levelsWithoutClasses = payload.classes_by_level
         .filter((group) => group.class_names.length === 0)
         .map((group) => group.level_nom);
@@ -58,7 +80,7 @@ class InitialisationPreviewService {
       }
     }
 
-    if (payload.academic_mode !== "PLUS_TARD") {
+    if (isImmediateCreationMode(payload.academic_mode)) {
       const levelsWithoutAcademic = payload.academic_by_level
         .filter(
           (group) => !group.programme_nom.trim() || group.subjects.length === 0,
@@ -78,6 +100,25 @@ class InitialisationPreviewService {
       }
     }
 
+    if (
+      isImmediateCreationMode(payload.security_mode) &&
+      payload.selected_role_names.length === 0
+    ) {
+      warnings.push(
+        "Aucun role standard n'est selectionne. Le bloc Securite ne pourra rien generer.",
+      );
+    }
+
+    if (isImmediateCreationMode(payload.finance_mode)) {
+      warnings.push(...validateInitialSetupFinanceCatalogues(payload));
+    }
+
+    if (!payload.create_initial_year && payload.periods.length > 0) {
+      warnings.push(
+        "Les periodes definies ici ne seront pas generees tant que l'annee initiale n'est pas creee dans ce wizard.",
+      );
+    }
+
     return {
       type: "NOUVEL_ETABLISSEMENT",
       payload,
@@ -87,8 +128,9 @@ class InitialisationPreviewService {
         0,
       ),
       ready_blocks: blocks.filter((block) => block.statut === "PRET").length,
-      deferred_blocks: blocks.filter((block) => block.statut === "DIFFERE").length,
-      warnings,
+      deferred_blocks: blocks.filter((block) => block.statut === "DIFFERE")
+        .length,
+      warnings: Array.from(new Set(warnings)),
       current_status: status,
     };
   }
@@ -142,7 +184,8 @@ class InitialisationPreviewService {
         0,
       ),
       ready_blocks: blocks.filter((block) => block.statut === "PRET").length,
-      deferred_blocks: blocks.filter((block) => block.statut === "DIFFERE").length,
+      deferred_blocks: blocks.filter((block) => block.statut === "DIFFERE")
+        .length,
       warnings,
       current_status: status,
       source_year: sourceYear,

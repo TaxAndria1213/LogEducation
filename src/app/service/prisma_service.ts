@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Prisma, PrismaClient } from "@prisma/client";
+import { prisma } from "./prisma";
 
 type OrderBy = Record<string, "asc" | "desc"> | Array<Record<string, "asc" | "desc">>;
 
@@ -77,7 +78,7 @@ class PrismaService {
   private relationsMap: RelationsMap;
 
   constructor(modelName: keyof PrismaClient, relationsMap: RelationsMap = {}) {
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
 
     if (!this.prisma[modelName] || typeof this.prisma[modelName] !== "object") {
       throw new Error(`Le modèle "${String(modelName)}" n'existe pas dans PrismaClient.`);

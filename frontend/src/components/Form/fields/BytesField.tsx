@@ -1,12 +1,14 @@
 import { Controller, type FieldValues } from "react-hook-form";
 import { FieldWrapper } from "./FieldWrapper";
+import { getFileInputClassName } from "./inputStyles";
 import type { BaseFieldProps } from "./types";
 
 async function fileToBase64(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
   const bytes = new Uint8Array(buf);
   let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < bytes.length; i++)
+    binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
 
@@ -14,7 +16,9 @@ async function fileToBase64(file: File): Promise<string> {
  * Pour Prisma Bytes : souvent on passe par base64 côté API.
  * Stocke une string base64.
  */
-export function BytesField<TFieldValues extends FieldValues>(props: BaseFieldProps<TFieldValues>) {
+export function BytesField<TFieldValues extends FieldValues>(
+  props: BaseFieldProps<TFieldValues>,
+) {
   const id = String(props.name);
 
   return (
@@ -40,6 +44,7 @@ export function BytesField<TFieldValues extends FieldValues>(props: BaseFieldPro
               const b64 = await fileToBase64(file);
               field.onChange(b64);
             }}
+            className={getFileInputClassName(Boolean(fieldState.error))}
           />
         </FieldWrapper>
       )}

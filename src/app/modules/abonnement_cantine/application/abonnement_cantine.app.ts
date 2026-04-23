@@ -1,6 +1,7 @@
 import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { Prisma, PrismaClient } from "@prisma/client";
 import Response from "../../../common/app/response";
+import { prisma } from "../../../service/prisma";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import AbonnementCantineModel from "../models/abonnement_cantine.model";
@@ -140,7 +141,7 @@ class AbonnementCantineApp {
     this.app = app;
     this.router = Router();
     this.abonnementCantine = new AbonnementCantineModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 

@@ -1,5 +1,6 @@
 import type {
   InitialisationClassGroup,
+  InitialisationLevelSelectionPreset,
   InitialisationSetupDraft,
   InitialisationTemplates,
 } from "../types";
@@ -12,12 +13,101 @@ export type DraftLevelDefinition = {
 };
 
 const CLASS_SUFFIXES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const PRESET_TO_CYCLE: Record<InitialisationLevelSelectionPreset, string> = {
+  PRESCOLAIRE: "Prescolaire",
+  PRIMAIRE: "Primaire",
+  COLLEGE: "College",
+  LYCEE: "Lycee",
+};
+
+export const LEVEL_SELECTION_PRESETS: {
+  key: InitialisationLevelSelectionPreset;
+  label: string;
+  description: string;
+}[] = [
+  {
+    key: "PRESCOLAIRE",
+    label: "Prescolaire",
+    description: "Maternelle, petites et grandes sections pretes a l'emploi.",
+  },
+  {
+    key: "PRIMAIRE",
+    label: "Primaire",
+    description: "CP a CM2 pour demarrer vite sur le socle fondamental.",
+  },
+  {
+    key: "COLLEGE",
+    label: "College",
+    description: "6e a 3e avec une structure standard de cycle college.",
+  },
+  {
+    key: "LYCEE",
+    label: "Lycee",
+    description: "Seconde, Premiere et Terminale en selection rapide.",
+  },
+];
 
 export function parseCustomLevelNames(value: string) {
   return value
     .split(/\r?\n|,/)
     .map((entry) => entry.trim())
     .filter(Boolean);
+}
+
+export function getPresetStandardLevels(
+  templates: InitialisationTemplates | null,
+  preset: InitialisationLevelSelectionPreset,
+) {
+  const cycle = PRESET_TO_CYCLE[preset];
+  return (templates?.niveaux_standards ?? []).filter((level) => level.cycle === cycle);
+}
+
+export function getPresetLevelCodes(
+  templates: InitialisationTemplates | null,
+  preset: InitialisationLevelSelectionPreset,
+) {
+  return getPresetStandardLevels(templates, preset).map((level) => level.code);
+}
+
+export function getPresetLevelNames(
+  templates: InitialisationTemplates | null,
+  preset: InitialisationLevelSelectionPreset,
+) {
+  return getPresetStandardLevels(templates, preset).map((level) => level.nom);
+}
+
+export function getCombinedPresetLevelNames(
+  templates: InitialisationTemplates | null,
+  presets: InitialisationLevelSelectionPreset[],
+) {
+  const names = presets.flatMap((preset) => getPresetLevelNames(templates, preset));
+  return Array.from(new Set(names));
+}
+
+export function buildSelectedLevelCodes(
+  templates: InitialisationTemplates | null,
+  presets: InitialisationLevelSelectionPreset[],
+  manualSelectedLevelCodes: string[],
+) {
+  const mergedSet = new Set([
+    ...presets.flatMap((preset) => getPresetLevelCodes(templates, preset)),
+    ...manualSelectedLevelCodes,
+  ]);
+
+  const orderedStandardCodes = (templates?.niveaux_standards ?? [])
+    .map((level) => level.code)
+    .filter((code) => mergedSet.has(code));
+
+  const nonStandardCodes = manualSelectedLevelCodes.filter(
+    (code) => !orderedStandardCodes.includes(code),
+  );
+
+  return [...orderedStandardCodes, ...nonStandardCodes];
+}
+
+export function areStringArraysEqual(current: string[], next: string[]) {
+  if (current.length !== next.length) return false;
+  return current.every((value, index) => value === next[index]);
 }
 
 export function resolveDraftLevels(
@@ -82,7 +172,9 @@ export function areClassGroupsEqual(
       return false;
     }
     if (group.class_names.length !== next.class_names.length) return false;
-    return group.class_names.every((className, classIndex) => className === next.class_names[classIndex]);
+    return group.class_names.every(
+      (className, classIndex) => className === next.class_names[classIndex],
+    );
   });
 }
 
@@ -92,7 +184,10 @@ export function countEnteredClasses(groups: InitialisationClassGroup[]) {
       sum +
       group.class_names.filter((className, index, names) => {
         const normalized = className.trim();
-        return Boolean(normalized) && names.findIndex((entry) => entry.trim() === normalized) === index;
+        return (
+          Boolean(normalized) &&
+          names.findIndex((entry) => entry.trim() === normalized) === index
+        );
       }).length
     );
   }, 0);

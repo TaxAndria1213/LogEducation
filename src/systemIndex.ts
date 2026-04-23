@@ -5,12 +5,9 @@ import cors from "cors";
 import mysql from "mysql2/promise";
 import { JwtService } from "./app/service/jwtService";
 import { AuthGuard } from "./middleware/AuthGuard";
-import { promisify } from 'node:util';
-import { exec as cbExec } from 'node:child_process';
 import { SystemApiRoutes } from "./app/api/system.routes";
 
 dotenv.config();
-const exec = promisify(cbExec);
 class Server {
     private static instance: Server | null = null;
 
@@ -19,7 +16,6 @@ class Server {
 
     constructor() {
         this.systemApp = express();
-        this.clearAllNodeCache();
         this.middleware();
     }
 
@@ -37,7 +33,9 @@ class Server {
         this.systemApp.use("/system-api", (req, res, next) => {
             if (
                 (req.path === "/user/create-owner-registration" && req.method === "POST") ||
-                (req.path === "/user/login" && req.method === "POST")
+                (req.path === "/user/owner-registration-status" && req.method === "POST") ||
+                (req.path === "/auth/login" && req.method === "POST") ||
+                (req.path === "/auth/refresh" && req.method === "POST")
             ) {
                 return next();
             }
@@ -72,10 +70,6 @@ class Server {
         } catch (error) {
             console.error("Error verifying or creating the database:", error);
         }
-    }
-
-    private async clearAllNodeCache(): Promise<void> {
-        exec("npm cache clean --force");
     }
 }
 

@@ -93,6 +93,45 @@ class UtilisateurService extends Service {
     }
   }
 
+  async rejectOwnerRegistration(userId: string) {
+    try {
+      const response = await Http.post(
+        ["api", this.url, userId, "reject-owner-registration"].join("/"),
+        {},
+      );
+      return response;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  async getPendingOwnerRegistrations(params?: Record<string, string | number | Date | boolean>) {
+    try {
+      const response = await Http.get(
+        ["api", this.url, "pending-owner-registrations"].join("/"),
+        params ?? {},
+      );
+      return response;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  async getOwnerRegistrationStatus(email: string) {
+    try {
+      const response = await Http.post(
+        ["api", this.url, "owner-registration-status"].join("/"),
+        { email },
+      );
+      return response;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   async createPersonnelAccount(data: WizardDataUserPersonnel) {
     try {
       console.log(data);

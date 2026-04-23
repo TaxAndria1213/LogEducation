@@ -1,9 +1,10 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import OperationFinanciereModel from "../models/operation_financiere.model";
+import { prisma } from "../../../service/prisma";
 
 class OperationFinanciereApp {
   public app: Application;
@@ -15,7 +16,7 @@ class OperationFinanciereApp {
     this.app = app;
     this.router = Router();
     this.operationFinanciere = new OperationFinanciereModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -154,3 +155,4 @@ class OperationFinanciereApp {
 }
 
 export default OperationFinanciereApp;
+

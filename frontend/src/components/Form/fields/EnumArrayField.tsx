@@ -1,15 +1,19 @@
 import { Controller, type FieldValues } from "react-hook-form";
 import { FieldWrapper } from "./FieldWrapper";
+import { getMultiSelectClassName } from "./inputStyles";
 import type { BaseFieldProps, Option } from "./types";
 
-type Props<TFieldValues extends FieldValues, TValue extends string> = BaseFieldProps<TFieldValues> & {
+type Props<
+  TFieldValues extends FieldValues,
+  TValue extends string,
+> = BaseFieldProps<TFieldValues> & {
   options: Option<TValue>[];
 };
 
-export function EnumArrayField<TFieldValues extends FieldValues, TValue extends string>({
-  options,
-  ...props
-}: Props<TFieldValues, TValue>) {
+export function EnumArrayField<
+  TFieldValues extends FieldValues,
+  TValue extends string,
+>({ options, ...props }: Props<TFieldValues, TValue>) {
   const id = String(props.name);
 
   return (
@@ -32,16 +36,22 @@ export function EnumArrayField<TFieldValues extends FieldValues, TValue extends 
               multiple
               value={arr}
               onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions).map((o) => o.value);
+                const selected = Array.from(e.target.selectedOptions).map(
+                  (o) => o.value,
+                );
                 field.onChange(selected.length ? selected : undefined);
               }}
               onBlur={field.onBlur}
               ref={field.ref}
               disabled={props.disabled}
-              style={{ padding: 10, border: "1px solid #ccc", borderRadius: 8, minHeight: 120 }}
+              className={getMultiSelectClassName(Boolean(fieldState.error))}
             >
               {options.map((o) => (
-                <option key={String(o.value)} value={String(o.value)} disabled={o.disabled}>
+                <option
+                  key={String(o.value)}
+                  value={String(o.value)}
+                  disabled={o.disabled}
+                >
                   {o.label}
                 </option>
               ))}

@@ -1,4 +1,4 @@
-import express, { Application, Request, Response } from "express";
+import express, { Application, NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
@@ -68,6 +68,7 @@ class Server {
       (req, res, next) => {
         // Keep auth routes and invitation-based account creation public.
         if ((req.path === "/user/create-owner-registration" && req.method === "POST") ||
+            (req.path === "/user/owner-registration-status" && req.method === "POST") ||
             (req.path === "/user/create-from-link" && req.method === "POST") ||
             (req.path === "/auth/login" && req.method === "POST") ||
             (req.path === "/auth/refresh" && req.method === "POST")) {
@@ -80,7 +81,7 @@ class Server {
     );
 
     // Global error handler
-    this.app.use((err: Error & { statusCode?: number }, req: Request, res: Response) => {
+    this.app.use((err: Error & { statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
       console.error("Error:", err);
       const statusCode = err.statusCode || 500;
       const message = err.message || "Internal Server Error";

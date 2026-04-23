@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { PrismaClient, type StatutFacture } from "@prisma/client";
+import { prisma as sharedPrisma } from "../../../service/prisma";
 import {
   ensurePlanForFacture,
   ensureFactureEcheances,
@@ -88,7 +89,7 @@ function getIsoWeek(date: Date) {
 export class FacturationRecurrenteService {
   private prisma: PrismaClient;
 
-  constructor(prisma = new PrismaClient()) {
+  constructor(prisma = sharedPrisma) {
     this.prisma = prisma;
   }
 

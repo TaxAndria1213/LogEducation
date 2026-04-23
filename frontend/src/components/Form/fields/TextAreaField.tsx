@@ -37,7 +37,7 @@ export function TextAreaField<TFieldValues extends FieldValues>({
             placeholder={placeholder}
             disabled={disabled}
             rows={4}
-            className={`${getInputClassName(Boolean(fieldState.error))} min-h-28 resize-y`}
+            className={`${getInputClassName(Boolean(fieldState.error))} min-h-24 resize-y sm:min-h-28`}
           />
         </FieldWrapper>
       )}

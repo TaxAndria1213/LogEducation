@@ -1,10 +1,11 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { Prisma, PrismaClient, type Remise } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import { archiveLinkedDocument } from "../../finance_shared/utils/document_archive";
 import RemiseModel from "../models/remise.model";
+import { prisma } from "../../../service/prisma";
 
 type RemisePayload = {
   etablissement_id: string;
@@ -39,7 +40,7 @@ class RemiseApp {
     this.app = app;
     this.router = Router();
     this.remise = new RemiseModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -482,3 +483,4 @@ class RemiseApp {
 }
 
 export default RemiseApp;
+

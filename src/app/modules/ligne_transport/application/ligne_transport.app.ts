@@ -1,9 +1,10 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import LigneTransportModel from "../models/ligne_transport.model";
+import { prisma } from "../../../service/prisma";
 
 type LigneTransportPayload = {
   etablissement_id: string;
@@ -36,7 +37,7 @@ class LigneTransportApp {
     this.app = app;
     this.router = Router();
     this.ligneTransport = new LigneTransportModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -288,3 +289,4 @@ class LigneTransportApp {
 }
 
 export default LigneTransportApp;
+

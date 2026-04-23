@@ -1,10 +1,11 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { ParentTuteur, Prisma, PrismaClient } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import { allocatePaiementsToFactureEcheances } from "../../finance_shared/utils/echeance_paiement";
 import ParentTuteurModel from "../models/parent_tuteur.model";
+import { prisma } from "../../../service/prisma";
 
 type RequestWithAuth = Request & {
   tenantId?: string;
@@ -51,7 +52,7 @@ function normalizeMethode(value: unknown) {
     case "virement":
       return "virement";
     case "cheque":
-    case "chèque":
+    case "chÃ¨que":
       return "cheque";
     case "bank":
     case "banque":
@@ -98,7 +99,7 @@ class ParentTuteurApp {
     this.app = app;
     this.router = Router();
     this.parentTuteur = new ParentTuteurModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -858,3 +859,4 @@ class ParentTuteurApp {
 }
 
 export default ParentTuteurApp;
+

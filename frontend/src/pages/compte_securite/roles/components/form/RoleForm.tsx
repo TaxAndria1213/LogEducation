@@ -1,228 +1,62 @@
 import { useEffect, useMemo, useState } from "react";
+import { FiChevronDown, FiChevronUp, FiSearch } from "react-icons/fi";
 import Spin from "../../../../../components/anim/Spin";
+import {
+  SelectionWorkspaceHeaderCard,
+  SelectionWorkspacePanel,
+} from "../../../../../components/page/SelectionWorkspace";
 import { useAuth } from "../../../../../auth/AuthContext";
 import { useInfo } from "../../../../../hooks/useInfo";
 import RoleService from "../../../../../services/role.service";
-import { mergeScopePermissions } from "../../../../../utils/permissionScope";
+import {
+  mergeScopePermissions,
+  normalizePermissionCodes,
+  permissionMatches,
+} from "../../../../../utils/permissionScope";
 import { useRoleCreateStore } from "../../store/RoleCreateStore";
-
-type FeatureItem = {
-  code: string;
-  label: string;
-  description: string;
-};
-
-type FeatureGroup = {
-  key: string;
-  title: string;
-  description: string;
-  items: FeatureItem[];
-};
-
-type RoleTemplate = {
-  key: string;
-  label: string;
-  suggestedName: string;
-  description: string;
-  permissions: string[];
-};
-
-const FEATURE_GROUPS: FeatureGroup[] = [
-  {
-    key: "administration",
-    title: "Administration",
-    description: "Pilotage global et selection d'etablissement.",
-    items: [
-      {
-        code: "ADM.*",
-        label: "Administration globale",
-        description: "Acces aux outils d'administration et aux selections globales.",
-      },
-    ],
-  },
-  {
-    key: "etablissement",
-    title: "Etablissement",
-    description: "Configuration de la structure et du calendrier scolaire.",
-    items: [
-      { code: "ET.*", label: "Tous les modules etablissement", description: "Sites, salles, annees scolaires et periodes." },
-    ],
-  },
-  {
-    key: "compte_securite",
-    title: "Comptes & securite",
-    description: "Utilisateurs, roles, profils, permissions et affectations.",
-    items: [
-      { code: "CS.UTILISATEURS.*", label: "Utilisateurs", description: "Gestion des comptes utilisateurs." },
-      { code: "CS.ROLES.*", label: "Roles", description: "Gestion des roles et des liens de creation." },
-      { code: "CS.PROFILS.*", label: "Profils", description: "Consultation et gestion des profils." },
-      { code: "CS.PERMISSIONS.*", label: "Permissions", description: "Catalogue fonctionnel des permissions." },
-      { code: "CS.AFFECTATIONS.*", label: "Affectations", description: "Affectation des roles et ajustements de scope." },
-    ],
-  },
-  {
-    key: "scolarite",
-    title: "Scolarite",
-    description: "Parcours eleve, classes et inscriptions.",
-    items: [
-      { code: "SC.INSCRIPTIONS.*", label: "Inscriptions", description: "Nouvelles inscriptions et reinscriptions." },
-      { code: "SC.CLASSES.*", label: "Classes", description: "Organisation des classes." },
-      { code: "SC.NIVEAUX.*", label: "Niveaux", description: "Parametrage des niveaux scolaires." },
-      { code: "SC.PARENTSTUTEURS.*", label: "Parents / tuteurs", description: "Responsables des eleves." },
-      { code: "SC.IDENTIFIANTS.*", label: "Identifiants eleves", description: "Documents et identifiants eleves." },
-      { code: "SC.ELEVES.*", label: "Eleves", description: "Fiches eleves et suivi." },
-    ],
-  },
-  {
-    key: "personnel",
-    title: "Personnel",
-    description: "Equipes et organisation interne.",
-    items: [
-      { code: "PE.PERSONNELS.*", label: "Personnels", description: "Fiches personnel et comptes rattaches." },
-      { code: "PE.ENSEIGNANTS.*", label: "Enseignants", description: "Profils enseignants." },
-      { code: "PE.DEPARTEMENTS.*", label: "Departements", description: "Organisation pedagogique par departement." },
-    ],
-  },
-  {
-    key: "pedagogie",
-    title: "Pedagogie",
-    description: "Organisation des enseignements et evaluations.",
-    items: [
-      { code: "PD.MATIERES.*", label: "Matieres", description: "Catalogue et pilotage des matieres." },
-      { code: "PD.PROGRAMMES.*", label: "Programmes", description: "Programmes par niveau et annee." },
-      { code: "PD.COURS.*", label: "Cours", description: "Affectation des cours." },
-      { code: "PD.EVALUATIONS.*", label: "Evaluations", description: "Controle continu et examens." },
-      { code: "PD.NOTES.*", label: "Notes", description: "Saisie et suivi des notes." },
-      { code: "PD.BULLETINS.*", label: "Bulletins", description: "Generation et publication des bulletins." },
-      { code: "PD.REGLESNOTES.*", label: "Regles de notes", description: "Parametrage de la notation." },
-    ],
-  },
-  {
-    key: "emploi_du_temps",
-    title: "Emploi du temps & calendrier",
-    description: "Planning des cours et evenements.",
-    items: [
-      { code: "EDT.EMPLOIDUTEMPS.*", label: "Emploi du temps", description: "Construction et consultation des EDT." },
-      { code: "EDT.EVENEMENTS.*", label: "Evenements", description: "Calendrier et evenements." },
-    ],
-  },
-  {
-    key: "presences",
-    title: "Presences",
-    description: "Appel, retards, justificatifs et suivi du personnel.",
-    items: [
-      { code: "PR.SESSIONSAPPEL.*", label: "Sessions d'appel", description: "Ouverture et suivi des appels." },
-      { code: "PR.PRESENCESELEVES.*", label: "Presences eleves", description: "Feuilles d'appel et statuts des eleves." },
-      { code: "PR.JUSTIFICATIFS.*", label: "Justificatifs", description: "Traitement des justificatifs d'absence." },
-      { code: "PR.PRESENCESPERSONNEL.*", label: "Presences personnel", description: "Suivi quotidien du personnel." },
-    ],
-  },
-  {
-    key: "discipline",
-    title: "Discipline",
-    description: "Incidents, sanctions et recompenses eleves.",
-    items: [
-      { code: "DI.INCIDENTS.*", label: "Incidents", description: "Signalement et suivi des incidents eleves." },
-      { code: "DI.SANCTIONS.*", label: "Sanctions", description: "Actions disciplinaires et decisions prises." },
-      { code: "DI.RECOMPENSES.*", label: "Recompenses", description: "Encouragements et valorisation du comportement." },
-    ],
-  },
-  {
-    key: "finance",
-    title: "Finance",
-    description: "Tarifs, facturation et suivi financier.",
-    items: [
-      { code: "FIN.CATALOGUEFRAIS.*", label: "Catalogue de frais", description: "Tarifs et frais reutilisables de l'etablissement." },
-      { code: "FIN.REMISES.*", label: "Remises", description: "Reductions en pourcentage ou montant fixe." },
-      { code: "FIN.FACTURES.*", label: "Factures", description: "Emission, detail et suivi des factures eleves." },
-      { code: "FIN.PAIEMENTS.*", label: "Paiements", description: "Encaissements, references et suivi des reglements." },
-      { code: "FIN.PLANSPAIEMENT.*", label: "Plans de paiement", description: "Echeanciers et tranches de paiement par eleve." },
-      { code: "FIN.JOURNALFINANCIER.*", label: "Journal financier", description: "Audit des operations comptables, annulations, remboursements et avoirs." },
-    ],
-  },
-  {
-    key: "transport_cantine",
-    title: "Transport & cantine",
-    description: "Services eleves, abonnements et parametres lies a la vie scolaire.",
-    items: [
-      { code: "TC.TRANSPORT.*", label: "Transport", description: "Lignes, arrets et abonnements transport des eleves." },
-      { code: "TC.CANTINE.*", label: "Cantine", description: "Formules et abonnements cantine des eleves." },
-    ],
-  },
-  {
-    key: "bibliotheque",
-    title: "Bibliotheque",
-    description: "Ressources documentaires et circulation des emprunts.",
-    items: [
-      { code: "BI.RESSOURCES.*", label: "Ressources", description: "Catalogue des livres et materiels de bibliotheque." },
-      { code: "BI.EMPRUNTS.*", label: "Emprunts", description: "Prets, retours et suivi des retards." },
-    ],
-  },
-];
-
-const ROLE_TEMPLATES: RoleTemplate[] = [
-  {
-    key: "ADMIN",
-    label: "Administrateur",
-    suggestedName: "Administrateur",
-    description: "Acces total aux modules et a l'administration globale.",
-    permissions: ["ADM.*", "ET.*", "CS.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*", "TC.*", "BI.*"],
-  },
-  {
-    key: "DIRECTION",
-    label: "Direction",
-    suggestedName: "Direction",
-    description: "Pilotage transverse de l'etablissement sans administration pure.",
-    permissions: ["ET.*", "SC.*", "PE.*", "PD.*", "EDT.*", "PR.*", "DI.*", "FIN.*", "TC.*", "BI.*"],
-  },
-  {
-    key: "SECRETARIAT",
-    label: "Secretariat",
-    suggestedName: "Secretariat",
-    description: "Orientation administrative, eleves et suivi quotidien.",
-    permissions: ["ET.*", "SC.*", "PR.*", "DI.*", "TC.*", "BI.*"],
-  },
-  {
-    key: "ENSEIGNANT",
-    label: "Enseignant",
-    suggestedName: "Enseignant",
-    description: "Pedagogie, emploi du temps et presences.",
-    permissions: ["PD.*", "EDT.*", "PR.*"],
-  },
-  {
-    key: "COMPTABLE",
-    label: "Comptable",
-    suggestedName: "Comptable",
-    description: "Acces restreint aux donnees utiles pour le suivi administratif et financier.",
-    permissions: ["ET.*", "SC.*", "FIN.*", "TC.*"],
-  },
-  {
-    key: "SURVEILLANT",
-    label: "Surveillant",
-    suggestedName: "Surveillant",
-    description: "Controle terrain, appels et classes utiles au suivi.",
-    permissions: ["PR.*", "EDT.*", "SC.CLASSES.*", "SC.ELEVES.*", "DI.*"],
-  },
-  {
-    key: "PARENT",
-    label: "Parent",
-    suggestedName: "Parent",
-    description: "Role minimal pour les comptes famille et parcours dedies.",
-    permissions: [],
-  },
-  {
-    key: "ELEVE",
-    label: "Eleve",
-    suggestedName: "Eleve",
-    description: "Role minimal pour l'acces des eleves.",
-    permissions: [],
-  },
-];
+import { FEATURE_GROUPS, ROLE_TEMPLATES } from "../../roleTemplates";
 
 function togglePermission(current: string[], code: string) {
   return current.includes(code)
     ? current.filter((item) => item !== code)
     : [...current, code];
+}
+
+function isFeatureSelected(current: string[], code: string) {
+  return current.some((item) => permissionMatches(item, code));
+}
+
+function expandTemplatePermissions(permissions: string[]) {
+  const allItems = FEATURE_GROUPS.flatMap((group) => group.items);
+  const expanded = permissions.flatMap((permissionCode) => {
+    const matches = allItems
+      .filter((item) => permissionMatches(permissionCode, item.code))
+      .map((item) => item.code);
+    return matches.length > 0 ? matches : [permissionCode];
+  });
+
+  return normalizePermissionCodes(expanded);
+}
+
+function getExpandedGroupsForPermissions(selectedPermissions: string[]) {
+  return FEATURE_GROUPS.filter((group) =>
+    group.items.some((item) => isFeatureSelected(selectedPermissions, item.code)),
+  ).map((group) => group.key);
+}
+
+function normalizeRoleGuardToken(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s_-]+/g, " ");
+}
+
+function isForbiddenAdminRoleName(value: string) {
+  return ["ADMIN", "ADMINISTRATEUR", "ADMINISTRATOR", "SUPER ADMIN", "SUPERADMIN"].includes(
+    normalizeRoleGuardToken(value),
+  );
 }
 
 function RoleForm() {
@@ -236,6 +70,8 @@ function RoleForm() {
   const [roleName, setRoleName] = useState("");
   const [templateKey, setTemplateKey] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  const [permissionQuery, setPermissionQuery] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -250,14 +86,43 @@ function RoleForm() {
   );
 
   const selectedCount = selectedPermissions.length;
+  const normalizedPermissionQuery = permissionQuery.trim().toLowerCase();
+
+  const filteredGroups = useMemo(() => {
+    return FEATURE_GROUPS.map((group) => {
+      const groupMatches =
+        group.title.toLowerCase().includes(normalizedPermissionQuery) ||
+        group.description.toLowerCase().includes(normalizedPermissionQuery);
+
+      if (!normalizedPermissionQuery) {
+        return group;
+      }
+
+      const filteredItems = groupMatches
+        ? group.items
+        : group.items.filter((item) => {
+            const haystack = [item.label, item.description, item.code]
+              .join(" ")
+              .toLowerCase();
+            return haystack.includes(normalizedPermissionQuery);
+          });
+
+      return {
+        ...group,
+        items: filteredItems,
+      };
+    }).filter((group) => group.items.length > 0);
+  }, [normalizedPermissionQuery]);
 
   const onTemplateChange = (nextTemplateKey: string) => {
     const nextTemplate =
       ROLE_TEMPLATES.find((template) => template.key === nextTemplateKey) ?? null;
     const previousSuggestedName = activeTemplate?.suggestedName ?? "";
+    const nextPermissions = expandTemplatePermissions(nextTemplate?.permissions ?? []);
 
     setTemplateKey(nextTemplateKey);
-    setSelectedPermissions(nextTemplate?.permissions ?? []);
+    setSelectedPermissions(nextPermissions);
+    setExpandedGroups(getExpandedGroupsForPermissions(nextPermissions));
 
     if (!roleName.trim() || roleName.trim() === previousSuggestedName) {
       setRoleName(nextTemplate?.suggestedName ?? "");
@@ -280,6 +145,14 @@ function RoleForm() {
       return;
     }
 
+    if (isForbiddenAdminRoleName(normalizedName)) {
+      info(
+        "Le role administrateur est reserve a la plateforme et ne peut pas etre cree dans un etablissement.",
+        "error",
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
       const scope = {
@@ -298,6 +171,8 @@ function RoleForm() {
       setRoleName("");
       setTemplateKey("");
       setSelectedPermissions([]);
+      setExpandedGroups([]);
+      setPermissionQuery("");
     } catch (error) {
       console.error("Erreur creation role", error);
       info("Le role n'a pas pu etre cree.", "error");
@@ -312,16 +187,18 @@ function RoleForm() {
         <Spin label="Chargement des ressources..." showLabel />
       ) : (
         <form onSubmit={onSubmit} className="space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-slate-900">Creation d'un role</h2>
-              <p className="text-sm leading-6 text-slate-600">
+          <SelectionWorkspaceHeaderCard
+            title="Creation d'un role"
+            description={
+              <>
                 Donne un nom libre au role, choisis si besoin un modele predefini,
                 puis ajuste les fonctionnalites a activer. Le role restera
-                personnalise meme s'il part d'une base standard.
-              </p>
-            </div>
-
+                personnalise meme s&apos;il part d&apos;une base standard.
+              </>
+            }
+            className="rounded-3xl p-6"
+            headerClassName="block"
+          >
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <label className="space-y-2">
                 <span className="text-sm font-medium text-slate-700">Nom du role</span>
@@ -362,68 +239,165 @@ function RoleForm() {
                 </span>
               </div>
             </div>
-          </div>
+          </SelectionWorkspaceHeaderCard>
 
-          <div className="grid gap-4">
-            {FEATURE_GROUPS.map((group) => (
-              <section
-                key={group.key}
-                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-              >
-                <div className="space-y-1">
-                  <h3 className="text-lg font-semibold text-slate-900">{group.title}</h3>
-                  <p className="text-sm leading-6 text-slate-600">{group.description}</p>
+          <SelectionWorkspacePanel
+            title="Modules et autorisations"
+            description={
+              <>
+                Ouvre seulement les groupes utiles, recherche une fonctionnalite,
+                puis enregistre sans devoir descendre jusqu&apos;au bas de la page.
+              </>
+            }
+            toolbar={
+              <div className="flex flex-col gap-3 lg:items-end">
+                <label className="relative block w-full lg:w-[22rem]">
+                  <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={permissionQuery}
+                    onChange={(event) => setPermissionQuery(event.target.value)}
+                    placeholder="Rechercher un module, un code ou une action"
+                    className="w-full rounded-2xl border border-slate-300 bg-white pl-10 pr-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                  />
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedGroups(filteredGroups.map((group) => group.key))}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Tout deplier
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedGroups([])}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Tout reduire
+                  </button>
                 </div>
+              </div>
+            }
+            footerTitle={
+              <>
+                {selectedCount} fonctionnalite{selectedCount > 1 ? "s" : ""} selectionnee{selectedCount > 1 ? "s" : ""}
+              </>
+            }
+            footerDescription="Le bouton reste accessible pendant que tu parcours les modules."
+            footerAction={
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <span>Enregistrer le role</span>
+                {submitting ? <Spin inline /> : null}
+              </button>
+            }
+          >
+              <div className="space-y-4">
+                {filteredGroups.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-600">
+                    Aucune fonctionnalite ne correspond a la recherche.
+                  </div>
+                ) : (
+                  filteredGroups.map((group) => {
+                    const groupSelectedCount = group.items.filter((item) =>
+                      isFeatureSelected(selectedPermissions, item.code),
+                    ).length;
+                    const isExpanded =
+                      normalizedPermissionQuery.length > 0 ||
+                      expandedGroups.includes(group.key);
 
-                <div className="mt-5 grid gap-3 md:grid-cols-2">
-                  {group.items.map((item) => {
-                    const checked = selectedPermissions.includes(item.code);
                     return (
-                      <label
-                        key={item.code}
-                        className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${
-                          checked
-                            ? "border-slate-900 bg-slate-900 text-white"
-                            : "border-slate-200 bg-slate-50 text-slate-900 hover:border-slate-300"
-                        }`}
+                      <section
+                        key={group.key}
+                        className="overflow-hidden rounded-3xl border border-slate-200 bg-white"
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() =>
-                            setSelectedPermissions((current) =>
-                              togglePermission(current, item.code),
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedGroups((current) =>
+                              current.includes(group.key)
+                                ? current.filter((key) => key !== group.key)
+                                : [...current, group.key],
                             )
                           }
-                          className="mt-1 h-4 w-4 accent-slate-900"
-                        />
-                        <span className="space-y-1">
-                          <span className="block text-sm font-semibold">{item.label}</span>
-                          <span className={`block text-xs ${checked ? "text-slate-200" : "text-slate-600"}`}>
-                            {item.description}
+                          className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="text-base font-semibold text-slate-900">
+                                {group.title}
+                              </h3>
+                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+                                {groupSelectedCount}/{group.items.length} active
+                              </span>
+                            </div>
+                            <p className="mt-1 text-sm leading-6 text-slate-600">
+                              {group.description}
+                            </p>
+                          </div>
+                          <span className="mt-1 shrink-0 rounded-full bg-slate-100 p-2 text-slate-500">
+                            {isExpanded ? <FiChevronUp /> : <FiChevronDown />}
                           </span>
-                          <span className={`block text-[11px] uppercase tracking-wide ${checked ? "text-slate-300" : "text-slate-500"}`}>
-                            {item.code}
-                          </span>
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </div>
+                        </button>
 
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              <span>Enregistrer le role</span>
-              {submitting ? <Spin inline /> : null}
-            </button>
-          </div>
+                        {isExpanded ? (
+                          <div className="border-t border-slate-200 px-5 py-4">
+                            <div className="grid gap-3 md:grid-cols-2">
+                              {group.items.map((item) => {
+                                const checked = selectedPermissions.includes(item.code);
+                                return (
+                                  <label
+                                    key={item.code}
+                                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${
+                                      checked
+                                        ? "border-slate-900 bg-slate-900 text-white"
+                                        : "border-slate-200 bg-slate-50 text-slate-900 hover:border-slate-300"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() =>
+                                        setSelectedPermissions((current) =>
+                                          togglePermission(current, item.code),
+                                        )
+                                      }
+                                      className="mt-1 h-4 w-4 accent-slate-900"
+                                    />
+                                    <span className="space-y-1">
+                                      <span className="block text-sm font-semibold">
+                                        {item.label}
+                                      </span>
+                                      <span
+                                        className={`block text-xs ${
+                                          checked ? "text-slate-200" : "text-slate-600"
+                                        }`}
+                                      >
+                                        {item.description}
+                                      </span>
+                                      <span
+                                        className={`block text-[11px] uppercase tracking-wide ${
+                                          checked ? "text-slate-300" : "text-slate-500"
+                                        }`}
+                                      >
+                                        {item.code}
+                                      </span>
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+                      </section>
+                    );
+                  })
+                )}
+              </div>
+          </SelectionWorkspacePanel>
         </form>
       )}
     </div>

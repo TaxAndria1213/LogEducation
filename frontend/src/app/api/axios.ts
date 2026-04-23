@@ -42,6 +42,20 @@ function apiApp(url: string) {
     (response) => response,
     async (error) => {
       const originalRequest = error.config;
+      const status = error.response?.data?.status;
+      const errorCode = status?.errorCode;
+      const redirectTo = status?.redirectTo;
+
+      if (
+        ["inactive_account", "pending_owner_registration", "rejected_owner_registration"].includes(
+          errorCode,
+        ) &&
+        redirectTo
+      ) {
+        window.location.href = redirectTo;
+        return Promise.reject(error);
+      }
+
       if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;
         try {
@@ -63,7 +77,7 @@ function apiApp(url: string) {
         }
       }
       if (error.response?.status === 403) {
-        window.location.href = "/login";
+        window.location.href = redirectTo || "/login";
       }
       return Promise.reject(error);
     }
@@ -71,4 +85,3 @@ function apiApp(url: string) {
 
   return api;
 }
-

@@ -1,10 +1,11 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient, type Note } from "@prisma/client";
 import Response from "../../../common/app/response";
 import NoteModel from "../models/note.model";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import { assertNoAdministrativeRestriction } from "../../finance_shared/utils/recovery_restrictions";
+import { prisma } from "../../../service/prisma";
 
 type NotePayload = Pick<
   Note,
@@ -21,7 +22,7 @@ class NoteApp {
     this.app = app;
     this.router = Router();
     this.note = new NoteModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -423,6 +424,7 @@ class NoteApp {
 }
 
 export default NoteApp;
+
 
 
 

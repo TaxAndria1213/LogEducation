@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   FiBookOpen,
   FiCalendar,
@@ -7,9 +14,7 @@ import {
   FiClock,
   FiLayers,
   FiMapPin,
-  FiSettings,
   FiShield,
-  FiTruck,
 } from "react-icons/fi";
 import { useInfo } from "../../../../../hooks/useInfo";
 import InitialisationEtablissementService from "../../../../../services/initialisationEtablissement.service";
@@ -26,10 +31,8 @@ import StepClasses from "../steps/StepClasses";
 import StepEtablissementBase from "../steps/StepEtablissementBase";
 import StepFinance from "../steps/StepFinance";
 import StepNiveaux from "../steps/StepNiveaux";
-import StepOrganisation from "../steps/StepOrganisation";
 import StepResumeGeneration from "../steps/StepResumeGeneration";
 import StepSecurite from "../steps/StepSecurite";
-import StepServicesAnnexes from "../steps/StepServicesAnnexes";
 import { useInitialisationWizardStore } from "../../store/InitialisationWizardStore";
 import {
   areAcademicGroupsEqual,
@@ -38,17 +41,27 @@ import {
 } from "../../utils/academics";
 import {
   areClassGroupsEqual,
+  areStringArraysEqual,
+  buildSelectedLevelCodes,
   countEnteredClasses,
   resolveDraftLevels,
   syncClassGroups,
 } from "../../utils/levels";
+import {
+  countConfiguredPeriods,
+  getSelectedPeriodTemplate,
+} from "../../utils/periods";
 
 type Props = {
   etablissementId: string;
   templates: InitialisationTemplates | null;
   onClose: () => void;
-  onCompleted: (result: InitialisationCommitResult) => void;
+  onCompleted: (result: InitialisationCommitResult) => void | Promise<void>;
+  onHeaderActionsChange?: (actions: ReactNode | null) => void;
+  onScrollTopRequest?: () => void;
 };
+
+const DEFAULT_SECURITY_ROLE_NAMES = ["Direction", "Secretariat", "Enseignant"];
 
 function buildDefaultDraft(etablissementId: string): InitialisationSetupDraft {
   const year = new Date().getFullYear();
@@ -62,14 +75,20 @@ function buildDefaultDraft(etablissementId: string): InitialisationSetupDraft {
     annee_nom: `${year}-${year + 1}`,
     annee_date_debut: `${year}-09-01`,
     annee_date_fin: `${year + 1}-07-31`,
-    selected_level_codes: ["CP", "CE1", "CE2", "CM1", "CM2", "6E"],
+    periods_strategy: "STANDARD",
+    periods_template_code: "TRIMESTRES",
+    custom_periods: [],
+    selected_level_presets: ["PRIMAIRE"],
+    manual_selected_level_codes: [""],
+    selected_level_codes: ["CP", "CE1", "CE2", "CM1", "CM2"],
     custom_levels: "",
     classes_by_level: [],
     academic_by_level: [],
-    create_default_departements: true,
+    finance_catalogues: [],
+    selected_role_names: DEFAULT_SECURITY_ROLE_NAMES,
     classes_mode: "CREATION",
-    academic_mode: "CREATION",
-    security_mode: "PLUS_TARD",
+    academic_mode: "PLUS_TARD",
+    security_mode: "CREATION",
     finance_mode: "PLUS_TARD",
     services_mode: "PLUS_TARD",
     audit_mode: "PLUS_TARD",
@@ -95,11 +114,57 @@ function getErrorMessage(error: unknown) {
   return "Une erreur est survenue pendant le wizard d'initialisation.";
 }
 
+function parseFinanceAmount(value: unknown) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  const normalized = value.trim().replace(/\s/g, "").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getFinanceNavigationIssue(draft: InitialisationSetupDraft) {
+  if (draft.finance_mode !== "CREATION") {
+    return null;
+  }
+
+  if (draft.finance_catalogues.length === 0) {
+    return "Ajoute au moins un frais catalogue avant de passer a l'etape suivante.";
+  }
+
+  const cataloguesSansMontant = draft.finance_catalogues.filter((catalogue) => {
+    const amount = parseFinanceAmount(catalogue.montant);
+    return amount === null || amount < 0;
+  });
+
+  if (cataloguesSansMontant.length === 0) {
+    return null;
+  }
+
+  const labels = cataloguesSansMontant
+    .slice(0, 3)
+    .map((catalogue) => catalogue.nom.trim() || "Frais sans nom")
+    .join(", ");
+  const suffix =
+    cataloguesSansMontant.length > 3
+      ? ` et ${cataloguesSansMontant.length - 3} autre(s)`
+      : "";
+
+  return `Renseigne le montant de tous les frais avant de continuer : ${labels}${suffix}.`;
+}
+
 export default function InitialisationWizard({
   etablissementId,
   templates,
   onClose,
   onCompleted,
+  onHeaderActionsChange,
+  onScrollTopRequest,
 }: Props) {
   const { info } = useInfo();
   const { step, preview, report, setStep, setPreview, setReport, reset } =
@@ -117,6 +182,81 @@ export default function InitialisationWizard({
     return () => reset();
   }, [etablissementId, reset]);
 
+  useEffect(() => {
+    setDraft((current) => {
+      const nextSelectedLevelCodes = buildSelectedLevelCodes(
+        templates,
+        current.selected_level_presets,
+        current.manual_selected_level_codes,
+      );
+
+      if (
+        areStringArraysEqual(
+          current.selected_level_codes,
+          nextSelectedLevelCodes,
+        )
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        selected_level_codes: nextSelectedLevelCodes,
+      };
+    });
+  }, [
+    draft.selected_level_presets,
+    draft.manual_selected_level_codes,
+    templates,
+  ]);
+
+  useEffect(() => {
+    if (!templates?.periodes_standards?.length) return;
+
+    setDraft((current) => {
+      const selectedTemplate = getSelectedPeriodTemplate(
+        templates,
+        current.periods_template_code,
+      );
+
+      if (
+        !selectedTemplate ||
+        selectedTemplate.code === current.periods_template_code
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        periods_template_code: selectedTemplate.code,
+      };
+    });
+  }, [templates]);
+
+  useEffect(() => {
+    if (!templates?.roles_standards?.length) return;
+
+    setDraft((current) => {
+      const availableRoleNames = templates.roles_standards.map(
+        (role) => role.nom,
+      );
+      const nextSelectedRoleNames = current.selected_role_names.filter(
+        (roleName) => availableRoleNames.includes(roleName),
+      );
+
+      if (
+        areStringArraysEqual(current.selected_role_names, nextSelectedRoleNames)
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        selected_role_names: nextSelectedRoleNames,
+      };
+    });
+  }, [templates]);
+
   const resolvedLevels = useMemo(
     () =>
       resolveDraftLevels(
@@ -131,7 +271,10 @@ export default function InitialisationWizard({
 
   useEffect(() => {
     setDraft((current) => {
-      const nextGroups = syncClassGroups(resolvedLevels, current.classes_by_level);
+      const nextGroups = syncClassGroups(
+        resolvedLevels,
+        current.classes_by_level,
+      );
 
       if (areClassGroupsEqual(current.classes_by_level, nextGroups)) {
         return current;
@@ -146,7 +289,10 @@ export default function InitialisationWizard({
 
   useEffect(() => {
     setDraft((current) => {
-      const nextGroups = syncAcademicGroups(resolvedLevels, current.academic_by_level);
+      const nextGroups = syncAcademicGroups(
+        resolvedLevels,
+        current.academic_by_level,
+      );
 
       if (areAcademicGroupsEqual(current.academic_by_level, nextGroups)) {
         return current;
@@ -158,6 +304,65 @@ export default function InitialisationWizard({
       };
     });
   }, [resolvedLevels]);
+
+  useEffect(() => {
+    const validLevelCodes = new Set(resolvedLevels.map((level) => level.code));
+
+    setDraft((current) => {
+      const validClassKeys = new Set(
+        current.classes_by_level.flatMap((group) =>
+          group.class_names
+            .map((className) => className.trim())
+            .filter(Boolean)
+            .map(
+              (className) => `${group.level_code}::${className.toLowerCase()}`,
+            ),
+        ),
+      );
+      const nextCatalogues = current.finance_catalogues.map((catalogue) => {
+        if (
+          catalogue.level_code &&
+          !validLevelCodes.has(catalogue.level_code)
+        ) {
+          return {
+            ...catalogue,
+            level_code: "",
+            class_name: "",
+          };
+        }
+
+        if (
+          catalogue.class_name &&
+          !validClassKeys.has(
+            `${catalogue.level_code}::${catalogue.class_name.trim().toLowerCase()}`,
+          )
+        ) {
+          return {
+            ...catalogue,
+            class_name: "",
+          };
+        }
+
+        return catalogue;
+      });
+      const changed = nextCatalogues.some(
+        (catalogue, index) =>
+          catalogue.level_code !==
+            current.finance_catalogues[index]?.level_code ||
+          catalogue.class_name !==
+            current.finance_catalogues[index]?.class_name,
+      );
+
+      if (!changed) {
+        return current;
+      }
+
+      return {
+        ...current,
+        finance_catalogues: nextCatalogues,
+      };
+    });
+  }, [draft.classes_by_level, resolvedLevels]);
 
   const steps = useMemo(
     () => [
@@ -171,7 +376,13 @@ export default function InitialisationWizard({
         title: "Annee initiale",
         subtitle: "Cadre temporel du premier cycle d'exploitation",
         icon: <FiCalendar />,
-        content: <StepAnneeInitiale draft={draft} setDraft={setDraft} />,
+        content: (
+          <StepAnneeInitiale
+            draft={draft}
+            setDraft={setDraft}
+            templates={templates}
+          />
+        ),
       },
       {
         title: "Niveaux",
@@ -210,11 +421,11 @@ export default function InitialisationWizard({
         ),
       },
       {
-        title: "Organisation",
-        subtitle: "Departements et premiers reperes administratifs",
-        icon: <FiSettings />,
+        title: "Securite",
+        subtitle: "Roles et habilitations cibles",
+        icon: <FiShield />,
         content: (
-          <StepOrganisation
+          <StepSecurite
             draft={draft}
             setDraft={setDraft}
             templates={templates}
@@ -222,22 +433,16 @@ export default function InitialisationWizard({
         ),
       },
       {
-        title: "Securite",
-        subtitle: "Roles et habilitations cibles",
-        icon: <FiShield />,
-        content: <StepSecurite draft={draft} setDraft={setDraft} />,
-      },
-      {
         title: "Finance",
         subtitle: "Socle de facturation et cadrage financier",
         icon: <FiCheckCircle />,
-        content: <StepFinance draft={draft} setDraft={setDraft} />,
-      },
-      {
-        title: "Services",
-        subtitle: "Transport, cantine et blocs annexes",
-        icon: <FiTruck />,
-        content: <StepServicesAnnexes draft={draft} setDraft={setDraft} />,
+        content: (
+          <StepFinance
+            draft={draft}
+            setDraft={setDraft}
+            levels={resolvedLevels}
+          />
+        ),
       },
       {
         title: "Audit",
@@ -257,22 +462,30 @@ export default function InitialisationWizard({
 
   const progress = Math.round(((step + 1) / steps.length) * 100);
   const isLastStep = step === steps.length - 1;
+  const financeStepIndex = steps.findIndex((item) => item.title === "Finance");
+  const financeNavigationIssue = getFinanceNavigationIssue(draft);
+  const isFinanceNextBlocked =
+    step === financeStepIndex && Boolean(financeNavigationIssue);
   const selectedLevelCount = resolvedLevels.length;
+  const plannedPeriodCount = countConfiguredPeriods(draft, templates);
   const plannedClassCount = countEnteredClasses(draft.classes_by_level);
-  const plannedAcademicSubjectCount = countEnteredAcademicSubjects(draft.academic_by_level);
+  const plannedAcademicSubjectCount = countEnteredAcademicSubjects(
+    draft.academic_by_level,
+  );
+  const selectedRoleCount = draft.selected_role_names.length;
   const deferredCount = [
     draft.classes_mode,
     draft.academic_mode,
     draft.security_mode,
     draft.finance_mode,
-    draft.services_mode,
     draft.audit_mode,
   ].filter((mode) => mode === "PLUS_TARD").length;
 
-  const handlePreview = async () => {
+  const handlePreview = useCallback(async () => {
     setIsPreviewing(true);
     try {
-      const response = await InitialisationEtablissementService.previewInitialSetup(draft);
+      const response =
+        await InitialisationEtablissementService.previewInitialSetup(draft);
       setPreview(response.data ?? null);
       info("Previsualisation mise a jour.", "success");
     } catch (error) {
@@ -280,43 +493,168 @@ export default function InitialisationWizard({
     } finally {
       setIsPreviewing(false);
     }
-  };
+  }, [draft, info, setPreview]);
 
-  const handleCommit = async () => {
+  const handleCommit = useCallback(async () => {
     setIsCommitting(true);
     try {
-      const response = await InitialisationEtablissementService.commitInitialSetup(draft);
-      setReport((response.data ?? null) as InitialisationCommitResult | null);
+      const response =
+        await InitialisationEtablissementService.commitInitialSetup(draft);
+      const result = (response.data ??
+        null) as InitialisationCommitResult | null;
+      setReport(result);
+      if (result) {
+        void onCompleted(result);
+      }
       info("Initialisation executee.", "success");
     } catch (error) {
       info(getErrorMessage(error), "error");
     } finally {
       setIsCommitting(false);
     }
-  };
+  }, [draft, info, onCompleted, setReport]);
 
-  const closeWithReport = () => {
-    if (report) {
-      onCompleted(report);
-    }
+  const closeWithReport = useCallback(() => {
     onClose();
-  };
+  }, [onClose]);
 
-  if (report) {
+  const goToStep = useCallback(
+    (nextStep: number) => {
+      const normalizedNextStep = Math.min(
+        steps.length - 1,
+        Math.max(0, nextStep),
+      );
+      const triesToMovePastFinance =
+        financeStepIndex >= 0 &&
+        step <= financeStepIndex &&
+        normalizedNextStep > financeStepIndex;
+
+      if (triesToMovePastFinance && financeNavigationIssue) {
+        info(financeNavigationIssue, "warning");
+        setStep(financeStepIndex);
+        onScrollTopRequest?.();
+        return;
+      }
+
+      setStep(normalizedNextStep);
+
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => {
+          onScrollTopRequest?.();
+        });
+      } else {
+        onScrollTopRequest?.();
+      }
+    },
+    [
+      financeNavigationIssue,
+      financeStepIndex,
+      info,
+      onScrollTopRequest,
+      setStep,
+      step,
+      steps.length,
+    ],
+  );
+
+  const goToStepRef = useRef(goToStep);
+  const handlePreviewRef = useRef(handlePreview);
+  const handleCommitRef = useRef(handleCommit);
+  const closeWithReportRef = useRef(closeWithReport);
+
+  useEffect(() => {
+    goToStepRef.current = goToStep;
+  }, [goToStep]);
+
+  useEffect(() => {
+    handlePreviewRef.current = handlePreview;
+  }, [handlePreview]);
+
+  useEffect(() => {
+    handleCommitRef.current = handleCommit;
+  }, [handleCommit]);
+
+  useEffect(() => {
+    closeWithReportRef.current = closeWithReport;
+  }, [closeWithReport]);
+
+  const headerActions = useMemo(() => {
+    if (report) {
+      return (
+        <button
+          type="button"
+          onClick={() => closeWithReportRef.current()}
+          className="rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"
+        >
+          Fermer
+        </button>
+      );
+    }
+
     return (
-      <div className="space-y-6">
-        <GenerationReport report={report} />
-        <div className="flex justify-end">
+      <>
+        <button
+          type="button"
+          onClick={() => goToStepRef.current(step - 1)}
+          disabled={step === 0}
+          className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 disabled:opacity-50"
+        >
+          Retour
+        </button>
+
+        {!isLastStep ? (
           <button
             type="button"
-            onClick={closeWithReport}
-            className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+            onClick={() => goToStepRef.current(step + 1)}
+            disabled={isFinanceNextBlocked}
+            title={financeNavigationIssue ?? undefined}
+            className="rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Fermer
+            Suivant
           </button>
-        </div>
-      </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => void handlePreviewRef.current()}
+              disabled={isPreviewing}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 disabled:opacity-50"
+            >
+              {isPreviewing ? "Previsualisation..." : "Previsualiser"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleCommitRef.current()}
+              disabled={isCommitting || !preview}
+              className="rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {isCommitting ? "Generation..." : "Generer"}
+            </button>
+          </>
+        )}
+      </>
     );
+  }, [
+    isCommitting,
+    isFinanceNextBlocked,
+    isLastStep,
+    isPreviewing,
+    financeNavigationIssue,
+    preview,
+    report,
+    step,
+  ]);
+
+  useEffect(() => {
+    onHeaderActionsChange?.(headerActions);
+
+    return () => {
+      onHeaderActionsChange?.(null);
+    };
+  }, [headerActions, onHeaderActionsChange]);
+
+  if (report) {
+    return <GenerationReport report={report} />;
   }
 
   return (
@@ -328,7 +666,8 @@ export default function InitialisationWizard({
           </p>
           <h3 className="mt-3 text-xl font-semibold">Initialisation guidee</h3>
           <p className="mt-2 text-sm leading-6 text-slate-100/90">
-            On structure le socle utile maintenant, sans te noyer dans tous les referentiels.
+            On structure le socle utile maintenant, sans te noyer dans tous les
+            referentiels.
           </p>
 
           <div className="mt-5">
@@ -355,11 +694,9 @@ export default function InitialisationWizard({
                 <button
                   key={item.title}
                   type="button"
-                  onClick={() => setStep(index)}
+                  onClick={() => goToStep(index)}
                   className={`flex w-full items-start gap-3 rounded-[20px] px-3 py-3 text-left transition ${
-                    active
-                      ? "bg-cyan-50"
-                      : "hover:bg-slate-50"
+                    active ? "bg-cyan-50" : "hover:bg-slate-50"
                   }`}
                 >
                   <div
@@ -374,8 +711,12 @@ export default function InitialisationWizard({
                     {item.icon}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{item.subtitle}</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      {item.subtitle}
+                    </p>
                   </div>
                 </button>
               );
@@ -390,11 +731,21 @@ export default function InitialisationWizard({
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <div className="rounded-[20px] bg-slate-50 px-3 py-3">
               <p className="text-xs font-medium text-slate-500">Niveaux</p>
-              <p className="mt-1 text-xl font-semibold text-slate-900">{selectedLevelCount}</p>
+              <p className="mt-1 text-xl font-semibold text-slate-900">
+                {selectedLevelCount}
+              </p>
+            </div>
+            <div className="rounded-[20px] bg-slate-50 px-3 py-3">
+              <p className="text-xs font-medium text-slate-500">Periodes</p>
+              <p className="mt-1 text-xl font-semibold text-slate-900">
+                {plannedPeriodCount}
+              </p>
             </div>
             <div className="rounded-[20px] bg-slate-50 px-3 py-3">
               <p className="text-xs font-medium text-slate-500">Classes</p>
-              <p className="mt-1 text-xl font-semibold text-slate-900">{plannedClassCount}</p>
+              <p className="mt-1 text-xl font-semibold text-slate-900">
+                {plannedClassCount}
+              </p>
             </div>
             <div className="rounded-[20px] bg-slate-50 px-3 py-3">
               <p className="text-xs font-medium text-slate-500">Matieres</p>
@@ -403,8 +754,18 @@ export default function InitialisationWizard({
               </p>
             </div>
             <div className="rounded-[20px] bg-slate-50 px-3 py-3">
-              <p className="text-xs font-medium text-slate-500">Blocs differes</p>
-              <p className="mt-1 text-xl font-semibold text-slate-900">{deferredCount}</p>
+              <p className="text-xs font-medium text-slate-500">Roles</p>
+              <p className="mt-1 text-xl font-semibold text-slate-900">
+                {selectedRoleCount}
+              </p>
+            </div>
+            <div className="rounded-[20px] bg-slate-50 px-3 py-3">
+              <p className="text-xs font-medium text-slate-500">
+                Blocs differes
+              </p>
+              <p className="mt-1 text-xl font-semibold text-slate-900">
+                {deferredCount}
+              </p>
             </div>
           </div>
         </section>
@@ -435,56 +796,6 @@ export default function InitialisationWizard({
 
         <section className="min-w-0 rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] p-6 shadow-sm">
           {steps[step]?.content}
-        </section>
-
-        <section className="min-w-0 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm text-slate-600">
-              {isLastStep
-                ? "Verifie la previsualisation avant d'executer."
-                : "Tu peux avancer librement dans le wizard et revenir sur une etape a tout moment."}
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => setStep(Math.max(0, step - 1))}
-                disabled={step === 0}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50"
-              >
-                Retour
-              </button>
-
-              {!isLastStep ? (
-                <button
-                  type="button"
-                  onClick={() => setStep(Math.min(steps.length - 1, step + 1))}
-                  className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
-                >
-                  Suivant
-                </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => void handlePreview()}
-                    disabled={isPreviewing}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50"
-                  >
-                    {isPreviewing ? "Previsualisation..." : "Previsualiser"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleCommit()}
-                    disabled={isCommitting || !preview}
-                    className="rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
-                  >
-                    {isCommitting ? "Generation..." : "Generer"}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
         </section>
       </div>
     </div>

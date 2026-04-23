@@ -11,6 +11,7 @@ class InitialisationEtablissementModel {
       classCount,
       departementCount,
       matiereCount,
+      catalogueFraisCount,
       roleCount,
       permissionCount,
       transportLineCount,
@@ -34,15 +35,28 @@ class InitialisationEtablissementModel {
         },
       }),
       prisma.site.count({ where: { etablissement_id: etablissementId } }),
-      prisma.anneeScolaire.count({ where: { etablissement_id: etablissementId } }),
-      prisma.niveauScolaire.count({ where: { etablissement_id: etablissementId } }),
+      prisma.anneeScolaire.count({
+        where: { etablissement_id: etablissementId },
+      }),
+      prisma.niveauScolaire.count({
+        where: { etablissement_id: etablissementId },
+      }),
       prisma.classe.count({ where: { etablissement_id: etablissementId } }),
-      prisma.departement.count({ where: { etablissement_id: etablissementId } }),
+      prisma.departement.count({
+        where: { etablissement_id: etablissementId },
+      }),
       prisma.matiere.count({ where: { etablissement_id: etablissementId } }),
+      prisma.catalogueFrais.count({
+        where: { etablissement_id: etablissementId },
+      }),
       prisma.role.count({ where: { etablissement_id: etablissementId } }),
       prisma.permission.count({ where: { etablissement_id: etablissementId } }),
-      prisma.ligneTransport.count({ where: { etablissement_id: etablissementId } }),
-      prisma.formuleCantine.count({ where: { etablissement_id: etablissementId } }),
+      prisma.ligneTransport.count({
+        where: { etablissement_id: etablissementId },
+      }),
+      prisma.formuleCantine.count({
+        where: { etablissement_id: etablissementId },
+      }),
     ]);
 
     if (!etablissement) {
@@ -53,8 +67,9 @@ class InitialisationEtablissementModel {
       siteCount > 0,
       yearCount > 0,
       levelCount > 0,
-      departementCount > 0,
+      classCount > 0,
       matiereCount > 0,
+      catalogueFraisCount > 0,
       roleCount > 0,
     ];
     const completionRate = Math.round(
@@ -71,6 +86,7 @@ class InitialisationEtablissementModel {
         classes: classCount,
         departements: departementCount,
         matieres: matiereCount,
+        catalogue_frais: catalogueFraisCount,
         roles: roleCount,
         permissions: permissionCount,
         lignes_transport: transportLineCount,
@@ -78,7 +94,12 @@ class InitialisationEtablissementModel {
       },
       completion_rate: completionRate,
       ready_for_operational_start:
-        siteCount > 0 && yearCount > 0 && levelCount > 0 && departementCount > 0,
+        siteCount > 0 &&
+        yearCount > 0 &&
+        levelCount > 0 &&
+        classCount > 0 &&
+        catalogueFraisCount > 0 &&
+        roleCount > 0,
       ready_for_new_school_year: yearCount > 0,
     };
   }
@@ -117,7 +138,9 @@ class InitialisationEtablissementModel {
       id: `bootstrap-${etablissementId}`,
       type: "NOUVEL_ETABLISSEMENT",
       label: "Amorcage etablissement",
-      statut: status.ready_for_operational_start ? "OPERATIONNEL" : "EN_PREPARATION",
+      statut: status.ready_for_operational_start
+        ? "OPERATIONNEL"
+        : "EN_PREPARATION",
       created_at: status.etablissement.created_at,
       summary: `Progression actuelle de l'amorcage: ${status.completion_rate}%.`,
       details: status.counts,

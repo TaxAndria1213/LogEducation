@@ -1,10 +1,11 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient, type Note } from "@prisma/client";
 import Response from "../../../common/app/response";
 import BulletinModel from "../models/bulletin.model";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import { assertNoAdministrativeRestriction } from "../../finance_shared/utils/recovery_restrictions";
+import { prisma } from "../../../service/prisma";
 
 type BulletinPayload = {
   eleve_id: string;
@@ -36,7 +37,7 @@ class BulletinApp {
     this.app = app;
     this.router = Router();
     this.bulletin = new BulletinModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -632,4 +633,5 @@ class BulletinApp {
 }
 
 export default BulletinApp;
+
 

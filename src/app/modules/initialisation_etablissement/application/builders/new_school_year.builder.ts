@@ -1,4 +1,7 @@
-import type { BlockMode, InitialisationPreviewBlock } from "./initial_setup.builder";
+import type {
+  BlockMode,
+  InitialisationPreviewBlock,
+} from "./initial_setup.builder";
 
 export type NewSchoolYearPayload = {
   etablissement_id: string;
@@ -66,7 +69,9 @@ function buildBlock(
   };
 }
 
-export function normalizeNewSchoolYearPayload(body: unknown): NewSchoolYearPayload {
+export function normalizeNewSchoolYearPayload(
+  body: unknown,
+): NewSchoolYearPayload {
   const raw =
     body && typeof body === "object" && !Array.isArray(body)
       ? (body as Record<string, unknown>)
@@ -82,7 +87,9 @@ export function normalizeNewSchoolYearPayload(body: unknown): NewSchoolYearPaylo
   }
 
   if (!nom || !dateDebut || !dateFin) {
-    throw new Error("Le nom et les bornes de la nouvelle annee scolaire sont obligatoires.");
+    throw new Error(
+      "Le nom et les bornes de la nouvelle annee scolaire sont obligatoires.",
+    );
   }
 
   return {
@@ -135,14 +142,6 @@ export function buildNewSchoolYearPreviewBlocks(
       "Frais et echeanciers",
       payload.finance_mode,
       "Le raccord finance est prevu dans l'assistant mais la duplication guidee reste a construire.",
-      0,
-      false,
-    ),
-    buildBlock(
-      "SERVICES_ANNEXES",
-      "Transport et cantine",
-      payload.services_mode,
-      "Les calendriers et references de services annexes sont prepares pour la prochaine passe.",
       0,
       false,
     ),

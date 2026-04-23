@@ -1,9 +1,10 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient, type CatalogueFrais } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import CatalogueFraisModel from "../models/catalogue_frais.model";
+import { prisma } from "../../../service/prisma";
 
 type CatalogueFraisPayload = {
   etablissement_id: string;
@@ -46,7 +47,7 @@ class CatalogueFraisApp {
     this.app = app;
     this.router = Router();
     this.catalogueFrais = new CatalogueFraisModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -429,9 +430,9 @@ class CatalogueFraisApp {
         motif_rejet: null,
       });
 
-      Response.success(res, "Barème approuve avec succes.", result);
+      Response.success(res, "BarÃ¨me approuve avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'approbation du barème", 400, error as Error);
+      Response.error(res, "Erreur lors de l'approbation du barÃ¨me", 400, error as Error);
       next(error);
     }
   }
@@ -448,7 +449,7 @@ class CatalogueFraisApp {
       const motif =
         typeof req.body?.motif === "string" && req.body.motif.trim()
           ? req.body.motif.trim()
-          : "Barème rejete par la direction.";
+          : "BarÃ¨me rejete par la direction.";
 
       const result = await this.catalogueFrais.update(req.params.id, {
         statut_validation: "REJETEE",
@@ -457,12 +458,13 @@ class CatalogueFraisApp {
         motif_rejet: motif,
       });
 
-      Response.success(res, "Barème rejete avec succes.", result);
+      Response.success(res, "BarÃ¨me rejete avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors du rejet du barème", 400, error as Error);
+      Response.error(res, "Erreur lors du rejet du barÃ¨me", 400, error as Error);
       next(error);
     }
   }
 }
 
 export default CatalogueFraisApp;
+

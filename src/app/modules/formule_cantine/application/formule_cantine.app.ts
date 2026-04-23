@@ -1,9 +1,10 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import FormuleCantineModel from "../models/formule_cantine.model";
+import { prisma } from "../../../service/prisma";
 
 type FormuleCantinePayload = {
   etablissement_id: string;
@@ -29,7 +30,7 @@ class FormuleCantineApp {
     this.app = app;
     this.router = Router();
     this.formuleCantine = new FormuleCantineModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -242,3 +243,4 @@ class FormuleCantineApp {
 }
 
 export default FormuleCantineApp;
+

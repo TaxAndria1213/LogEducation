@@ -109,7 +109,7 @@ export default function AppLayout() {
           0,
           scrollContainer.scrollTop + (moduleRect.top - scrollContainerRect.top) - topGap,
         );
-        scrollContainer.scrollTo({ top: nextTop, behavior: "smooth" });
+        scrollContainer.scrollTop = nextTop;
       });
     });
 

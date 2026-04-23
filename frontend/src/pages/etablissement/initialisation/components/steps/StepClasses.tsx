@@ -1,9 +1,15 @@
+import { useEffect, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import { useForm, useWatch, type Path } from "react-hook-form";
 import { FiGrid, FiLayers, FiPlus, FiTrash2 } from "react-icons/fi";
+import { TextField } from "../../../../../components/Form/fields/TextField";
 import type { InitialisationSetupDraft } from "../../types";
 import BlockActionSelector from "../shared/BlockActionSelector";
 import type { DraftLevelDefinition } from "../../utils/levels";
-import { buildSuggestedClassName, countEnteredClasses } from "../../utils/levels";
+import {
+  buildSuggestedClassName,
+  countEnteredClasses,
+} from "../../utils/levels";
 
 type Props = {
   draft: InitialisationSetupDraft;
@@ -11,8 +17,19 @@ type Props = {
   levels: DraftLevelDefinition[];
 };
 
+type FormValues = Pick<InitialisationSetupDraft, "classes_by_level">;
+
 export default function StepClasses({ draft, setDraft, levels }: Props) {
+  const form = useForm<FormValues>({
+    defaultValues: { classes_by_level: draft.classes_by_level },
+  });
+  const watchedGroups = useWatch({
+    control: form.control,
+    name: "classes_by_level",
+  });
+  const lastGroupsRef = useRef(JSON.stringify(draft.classes_by_level));
   const classCount = countEnteredClasses(draft.classes_by_level);
+  const shouldCreateClasses = draft.classes_mode === "CREATION";
   const groupsByCode = new Map(
     draft.classes_by_level.map((group) => [group.level_code, group] as const),
   );
@@ -35,6 +52,28 @@ export default function StepClasses({ draft, setDraft, levels }: Props) {
     }));
   };
 
+  useEffect(() => {
+    const nextKey = JSON.stringify(draft.classes_by_level);
+
+    if (nextKey === lastGroupsRef.current) return;
+
+    lastGroupsRef.current = nextKey;
+    form.reset({ classes_by_level: draft.classes_by_level });
+  }, [draft.classes_by_level, form]);
+
+  useEffect(() => {
+    const nextGroups = watchedGroups ?? [];
+    const nextKey = JSON.stringify(nextGroups);
+
+    if (nextKey === lastGroupsRef.current) return;
+
+    lastGroupsRef.current = nextKey;
+    setDraft((current) => ({
+      ...current,
+      classes_by_level: nextGroups,
+    }));
+  }, [setDraft, watchedGroups]);
+
   return (
     <div className="space-y-5">
       <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_100%)] p-5 shadow-sm">
@@ -52,9 +91,9 @@ export default function StepClasses({ draft, setDraft, levels }: Props) {
               Structure des classes apres les niveaux
             </h4>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Chaque niveau retenu peut maintenant recevoir une ou plusieurs classes.
-              Une premiere proposition est pre-remplie, puis tu ajustes librement la
-              liste niveau par niveau.
+              Chaque niveau retenu peut maintenant recevoir une ou plusieurs
+              classes. Une premiere proposition est pre-remplie, puis tu ajustes
+              librement la liste niveau par niveau.
             </p>
           </div>
 
@@ -62,7 +101,9 @@ export default function StepClasses({ draft, setDraft, levels }: Props) {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               Classes renseignees
             </p>
-            <p className="mt-2 text-3xl font-semibold text-slate-900">{classCount}</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">
+              {classCount}
+            </p>
           </div>
         </div>
       </section>
@@ -77,25 +118,30 @@ export default function StepClasses({ draft, setDraft, levels }: Props) {
         }
       />
 
-      {draft.classes_mode === "PLUS_TARD" ? (
+      {!shouldCreateClasses ? (
         <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5 text-sm leading-6 text-slate-600">
-          Les classes restent differees pour l'instant. Tu pourras y revenir plus tard
-          sans perdre les niveaux deja prepares.
+          Les classes restent differees pour l'instant. Tu pourras y revenir
+          plus tard sans perdre les niveaux deja prepares.
         </div>
       ) : levels.length === 0 ? (
         <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-5 text-sm leading-6 text-amber-800">
-          Selectionne d'abord au moins un niveau dans l'etape precedente pour ouvrir la
-          saisie des classes.
+          Selectionne d'abord au moins un niveau dans l'etape precedente pour
+          ouvrir la saisie des classes.
         </div>
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {levels.map((level) => {
+            const groupIndex = draft.classes_by_level.findIndex(
+              (entry) => entry.level_code === level.code,
+            );
             const group = groupsByCode.get(level.code) ?? {
               level_code: level.code,
               level_nom: level.nom,
               class_names: [],
             };
-            const enteredCount = group.class_names.filter((className) => className.trim()).length;
+            const enteredCount = group.class_names.filter((className) =>
+              className.trim(),
+            ).length;
 
             return (
               <article
@@ -112,9 +158,12 @@ export default function StepClasses({ draft, setDraft, levels }: Props) {
                         {enteredCount} classe(s)
                       </span>
                     </div>
-                    <h5 className="mt-3 text-base font-semibold text-slate-900">{level.nom}</h5>
+                    <h5 className="mt-3 text-base font-semibold text-slate-900">
+                      {level.nom}
+                    </h5>
                     <p className="mt-1 text-sm text-slate-500">
-                      Renseigne ici toutes les classes de ce niveau pour l'annee de depart.
+                      Renseigne ici toutes les classes de ce niveau pour l'annee
+                      de depart.
                     </p>
                   </div>
 
@@ -143,20 +192,16 @@ export default function StepClasses({ draft, setDraft, levels }: Props) {
                         {index + 1}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                          Nom de la classe
-                        </label>
-                        <input
-                          value={className}
-                          onChange={(event) =>
-                            updateClassNames(level, (currentNames) =>
-                              currentNames.map((entry, entryIndex) =>
-                                entryIndex === index ? event.target.value : entry,
-                              ),
-                            )
+                        <TextField<FormValues>
+                          control={form.control}
+                          name={
+                            `classes_by_level.${Math.max(
+                              groupIndex,
+                              0,
+                            )}.class_names.${index}` as Path<FormValues>
                           }
+                          label="Nom de la classe"
                           placeholder={buildSuggestedClassName(level, index)}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
                         />
                       </div>
                       {group.class_names.length > 1 ? (
@@ -164,7 +209,9 @@ export default function StepClasses({ draft, setDraft, levels }: Props) {
                           type="button"
                           onClick={() =>
                             updateClassNames(level, (currentNames) =>
-                              currentNames.filter((_, entryIndex) => entryIndex !== index),
+                              currentNames.filter(
+                                (_, entryIndex) => entryIndex !== index,
+                              ),
                             )
                           }
                           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-white text-rose-600 transition hover:bg-rose-50"
@@ -180,7 +227,8 @@ export default function StepClasses({ draft, setDraft, levels }: Props) {
                 <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
                   <FiGrid />
                   <span>
-                    Exemple rapide : {buildSuggestedClassName(level, 0)}, {buildSuggestedClassName(level, 1)}
+                    Exemple rapide : {buildSuggestedClassName(level, 0)},{" "}
+                    {buildSuggestedClassName(level, 1)}
                   </span>
                 </div>
               </article>
@@ -189,15 +237,15 @@ export default function StepClasses({ draft, setDraft, levels }: Props) {
         </div>
       )}
 
-      {draft.classes_mode !== "PLUS_TARD" && levels.length > 0 ? (
+      {shouldCreateClasses && levels.length > 0 ? (
         <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
           <div className="flex items-start gap-3">
             <div className="mt-0.5 text-slate-500">
               <FiLayers />
             </div>
             <p className="leading-6">
-              Les classes seront creees dans l'annee scolaire initiale si elle est generee
-              maintenant, sinon sur l'annee active deja existante.
+              Les classes seront creees dans l'annee scolaire initiale si elle
+              est generee maintenant, sinon sur l'annee active deja existante.
             </p>
           </div>
         </div>

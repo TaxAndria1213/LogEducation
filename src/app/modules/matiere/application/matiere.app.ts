@@ -4,6 +4,7 @@ import Response from "../../../common/app/response";
 import MatiereModel from "../models/matiere.model";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
+import { prisma } from "../../../service/prisma";
 
 type MatierePayload = Pick<
   Matiere,
@@ -20,7 +21,7 @@ class MatiereApp {
     this.app = app;
     this.router = Router();
     this.matiere = new MatiereModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -338,4 +339,5 @@ class MatiereApp {
 }
 
 export default MatiereApp;
+
 

@@ -1,9 +1,10 @@
-import { Application, NextFunction, Request, Response as R, Router } from "express";
+﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
 import { Prisma, PrismaClient } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import { assertDirectionUser } from "../../finance_shared/utils/direction_approval";
+import { prisma } from "../../../service/prisma";
 import {
   resolveLinkedFactureIdForPlan,
   syncFactureStatusFromEcheances,
@@ -43,7 +44,7 @@ class FinanceRecouvrementApp {
   constructor(app: Application) {
     this.app = app;
     this.router = Router();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -865,5 +866,6 @@ class FinanceRecouvrementApp {
 }
 
 export default FinanceRecouvrementApp;
+
 
 

@@ -15,6 +15,8 @@ import UtilisateurService, {
   type AdminOwnerCreationPayload,
 } from "../../services/utilisateur.service";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 type CreateAccountProps = {
   mode?: "admin" | "request";
   onSuccess?: (result: {
@@ -105,7 +107,16 @@ export default function CreateAccount({
 
   const utilisateurField = useMemo(
     () =>
-      getFieldsFromZodObjectSchema(UtilisateurSchema, {
+      getFieldsFromZodObjectSchema(
+        UtilisateurSchema.extend({
+          email: UtilisateurSchema.shape.email
+            .transform((value) => value?.trim().toLowerCase() ?? value)
+            .refine(
+              (value) => typeof value === "string" && value.length > 0 && EMAIL_REGEX.test(value),
+              "Veuillez saisir un email valide.",
+            ),
+        }),
+        {
         omit: [
           "id",
           "created_at",
@@ -117,6 +128,7 @@ export default function CreateAccount({
         ],
         labelByField: {
           mot_de_passe_hash: "Mot de passe",
+          email: "Email",
           telephone: "Telephone",
         },
         metaByField: {
@@ -130,7 +142,14 @@ export default function CreateAccount({
 
   const utilisateurSchema = useMemo(
     () =>
-      UtilisateurSchema.omit({
+      UtilisateurSchema.extend({
+        email: UtilisateurSchema.shape.email
+          .transform((value) => value?.trim().toLowerCase() ?? value)
+          .refine(
+            (value) => typeof value === "string" && value.length > 0 && EMAIL_REGEX.test(value),
+            "Veuillez saisir un email valide.",
+          ),
+      }).omit({
         id: true,
         created_at: true,
         updated_at: true,

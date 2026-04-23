@@ -2,7 +2,27 @@
 import {Response as R} from "express"
 
 class Response {
-  static success(res: R, message: string, data: any, payload = null) {
+  private static getErrorMetadata(error?: Error) {
+    if (!error) return undefined;
+
+    const errorWithCode = error as Error & { code?: string | number };
+    const details: Record<string, unknown> = {
+      name: error.name,
+    };
+
+    if (typeof errorWithCode.code === "string" || typeof errorWithCode.code === "number") {
+      details.code = errorWithCode.code;
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      details.message = error.message;
+      details.stack = error.stack;
+    }
+
+    return details;
+  }
+
+  static success(res: R, message: string, data: any, payload: any = null) {
     if (payload) {
       // payload = {
       //   page: pagination.page + 1,
@@ -63,12 +83,14 @@ class Response {
   }
 
   static error(res: R, message: string, code: number, error: Error) {
+    const errorMetadata = this.getErrorMetadata(error);
     res.status(code || 500).send({
+      message: message,
       status: {
         code: code || 500,
         success: false,
         message: message,
-        error: error,
+        ...(errorMetadata ? { error: errorMetadata } : {}),
       },
       data: null,
     });

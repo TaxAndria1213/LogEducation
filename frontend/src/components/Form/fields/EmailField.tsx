@@ -3,7 +3,9 @@ import { FieldWrapper } from "./FieldWrapper";
 import type { BaseFieldProps } from "./types";
 import { getInputClassName } from "./inputStyles";
 
-export function EmailField<TFieldValues extends FieldValues>(props: BaseFieldProps<TFieldValues>) {
+export function EmailField<TFieldValues extends FieldValues>(
+  props: BaseFieldProps<TFieldValues>,
+) {
   const id = String(props.name);
 
   return (

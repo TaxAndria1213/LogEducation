@@ -5,7 +5,7 @@ import type { BaseFieldProps } from "./types";
 import { getInputClassName } from "./inputStyles";
 
 export function FloatField<TFieldValues extends FieldValues>(
-  props: BaseFieldProps<TFieldValues>
+  props: BaseFieldProps<TFieldValues>,
 ) {
   const id = String(props.name);
 

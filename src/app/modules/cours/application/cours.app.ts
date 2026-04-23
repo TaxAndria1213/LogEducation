@@ -4,6 +4,7 @@ import Response from "../../../common/app/response";
 import CoursModel from "../models/cours.model";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
+import { prisma } from "../../../service/prisma";
 
 type CoursPayload = Pick<
   Cours,
@@ -25,7 +26,7 @@ class CoursApp {
     this.app = app;
     this.router = Router();
     this.cours = new CoursModel();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
     this.routes();
   }
 
@@ -467,3 +468,4 @@ class CoursApp {
 }
 
 export default CoursApp;
+
