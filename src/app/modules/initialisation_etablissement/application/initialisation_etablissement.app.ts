@@ -1,6 +1,5 @@
 import {
   Application,
-  NextFunction,
   Request,
   Response as R,
   Router,
@@ -11,6 +10,17 @@ import InitialisationEtablissementService from "./initialisation_etablissement.s
 function readString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
+
+type ScopedRequest = Request & {
+  tenantId?: string;
+  user?: {
+    etablissement_id?: string | null;
+  };
+};
+
+type AppError = Error & {
+  statusCode?: number;
+};
 
 class InitialisationEtablissementApp {
   public app: Application;
@@ -48,39 +58,69 @@ class InitialisationEtablissementApp {
     return this.router;
   }
 
-  private getEtablissementId(req: Request): string {
-    const requestBody =
-      req.body && typeof req.body === "object" && !Array.isArray(req.body)
-        ? (req.body as Record<string, unknown>)
-        : {};
+  private buildError(message: string, statusCode: number) {
+    const error = new Error(message) as AppError;
+    error.statusCode = statusCode;
+    return error;
+  }
 
-    const etablissementId =
+  private getRequestBody(req: Request): Record<string, unknown> {
+    return req.body && typeof req.body === "object" && !Array.isArray(req.body)
+      ? { ...(req.body as Record<string, unknown>) }
+      : {};
+  }
+
+  private getEtablissementId(req: ScopedRequest): string {
+    const requestBody = this.getRequestBody(req);
+    const scopedTenantId =
+      readString(req.tenantId) ?? readString(req.user?.etablissement_id);
+    const requestedEtablissementId =
       readString(req.query.etablissement_id) ??
       readString(requestBody.etablissement_id);
 
+    if (
+      scopedTenantId &&
+      requestedEtablissementId &&
+      requestedEtablissementId !== scopedTenantId
+    ) {
+      throw this.buildError(
+        "Conflit de contexte sur l'etablissement d'initialisation.",
+        403,
+      );
+    }
+
+    const etablissementId = scopedTenantId ?? requestedEtablissementId;
+
     if (!etablissementId) {
-      throw new Error("L'etablissement cible est obligatoire.");
+      throw this.buildError("L'etablissement cible est obligatoire.", 400);
     }
 
     return etablissementId;
   }
 
-  private async getStatus(req: Request, res: R, next: NextFunction) {
+  private getScopedBody(req: ScopedRequest) {
+    return {
+      ...this.getRequestBody(req),
+      etablissement_id: this.getEtablissementId(req),
+    };
+  }
+
+  private async getStatus(req: Request, res: R) {
     try {
-      const result = await this.service.getStatus(this.getEtablissementId(req));
+      const result = await this.service.getStatus(this.getEtablissementId(req as ScopedRequest));
       Response.success(res, "Etat d'initialisation recupere.", result);
     } catch (error) {
       Response.error(
         res,
         "Erreur lors de la lecture de l'etat d'initialisation",
-        400,
+        (error as AppError).statusCode ?? 400,
         error as Error,
       );
-      next(error);
+      return;
     }
   }
 
-  private async getTemplates(_req: Request, res: R, next: NextFunction) {
+  private async getTemplates(_req: Request, res: R) {
     try {
       const result = this.service.getTemplates();
       Response.success(res, "Modeles d'initialisation recuperes.", result);
@@ -91,29 +131,31 @@ class InitialisationEtablissementApp {
         400,
         error as Error,
       );
-      next(error);
+      return;
     }
   }
 
-  private async getSessions(req: Request, res: R, next: NextFunction) {
+  private async getSessions(req: Request, res: R) {
     try {
-      const result = await this.service.getSessions(this.getEtablissementId(req));
+      const result = await this.service.getSessions(
+        this.getEtablissementId(req as ScopedRequest),
+      );
       Response.success(res, "Sessions d'initialisation recuperees.", result);
     } catch (error) {
       Response.error(
         res,
         "Erreur lors de la lecture des sessions d'initialisation",
-        400,
+        (error as AppError).statusCode ?? 400,
         error as Error,
       );
-      next(error);
+      return;
     }
   }
 
-  private async getSessionById(req: Request, res: R, next: NextFunction) {
+  private async getSessionById(req: Request, res: R) {
     try {
       const result = await this.service.getSessionById(
-        this.getEtablissementId(req),
+        this.getEtablissementId(req as ScopedRequest),
         req.params.id,
       );
       Response.success(res, "Session d'initialisation recuperee.", result);
@@ -121,70 +163,78 @@ class InitialisationEtablissementApp {
       Response.error(
         res,
         "Erreur lors de la lecture de la session d'initialisation",
-        404,
+        (error as AppError).statusCode ?? 404,
         error as Error,
       );
-      next(error);
+      return;
     }
   }
 
-  private async previewInitialSetup(req: Request, res: R, next: NextFunction) {
+  private async previewInitialSetup(req: Request, res: R) {
     try {
-      const result = await this.service.previewInitialSetup(req.body);
+      const result = await this.service.previewInitialSetup(
+        this.getScopedBody(req as ScopedRequest),
+      );
       Response.success(res, "Previsualisation initiale generee.", result);
     } catch (error) {
       Response.error(
         res,
         "Erreur lors de la previsualisation de l'initialisation",
-        400,
+        (error as AppError).statusCode ?? 400,
         error as Error,
       );
-      next(error);
+      return;
     }
   }
 
-  private async commitInitialSetup(req: Request, res: R, next: NextFunction) {
+  private async commitInitialSetup(req: Request, res: R) {
     try {
-      const result = await this.service.commitInitialSetup(req.body);
+      const result = await this.service.commitInitialSetup(
+        this.getScopedBody(req as ScopedRequest),
+      );
       Response.success(res, "Initialisation de base executee.", result);
     } catch (error) {
       Response.error(
         res,
         "Erreur lors du commit de l'initialisation",
-        400,
+        (error as AppError).statusCode ?? 400,
         error as Error,
       );
-      next(error);
+      return;
     }
   }
 
-  private async previewNewSchoolYear(req: Request, res: R, next: NextFunction) {
+  private async previewNewSchoolYear(req: Request, res: R) {
     try {
-      const result = await this.service.previewNewSchoolYear(req.body);
+      const result = await this.service.previewNewSchoolYear(
+        this.getScopedBody(req as ScopedRequest),
+      );
       Response.success(res, "Previsualisation de la nouvelle annee generee.", result);
     } catch (error) {
       Response.error(
         res,
         "Erreur lors de la previsualisation de la nouvelle annee",
-        400,
+        (error as AppError).statusCode ?? 400,
         error as Error,
       );
-      next(error);
+      return;
     }
   }
 
-  private async commitNewSchoolYear(req: Request, res: R, next: NextFunction) {
+  private async commitNewSchoolYear(req: Request, res: R) {
     try {
-      const result = await this.service.commitNewSchoolYear(req.body);
+      const result = await this.service.commitNewSchoolYear(
+        this.getScopedBody(req as ScopedRequest),
+      );
       Response.success(res, "Nouvelle annee scolaire creee.", result);
     } catch (error) {
       Response.error(
         res,
         "Erreur lors de la creation de la nouvelle annee scolaire",
-        400,
+        (error as AppError).statusCode ?? 400,
         error as Error,
       );
-      next(error);
+      return;
     }
   }
 }

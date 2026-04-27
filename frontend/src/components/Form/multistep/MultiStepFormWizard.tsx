@@ -14,6 +14,7 @@ export type WizardStep = {
   initialValues?: Record<string, any>;
   labelMessage?: string;
   icon?: ReactNode;
+  onValuesChange?: (data: Record<string, any>) => void;
 };
 
 type WizardData = Record<string, any>;
@@ -51,7 +52,7 @@ function getPreviewValue(data: Record<string, any> | undefined) {
   }
 
   if (values.length > 0) {
-    return values.slice(0, 2).join(" · ");
+    return values.slice(0, 2).join(" - ");
   }
 
   for (const value of Object.values(data)) {
@@ -78,10 +79,26 @@ export function MultiStepFormWizard({
   const [completed, setCompleted] = useState<Record<number, boolean>>({});
 
   const progress = useMemo(
-    () => ((step + 1) / steps.length) * 100,
+    () => (steps.length > 0 ? ((step + 1) / steps.length) * 100 : 0),
     [step, steps.length],
   );
-  const current = steps[step];
+  const current = steps[step] ?? steps[0];
+
+  if (!current) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <div className="mx-auto max-w-3xl px-4 py-10">
+          <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm">
+            <h2 className="text-xl font-semibold">Assistant indisponible</h2>
+            <p className="mt-2 text-sm leading-6">
+              Aucune etape n&apos;est configuree pour ce formulaire. Verifie la
+              configuration du wizard avant de continuer.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const canJumpTo = (s: number) => s <= step || !!completed[s];
 
@@ -99,6 +116,8 @@ export function MultiStepFormWizard({
   };
 
   const handleStepSubmit = async (data: any) => {
+    if (!current) return;
+
     const updatedData = { ...allData, [current.key]: data };
 
     setAllData(updatedData);
@@ -269,6 +288,7 @@ export function MultiStepFormWizard({
               initialValues={allData[current.key] ?? current.initialValues ?? {}}
               dataOnly={handleStepSubmit}
               labelMessage={current.labelMessage ?? current.title}
+              onValuesChange={current.onValuesChange}
               submitLabel={
                 step === steps.length - 1 ? "Finaliser l'inscription" : "Enregistrer et continuer"
               }

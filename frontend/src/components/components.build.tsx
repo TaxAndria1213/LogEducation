@@ -56,6 +56,50 @@ import {
   permissionMatches,
 } from "../utils/permissionScope";
 
+const SYSTEM_ADMIN_ROLE_NAMES = new Set([
+  "ADMIN",
+  "ADMINISTRATEUR",
+  "ADMINISTRATOR",
+  "SUPER ADMIN",
+  "SUPERADMIN",
+]);
+
+function parseScopeObject(rawScope: unknown): Record<string, unknown> | null {
+  if (!rawScope) return null;
+
+  if (typeof rawScope === "string") {
+    try {
+      const parsed = JSON.parse(rawScope);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return typeof rawScope === "object" && !Array.isArray(rawScope)
+    ? (rawScope as Record<string, unknown>)
+    : null;
+}
+
+function normalizeRoleName(value?: string | null) {
+  return value?.trim().toUpperCase() ?? "";
+}
+
+function resolveAssignmentRoleNames(assignment: UtilisateurRole): string[] {
+  const scope = parseScopeObject(assignment.role?.scope_json ?? assignment.scope_json);
+  const candidateNames = [
+    assignment.role?.nom,
+    typeof scope?.role_template === "string" ? scope.role_template : null,
+    typeof scope?.role_template_label === "string" ? scope.role_template_label : null,
+  ];
+
+  return Array.from(
+    new Set(candidateNames.map((value) => normalizeRoleName(value)).filter(Boolean)),
+  );
+}
+
 export type ComponentIdentifierType = {
   id: componentId;
   name: string;
@@ -182,8 +226,12 @@ function verifyAccess(
   roles: UtilisateurRole[],
   id: componentId,
 ): boolean {
-  const isAdmin = roles.some((role) => role.role?.nom === "ADMIN");
-  const isDirection = roles.some((role) => role.role?.nom === "DIRECTION");
+  const isAdmin = roles.some((role) =>
+    resolveAssignmentRoleNames(role).some((roleName) => SYSTEM_ADMIN_ROLE_NAMES.has(roleName)),
+  );
+  const isDirection = roles.some((role) =>
+    resolveAssignmentRoleNames(role).includes("DIRECTION"),
+  );
   const item = componentsById[id];
   const grantedCodes = getGrantedPermissionCodes(roles);
 

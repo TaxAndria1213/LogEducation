@@ -834,10 +834,13 @@ export interface CatalogueFrais {
   montant: Decimal;
   devise: string;
   nombre_tranches: number;
+  mode_facturation: string;
   est_recurrent: boolean;
   periodicite: string | null;
   prorata_eligible: boolean;
   eligibilite_json: JsonValue | null;
+  plans_paiement_autorises_json: JsonValue | null;
+  plan_paiement_defaut_code: string | null;
   statut_validation: string;
   approuve_par_utilisateur_id: string | null;
   approuve_le: Date | null;

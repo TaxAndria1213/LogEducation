@@ -145,10 +145,19 @@ export async function createRecurringExecutionIfNeeded(
     select: {
       id: true,
       periodicite: true,
+      usage_scope: true,
+      mode_facturation: true,
     },
   });
 
   if (!catalogue?.periodicite) return null;
+
+  if (
+    (catalogue.usage_scope ?? "").toUpperCase() === "SCOLARITE" &&
+    (catalogue.mode_facturation ?? "").toUpperCase() === "ANNUEL"
+  ) {
+    return null;
+  }
 
   const cycle = await resolveRecurringCycleInfo(
     prisma,

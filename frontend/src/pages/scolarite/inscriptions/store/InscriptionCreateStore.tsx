@@ -53,10 +53,14 @@ type State = {
     Option & {
       montant: number;
       devise: string;
+      nombre_tranches?: number;
+      mode_facturation?: string | null;
       est_recurrent?: boolean;
       periodicite?: string | null;
       niveau_scolaire_id?: string | null;
       usage_scope?: string | null;
+      plans_paiement_autorises_json?: unknown;
+      plan_paiement_defaut_code?: string | null;
     }
   >;
   remiseOptions: Array<
@@ -278,10 +282,14 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
                 .join(" - "),
               montant: Number(frais.montant ?? 0),
               devise: frais.devise ?? "MGA",
+              nombre_tranches: Number(frais.nombre_tranches ?? 1),
+              mode_facturation: frais.mode_facturation ?? "PONCTUEL",
               est_recurrent: Boolean(frais.est_recurrent),
               periodicite: frais.periodicite ?? null,
               niveau_scolaire_id: frais.niveau_scolaire_id ?? null,
               usage_scope: frais.usage_scope ?? "GENERAL",
+              plans_paiement_autorises_json: frais.plans_paiement_autorises_json ?? null,
+              plan_paiement_defaut_code: frais.plan_paiement_defaut_code ?? null,
             }))
           : [];
 

@@ -23,6 +23,27 @@ import ProfileModel from "../../profile/models/profile.model";
 import UserModel from "../../user/models/user.model";
 import InscriptionModel from "../models/inscription.model";
 
+type AnnualPaymentPlan = {
+    code: string;
+    label: string;
+    nombre_tranches: number;
+    offsets_mois: number[];
+};
+
+type BillingInvoiceLine = {
+    libelle: string;
+    montant: number;
+    catalogue_frais_id: string | null;
+    source_key: string;
+    devise?: string | null;
+    nombre_tranches: number;
+    installment_offsets_months?: number[] | null;
+    usage_scope?: string | null;
+    mode_facturation?: string | null;
+    plan_code?: string | null;
+    plan_label?: string | null;
+};
+
 class InscriptionApp {
     public app: Application;
     public router: Router;
@@ -303,6 +324,10 @@ class InscriptionApp {
                     typeof financeConfig.catalogue_frais_scolarite_id === "string" && financeConfig.catalogue_frais_scolarite_id.trim()
                         ? financeConfig.catalogue_frais_scolarite_id.trim()
                         : null;
+                const oldPlanCode =
+                    typeof financeConfig.catalogue_frais_scolarite_plan_code === "string" && financeConfig.catalogue_frais_scolarite_plan_code.trim()
+                        ? financeConfig.catalogue_frais_scolarite_plan_code.trim().toUpperCase()
+                        : null;
 
                 const approvedFees = await tx.catalogueFrais.findMany({
                     where: {
@@ -316,7 +341,7 @@ class InscriptionApp {
                     } as never,
                     orderBy: [
                         { niveau_scolaire_id: "desc" },
-                        { est_recurrent: "desc" },
+                        { mode_facturation: "desc" },
                         { montant: "desc" },
                     ],
                 });
@@ -334,6 +359,31 @@ class InscriptionApp {
                     })
                     : null;
 
+                const newFeePlan =
+                    newFee && (newFee.mode_facturation ?? "").toUpperCase() === "ANNUEL"
+                        ? this.resolvePaymentPlanForFee(
+                            {
+                                nombre_tranches: this.resolveFinanceLineTrancheCount(newFee.nombre_tranches),
+                                plans_paiement_autorises_json: newFee.plans_paiement_autorises_json ?? null,
+                                plan_paiement_defaut_code: newFee.plan_paiement_defaut_code ?? null,
+                            },
+                            oldPlanCode,
+                            "le nouveau frais de scolarite",
+                        )
+                        : null;
+                const oldFeePlan =
+                    oldFee && (oldFee.mode_facturation ?? "").toUpperCase() === "ANNUEL"
+                        ? this.resolvePaymentPlanForFee(
+                            {
+                                nombre_tranches: this.resolveFinanceLineTrancheCount(oldFee.nombre_tranches),
+                                plans_paiement_autorises_json: oldFee.plans_paiement_autorises_json ?? null,
+                                plan_paiement_defaut_code: oldFee.plan_paiement_defaut_code ?? null,
+                            },
+                            oldPlanCode,
+                            "l'ancien frais de scolarite",
+                        )
+                        : null;
+
                 if (!newFee || !oldFee) {
                     if (plan) {
                         await tx.planPaiementEleve.update({
@@ -344,6 +394,13 @@ class InscriptionApp {
                                     finance: {
                                         ...financeConfig,
                                         catalogue_frais_scolarite_id: newFee?.id ?? oldFee?.id ?? null,
+                                        catalogue_frais_scolarite_plan_code: newFeePlan?.code ?? oldFeePlan?.code ?? oldPlanCode,
+                                        catalogue_frais_scolarite_plan_label: newFeePlan?.label ?? oldFeePlan?.label ?? null,
+                                        catalogue_frais_scolarite_nombre_tranches:
+                                            newFeePlan?.nombre_tranches ??
+                                            oldFeePlan?.nombre_tranches ??
+                                            financeConfig.catalogue_frais_scolarite_nombre_tranches ??
+                                            null,
                                     },
                                 } as Prisma.InputJsonValue,
                             },
@@ -510,6 +567,12 @@ class InscriptionApp {
                                 finance: {
                                     ...financeConfig,
                                     catalogue_frais_scolarite_id: newFee.id,
+                                    catalogue_frais_scolarite_plan_code: newFeePlan?.code ?? oldPlanCode,
+                                    catalogue_frais_scolarite_plan_label: newFeePlan?.label ?? null,
+                                    catalogue_frais_scolarite_nombre_tranches:
+                                        newFeePlan?.nombre_tranches ??
+                                        financeConfig.catalogue_frais_scolarite_nombre_tranches ??
+                                        null,
                                 },
                                 metadata: {
                                     ...(planJson.metadata && typeof planJson.metadata === "object" && !Array.isArray(planJson.metadata)
@@ -683,18 +746,6 @@ class InscriptionApp {
                     return Response.error(res, "La formule de cantine selectionnee n'est reliee a aucun frais catalogue.", 400, new Error());
                 }
             }
-            const normalizedModePaiement = this.normalizeModePaiement(
-                this.toNullableString(echeancier?.mode_paiement),
-            );
-            const jourPaiementMensuel = this.resolvePaymentDayOfMonth(
-                echeancier?.jour_paiement_mensuel,
-                normalizedModePaiement === "ECHELONNE"
-                    ? this.getSchoolYearScheduleStartDate(anneeScolaire.date_debut).getDate()
-                    : null,
-            );
-            if (normalizedModePaiement === "ECHELONNE" && !jourPaiementMensuel) {
-                return Response.error(res, "Le jour du mois de paiement est obligatoire pour un echeancier.", 400, new Error());
-            }
             const resolvedFinance = {
                 ...(finance ?? {}),
                 catalogue_frais_transport_id:
@@ -736,9 +787,21 @@ class InscriptionApp {
             }
             const totalBrut = invoiceLines.reduce((sum, line) => sum + line.montant, 0);
             const schoolYearStartDate = this.getSchoolYearScheduleStartDate(anneeScolaire.date_debut);
+            const schoolYearEndDate = this.getSchoolYearScheduleEndDate(anneeScolaire.date_fin);
             const invoiceDevise =
                 invoiceLines.find((line) => line.devise)?.devise ??
                 "MGA";
+            const normalizedModePaiement = this.deriveScheduleMode(invoiceLines);
+            const jourPaiementMensuel =
+                normalizedModePaiement === "ECHELONNE"
+                    ? this.resolvePaymentDayOfMonth(
+                        echeancier?.jour_paiement_mensuel,
+                        null,
+                    )
+                    : null;
+            if (normalizedModePaiement === "ECHELONNE" && !jourPaiementMensuel) {
+                return Response.error(res, "Le jour du mois de paiement est obligatoire pour un echeancier en plusieurs tranches.", 400, new Error());
+            }
 
             const result = await this.prisma.$transaction(async (tx) => {
                 const userEleve = await tx.utilisateur.create({
@@ -868,6 +931,7 @@ class InscriptionApp {
                     remiseMontant,
                     normalizedModePaiement,
                     schoolYearStartDate,
+                    schoolYearEndDate,
                     factureDateEmission,
                     jourPaiementMensuel,
                     remiseSourceKeys,
@@ -979,6 +1043,12 @@ class InscriptionApp {
                     });
 
                     for (const line of finalInvoiceLines) {
+                        if (
+                            (line.usage_scope ?? "").toUpperCase() === "SCOLARITE" ||
+                            (line.mode_facturation ?? "").toUpperCase() === "ANNUEL"
+                        ) {
+                            continue;
+                        }
                         await createRecurringExecutionIfNeeded(tx, {
                             tenantId: etablissement_id,
                             eleveId: eleveCreated.id,
@@ -1038,9 +1108,19 @@ class InscriptionApp {
                         },
                         finance: {
                             catalogue_frais_inscription_id: this.toNullableString(finance?.catalogue_frais_inscription_id),
-                            catalogue_frais_inscription_nombre_tranches: this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_inscription_nombre_tranches),
+                            catalogue_frais_inscription_plan_code: this.toNullableString(finance?.catalogue_frais_inscription_plan_code),
+                            catalogue_frais_inscription_plan_label:
+                                invoiceLines.find((line) => line.source_key === "catalogue_frais_inscription_id")?.plan_label ?? null,
+                            catalogue_frais_inscription_nombre_tranches:
+                                invoiceLines.find((line) => line.source_key === "catalogue_frais_inscription_id")?.nombre_tranches ??
+                                this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_inscription_nombre_tranches),
                             catalogue_frais_scolarite_id: this.toNullableString(finance?.catalogue_frais_scolarite_id),
-                            catalogue_frais_scolarite_nombre_tranches: this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_scolarite_nombre_tranches),
+                            catalogue_frais_scolarite_plan_code: this.toNullableString(finance?.catalogue_frais_scolarite_plan_code),
+                            catalogue_frais_scolarite_plan_label:
+                                invoiceLines.find((line) => line.source_key === "catalogue_frais_scolarite_id")?.plan_label ?? null,
+                            catalogue_frais_scolarite_nombre_tranches:
+                                invoiceLines.find((line) => line.source_key === "catalogue_frais_scolarite_id")?.nombre_tranches ??
+                                this.resolveFinanceLineTrancheCount(finance?.catalogue_frais_scolarite_nombre_tranches),
                             catalogue_frais_transport_id: null,
                             catalogue_frais_cantine_id: null,
                             remise_id: appliedRemise?.id ?? this.toNullableString(finance?.remise_id),
@@ -1162,6 +1242,79 @@ class InscriptionApp {
         return found ? found.montant : 0;
     }
 
+    private normalizeAnnualPaymentPlans(raw: Prisma.JsonValue | null | undefined, fallbackTranches: number): AnnualPaymentPlan[] {
+        if (Array.isArray(raw)) {
+            const normalized = raw.flatMap((entry) => {
+                if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+                const plan = entry as Record<string, unknown>;
+                const code = typeof plan.code === "string" ? plan.code.trim().toUpperCase() : "";
+                const label = typeof plan.label === "string" ? plan.label.trim() : "";
+                const nombreTranches = this.resolveFinanceLineTrancheCount(plan.nombre_tranches);
+                const offsets = Array.isArray(plan.offsets_mois)
+                    ? plan.offsets_mois
+                        .map((value) => Number.parseInt(String(value), 10))
+                        .filter((value) => Number.isFinite(value) && value >= 0 && value <= 11)
+                    : [];
+                if (!code || !label || offsets.length !== nombreTranches) return [];
+                return [{
+                    code,
+                    label,
+                    nombre_tranches: nombreTranches,
+                    offsets_mois: offsets,
+                }];
+            });
+            if (normalized.length > 0) {
+                return normalized;
+            }
+        }
+
+        const trancheCount = this.resolveFinanceLineTrancheCount(fallbackTranches);
+        return [{
+            code: `${trancheCount}X`,
+            label: trancheCount === 1 ? "Comptant" : `${trancheCount} tranches`,
+            nombre_tranches: trancheCount,
+            offsets_mois: Array.from({ length: trancheCount }, (_, index) => index),
+        }];
+    }
+
+    private resolvePaymentPlanForFee(
+        catalogue: {
+            nombre_tranches: number;
+            plans_paiement_autorises_json: Prisma.JsonValue | null;
+            plan_paiement_defaut_code: string | null;
+        },
+        requestedCode: unknown,
+        feeLabel: string,
+    ): AnnualPaymentPlan {
+        const plans = this.normalizeAnnualPaymentPlans(
+            catalogue.plans_paiement_autorises_json,
+            catalogue.nombre_tranches,
+        );
+        const normalizedRequested =
+            typeof requestedCode === "string" && requestedCode.trim()
+                ? requestedCode.trim().toUpperCase()
+                : null;
+        const defaultCode =
+            typeof catalogue.plan_paiement_defaut_code === "string" && catalogue.plan_paiement_defaut_code.trim()
+                ? catalogue.plan_paiement_defaut_code.trim().toUpperCase()
+                : null;
+
+        const selected =
+            plans.find((plan) => plan.code === normalizedRequested) ??
+            plans.find((plan) => plan.code === defaultCode) ??
+            plans[0];
+
+        if (!selected) {
+            throw new Error(`Aucun plan de paiement n'est defini pour ${feeLabel}.`);
+        }
+
+        if (normalizedRequested && !plans.some((plan) => plan.code === normalizedRequested)) {
+            throw new Error(`Le plan choisi n'est pas autorise pour ${feeLabel}.`);
+        }
+
+        return selected;
+    }
+
     private async buildInvoiceLines(
         prisma: PrismaClient | Prisma.TransactionClient,
         etablissementId: string,
@@ -1169,11 +1322,12 @@ class InscriptionApp {
         finance: any,
         servicesState: { transportActive: boolean; cantineActive: boolean },
         billingContext: { classeId: string; invoiceDate: Date; schoolYearStartDate: Date },
-    ): Promise<Array<{ libelle: string; montant: number; catalogue_frais_id: string | null; source_key: string; devise?: string | null; nombre_tranches: number }>> {
+    ): Promise<BillingInvoiceLine[]> {
         const definitions = [
             {
                 source_key: "catalogue_frais_inscription_id",
                 tranche_key: "catalogue_frais_inscription_nombre_tranches",
+                plan_key: "catalogue_frais_inscription_plan_code",
                 fallback_label: "Frais d'inscription",
                 enabled: true,
                 allowed_scopes: ["GENERAL", "INSCRIPTION"],
@@ -1181,6 +1335,7 @@ class InscriptionApp {
             {
                 source_key: "catalogue_frais_scolarite_id",
                 tranche_key: "catalogue_frais_scolarite_nombre_tranches",
+                plan_key: "catalogue_frais_scolarite_plan_code",
                 fallback_label: "Frais de scolarite",
                 enabled: true,
                 allowed_scopes: ["GENERAL", "SCOLARITE"],
@@ -1196,11 +1351,15 @@ class InscriptionApp {
             nom: string;
             montant: number;
             devise: string;
+            nombre_tranches: number;
             usage_scope: string;
+            mode_facturation: string | null;
             est_recurrent: boolean;
             periodicite: string | null;
             prorata_eligible: boolean;
             eligibilite_json: Prisma.JsonValue | null;
+            plans_paiement_autorises_json: Prisma.JsonValue | null;
+            plan_paiement_defaut_code: string | null;
             statut_validation: string | null;
         }>();
         if (selectedIds.length > 0) {
@@ -1218,11 +1377,15 @@ class InscriptionApp {
                     nom: true,
                     montant: true,
                     devise: true,
+                    nombre_tranches: true,
                     usage_scope: true,
+                    mode_facturation: true,
                     est_recurrent: true,
                     periodicite: true,
                     prorata_eligible: true,
                     eligibilite_json: true,
+                    plans_paiement_autorises_json: true,
+                    plan_paiement_defaut_code: true,
                     statut_validation: true,
                 } as never,
             }) as Array<{
@@ -1230,11 +1393,15 @@ class InscriptionApp {
                 nom: string;
                 montant: unknown;
                 devise: string | null;
+                nombre_tranches: number | null;
                 usage_scope: string | null;
+                mode_facturation: string | null;
                 est_recurrent: boolean | null;
                 periodicite: string | null;
                 prorata_eligible: boolean | null;
                 eligibilite_json: Prisma.JsonValue | null;
+                plans_paiement_autorises_json: Prisma.JsonValue | null;
+                plan_paiement_defaut_code: string | null;
                 statut_validation: string | null;
             }>;
 
@@ -1244,11 +1411,15 @@ class InscriptionApp {
                     nom: item.nom,
                     montant: this.toMoney(item.montant),
                     devise: item.devise ?? "MGA",
+                    nombre_tranches: this.resolveFinanceLineTrancheCount(item.nombre_tranches),
                     usage_scope: (item.usage_scope ?? "GENERAL").toUpperCase(),
+                    mode_facturation: item.mode_facturation ? item.mode_facturation.toUpperCase() : null,
                     est_recurrent: Boolean(item.est_recurrent),
                     periodicite: item.periodicite ?? null,
                     prorata_eligible: Boolean(item.prorata_eligible),
                     eligibilite_json: item.eligibilite_json ?? null,
+                    plans_paiement_autorises_json: item.plans_paiement_autorises_json ?? null,
+                    plan_paiement_defaut_code: item.plan_paiement_defaut_code ?? null,
                     statut_validation: item.statut_validation ?? null,
                 });
             }
@@ -1268,7 +1439,6 @@ class InscriptionApp {
             .flatMap((definition) => {
                 const selectedId = this.toNullableString(finance?.[definition.source_key]);
                 const catalogue = selectedId ? catalogueById.get(selectedId) : null;
-                const nombreTranches = this.resolveFinanceLineTrancheCount(finance?.[definition.tranche_key]);
 
                 if (!catalogue || catalogue.montant <= 0) {
                     return [];
@@ -1306,6 +1476,28 @@ class InscriptionApp {
                     billingContext.schoolYearStartDate,
                 );
 
+                let nombreTranches = this.resolveFinanceLineTrancheCount(
+                    finance?.[definition.tranche_key] ?? catalogue.nombre_tranches,
+                );
+                let installmentOffsetsMonths: number[] | null = null;
+                let planCode: string | null = null;
+                let planLabel: string | null = null;
+
+                const planManaged =
+                    (catalogue.mode_facturation ?? "").toUpperCase() === "ANNUEL" ||
+                    catalogue.usage_scope === "INSCRIPTION";
+                if (definition.plan_key && planManaged) {
+                    const annualPlan = this.resolvePaymentPlanForFee(
+                        catalogue,
+                        finance?.[definition.plan_key],
+                        definition.fallback_label.toLowerCase(),
+                    );
+                    nombreTranches = annualPlan.nombre_tranches;
+                    installmentOffsetsMonths = annualPlan.offsets_mois;
+                    planCode = annualPlan.code;
+                    planLabel = annualPlan.label;
+                }
+
                 return [{
                     source_key: definition.source_key,
                     catalogue_frais_id: catalogue.id,
@@ -1313,6 +1505,11 @@ class InscriptionApp {
                     montant: montantAjuste,
                     devise: catalogue.devise,
                     nombre_tranches: nombreTranches,
+                    installment_offsets_months: installmentOffsetsMonths,
+                    usage_scope: catalogue.usage_scope,
+                    mode_facturation: catalogue.mode_facturation,
+                    plan_code: planCode,
+                    plan_label: planLabel,
                 }];
             });
     }
@@ -1357,11 +1554,11 @@ class InscriptionApp {
     }
 
     private applyDiscountToInvoiceLines(
-        lines: Array<{ libelle: string; montant: number; catalogue_frais_id?: string | null; source_key?: string; devise?: string | null; nombre_tranches?: number }>,
+        lines: BillingInvoiceLine[],
         discountAmount: number,
         discountLabel?: string | null,
         applyOnSourceKeys?: string[] | null,
-    ): Array<{ libelle: string; montant: number; catalogue_frais_id?: string | null; source_key?: string; devise?: string | null; nombre_tranches?: number }> {
+    ): BillingInvoiceLine[] {
         if (discountAmount <= 0) return lines;
         return [
             ...lines,
@@ -1371,20 +1568,30 @@ class InscriptionApp {
                 catalogue_frais_id: null,
                 source_key: applyOnSourceKeys?.length ? `remise:${applyOnSourceKeys.join(",")}` : "remise",
                 nombre_tranches: 1,
+                installment_offsets_months: null,
+                usage_scope: null,
+                mode_facturation: null,
+                plan_code: null,
+                plan_label: null,
             },
         ];
-    }
-
-    private normalizeModePaiement(mode: string | null): string {
-        const normalized = (mode ?? "").trim().toUpperCase();
-        if (normalized === "COMPTANT") return "COMPTANT";
-        return "ECHELONNE";
     }
 
     private resolveFinanceLineTrancheCount(value: unknown): number {
         const parsed = Number.parseInt(String(value ?? 1), 10);
         if (!Number.isFinite(parsed) || parsed < 1) return 1;
         return parsed;
+    }
+
+    private deriveScheduleMode(lines: BillingInvoiceLine[]) {
+        const hasInstallments = lines.some((line) => {
+            const trancheCount = Math.max(1, Number(line.nombre_tranches || 1));
+            const offsets = Array.isArray(line.installment_offsets_months)
+                ? line.installment_offsets_months.filter((value) => Number.isFinite(value))
+                : [];
+            return trancheCount > 1 || offsets.some((value) => value > 0);
+        });
+        return hasInstallments ? "ECHELONNE" : "COMPTANT";
     }
 
     private resolvePaymentDayOfMonth(value: unknown, fallback: number | null = null): number | null {
@@ -1402,6 +1609,10 @@ class InscriptionApp {
 
     private getSchoolYearScheduleStartDate(dateDebut: Date) {
         return new Date(new Date(dateDebut).toISOString().slice(0, 10));
+    }
+
+    private getSchoolYearScheduleEndDate(dateFin: Date) {
+        return new Date(new Date(dateFin).toISOString().slice(0, 10));
     }
 
     private buildMonthlyScheduledDate(year: number, month: number, paymentDay: number) {
@@ -1465,10 +1676,17 @@ class InscriptionApp {
     }
 
     private buildPaymentSchedule(
-        lines: Array<{ libelle: string; montant: number; nombre_tranches: number; devise?: string | null }>,
+        lines: Array<{
+            libelle: string;
+            montant: number;
+            nombre_tranches: number;
+            devise?: string | null;
+            installment_offsets_months?: number[] | null;
+        }>,
         discountAmount: number,
         modePaiement: string,
         schoolYearStartDate: Date,
+        schoolYearEndDate: Date,
         immediateDueDate: Date,
         paymentDayOfMonth: number | null,
         applyOnSourceKeys?: string[] | null,
@@ -1501,15 +1719,29 @@ class InscriptionApp {
 
         for (const line of linesWithNetAmount) {
             const trancheCount = Math.max(1, Number(line.nombre_tranches || 1));
+            const providedOffsets = Array.isArray(line.installment_offsets_months)
+                ? line.installment_offsets_months
+                    .map((value) => Number.parseInt(String(value), 10))
+                    .filter((value) => Number.isFinite(value) && value >= 0)
+                : [];
+            const installmentOffsets =
+                providedOffsets.length === trancheCount
+                    ? [...providedOffsets]
+                    : Array.from({ length: trancheCount }, (_, index) => index);
             let remaining = this.roundMoney(line.montant_net);
             const baseAmount = this.roundMoney(remaining / trancheCount);
 
             for (let index = 0; index < trancheCount; index += 1) {
                 const date = this.buildMonthlyScheduledDate(
                     firstScheduledDate.getUTCFullYear(),
-                    firstScheduledDate.getUTCMonth() + index,
+                    firstScheduledDate.getUTCMonth() + installmentOffsets[index],
                     monthlyPaymentDay,
                 );
+                if (date.getTime() > schoolYearEndDate.getTime()) {
+                    throw new Error(
+                        `Le plan de paiement ${line.libelle} depasse la fin de l'annee scolaire. Ajuste le jour du mois ou choisis un plan annuel plus court.`,
+                    );
+                }
                 const montant = index === trancheCount - 1
                     ? this.roundMoney(remaining)
                     : baseAmount;

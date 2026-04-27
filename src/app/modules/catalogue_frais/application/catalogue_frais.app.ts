@@ -1,5 +1,5 @@
 ﻿import { Application, NextFunction, Request, Response as R, Router } from "express";
-import { PrismaClient, type CatalogueFrais } from "@prisma/client";
+import { Prisma, PrismaClient, type CatalogueFrais } from "@prisma/client";
 import Response from "../../../common/app/response";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
@@ -14,13 +14,25 @@ type CatalogueFraisPayload = {
   description: string | null;
   montant: number;
   devise: string;
+  nombre_tranches: number;
+  mode_facturation: string;
   est_recurrent: boolean;
   periodicite: string | null;
   prorata_eligible: boolean;
   eligibilite_json: Record<string, unknown> | null;
+  plans_paiement_autorises_json: Prisma.InputJsonValue | null;
+  plan_paiement_defaut_code: string | null;
+};
+
+type CataloguePaymentPlan = {
+  code: string;
+  label: string;
+  nombre_tranches: number;
+  offsets_mois: number[];
 };
 
 const ALLOWED_PERIODICITIES = new Set(["daily", "weekly", "monthly", "term", "semester", "year"]);
+const ALLOWED_BILLING_MODES = new Set(["PONCTUEL", "ANNUEL", "RECURRENT"]);
 const ALLOWED_USAGE_SCOPES = new Set([
   "GENERAL",
   "INSCRIPTION",
@@ -36,6 +48,23 @@ const ALLOWED_USAGE_SCOPES = new Set([
   "RATTRAPAGE",
   "COMPLEMENTAIRE",
 ]);
+
+const DEFAULT_SCOLARITE_PAYMENT_PLANS: CataloguePaymentPlan[] = [
+  { code: "1X", label: "Comptant", nombre_tranches: 1, offsets_mois: [0] },
+  { code: "3X", label: "3 tranches", nombre_tranches: 3, offsets_mois: [0, 4, 8] },
+  {
+    code: "10X",
+    label: "10 tranches",
+    nombre_tranches: 10,
+    offsets_mois: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  },
+];
+
+const DEFAULT_INSCRIPTION_PAYMENT_PLANS: CataloguePaymentPlan[] = [
+  { code: "1X", label: "Comptant", nombre_tranches: 1, offsets_mois: [0] },
+  { code: "2X", label: "2 tranches", nombre_tranches: 2, offsets_mois: [0, 1] },
+  { code: "3X", label: "3 tranches", nombre_tranches: 3, offsets_mois: [0, 1, 2] },
+];
 
 class CatalogueFraisApp {
   public app: Application;
@@ -128,6 +157,130 @@ class CatalogueFraisApp {
     return Object.keys(normalized).length > 0 ? normalized : null;
   }
 
+  private normalizeLegacyTrancheCount(value: unknown) {
+    const parsed = Number.parseInt(String(value ?? 1), 10);
+    if (!Number.isFinite(parsed) || parsed < 1) return 1;
+    return parsed;
+  }
+
+  private normalizeBillingMode(
+    rawMode: unknown,
+    usageScope: string,
+    estRecurrent: boolean,
+  ): string {
+    if (usageScope === "SCOLARITE") {
+      return "ANNUEL";
+    }
+
+    const normalized =
+      typeof rawMode === "string" && rawMode.trim()
+        ? rawMode.trim().toUpperCase()
+        : null;
+
+    if (estRecurrent) {
+      return "RECURRENT";
+    }
+
+    if (normalized && ALLOWED_BILLING_MODES.has(normalized)) {
+      return normalized;
+    }
+
+    return "PONCTUEL";
+  }
+
+  private normalizePaymentPlans(raw: unknown): CataloguePaymentPlan[] | null {
+    if (raw == null || raw === "") return null;
+
+    const parsed =
+      typeof raw === "string"
+        ? JSON.parse(raw)
+        : raw;
+
+    if (!Array.isArray(parsed)) {
+      throw new Error("Les plans de paiement autorises doivent etre fournis sous forme de tableau JSON.");
+    }
+
+    const normalized = parsed.map((entry, index) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        throw new Error(`Le plan de paiement #${index + 1} est invalide.`);
+      }
+
+      const rawPlan = entry as Record<string, unknown>;
+      const code =
+        typeof rawPlan.code === "string" ? rawPlan.code.trim().toUpperCase() : "";
+      const label =
+        typeof rawPlan.label === "string" ? rawPlan.label.trim() : "";
+      const nombreTranches = this.normalizeLegacyTrancheCount(rawPlan.nombre_tranches);
+      const offsets = Array.isArray(rawPlan.offsets_mois)
+        ? rawPlan.offsets_mois.map((value, offsetIndex) => {
+            const parsedOffset = Number.parseInt(String(value), 10);
+            if (!Number.isFinite(parsedOffset) || parsedOffset < 0 || parsedOffset > 11) {
+              throw new Error(
+                `Le decalage mensuel #${offsetIndex + 1} du plan ${code || `#${index + 1}`} est invalide.`,
+              );
+            }
+            return parsedOffset;
+          })
+        : [];
+
+      if (!code) {
+        throw new Error(`Le code du plan de paiement #${index + 1} est requis.`);
+      }
+
+      if (!label) {
+        throw new Error(`Le libelle du plan de paiement ${code} est requis.`);
+      }
+
+      if (nombreTranches > 12) {
+        throw new Error(`Le plan ${code} depasse la limite de 12 tranches annuelles.`);
+      }
+
+      if (offsets.length !== nombreTranches) {
+        throw new Error(
+          `Le plan ${code} doit definir ${nombreTranches} decalage(s) mensuel(s).`,
+        );
+      }
+
+      if (new Set(offsets).size !== offsets.length) {
+        throw new Error(`Le plan ${code} contient des decalages mensuels dupliques.`);
+      }
+
+      return {
+        code,
+        label,
+        nombre_tranches: nombreTranches,
+        offsets_mois: [...offsets].sort((left, right) => left - right),
+      } satisfies CataloguePaymentPlan;
+    });
+
+    if (new Set(normalized.map((item) => item.code)).size !== normalized.length) {
+      throw new Error("Chaque plan de paiement autorise doit avoir un code unique.");
+    }
+
+    return normalized;
+  }
+
+  private buildAnnualPlansFromLegacy(nombreTranches: number): CataloguePaymentPlan[] {
+    const boundedTranches = Math.max(1, Math.min(12, nombreTranches));
+    return [{
+      code: `${boundedTranches}X`,
+      label:
+        boundedTranches === 1 ? "Comptant" : `${boundedTranches} tranches`,
+      nombre_tranches: boundedTranches,
+      offsets_mois: Array.from({ length: boundedTranches }, (_, index) => index),
+    }];
+  }
+
+  private buildInscriptionPlansFromLegacy(nombreTranches: number): CataloguePaymentPlan[] {
+    const boundedTranches = Math.max(1, Math.min(3, nombreTranches));
+    return [{
+      code: `${boundedTranches}X`,
+      label: boundedTranches === 1 ? "Comptant" : `${boundedTranches} tranches`,
+      nombre_tranches: boundedTranches,
+      offsets_mois: Array.from({ length: boundedTranches }, (_, index) => index),
+    }];
+  }
+
   private normalizePayload(
     raw: Partial<CatalogueFrais>,
     tenantId: string,
@@ -154,17 +307,40 @@ class CatalogueFraisApp {
     const devise = typeof raw.devise === "string" && raw.devise.trim()
       ? raw.devise.trim().toUpperCase()
       : "MGA";
-    const est_recurrent = Boolean(raw.est_recurrent);
-    const periodicite =
+    const legacyNombreTranches = this.normalizeLegacyTrancheCount(raw.nombre_tranches);
+    const rawEstRecurrent = Boolean(raw.est_recurrent);
+    const rawPeriodicite =
       typeof raw.periodicite === "string" && raw.periodicite.trim()
         ? raw.periodicite.trim().toLowerCase()
         : null;
-    const prorata_eligible = Boolean(
+    const rawProrataEligible = Boolean(
       (raw as Partial<CatalogueFrais> & { prorata_eligible?: unknown }).prorata_eligible,
     );
     const eligibilite_json = this.normalizeEligibilityRules(
       (raw as Partial<CatalogueFrais> & { eligibilite_json?: unknown }).eligibilite_json,
     );
+    const rawWithBilling = raw as Partial<CatalogueFrais> & {
+      mode_facturation?: unknown;
+      plans_paiement_autorises_json?: unknown;
+      plan_paiement_defaut_code?: unknown;
+    };
+    let mode_facturation = this.normalizeBillingMode(
+      rawWithBilling.mode_facturation,
+      usage_scope,
+      rawEstRecurrent,
+    );
+    let plans_paiement_autorises_json = this.normalizePaymentPlans(
+      rawWithBilling.plans_paiement_autorises_json,
+    );
+    let plan_paiement_defaut_code =
+      typeof rawWithBilling.plan_paiement_defaut_code === "string" &&
+      rawWithBilling.plan_paiement_defaut_code.trim()
+        ? rawWithBilling.plan_paiement_defaut_code.trim().toUpperCase()
+        : null;
+    let est_recurrent = rawEstRecurrent;
+    let periodicite = rawPeriodicite;
+    let prorata_eligible = rawProrataEligible;
+    let nombre_tranches = legacyNombreTranches;
     const montant = Number(raw.montant ?? 0);
     if (!nom) {
       throw new Error("Le nom du frais est requis.");
@@ -178,12 +354,91 @@ class CatalogueFraisApp {
       throw new Error("Le type d'usage du frais n'est pas valide.");
     }
 
-    if (est_recurrent && (!periodicite || !ALLOWED_PERIODICITIES.has(periodicite))) {
+    if (mode_facturation === "RECURRENT" && (!periodicite || !ALLOWED_PERIODICITIES.has(periodicite))) {
       throw new Error("La periodicite est requise pour un frais recurrent.");
     }
 
-    if (!est_recurrent && periodicite && !ALLOWED_PERIODICITIES.has(periodicite)) {
+    if (periodicite && !ALLOWED_PERIODICITIES.has(periodicite)) {
       throw new Error("La periodicite fournie n'est pas valide.");
+    }
+
+    if (usage_scope === "SCOLARITE") {
+      if (rawEstRecurrent || rawPeriodicite || rawProrataEligible) {
+        throw new Error("Un frais de scolarite doit etre annuel: il ne peut pas etre recurrent ni au prorata.");
+      }
+
+      mode_facturation = "ANNUEL";
+      est_recurrent = false;
+      periodicite = null;
+      prorata_eligible = false;
+      const annualPlans =
+        plans_paiement_autorises_json ?? DEFAULT_SCOLARITE_PAYMENT_PLANS;
+      plans_paiement_autorises_json = annualPlans;
+      plan_paiement_defaut_code =
+        plan_paiement_defaut_code ??
+        (annualPlans.find((plan) => plan.code === "10X")?.code ??
+          annualPlans[0]?.code ??
+          null);
+    }
+
+    if (usage_scope === "INSCRIPTION") {
+      if (rawEstRecurrent || rawPeriodicite || rawProrataEligible || mode_facturation === "RECURRENT") {
+        throw new Error("Un droit d'inscription doit rester ponctuel: il ne peut pas etre recurrent ni au prorata.");
+      }
+
+      mode_facturation = "PONCTUEL";
+      est_recurrent = false;
+      periodicite = null;
+      prorata_eligible = false;
+      const inscriptionPlans =
+        plans_paiement_autorises_json ?? this.buildInscriptionPlansFromLegacy(legacyNombreTranches);
+
+      if (inscriptionPlans.some((plan) => plan.nombre_tranches > 3)) {
+        throw new Error("Un droit d'inscription ne peut pas depasser 3 tranches autorisees.");
+      }
+
+      plans_paiement_autorises_json = inscriptionPlans;
+      plan_paiement_defaut_code =
+        plan_paiement_defaut_code ??
+        (inscriptionPlans.find((plan) => plan.code === "1X")?.code ??
+          inscriptionPlans[0]?.code ??
+          null);
+    }
+
+    const planManagedMode = mode_facturation === "ANNUEL" || usage_scope === "INSCRIPTION";
+
+    if (mode_facturation === "ANNUEL") {
+      const annualPlans =
+        plans_paiement_autorises_json ?? this.buildAnnualPlansFromLegacy(legacyNombreTranches);
+      plans_paiement_autorises_json = annualPlans;
+      plan_paiement_defaut_code =
+        plan_paiement_defaut_code ?? annualPlans[0]?.code ?? null;
+    }
+
+    if (!planManagedMode) {
+      plans_paiement_autorises_json = null;
+      plan_paiement_defaut_code = null;
+    }
+
+    if (mode_facturation === "RECURRENT") {
+      est_recurrent = true;
+    }
+
+    if (!est_recurrent) {
+      periodicite = null;
+      prorata_eligible = false;
+    } else {
+      prorata_eligible = periodicite === "monthly" ? prorata_eligible : false;
+    }
+
+    if (plans_paiement_autorises_json && plan_paiement_defaut_code) {
+      const selectedPlan = plans_paiement_autorises_json.find(
+        (plan) => plan.code === plan_paiement_defaut_code,
+      );
+      if (!selectedPlan) {
+        throw new Error("Le plan de paiement annuel par defaut doit exister dans la liste des plans autorises.");
+      }
+      nombre_tranches = selectedPlan.nombre_tranches;
     }
 
     return {
@@ -194,10 +449,17 @@ class CatalogueFraisApp {
       description,
       montant,
       devise,
+      nombre_tranches,
+      mode_facturation,
       est_recurrent,
       periodicite: est_recurrent ? periodicite : null,
-      prorata_eligible: est_recurrent && periodicite === "monthly" ? prorata_eligible : false,
+      prorata_eligible,
       eligibilite_json,
+      plans_paiement_autorises_json:
+        plans_paiement_autorises_json != null
+          ? (plans_paiement_autorises_json as Prisma.InputJsonValue)
+          : null,
+      plan_paiement_defaut_code,
     };
   }
 

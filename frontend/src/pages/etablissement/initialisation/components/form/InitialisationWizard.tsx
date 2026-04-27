@@ -183,6 +183,11 @@ export default function InitialisationWizard({
   }, [etablissementId, reset]);
 
   useEffect(() => {
+    setPreview(null);
+    setReport(null);
+  }, [draft, setPreview, setReport]);
+
+  useEffect(() => {
     setDraft((current) => {
       const nextSelectedLevelCodes = buildSelectedLevelCodes(
         templates,

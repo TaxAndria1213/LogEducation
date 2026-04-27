@@ -20,6 +20,11 @@ export const systemApi = axios.create({
   ...commonConfig,
 });
 
+export const publicApi = axios.create({
+  baseURL: API_BASE_URL,
+  ...commonConfig,
+});
+
 api.interceptors.request.use(async (config) => {
   config.headers = config.headers ?? {};
   const session = getRuntimeSession();
@@ -46,7 +51,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const { data } = await systemApi.post("/api/auth/refresh", {
+        const { data } = await publicApi.post("/api/auth/refresh", {
           refreshToken: session.tokens.refreshToken,
         });
 

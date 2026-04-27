@@ -12,6 +12,7 @@ export type AuthContextType = {
   refreshToken: null | string;
   login: (user: Utilisateur, roles: Role[], tokens: { accessToken: string; refreshToken: string }) => void;
   logout: () => void;
+  setActiveEtablissementId: (etablissementId: string | null) => void;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

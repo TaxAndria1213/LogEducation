@@ -146,10 +146,13 @@ export type InitialisationFinanceCatalogueDraft = {
   montant: string;
   devise: string;
   nombre_tranches: string;
+  mode_facturation: string;
   est_recurrent: boolean;
   periodicite: string;
   prorata_eligible: boolean;
   eligibilite_json: string;
+  plans_paiement_autorises_json: string;
+  plan_paiement_defaut_code: string;
 };
 
 export type InitialisationPeriodDraft = {

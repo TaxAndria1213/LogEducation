@@ -172,6 +172,34 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
     [lockedInstallmentCount, selectedPlanEcheances.length],
   );
 
+  const originalAnnualPlan = useMemo(() => {
+    const finance =
+      selectedPlan?.plan_json &&
+      typeof selectedPlan.plan_json === "object" &&
+      !Array.isArray(selectedPlan.plan_json)
+        ? (selectedPlan.plan_json as {
+            finance?: {
+              catalogue_frais_scolarite_plan_code?: unknown;
+              catalogue_frais_scolarite_plan_label?: unknown;
+            } | null;
+          }).finance
+        : null;
+
+    const code =
+      typeof finance?.catalogue_frais_scolarite_plan_code === "string" &&
+      finance.catalogue_frais_scolarite_plan_code.trim()
+        ? finance.catalogue_frais_scolarite_plan_code.trim().toUpperCase()
+        : null;
+    const label =
+      typeof finance?.catalogue_frais_scolarite_plan_label === "string" &&
+      finance.catalogue_frais_scolarite_plan_label.trim()
+        ? finance.catalogue_frais_scolarite_plan_label.trim()
+        : null;
+
+    if (!code && !label) return null;
+    return { code, label };
+  }, [selectedPlan]);
+
   const defaultValues = useMemo<PlanPaiementFormValues>(
     () => buildDefaultValues(initialData, selectedPlan, selectedPlanEcheances),
     [initialData, selectedPlan, selectedPlanEcheances],
@@ -281,6 +309,17 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
                     {editableInstallmentCount > 0
                       ? ` ${editableInstallmentCount} tranche(s) restent ajustables.`
                       : " Aucune tranche restante n'est modifiable."}
+                  </p>
+                </div>
+              ) : null}
+
+              {mode === "edit" && originalAnnualPlan ? (
+                <div className="mb-5 rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
+                  <p className="font-semibold">Plan annuel d'origine detecte</p>
+                  <p className="mt-2 leading-6">
+                    {originalAnnualPlan.label ?? "Plan annuel"}
+                    {originalAnnualPlan.code ? ` (${originalAnnualPlan.code})` : ""} a servi a generer l'echeancier initial.
+                    Toute modification ici est traitee comme une derogation ou un reechelonnement manuel.
                   </p>
                 </div>
               ) : null}

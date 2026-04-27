@@ -57,6 +57,21 @@ const periodiciteOptions = [
   { value: "year", label: "Annuel" },
 ];
 
+const defaultAnnualScolaritePlans = JSON.stringify(
+  [
+    { code: "1X", label: "Comptant", nombre_tranches: 1, offsets_mois: [0] },
+    { code: "3X", label: "3 tranches", nombre_tranches: 3, offsets_mois: [0, 4, 8] },
+    {
+      code: "10X",
+      label: "10 tranches",
+      nombre_tranches: 10,
+      offsets_mois: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    },
+  ],
+  null,
+  2,
+);
+
 const deviseOptions = ["MGA", "EUR", "USD"];
 
 function buildClassKey(levelCode: string, className: string) {
@@ -106,7 +121,7 @@ function buildEmptyCatalogue(
   className = "",
   usageScope = "SCOLARITE",
 ): InitialisationFinanceCatalogueDraft {
-  const isRecurring = usageScope === "SCOLARITE";
+  const isScolarite = usageScope === "SCOLARITE";
 
   return {
     level_code: levelCode,
@@ -116,11 +131,14 @@ function buildEmptyCatalogue(
     description: "",
     montant: "",
     devise: "MGA",
-    nombre_tranches: isRecurring ? "10" : "1",
-    est_recurrent: isRecurring,
-    periodicite: isRecurring ? "monthly" : "",
+    nombre_tranches: isScolarite ? "10" : "1",
+    mode_facturation: isScolarite ? "ANNUEL" : "PONCTUEL",
+    est_recurrent: false,
+    periodicite: "",
     prorata_eligible: false,
     eligibilite_json: "",
+    plans_paiement_autorises_json: isScolarite ? defaultAnnualScolaritePlans : "",
+    plan_paiement_defaut_code: isScolarite ? "10X" : "",
   };
 }
 
@@ -157,6 +175,30 @@ function isCatalogueComplete(catalogue: InitialisationFinanceCatalogueDraft) {
   return (
     Boolean(catalogue.nom.trim()) && Number.isFinite(amount) && amount >= 0
   );
+}
+
+function normalizeFinanceDraftCatalogue(
+  catalogue: InitialisationFinanceCatalogueDraft,
+): InitialisationFinanceCatalogueDraft {
+  if (catalogue.usage_scope !== "SCOLARITE") {
+    return {
+      ...catalogue,
+      mode_facturation: catalogue.mode_facturation || "PONCTUEL",
+    };
+  }
+
+  return {
+    ...catalogue,
+    nombre_tranches: catalogue.nombre_tranches || "10",
+    mode_facturation: "ANNUEL",
+    est_recurrent: false,
+    periodicite: "",
+    prorata_eligible: false,
+    plans_paiement_autorises_json:
+      catalogue.plans_paiement_autorises_json || defaultAnnualScolaritePlans,
+    plan_paiement_defaut_code:
+      catalogue.plan_paiement_defaut_code || "10X",
+  };
 }
 
 export default function StepFinance({ draft, setDraft, levels }: Props) {
@@ -198,7 +240,7 @@ export default function StepFinance({ draft, setDraft, levels }: Props) {
   }, [draft.finance_catalogues, form]);
 
   useEffect(() => {
-    const nextCatalogues = watchedCatalogues ?? [];
+    const nextCatalogues = (watchedCatalogues ?? []).map(normalizeFinanceDraftCatalogue);
     const nextKey = JSON.stringify(nextCatalogues);
 
     if (nextKey === lastCataloguesRef.current) return;
@@ -321,7 +363,10 @@ useEffect(() => {
   const renderCatalogueFields = (
     catalogue: InitialisationFinanceCatalogueDraft,
     index: number,
-  ) => (
+  ) => {
+    const isScolarite = catalogue.usage_scope === "SCOLARITE";
+
+    return (
     <article
       key={`finance-catalogue-${index}`}
       className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm"
@@ -398,13 +443,22 @@ useEffect(() => {
           placeholder="1"
         />
 
-        <BooleanField<FormValues>
-          control={form.control}
-          name={`finance_catalogues.${index}.est_recurrent` as Path<FormValues>}
-          label="Recurrent"
-        />
+        {!isScolarite ? (
+          <BooleanField<FormValues>
+            control={form.control}
+            name={`finance_catalogues.${index}.est_recurrent` as Path<FormValues>}
+            label="Recurrent"
+          />
+        ) : (
+          <TextField<FormValues>
+            control={form.control}
+            name={`finance_catalogues.${index}.mode_facturation` as Path<FormValues>}
+            label="Mode de facturation"
+            disabled
+          />
+        )}
 
-        {catalogue.est_recurrent ? (
+        {catalogue.est_recurrent && !isScolarite ? (
           <>
             <SelectField<FormValues, string>
               control={form.control}
@@ -436,8 +490,26 @@ useEffect(() => {
           placeholder="Note courte visible dans le catalogue"
         />
       </div>
+
+      {isScolarite ? (
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <TextAreaField<FormValues>
+            control={form.control}
+            name={`finance_catalogues.${index}.plans_paiement_autorises_json` as Path<FormValues>}
+            label="Plans annuels autorises"
+            placeholder={defaultAnnualScolaritePlans}
+          />
+          <TextField<FormValues>
+            control={form.control}
+            name={`finance_catalogues.${index}.plan_paiement_defaut_code` as Path<FormValues>}
+            label="Plan annuel par defaut"
+            placeholder="10X"
+          />
+        </div>
+      ) : null}
     </article>
   );
+  };
 
   return (
     <div className="space-y-5">

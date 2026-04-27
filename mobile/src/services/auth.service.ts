@@ -1,4 +1,4 @@
-import { systemApi } from "@/lib/api";
+import { publicApi } from "@/lib/api";
 import type { AuthTokens, Utilisateur } from "@/types/models";
 
 type LoginPayload = {
@@ -18,7 +18,7 @@ export const authService = {
       mot_de_passe_hash: password,
     };
 
-    const { data } = await systemApi.post<{ data: LoginResponse }>(
+    const { data } = await publicApi.post<{ data: LoginResponse }>(
       "/api/auth/login",
       payload,
     );

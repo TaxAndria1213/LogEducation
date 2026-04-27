@@ -9,6 +9,7 @@ import {
   createServiceSubscriptionFacture,
   regularizeServiceSubscriptionFacture,
 } from "../../finance_shared/utils/service_subscription_finance";
+import { roundMoney } from "../../finance_shared/utils/echeance_paiement";
 
 type AbonnementCantinePayload = {
   eleve_id: string;
@@ -1022,20 +1023,36 @@ class AbonnementCantineApp {
       return this.abonnementCantine.delete(existing.id);
     }
 
+    const formuleFinanceContext = existing.formule_cantine_id
+      ? await this.getFormuleWithFinanceContext(existing.formule_cantine_id, tenantId).catch(() => null)
+      : null;
+
     return this.prisma.$transaction(async (tx) => {
-      await regularizeServiceSubscriptionFacture(tx, {
-        tenantId,
-        factureId: existing.facture_id as string,
-        eleveId: existing.eleve_id,
-        anneeScolaireId: existing.annee_scolaire_id,
-        catalogueFraisId: existing.formule?.catalogue_frais_id ?? null,
-        libellePrefix: "Cantine -",
-        serviceLabel: existing.formule?.nom
-          ? `cantine ${existing.formule.nom}`
-          : "cantine",
-        createdByUtilisateurId: actorId,
-        motif: "Resiliation abonnement cantine",
+      const regularizationAmount = this.computeCantineRemainingAmount({
+        montant: formuleFinanceContext?.frais?.montant ?? null,
+        formuleType: formuleFinanceContext?.type_formule ?? existing.formule?.type_formule ?? null,
+        subscriptionStart: existing.date_effet ?? null,
+        schoolYearStart: existing.annee?.date_debut ?? null,
+        schoolYearEnd: existing.annee?.date_fin ?? null,
+        effectiveDate: new Date(),
       });
+
+      if (regularizationAmount > 0) {
+        await regularizeServiceSubscriptionFacture(tx, {
+          tenantId,
+          factureId: existing.facture_id as string,
+          eleveId: existing.eleve_id,
+          anneeScolaireId: existing.annee_scolaire_id,
+          catalogueFraisId: existing.formule?.catalogue_frais_id ?? null,
+          libellePrefix: "Cantine -",
+          serviceLabel: existing.formule?.nom
+            ? `cantine ${existing.formule.nom}`
+            : "cantine",
+          createdByUtilisateurId: actorId,
+          motif: "Resiliation abonnement cantine",
+          montantOverride: regularizationAmount,
+        });
+      }
 
       return tx.abonnementCantine.update({
         where: { id: existing.id },
@@ -1098,6 +1115,124 @@ class AbonnementCantineApp {
           ? existing.formule?.mode_regularisation_absence ?? "AVOIR"
           : null,
     };
+  }
+
+  private normalizeCantineDate(value: Date | string | null | undefined) {
+    if (!value) return null;
+    const parsed = value instanceof Date ? new Date(value) : new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate()));
+  }
+
+  private diffDaysInclusive(start: Date, end: Date) {
+    const diff = end.getTime() - start.getTime();
+    if (diff < 0) return 0;
+    return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+  }
+
+  private clampCantineDateToWindow(
+    value: Date | null,
+    start: Date,
+    end: Date,
+  ) {
+    if (!value) return null;
+    if (value < start) return start;
+    if (value > end) return null;
+    return value;
+  }
+
+  private resolveCantineCoverageWindow(args: {
+    subscriptionStart?: Date | null;
+    schoolYearStart?: Date | null;
+    schoolYearEnd?: Date | null;
+  }) {
+    const schoolYearEnd = this.normalizeCantineDate(args.schoolYearEnd);
+    if (!schoolYearEnd) return null;
+    const schoolYearStart =
+      this.normalizeCantineDate(args.schoolYearStart) ??
+      this.normalizeCantineDate(args.subscriptionStart) ??
+      schoolYearEnd;
+    const subscriptionStart =
+      this.normalizeCantineDate(args.subscriptionStart) ?? schoolYearStart;
+    const coverageStart = subscriptionStart > schoolYearStart ? subscriptionStart : schoolYearStart;
+    if (coverageStart > schoolYearEnd) return null;
+    return {
+      start: coverageStart,
+      end: schoolYearEnd,
+    };
+  }
+
+  private computeCantineRemainingAmount(args: {
+    montant: unknown;
+    formuleType?: string | null;
+    subscriptionStart?: Date | null;
+    schoolYearStart?: Date | null;
+    schoolYearEnd?: Date | null;
+    effectiveDate?: Date | null;
+  }) {
+    const montant = Number(args.montant ?? 0);
+    if (!Number.isFinite(montant) || montant <= 0) return 0;
+    if ((args.formuleType ?? "").toUpperCase() === "REPAS_UNITAIRE") return 0;
+
+    const coverageWindow = this.resolveCantineCoverageWindow({
+      subscriptionStart: args.subscriptionStart ?? null,
+      schoolYearStart: args.schoolYearStart ?? null,
+      schoolYearEnd: args.schoolYearEnd ?? null,
+    });
+    if (!coverageWindow) return 0;
+
+    const effectiveDate = this.clampCantineDateToWindow(
+      this.normalizeCantineDate(args.effectiveDate ?? null) ?? coverageWindow.start,
+      coverageWindow.start,
+      coverageWindow.end,
+    );
+    if (!effectiveDate) return 0;
+
+    const totalDays = this.diffDaysInclusive(coverageWindow.start, coverageWindow.end);
+    const remainingDays = this.diffDaysInclusive(effectiveDate, coverageWindow.end);
+    if (totalDays <= 0 || remainingDays <= 0) return 0;
+
+    return roundMoney((montant * remainingDays) / totalDays);
+  }
+
+  private computeCantineAbsenceRegularizationAmount(args: {
+    formule: Awaited<ReturnType<AbonnementCantineApp["getFormuleWithFinanceContext"]>> | null;
+    abonnement: {
+      date_effet?: Date | null;
+      annee?: {
+        date_debut?: Date | null;
+        date_fin?: Date | null;
+      } | null;
+    } | null;
+    absenceDate?: Date | null;
+  }) {
+    if (!args.formule || !args.abonnement) return 0;
+    const formuleType = (args.formule.type_formule ?? "").toUpperCase();
+    if (formuleType === "REPAS_UNITAIRE") return 0;
+
+    const coverageWindow = this.resolveCantineCoverageWindow({
+      subscriptionStart: args.abonnement.date_effet ?? null,
+      schoolYearStart: args.abonnement.annee?.date_debut ?? null,
+      schoolYearEnd: args.abonnement.annee?.date_fin ?? null,
+    });
+    if (!coverageWindow) return 0;
+
+    const absenceDate = this.clampCantineDateToWindow(
+      this.normalizeCantineDate(args.absenceDate ?? null),
+      coverageWindow.start,
+      coverageWindow.end,
+    );
+    if (!absenceDate) return 0;
+
+    const totalDays = this.diffDaysInclusive(coverageWindow.start, coverageWindow.end);
+    const mealsPerDayRaw = Number(args.formule.max_repas_par_jour ?? 1);
+    const mealsPerDay =
+      Number.isFinite(mealsPerDayRaw) && mealsPerDayRaw > 0 ? Math.max(1, Math.trunc(mealsPerDayRaw)) : 1;
+    const totalMealUnits = totalDays * mealsPerDay;
+    const montant = Number(args.formule.frais?.montant ?? 0);
+    if (!Number.isFinite(montant) || montant <= 0 || totalMealUnits <= 0) return 0;
+
+    return roundMoney(montant / totalMealUnits);
   }
 
   private getConsumptionTransmissionRequirement(existing: NonNullable<AbonnementCantineScopedRecord>) {
@@ -2550,7 +2685,11 @@ class AbonnementCantineApp {
           existing.abonnement.formule_cantine_id,
           tenantId,
         ).catch(() => null);
-        const regularizationAmount = Number(formule?.frais?.montant ?? 0);
+        const regularizationAmount = this.computeCantineAbsenceRegularizationAmount({
+          formule,
+          abonnement: existing.abonnement,
+          absenceDate: existing.date_repas,
+        });
         let creditResult:
           | Awaited<ReturnType<typeof regularizeServiceSubscriptionFacture>>
           | null = null;
@@ -2828,6 +2967,22 @@ class AbonnementCantineApp {
 
       const impactTarifaire = this.hasFormulaTariffImpact(currentFormule, nextFormule);
       const factureActive = Boolean(existing.facture_id && (existing.facture?.statut ?? "").toUpperCase() !== "ANNULEE");
+      const oldRemainingAmount = this.computeCantineRemainingAmount({
+        montant: currentFormule.frais?.montant ?? null,
+        formuleType: currentFormule.type_formule ?? null,
+        subscriptionStart: existing.date_effet ?? null,
+        schoolYearStart: existing.annee?.date_debut ?? null,
+        schoolYearEnd: existing.annee?.date_fin ?? null,
+        effectiveDate: payload.date_effet,
+      });
+      const newRemainingAmount = this.computeCantineRemainingAmount({
+        montant: nextFormule.frais?.montant ?? null,
+        formuleType: nextFormule.type_formule ?? null,
+        subscriptionStart: payload.date_effet,
+        schoolYearStart: existing.annee?.date_debut ?? null,
+        schoolYearEnd: existing.annee?.date_fin ?? null,
+        effectiveDate: payload.date_effet,
+      });
       const nextStatus =
         impactTarifaire && factureActive
           ? "EN_ATTENTE_REGLEMENT"
@@ -2864,6 +3019,8 @@ class AbonnementCantineApp {
               nouveau_catalogue_frais_id: nextFormule.catalogue_frais_id ?? null,
               ancien_montant: currentFormule.frais?.montant ?? null,
               nouveau_montant: nextFormule.frais?.montant ?? null,
+              ancien_montant_restant: oldRemainingAmount,
+              nouveau_montant_restant: newRemainingAmount,
               notification_finance: impactTarifaire && factureActive,
               finance_processed_at: null,
               facture_active_avant_changement: factureActive,
@@ -2879,12 +3036,14 @@ class AbonnementCantineApp {
               facture_id: existing.facture_id ?? null,
               cree_par_utilisateur_id: (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
               type: "CANTINE_CHANGEMENT_FORMULE",
-              montant: Number(nextFormule.frais?.montant ?? 0) - Number(currentFormule.frais?.montant ?? 0),
+              montant: roundMoney(newRemainingAmount - oldRemainingAmount),
               motif: "Changement de formule cantine avec regularisation Finance",
               details_json: {
                 ancienne_formule_id: currentFormule.id,
                 nouvelle_formule_id: nextFormule.id,
                 date_effet: payload.date_effet,
+                ancien_montant_restant: oldRemainingAmount,
+                nouveau_montant_restant: newRemainingAmount,
               },
             },
           });
@@ -2933,6 +3092,32 @@ class AbonnementCantineApp {
         throw new Error("La nouvelle formule de cantine n'est reliee a aucun frais catalogue.");
       }
       const nextCatalogueFraisId = newFormule.catalogue_frais_id;
+      const historyDetails =
+        pendingHistory.details_json && typeof pendingHistory.details_json === "object" && !Array.isArray(pendingHistory.details_json)
+          ? (pendingHistory.details_json as Record<string, unknown>)
+          : {};
+      const oldRemainingAmount =
+        historyDetails.ancien_montant_restant != null
+          ? Number(historyDetails.ancien_montant_restant)
+          : this.computeCantineRemainingAmount({
+              montant: oldFormule.frais?.montant ?? null,
+              formuleType: oldFormule.type_formule ?? null,
+              subscriptionStart: existing.date_effet ?? null,
+              schoolYearStart: existing.annee?.date_debut ?? null,
+              schoolYearEnd: existing.annee?.date_fin ?? null,
+              effectiveDate: pendingHistory.date_effet ?? existing.date_effet ?? null,
+            });
+      const newRemainingAmount =
+        historyDetails.nouveau_montant_restant != null
+          ? Number(historyDetails.nouveau_montant_restant)
+          : this.computeCantineRemainingAmount({
+              montant: newFormule.frais?.montant ?? null,
+              formuleType: newFormule.type_formule ?? null,
+              subscriptionStart: pendingHistory.date_effet ?? existing.date_effet ?? null,
+              schoolYearStart: existing.annee?.date_debut ?? null,
+              schoolYearEnd: existing.annee?.date_fin ?? null,
+              effectiveDate: pendingHistory.date_effet ?? existing.date_effet ?? null,
+            });
 
       const result = await this.prisma.$transaction(async (tx) => {
         const regularization = await regularizeServiceSubscriptionFacture(tx, {
@@ -2945,47 +3130,59 @@ class AbonnementCantineApp {
           serviceLabel: oldFormule.nom ? `cantine ${oldFormule.nom}` : "cantine",
           createdByUtilisateurId: (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
           motif: "Regularisation apres changement de formule cantine",
+          montantOverride: oldRemainingAmount,
         });
 
-        const billing = await createServiceSubscriptionFacture(tx, {
-          tenantId,
-          eleveId: existing.eleve_id,
-          anneeScolaireId: existing.annee_scolaire_id,
-          catalogueFraisId: nextCatalogueFraisId,
-          allowedScopes: ["GENERAL", "CANTINE"],
-          libelle: `Cantine - ${newFormule.nom ?? "service"}`,
-          modePaiement: "COMPTANT",
-          nombreTranches: 1,
-          jourPaiementMensuel: null,
-          createdByUtilisateurId: (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
-          dateEcheance: pendingHistory.date_effet ?? ((existing as Record<string, unknown>).date_effet as Date | null | undefined) ?? null,
-        });
+        const billing =
+          newRemainingAmount > 0
+            ? await createServiceSubscriptionFacture(tx, {
+                tenantId,
+                eleveId: existing.eleve_id,
+                anneeScolaireId: existing.annee_scolaire_id,
+                catalogueFraisId: nextCatalogueFraisId,
+                allowedScopes: ["GENERAL", "CANTINE"],
+                libelle: `Cantine - ${newFormule.nom ?? "service"}`,
+                modePaiement: "COMPTANT",
+                nombreTranches: 1,
+                jourPaiementMensuel: null,
+                createdByUtilisateurId: (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
+                dateEcheance: pendingHistory.date_effet ?? ((existing as Record<string, unknown>).date_effet as Date | null | undefined) ?? null,
+                montantOverride: newRemainingAmount,
+              })
+            : null;
 
         await tx.abonnementCantine.update({
           where: { id: existing.id },
           data: {
-            facture_id: billing.facture.id,
-            statut: (billing.facture.statut ?? "").toUpperCase() === "PAYEE" ? "ACTIF" : "EN_ATTENTE_REGLEMENT",
+            facture_id: billing?.facture.id ?? null,
+            statut:
+              billing?.facture.id != null
+                ? (billing.facture.statut ?? "").toUpperCase() === "PAYEE"
+                  ? "ACTIF"
+                  : "EN_ATTENTE_REGLEMENT"
+                : "ACTIF",
           },
         });
-
-        const historyDetails =
-          pendingHistory.details_json && typeof pendingHistory.details_json === "object" && !Array.isArray(pendingHistory.details_json)
-            ? (pendingHistory.details_json as Record<string, unknown>)
-            : {};
 
         await tx.historiqueFormuleCantine.update({
           where: { id: pendingHistory.id },
           data: {
-            nouveau_statut: (billing.facture.statut ?? "").toUpperCase() === "PAYEE" ? "ACTIF" : "EN_ATTENTE_REGLEMENT",
+            nouveau_statut:
+              billing?.facture.id != null
+                ? (billing.facture.statut ?? "").toUpperCase() === "PAYEE"
+                  ? "ACTIF"
+                  : "EN_ATTENTE_REGLEMENT"
+                : "ACTIF",
             details_json: {
               ...historyDetails,
               finance_processed_at: new Date().toISOString(),
               regularization_facture_id: existing.facture_id,
               regularization_avoir_id: regularization.avoir?.id ?? null,
-              nouvelle_facture_id: billing.facture.id,
+              nouvelle_facture_id: billing?.facture.id ?? null,
               regularization_amount: regularization.montant_regularise,
-              new_billing_amount: billing.facture.total_montant,
+              new_billing_amount: billing?.facture.total_montant ?? 0,
+              ancien_montant_restant: oldRemainingAmount,
+              nouveau_montant_restant: newRemainingAmount,
             },
           },
         });
@@ -2994,17 +3191,19 @@ class AbonnementCantineApp {
           data: {
             etablissement_id: tenantId,
             abonnement_cantine_id: existing.id,
-            facture_id: billing.facture.id,
+            facture_id: billing?.facture.id ?? null,
             cree_par_utilisateur_id: (req as Request & { user?: { sub?: string } }).user?.sub ?? null,
             type: "CANTINE_REGULARISATION_FORMULE",
-            montant: billing.facture.total_montant,
+            montant: billing?.facture.total_montant ?? 0,
             motif: "Regularisation Finance apres changement de formule cantine",
             details_json: {
               ancienne_formule_id: oldFormule.id,
               nouvelle_formule_id: newFormule.id,
               ancienne_facture_id: existing.facture_id,
-              nouvelle_facture_id: billing.facture.id,
+              nouvelle_facture_id: billing?.facture.id ?? null,
               avoir_id: regularization.avoir?.id ?? null,
+              ancien_montant_restant: oldRemainingAmount,
+              nouveau_montant_restant: newRemainingAmount,
             },
           },
         });

@@ -1151,10 +1151,13 @@ model CatalogueFrais {
   montant            Decimal @db.Decimal(12, 2)
   devise             String  @default("MGA")
   nombre_tranches    Int     @default(1)
+  mode_facturation   String  @default("PONCTUEL")
   est_recurrent      Boolean @default(false)
   periodicite        String? // monthly/term/year
   prorata_eligible   Boolean @default(false)
   eligibilite_json   Json?
+  plans_paiement_autorises_json Json?
+  plan_paiement_defaut_code String?
   statut_validation  String  @default("EN_ATTENTE")
   approuve_par_utilisateur_id String?
   approuve_le        DateTime?

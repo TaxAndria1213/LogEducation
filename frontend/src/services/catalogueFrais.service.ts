@@ -18,6 +18,13 @@ export type CatalogueFraisWithRelations = CatalogueFrais & {
   };
 };
 
+type CataloguePaymentPlan = {
+  code?: string | null;
+  label?: string | null;
+  nombre_tranches?: number | null;
+  offsets_mois?: number[] | null;
+};
+
 function getUsageScopeLabel(scope?: string | null) {
   switch ((scope ?? "GENERAL").toUpperCase()) {
     case "INSCRIPTION":
@@ -58,6 +65,35 @@ function getValidationStatusLabel(status?: string | null) {
     default:
       return "En attente";
   }
+}
+
+function getBillingModeLabel(mode?: string | null) {
+  switch ((mode ?? "").toUpperCase()) {
+    case "ANNUEL":
+      return "Annuel";
+    case "RECURRENT":
+      return "Recurrent";
+    default:
+      return "Ponctuel";
+  }
+}
+
+function getDefaultAnnualPlanSummary(record?: Partial<CatalogueFraisWithRelations> | null) {
+  const plans = Array.isArray(record?.plans_paiement_autorises_json)
+    ? (record?.plans_paiement_autorises_json as CataloguePaymentPlan[])
+    : [];
+  const defaultCode =
+    typeof record?.plan_paiement_defaut_code === "string"
+      ? record.plan_paiement_defaut_code.trim().toUpperCase()
+      : "";
+  const selectedPlan = plans.find(
+    (plan) => (plan.code ?? "").trim().toUpperCase() === defaultCode,
+  );
+
+  if (!selectedPlan) return null;
+  const count = Number(selectedPlan.nombre_tranches ?? 0);
+  if (!Number.isFinite(count) || count <= 0) return selectedPlan.label ?? null;
+  return `${selectedPlan.label ?? selectedPlan.code ?? "Plan annuel"} - ${count} tranche${count > 1 ? "s" : ""}`;
 }
 
 function parseObjectParam(value: unknown): Record<string, unknown> | undefined {
@@ -101,13 +137,16 @@ export function getCatalogueFraisSecondaryLabel(record?: Partial<CatalogueFraisW
     `Usage: ${getUsageScopeLabel(record.usage_scope)}`,
     amountLabel,
     `Validation: ${getValidationStatusLabel(record.statut_validation)}`,
-    record.est_recurrent
-      ? `Recurrent${
-          record.periodicite
-            ? ` - ${record.periodicite === "semester" ? "semester" : record.periodicite}`
-            : ""
-        }`
-      : "Ponctuel",
+    `Facturation: ${getBillingModeLabel(record.mode_facturation)}`,
+    record.mode_facturation?.toUpperCase() === "ANNUEL"
+      ? getDefaultAnnualPlanSummary(record)
+      : record.est_recurrent
+        ? `Recurrent${
+            record.periodicite
+              ? ` - ${record.periodicite === "semester" ? "semester" : record.periodicite}`
+              : ""
+          }`
+        : "Ponctuel",
     record.prorata_eligible ? "Prorata actif" : null,
   ]
     .filter(Boolean)

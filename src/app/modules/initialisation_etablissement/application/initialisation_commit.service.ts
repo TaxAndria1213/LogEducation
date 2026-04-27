@@ -1,5 +1,5 @@
 import { prisma } from "../../../service/prisma";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import {
   buildInitialSetupPreviewBlocks,
   getInitialYearWindow,
@@ -693,12 +693,21 @@ class InitialisationCommitService {
               montant: catalogue.montant ?? 0,
               devise: catalogue.devise,
               nombre_tranches: catalogue.nombre_tranches,
+              mode_facturation: catalogue.mode_facturation,
               est_recurrent: catalogue.est_recurrent,
               periodicite: catalogue.est_recurrent
                 ? catalogue.periodicite
                 : null,
               prorata_eligible: catalogue.prorata_eligible,
               eligibilite_json: eligibilityInput,
+              plans_paiement_autorises_json:
+                catalogue.mode_facturation === "ANNUEL"
+                  ? catalogue.plans_paiement_autorises_json ?? Prisma.JsonNull
+                  : Prisma.JsonNull,
+              plan_paiement_defaut_code:
+                catalogue.mode_facturation === "ANNUEL"
+                  ? catalogue.plan_paiement_defaut_code ?? null
+                  : null,
               statut_validation: "APPROUVEE",
               approuve_par_utilisateur_id: null,
               approuve_le: new Date(),

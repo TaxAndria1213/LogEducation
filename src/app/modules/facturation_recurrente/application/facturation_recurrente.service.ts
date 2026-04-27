@@ -439,6 +439,12 @@ export class FacturationRecurrenteService {
         etablissement_id: tenantId,
         est_recurrent: true,
         statut_validation: "APPROUVEE",
+        NOT: {
+          AND: [
+            { usage_scope: "SCOLARITE" },
+            { mode_facturation: "ANNUEL" },
+          ],
+        },
         ...(payload.catalogue_frais_id ? { id: payload.catalogue_frais_id } : {}),
         ...(payload.periodicite ? { periodicite: payload.periodicite } : {}),
         ...(payload.niveau_scolaire_id ? { niveau_scolaire_id: payload.niveau_scolaire_id } : {}),

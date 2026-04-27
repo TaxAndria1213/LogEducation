@@ -11,6 +11,7 @@ import {
 } from "./echeance_paiement";
 import { tryApplyAvailableCreditsToFacture } from "./credit_carry_forward";
 import { createRecurringExecutionIfNeeded } from "./recurring_billing";
+import { assessBillingReadiness } from "./billing_readiness";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -191,12 +192,17 @@ function buildServicePaymentSchedule(args: {
   jourPaiementMensuel: number | null;
   libelle: string;
   devise: string;
+  schoolYearEnd: Date | null;
 }) {
   const total = roundMoney(Math.max(0, args.montant));
   if (total <= 0) return [];
+  const schoolYearEnd = args.schoolYearEnd ? new Date(args.schoolYearEnd) : null;
 
   if (args.modePaiement === "COMPTANT") {
     const comptantDate = args.firstDueDate ?? args.dateEmission;
+    if (schoolYearEnd && comptantDate > schoolYearEnd) {
+      throw new Error("L'echeance du service depasse la fin de l'annee scolaire.");
+    }
     return [
       {
         ordre: 1,
@@ -236,6 +242,11 @@ function buildServicePaymentSchedule(args: {
       firstScheduledDate.getUTCMonth() + index,
       paymentDay,
     );
+    if (schoolYearEnd && dueDate > schoolYearEnd) {
+      throw new Error(
+        "L'echeancier du service depasse la fin de l'annee scolaire. Reduis le nombre de tranches ou ajuste la date d'effet.",
+      );
+    }
     const montant = index === trancheCount - 1 ? roundMoney(remaining) : baseAmount;
     remaining = roundMoney(Math.max(0, remaining - montant));
 
@@ -257,19 +268,49 @@ export async function createServiceSubscriptionFacture(
   tx: DbClient,
   args: CreateServiceSubscriptionFactureArgs,
 ) {
-  const inscription = await tx.inscription.findUnique({
-    where: {
-      eleve_id_annee_scolaire_id: {
-        eleve_id: args.eleveId,
-        annee_scolaire_id: args.anneeScolaireId,
+  const [inscription, anneeScolaire, billingReadiness] = await Promise.all([
+    tx.inscription.findUnique({
+      where: {
+        eleve_id_annee_scolaire_id: {
+          eleve_id: args.eleveId,
+          annee_scolaire_id: args.anneeScolaireId,
+        },
       },
-    },
-    include: {
-      classe: {
-        select: { niveau_scolaire_id: true },
+      include: {
+        classe: {
+          select: { niveau_scolaire_id: true },
+        },
       },
-    },
-  });
+    }),
+    tx.anneeScolaire.findFirst({
+      where: {
+        id: args.anneeScolaireId,
+        etablissement_id: args.tenantId,
+      },
+      select: {
+        id: true,
+        date_fin: true,
+      },
+    }),
+    assessBillingReadiness(tx as Prisma.TransactionClient, {
+      tenantId: args.tenantId,
+      anneeScolaireId: args.anneeScolaireId,
+      catalogueFraisIds: [args.catalogueFraisId],
+    }),
+  ]);
+
+  if (!anneeScolaire) {
+    throw new Error("L'annee scolaire du service n'appartient pas a cet etablissement.");
+  }
+
+  if (!billingReadiness.ready) {
+    const blockingMessages = billingReadiness.issues
+      .filter((item) => item.severity === "error")
+      .map((item) => item.message);
+    if (blockingMessages.length > 0) {
+      throw new Error(blockingMessages.join(" "));
+    }
+  }
 
   const selectedCatalogue = (await tx.catalogueFrais.findFirst({
     where: {
@@ -283,6 +324,8 @@ export async function createServiceSubscriptionFacture(
       devise: true,
       niveau_scolaire_id: true,
       usage_scope: true as never,
+      statut_validation: true,
+      mode_facturation: true,
     },
   })) as {
     id: string;
@@ -291,6 +334,8 @@ export async function createServiceSubscriptionFacture(
     devise: string | null;
     niveau_scolaire_id: string | null;
     usage_scope: string | null;
+    statut_validation: string | null;
+    mode_facturation: string | null;
   } | null;
 
   if (!selectedCatalogue) {
@@ -300,6 +345,10 @@ export async function createServiceSubscriptionFacture(
   const usageScope = (selectedCatalogue.usage_scope ?? "GENERAL").toUpperCase();
   if (!args.allowedScopes.includes(usageScope)) {
     throw new Error("Le frais selectionne n'est pas compatible avec ce service.");
+  }
+
+  if ((selectedCatalogue.statut_validation ?? "").toUpperCase() !== "APPROUVEE") {
+    throw new Error("Le frais selectionne doit etre approuve avant facturation.");
   }
 
   const eleveLevelId = inscription?.classe?.niveau_scolaire_id ?? null;
@@ -328,6 +377,7 @@ export async function createServiceSubscriptionFacture(
     jourPaiementMensuel: args.jourPaiementMensuel ?? null,
     libelle: args.libelle || selectedCatalogue.nom,
     devise,
+    schoolYearEnd: anneeScolaire.date_fin,
   });
   const factureDateEcheance =
     paymentSchedule.length > 0
@@ -398,6 +448,7 @@ export async function createServiceSubscriptionFacture(
     jourPaiementMensuel: args.jourPaiementMensuel ?? null,
     libelle: args.libelle || selectedCatalogue.nom,
     devise,
+    schoolYearEnd: anneeScolaire.date_fin,
   });
   const reusedExistingFacture = Boolean(reusableFacture);
   const previousTotalMontant = reusedExistingFacture ? toMoney(reusableFacture?.total_montant) : 0;

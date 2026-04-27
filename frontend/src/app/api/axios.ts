@@ -1,6 +1,16 @@
 import axios from "axios";
 
 export const systemApi = apiApp(import.meta.env.VITE_REACT_SYSTEM_APP_BASE_URL)
+export const publicApi = axios.create({
+  baseURL:
+    import.meta.env.VITE_REACT_APP_BASE_URL ||
+    import.meta.env.VITE_REACT_SYSTEM_APP_BASE_URL ||
+    "http://localhost:3045",
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 // Instance de base
 export const api = apiApp(import.meta.env.VITE_REACT_APP_BASE_URL);
@@ -61,7 +71,7 @@ function apiApp(url: string) {
         try {
           const refreshToken = localStorage.getItem("refreshToken");
           if (!refreshToken) throw new Error("missing refresh token");
-          const { data } = await api.post("/auth/refresh", { refreshToken });
+          const { data } = await publicApi.post("/auth/refresh", { refreshToken });
           const newAccess = data?.data?.accessToken;
           const newRefresh = data?.data?.refreshToken;
           if (newAccess) {

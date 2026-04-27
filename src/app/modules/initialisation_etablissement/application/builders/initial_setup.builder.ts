@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { defaultPeriodTemplates } from "../templates/default-periods.template";
 import { standardLevelTemplates } from "../templates/standard-levels.template";
 
@@ -63,10 +64,13 @@ export type InitialSetupPayload = {
     devise: string;
     nombre_tranches: number;
     usage_scope: string;
+    mode_facturation: string;
     est_recurrent: boolean;
     periodicite?: string | null;
     prorata_eligible: boolean;
     eligibilite_json: Record<string, unknown> | null;
+    plans_paiement_autorises_json: Prisma.JsonValue | null;
+    plan_paiement_defaut_code?: string | null;
   }[];
   selected_role_names: string[];
   classes_mode: BlockMode;
@@ -79,6 +83,14 @@ export type InitialSetupPayload = {
 
 function toTrimmedString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function safeParseJson(value: string) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
 }
 
 function toBoolean(value: unknown, fallback = false): boolean {
@@ -475,6 +487,29 @@ function normalizeFinanceCatalogues(value: unknown) {
         toTrimmedString(catalogue.periodicite)?.toLowerCase() ?? null;
       const usageScope =
         toTrimmedString(catalogue.usage_scope)?.toUpperCase() ?? "GENERAL";
+      const modeFacturation =
+        toTrimmedString(catalogue.mode_facturation)?.toUpperCase() ??
+        (usageScope === "SCOLARITE"
+          ? "ANNUEL"
+          : estRecurrent
+            ? "RECURRENT"
+            : "PONCTUEL");
+      const planDefaultCode =
+        toTrimmedString(catalogue.plan_paiement_defaut_code)?.toUpperCase() ??
+        (usageScope === "SCOLARITE" ? "10X" : null);
+      const rawAnnualPlans =
+        catalogue.plans_paiement_autorises_json == null ||
+        catalogue.plans_paiement_autorises_json === ""
+          ? usageScope === "SCOLARITE"
+            ? [
+                { code: "1X", label: "Comptant", nombre_tranches: 1, offsets_mois: [0] },
+                { code: "3X", label: "3 tranches", nombre_tranches: 3, offsets_mois: [0, 4, 8] },
+                { code: "10X", label: "10 tranches", nombre_tranches: 10, offsets_mois: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] },
+              ]
+            : null
+          : typeof catalogue.plans_paiement_autorises_json === "string"
+            ? safeParseJson(catalogue.plans_paiement_autorises_json)
+            : catalogue.plans_paiement_autorises_json;
 
       return {
         level_code: toTrimmedString(catalogue.level_code),
@@ -485,13 +520,20 @@ function normalizeFinanceCatalogues(value: unknown) {
         devise: toTrimmedString(catalogue.devise)?.toUpperCase() ?? "MGA",
         nombre_tranches: parsePositiveInteger(catalogue.nombre_tranches, 1),
         usage_scope: usageScope,
-        est_recurrent: estRecurrent,
-        periodicite: estRecurrent ? periodicite : null,
+        mode_facturation: modeFacturation,
+        est_recurrent: usageScope === "SCOLARITE" ? false : estRecurrent,
+        periodicite: usageScope === "SCOLARITE" ? null : estRecurrent ? periodicite : null,
         prorata_eligible:
-          estRecurrent && periodicite === "monthly"
+          usageScope === "SCOLARITE"
+            ? false
+            : estRecurrent && periodicite === "monthly"
             ? toBoolean(catalogue.prorata_eligible, false)
             : false,
         eligibilite_json: normalizeEligibilityRules(catalogue.eligibilite_json),
+        plans_paiement_autorises_json:
+          modeFacturation === "ANNUEL" ? ((rawAnnualPlans as Prisma.JsonValue | null) ?? null) : null,
+        plan_paiement_defaut_code:
+          modeFacturation === "ANNUEL" ? planDefaultCode : null,
       };
     })
     .filter((catalogue) => {
@@ -699,6 +741,27 @@ export function validateInitialSetupFinanceCatalogues(
         !ALLOWED_PERIODICITIES.has(catalogue.periodicite))
     ) {
       issues.push(`La periodicite du frais recurrent ${label} est requise.`);
+    }
+
+    if (catalogue.usage_scope === "SCOLARITE") {
+      if (catalogue.est_recurrent || catalogue.periodicite) {
+        issues.push(`Le frais ${label} doit rester annuel et ne peut pas etre recurrent.`);
+      }
+
+      if ((catalogue.mode_facturation ?? "").toUpperCase() !== "ANNUEL") {
+        issues.push(`Le frais ${label} doit utiliser le mode de facturation annuel.`);
+      }
+
+      const plans =
+        Array.isArray(catalogue.plans_paiement_autorises_json)
+          ? catalogue.plans_paiement_autorises_json
+          : null;
+      if (!plans || plans.length === 0) {
+        issues.push(`Le frais ${label} doit definir au moins un plan annuel autorise.`);
+      }
+      if (!catalogue.plan_paiement_defaut_code) {
+        issues.push(`Le frais ${label} doit definir un plan annuel par defaut.`);
+      }
     }
 
     if (catalogue.level_code && !levelCodes.has(catalogue.level_code)) {

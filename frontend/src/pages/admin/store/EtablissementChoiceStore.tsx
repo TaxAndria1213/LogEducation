@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import type { Etablissement } from "../../../types/models";
 import EtablissementService from "../../../services/etablissement.service";
+import {
+    getStoredContextParams,
+    setStoredContextEtablissementId,
+} from "../../../auth/contextParams";
 
 const etablisementService = new EtablissementService();
 type EtablissementChoiceStoreType = {
@@ -11,10 +15,10 @@ type EtablissementChoiceStoreType = {
 };
 
 export const useEtablissementChoiceStore = create<EtablissementChoiceStoreType>()((set) => ({
-    etablissementId: null,
+    etablissementId: getStoredContextParams().etablissement_id,
     etablissementList: [],
     setEtablissementId: (etablissementId: string | null) => {
-        localStorage.setItem("contextParams", JSON.stringify({ etablissement_id: etablissementId }));
+        setStoredContextEtablissementId(etablissementId);
         set({ etablissementId });
     },
     getEtablissementList: () => {

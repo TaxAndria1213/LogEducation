@@ -766,6 +766,56 @@ class AbonnementTransportApp {
     return roundMoney(baseAmount * Math.min(1, Math.max(0, ratio)));
   }
 
+  private resolveStoredOrComputedTransportRatio(
+    existing: NonNullable<AbonnementTransportScopedRecord>,
+  ) {
+    const storedRatio =
+      existing.prorata_ratio != null && Number.isFinite(Number(existing.prorata_ratio))
+        ? Number(existing.prorata_ratio)
+        : null;
+    if (storedRatio != null) {
+      return Math.min(1, Math.max(0, storedRatio));
+    }
+
+    return this.computeProrataRatioForLine({
+      startDate: existing.date_debut_service ?? null,
+      endDate: existing.date_fin_service ?? null,
+      lineSettings: this.parseLigneTransportSettings(existing.ligne?.infos_vehicule_json),
+      schoolYearStart: existing.annee?.date_debut ?? null,
+      schoolYearEnd: existing.annee?.date_fin ?? null,
+    });
+  }
+
+  private computeTransportRemainingAmount(
+    existing: NonNullable<AbonnementTransportScopedRecord>,
+    effectiveDate: Date,
+  ) {
+    if (!existing.ligne) return 0;
+
+    const remainingRatio = this.computeProrataRatioForLine({
+      startDate: effectiveDate,
+      endDate: existing.date_fin_service ?? null,
+      lineSettings: this.parseLigneTransportSettings(existing.ligne?.infos_vehicule_json),
+      schoolYearStart: existing.annee?.date_debut ?? null,
+      schoolYearEnd: existing.annee?.date_fin ?? null,
+    });
+
+    if (remainingRatio == null || remainingRatio <= 0) return 0;
+
+    const currentChargeAmount = this.resolveTransportAmount({
+      ligne: existing.ligne,
+      zone: existing.zone_transport ?? null,
+      ratio: this.resolveStoredOrComputedTransportRatio(existing),
+    });
+    const remainingChargeAmount = this.resolveTransportAmount({
+      ligne: existing.ligne,
+      zone: existing.zone_transport ?? null,
+      ratio: remainingRatio,
+    });
+
+    return roundMoney(Math.min(currentChargeAmount, remainingChargeAmount));
+  }
+
   private deriveFinanceStatus(record: {
     statut?: string | null;
     a_facturer?: boolean | null;
@@ -1578,19 +1628,24 @@ class AbonnementTransportApp {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      await regularizeServiceSubscriptionFacture(tx, {
-        tenantId,
-        factureId: existing.facture_id as string,
-        eleveId: existing.eleve_id,
-        anneeScolaireId: existing.annee_scolaire_id,
-        catalogueFraisId: existing.ligne?.catalogue_frais_id ?? null,
-        libellePrefix: "Transport -",
-        serviceLabel: existing.ligne?.nom
-          ? `transport ${existing.ligne.nom}`
-          : "transport",
-        createdByUtilisateurId: actorId,
-        motif: "Resiliation abonnement transport",
-      });
+      const regularizationAmount = this.computeTransportRemainingAmount(existing, new Date());
+
+      if (regularizationAmount > 0) {
+        await regularizeServiceSubscriptionFacture(tx, {
+          tenantId,
+          factureId: existing.facture_id as string,
+          eleveId: existing.eleve_id,
+          anneeScolaireId: existing.annee_scolaire_id,
+          catalogueFraisId: existing.ligne?.catalogue_frais_id ?? null,
+          libellePrefix: "Transport -",
+          serviceLabel: existing.ligne?.nom
+            ? `transport ${existing.ligne.nom}`
+            : "transport",
+          createdByUtilisateurId: actorId,
+          motif: "Resiliation abonnement transport",
+          montantOverride: regularizationAmount,
+        });
+      }
 
       return tx.abonnementTransport.update({
         where: { id: existing.id },

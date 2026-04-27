@@ -40,10 +40,21 @@ type CatalogueFeeOption = {
   label: string;
   montant: number;
   devise: string;
+  nombre_tranches?: number;
+  mode_facturation?: string | null;
   est_recurrent?: boolean;
   periodicite?: string | null;
   niveau_scolaire_id?: string | null;
   usage_scope?: string | null;
+  plans_paiement_autorises_json?: unknown;
+  plan_paiement_defaut_code?: string | null;
+};
+
+type CataloguePaymentPlan = {
+  code: string;
+  label: string;
+  nombre_tranches: number;
+  offsets_mois: number[];
 };
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -61,6 +72,57 @@ function parseBooleanLabel(value?: boolean) {
 function matchesFeeScope(option: CatalogueFeeOption, scopes: string[]) {
   const scope = (option.usage_scope ?? "GENERAL").toUpperCase();
   return scopes.includes(scope);
+}
+
+function parsePaymentPlans(option?: CatalogueFeeOption | null): CataloguePaymentPlan[] {
+  if (!option) return [];
+
+  const rawPlans = option.plans_paiement_autorises_json;
+  const parsed =
+    typeof rawPlans === "string"
+      ? (() => {
+          try {
+            return JSON.parse(rawPlans);
+          } catch {
+            return null;
+          }
+        })()
+      : rawPlans;
+
+  if (Array.isArray(parsed)) {
+    const normalized = parsed.flatMap((entry) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+      const plan = entry as Record<string, unknown>;
+      const code = typeof plan.code === "string" ? plan.code.trim().toUpperCase() : "";
+      const label = typeof plan.label === "string" ? plan.label.trim() : "";
+      const nombreTranches = Number(plan.nombre_tranches ?? 0);
+      const offsets = Array.isArray(plan.offsets_mois)
+        ? plan.offsets_mois
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value) && value >= 0)
+        : [];
+      if (!code || !label || !Number.isFinite(nombreTranches) || nombreTranches < 1) return [];
+      if (offsets.length !== Math.trunc(nombreTranches)) return [];
+      return [{
+        code,
+        label,
+        nombre_tranches: Math.trunc(nombreTranches),
+        offsets_mois: offsets,
+      }];
+    });
+    if (normalized.length > 0) return normalized;
+  }
+
+  const fallbackCount = Math.max(1, Number(option.nombre_tranches ?? 1));
+  return [{
+    code:
+      typeof option.plan_paiement_defaut_code === "string" && option.plan_paiement_defaut_code.trim()
+        ? option.plan_paiement_defaut_code.trim().toUpperCase()
+        : `${fallbackCount}X`,
+    label: fallbackCount === 1 ? "Comptant" : `${fallbackCount} tranches`,
+    nombre_tranches: fallbackCount,
+    offsets_mois: Array.from({ length: fallbackCount }, (_, index) => index),
+  }];
 }
 
 export default function InscriptionForm() {
@@ -102,6 +164,9 @@ export default function InscriptionForm() {
   const [selectedTransportActive, setSelectedTransportActive] = useState(false);
   const [selectedCantineActive, setSelectedCantineActive] = useState(false);
   const [selectedTransportLineId, setSelectedTransportLineId] = useState<string | null>(null);
+  const [selectedInscriptionFeeId, setSelectedInscriptionFeeId] = useState<string | null>(null);
+  const [selectedScolariteFeeId, setSelectedScolariteFeeId] = useState<string | null>(null);
+  const [requiresPaymentDay, setRequiresPaymentDay] = useState(false);
   const [referentialCatalog, setReferentialCatalog] = useState<
     ReferentialCatalogItem[]
   >([]);
@@ -743,21 +808,6 @@ export default function InscriptionForm() {
     ],
   );
 
-  const financeSchema = useMemo(
-    () =>
-      z
-        .object({
-          catalogue_frais_inscription_id: z.string().optional().nullable(),
-          catalogue_frais_inscription_nombre_tranches: z.coerce.number().int().min(1).default(1),
-          catalogue_frais_scolarite_id: z.string().optional().nullable(),
-          catalogue_frais_scolarite_nombre_tranches: z.coerce.number().int().min(1).default(1),
-          remise_id: z.string().optional().nullable(),
-          remise_type: z.string().default("AUCUNE"),
-          remise_valeur: z.coerce.number().min(0).default(0),
-        }),
-    [],
-  );
-
   const filteredCatalogueFraisOptions = useMemo(() => {
     if (!selectedNiveauId) {
       return catalogueFraisOptions;
@@ -769,19 +819,131 @@ export default function InscriptionForm() {
   }, [catalogueFraisOptions, selectedNiveauId]);
 
   const inscriptionFeeOptions = useMemo(
-    () =>
-      filteredCatalogueFraisOptions.filter((option) =>
-        matchesFeeScope(option as CatalogueFeeOption, ["GENERAL", "INSCRIPTION"]),
-      ),
+    () => {
+      return filteredCatalogueFraisOptions.filter((option) => {
+        if (!matchesFeeScope(option as CatalogueFeeOption, ["GENERAL", "INSCRIPTION"])) {
+          return false;
+        }
+        const feeOption = option as CatalogueFeeOption;
+        const isInscriptionScope = (feeOption.usage_scope ?? "GENERAL").toUpperCase() === "INSCRIPTION";
+        if (!isInscriptionScope) return true;
+        return (feeOption.mode_facturation ?? "").toUpperCase() === "PONCTUEL" || !feeOption.est_recurrent;
+      });
+    },
     [filteredCatalogueFraisOptions],
+  );
+
+  const selectedInscriptionFee = useMemo(
+    () =>
+      inscriptionFeeOptions.find((option) => option.value === selectedInscriptionFeeId) ?? null,
+    [inscriptionFeeOptions, selectedInscriptionFeeId],
+  );
+
+  const selectedInscriptionPaymentPlans = useMemo(
+    () => parsePaymentPlans(selectedInscriptionFee as CatalogueFeeOption | null),
+    [selectedInscriptionFee],
+  );
+
+  const inscriptionPlanOptions = useMemo(
+    () =>
+      selectedInscriptionPaymentPlans.map((plan) => ({
+        value: plan.code,
+        label: `${plan.label} - ${plan.nombre_tranches} tranche${plan.nombre_tranches > 1 ? "s" : ""}`,
+      })),
+    [selectedInscriptionPaymentPlans],
   );
 
   const scolariteFeeOptions = useMemo(
     () =>
-      filteredCatalogueFraisOptions.filter((option) =>
-        matchesFeeScope(option as CatalogueFeeOption, ["GENERAL", "SCOLARITE"]),
-      ),
+      filteredCatalogueFraisOptions.filter((option) => {
+        if (!matchesFeeScope(option as CatalogueFeeOption, ["GENERAL", "SCOLARITE"])) {
+          return false;
+        }
+        const feeOption = option as CatalogueFeeOption;
+        const isScolariteScope = (feeOption.usage_scope ?? "GENERAL").toUpperCase() === "SCOLARITE";
+        if (!isScolariteScope) return true;
+        return (feeOption.mode_facturation ?? "").toUpperCase() === "ANNUEL" || !feeOption.est_recurrent;
+      }),
     [filteredCatalogueFraisOptions],
+  );
+
+  const selectedScolariteFee = useMemo(
+    () =>
+      scolariteFeeOptions.find((option) => option.value === selectedScolariteFeeId) ?? null,
+    [scolariteFeeOptions, selectedScolariteFeeId],
+  );
+
+  const selectedScolaritePaymentPlans = useMemo(
+    () => parsePaymentPlans(selectedScolariteFee as CatalogueFeeOption | null),
+    [selectedScolariteFee],
+  );
+
+  const scolaritePlanOptions = useMemo(
+    () =>
+      selectedScolaritePaymentPlans.map((plan) => ({
+        value: plan.code,
+        label: `${plan.label} - ${plan.nombre_tranches} tranche${plan.nombre_tranches > 1 ? "s" : ""}`,
+      })),
+    [selectedScolaritePaymentPlans],
+  );
+
+  const financeSchema = useMemo(
+    () =>
+      z
+        .object({
+          catalogue_frais_inscription_id: z.string().optional().nullable(),
+          catalogue_frais_inscription_plan_code: z.string().optional().nullable(),
+          catalogue_frais_scolarite_id: z.string().optional().nullable(),
+          catalogue_frais_scolarite_plan_code: z.string().optional().nullable(),
+          remise_id: z.string().optional().nullable(),
+          remise_type: z.string().default("AUCUNE"),
+          remise_valeur: z.coerce.number().min(0).default(0),
+        })
+        .superRefine((data, ctx) => {
+          if (data.catalogue_frais_inscription_id && selectedInscriptionPaymentPlans.length > 0) {
+            const selectedCode = normalizeOptionalString(data.catalogue_frais_inscription_plan_code);
+            if (!selectedCode) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["catalogue_frais_inscription_plan_code"],
+                message: "Choisis le plan autorise pour le droit d'inscription.",
+              });
+              return;
+            }
+            const exists = selectedInscriptionPaymentPlans.some(
+              (plan) => plan.code.toUpperCase() === selectedCode.toUpperCase(),
+            );
+            if (!exists) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["catalogue_frais_inscription_plan_code"],
+                message: "Le plan choisi n'est pas autorise pour ce droit d'inscription.",
+              });
+            }
+          }
+          if (data.catalogue_frais_scolarite_id && selectedScolaritePaymentPlans.length > 0) {
+            const selectedCode = normalizeOptionalString(data.catalogue_frais_scolarite_plan_code);
+            if (!selectedCode) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["catalogue_frais_scolarite_plan_code"],
+                message: "Choisis le plan annuel de scolarite a appliquer.",
+              });
+              return;
+            }
+            const exists = selectedScolaritePaymentPlans.some(
+              (plan) => plan.code.toUpperCase() === selectedCode.toUpperCase(),
+            );
+            if (!exists) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["catalogue_frais_scolarite_plan_code"],
+                message: "Le plan choisi n'est pas autorise pour ce frais de scolarite.",
+              });
+            }
+          }
+        }),
+    [selectedInscriptionPaymentPlans, selectedScolaritePaymentPlans],
   );
 
   const financeFields = useMemo(
@@ -789,9 +951,9 @@ export default function InscriptionForm() {
       getFieldsFromZodObjectSchema(financeSchema, {
         labelByField: {
           catalogue_frais_inscription_id: "Frais d'inscription",
-          catalogue_frais_inscription_nombre_tranches: "Tranches inscription",
+          catalogue_frais_inscription_plan_code: "Plan de paiement inscription",
           catalogue_frais_scolarite_id: "Frais de scolarite",
-          catalogue_frais_scolarite_nombre_tranches: "Tranches scolarite",
+          catalogue_frais_scolarite_plan_code: "Plan de paiement scolarite",
           remise_id: "Remise preconfiguree",
           remise_type: "Type de remise",
           remise_valeur: "Valeur de la remise",
@@ -809,11 +971,18 @@ export default function InscriptionForm() {
                 : "Sans classe selectionnee, tous les frais approuves restent visibles. Choisissez une classe pour prioriser automatiquement ceux du niveau.",
             },
           },
-          catalogue_frais_inscription_nombre_tranches: {
+          catalogue_frais_inscription_plan_code: {
+            relation: {
+              options: inscriptionPlanOptions,
+            },
             fieldProps: {
               className: "md:col-span-1",
-              placeholder: "1",
-              description: "Ex: 1 ou 2 selon le choix du parent pour ce frais seulement.",
+              emptyLabel: selectedInscriptionFee
+                ? "Choisir un plan autorise"
+                : "Selectionner d'abord un frais",
+              description: selectedInscriptionFee
+                ? "Le droit d'inscription reste ponctuel, avec seulement quelques plans courts autorises."
+                : "Choisissez d'abord un frais d'inscription pour afficher ses plans autorises.",
             },
           },
           catalogue_frais_scolarite_id: {
@@ -828,11 +997,18 @@ export default function InscriptionForm() {
                 : "Sans classe selectionnee, tous les frais approuves restent visibles. Choisissez une classe pour prioriser automatiquement ceux du niveau.",
             },
           },
-          catalogue_frais_scolarite_nombre_tranches: {
+          catalogue_frais_scolarite_plan_code: {
+            relation: {
+              options: scolaritePlanOptions,
+            },
             fieldProps: {
               className: "md:col-span-1",
-              placeholder: "1",
-              description: "Nombre de paiements uniquement pour les frais de scolarite.",
+              emptyLabel: selectedScolariteFee
+                ? "Choisir un plan annuel"
+                : "Selectionner d'abord un frais",
+              description: selectedScolariteFee
+                ? "Le plan annuel fixe le nombre de tranches autorisees pour la scolarite."
+                : "Choisissez d'abord un frais de scolarite pour afficher ses plans autorises.",
             },
           },
           remise_id: {
@@ -869,12 +1045,14 @@ export default function InscriptionForm() {
       }),
     [
       financeSchema,
+      inscriptionPlanOptions,
       inscriptionFeeOptions,
       remiseOptions,
+      scolaritePlanOptions,
+      selectedInscriptionFee,
       scolariteFeeOptions,
-      selectedCantineActive,
+      selectedScolariteFee,
       selectedNiveauId,
-      selectedTransportActive,
     ],
   );
 
@@ -882,52 +1060,39 @@ export default function InscriptionForm() {
     () =>
       z
         .object({
-          mode_paiement: z.string().min(1, "Champ requis"),
           jour_paiement_mensuel: z.coerce.number().int().min(1).max(28).optional().nullable(),
           notes: z.string().optional().nullable(),
         })
         .superRefine((data, ctx) => {
           if (
-            (data.mode_paiement ?? "").toUpperCase() === "ECHELONNE" &&
+            requiresPaymentDay &&
             (data.jour_paiement_mensuel == null || Number.isNaN(Number(data.jour_paiement_mensuel)))
           ) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               path: ["jour_paiement_mensuel"],
-              message: "Renseigne le jour du mois pour les paiements echelonnes.",
+              message: "Renseigne le jour du mois pour les plans en plusieurs tranches.",
             });
           }
         }),
-    [],
+    [requiresPaymentDay],
   );
 
   const echeancierFields = useMemo(
     () =>
       getFieldsFromZodObjectSchema(echeancierSchema, {
         labelByField: {
-          mode_paiement: "Mode de paiement",
           jour_paiement_mensuel: "Jour de paiement du mois",
           notes: "Notes administratives",
         },
         metaByField: {
-          mode_paiement: {
-            relation: {
-              options: [
-                { value: "COMPTANT", label: "Comptant" },
-                { value: "ECHELONNE", label: "Echelonne" },
-              ],
-            },
-            fieldProps: {
-              className: "md:col-span-2",
-              emptyLabel: "Choisir un mode",
-              description: "Comptant = reglement immediat. Echelonne = les tranches saisies sur chaque frais sont appliquees separement.",
-            },
-          },
           jour_paiement_mensuel: {
             fieldProps: {
               className: "md:col-span-1",
               placeholder: "Ex: 5",
-              description: "Jour fixe du mois auquel l'eleve est autorise a regler. Limite a 28 pour rester valable tous les mois.",
+              description: requiresPaymentDay
+                ? "Jour fixe du mois applique a la scolarite et aux autres tranches echelonnables."
+                : "Optionnel si tous les frais sont en reglement unique.",
             },
           },
           notes: {
@@ -935,13 +1100,42 @@ export default function InscriptionForm() {
             fieldProps: {
               className: "md:col-span-1",
               placeholder: "Consignes, engagements, informations utiles...",
-              description: "Les echeances seront alignees sur le jour du mois choisi ci-dessus.",
+              description: "Le mode de paiement sera deduit automatiquement du plan genere.",
             },
           },
         },
       }),
     [echeancierSchema],
   );
+
+  const handleFinanceValuesChange = (data: Record<string, any>) => {
+    const selectedInscriptionFeeValue = normalizeOptionalString(data?.catalogue_frais_inscription_id);
+    const selectedInscription = inscriptionFeeOptions.find(
+      (item) => item.value === selectedInscriptionFeeValue,
+    ) ?? null;
+    const selectedInscriptionPlanCode = normalizeOptionalString(
+      data?.catalogue_frais_inscription_plan_code,
+    );
+    const inscriptionPlans = parsePaymentPlans(selectedInscription as CatalogueFeeOption | null);
+    const selectedInscriptionPlan =
+      inscriptionPlans.find((plan) => plan.code === (selectedInscriptionPlanCode ?? "").toUpperCase()) ?? null;
+
+    const selectedScolariteFeeValue = normalizeOptionalString(data?.catalogue_frais_scolarite_id);
+    const selectedScolarite = scolariteFeeOptions.find(
+      (item) => item.value === selectedScolariteFeeValue,
+    ) ?? null;
+    const selectedScolaritePlanCode = normalizeOptionalString(data?.catalogue_frais_scolarite_plan_code);
+    const scolaritePlans = parsePaymentPlans(selectedScolarite as CatalogueFeeOption | null);
+    const selectedScolaritePlan =
+      scolaritePlans.find((plan) => plan.code === (selectedScolaritePlanCode ?? "").toUpperCase()) ?? null;
+
+    setSelectedInscriptionFeeId(selectedInscriptionFeeValue);
+    setSelectedScolariteFeeId(selectedScolariteFeeValue);
+    setRequiresPaymentDay(
+      (selectedInscriptionPlan?.nombre_tranches ?? 1) > 1 ||
+      (selectedScolaritePlan?.nombre_tranches ?? 1) > 1,
+    );
+  };
 
   const steps: WizardStep[] = useMemo(
     () => [
@@ -1008,14 +1202,15 @@ export default function InscriptionForm() {
       {
         key: "finance",
         title: "Montants et remise",
-        desc: "Selection des frais catalogue, avec un nombre de tranches saisi separement pour chaque frais.",
+        desc: "Selection des frais catalogue, avec un plan annuel autorise pour la scolarite et des tranches libres uniquement pour l'inscription.",
         schema: financeSchema,
         fields: financeFields,
+        onValuesChange: handleFinanceValuesChange,
         initialValues: {
           catalogue_frais_inscription_id: "",
-          catalogue_frais_inscription_nombre_tranches: 1,
+          catalogue_frais_inscription_plan_code: "",
           catalogue_frais_scolarite_id: "",
-          catalogue_frais_scolarite_nombre_tranches: 1,
+          catalogue_frais_scolarite_plan_code: "",
           remise_id: "",
           remise_type: "AUCUNE",
           remise_valeur: 0,
@@ -1026,11 +1221,10 @@ export default function InscriptionForm() {
       {
         key: "echeancier",
         title: "Plan de paiement",
-        desc: "Mode de reglement et generation automatique des echeances a partir des tranches renseignees sur chaque frais.",
+        desc: "Jour de paiement du mois et generation automatique des echeances a partir du plan annuel choisi.",
         schema: echeancierSchema,
         fields: echeancierFields,
         initialValues: {
-          mode_paiement: "COMPTANT",
           jour_paiement_mensuel: 5,
           notes: "",
         },
@@ -1054,6 +1248,7 @@ export default function InscriptionForm() {
       tuteur1Schema,
       tuteur2Fields,
       tuteur2Schema,
+      handleFinanceValuesChange,
     ],
   );
 
@@ -1146,16 +1341,14 @@ export default function InscriptionForm() {
         catalogue_frais_inscription_id: normalizeOptionalString(
           finalData.finance?.catalogue_frais_inscription_id,
         ),
-        catalogue_frais_inscription_nombre_tranches: Math.max(
-          1,
-          Number(finalData.finance?.catalogue_frais_inscription_nombre_tranches ?? 1),
+        catalogue_frais_inscription_plan_code: normalizeOptionalString(
+          finalData.finance?.catalogue_frais_inscription_plan_code,
         ),
         catalogue_frais_scolarite_id: normalizeOptionalString(
           finalData.finance?.catalogue_frais_scolarite_id,
         ),
-        catalogue_frais_scolarite_nombre_tranches: Math.max(
-          1,
-          Number(finalData.finance?.catalogue_frais_scolarite_nombre_tranches ?? 1),
+        catalogue_frais_scolarite_plan_code: normalizeOptionalString(
+          finalData.finance?.catalogue_frais_scolarite_plan_code,
         ),
         remise_id: normalizeOptionalString(finalData.finance?.remise_id),
         remise_type: finalData.finance?.remise_type ?? "AUCUNE",
@@ -1203,7 +1396,6 @@ export default function InscriptionForm() {
         services: normalizedServices,
         finance: normalizedFinance,
         echeancier: {
-          mode_paiement: finalData.echeancier?.mode_paiement ?? "COMPTANT",
           jour_paiement_mensuel:
             finalData.echeancier?.jour_paiement_mensuel == null
               ? null
@@ -1242,11 +1434,29 @@ export default function InscriptionForm() {
 
         const selectedClasseId = allData?.scolarite?.classe_id;
         const selectedClasse = classeOptions.find((item) => item.value === selectedClasseId);
+        const selectedInscriptionFeeValue = normalizeOptionalString(allData?.finance?.catalogue_frais_inscription_id);
+        const selectedInscription = inscriptionFeeOptions.find((item) => item.value === selectedInscriptionFeeValue) ?? null;
+        const selectedInscriptionPlanCode = normalizeOptionalString(allData?.finance?.catalogue_frais_inscription_plan_code);
+        const inscriptionPlans = parsePaymentPlans(selectedInscription as CatalogueFeeOption | null);
+        const selectedInscriptionPlan =
+          inscriptionPlans.find((plan) => plan.code === (selectedInscriptionPlanCode ?? "").toUpperCase()) ?? null;
+        const selectedScolariteFeeValue = normalizeOptionalString(allData?.finance?.catalogue_frais_scolarite_id);
+        const selectedScolarite = scolariteFeeOptions.find((item) => item.value === selectedScolariteFeeValue) ?? null;
+        const selectedScolaritePlanCode = normalizeOptionalString(allData?.finance?.catalogue_frais_scolarite_plan_code);
+        const scolaritePlans = parsePaymentPlans(selectedScolarite as CatalogueFeeOption | null);
+        const selectedScolaritePlan =
+          scolaritePlans.find((plan) => plan.code === (selectedScolaritePlanCode ?? "").toUpperCase()) ?? null;
         setSelectedNiveauId(selectedClasse?.niveau_scolaire_id ?? null);
         setSelectedTransportActive(Boolean(allData?.services?.transport_active));
         setSelectedCantineActive(Boolean(allData?.services?.cantine_active));
         setSelectedTransportLineId(
           normalizeOptionalString(allData?.services?.ligne_transport_id),
+        );
+        setSelectedInscriptionFeeId(selectedInscriptionFeeValue);
+        setSelectedScolariteFeeId(selectedScolariteFeeValue);
+        setRequiresPaymentDay(
+          (selectedInscriptionPlan?.nombre_tranches ?? 1) > 1 ||
+          (selectedScolaritePlan?.nombre_tranches ?? 1) > 1,
         );
       }}
       submitHint="Chaque etape enregistre des informations utiles au dossier eleve. La derniere validation cree l'inscription, les rattachements et la base du suivi financier."

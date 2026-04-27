@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type z from "zod";
@@ -21,6 +21,7 @@ export function Form({
   initialValues,
   submitLabel = "Enregistrer",
   submitAlign = "start",
+  onValuesChange,
 }: {
   schema: any;
   fields: any[];
@@ -30,6 +31,7 @@ export function Form({
   initialValues?: Partial<FormValues>;
   submitLabel?: string;
   submitAlign?: "start" | "end";
+  onValuesChange?: (data: Partial<FormValues>) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const { info } = useInfo();
@@ -50,6 +52,15 @@ export function Form({
     defaultValues,
     mode: "onSubmit",
   });
+
+  useEffect(() => {
+    if (!onValuesChange) return undefined;
+    onValuesChange(form.getValues());
+    const subscription = form.watch((value) => {
+      onValuesChange(value as Partial<FormValues>);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, onValuesChange]);
 
   const onValid = async (data: FormValues) => {
     setLoading(true);
