@@ -78,7 +78,6 @@ class MotifAbsenceApp {
       Response.success(res, "Motif d'absence cree.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation du motif d'absence", 400, error as Error);
-      next(error);
     }
   }
 
@@ -95,7 +94,6 @@ class MotifAbsenceApp {
       Response.success(res, "Motifs d'absence.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des motifs d'absence", 400, error as Error);
-      next(error);
     }
   }
 
@@ -109,7 +107,6 @@ class MotifAbsenceApp {
       Response.success(res, "Motif d'absence detail.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation du motif d'absence", 404, error as Error);
-      next(error);
     }
   }
 
@@ -128,7 +125,6 @@ class MotifAbsenceApp {
       Response.success(res, "Motif d'absence supprime.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression du motif d'absence", 400, error as Error);
-      next(error);
     }
   }
 
@@ -143,7 +139,6 @@ class MotifAbsenceApp {
       Response.success(res, "Motif d'absence mis a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour du motif d'absence", 400, error as Error);
-      next(error);
     }
   }
 }

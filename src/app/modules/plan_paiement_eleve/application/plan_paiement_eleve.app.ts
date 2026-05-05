@@ -508,9 +508,7 @@ class PlanPaiementEleveApp {
       const refreshed = result;
       Response.success(res, "Plan de paiement cree avec succes.", refreshed ?? result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation du plan de paiement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la creation du plan de paiement", 400, error as Error);    }
   }
 
   private async requestReschedule(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -569,9 +567,7 @@ class PlanPaiementEleveApp {
 
       Response.success(res, "Demande de reechelonnement enregistree avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la demande de reechelonnement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la demande de reechelonnement", 400, error as Error);    }
   }
 
   private async approveReschedule(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -662,9 +658,7 @@ class PlanPaiementEleveApp {
 
       Response.success(res, "Reechelonnement approuve et applique avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'approbation du reechelonnement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de l'approbation du reechelonnement", 400, error as Error);    }
   }
 
   private async rejectReschedule(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -710,9 +704,7 @@ class PlanPaiementEleveApp {
 
       Response.success(res, "Demande de reechelonnement rejetee.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors du rejet du reechelonnement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors du rejet du reechelonnement", 400, error as Error);    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -727,9 +719,7 @@ class PlanPaiementEleveApp {
       const result = await getAllPaginated(scopedQuery as typeof req.query, this.planPaiement);
       Response.success(res, "Liste des plans de paiement recuperee.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des plans de paiement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation des plans de paiement", 400, error as Error);    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -751,9 +741,7 @@ class PlanPaiementEleveApp {
 
       Response.success(res, "Detail du plan de paiement.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation du plan de paiement", 404, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation du plan de paiement", 404, error as Error);    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -788,9 +776,7 @@ class PlanPaiementEleveApp {
       const result = await this.planPaiement.delete(req.params.id);
       Response.success(res, "Plan de paiement supprime avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la suppression du plan de paiement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la suppression du plan de paiement", 400, error as Error);    }
   }
 
   private async update(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -830,9 +816,7 @@ class PlanPaiementEleveApp {
       const refreshed = result;
       Response.success(res, "Plan de paiement mis a jour avec succes.", refreshed ?? result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la mise a jour du plan de paiement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la mise a jour du plan de paiement", 400, error as Error);    }
   }
 }
 

@@ -943,7 +943,6 @@ class AbonnementCantineApp {
       });
     } catch (error) {
       Response.error(res, "Erreur lors du controle d'acces cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -1755,7 +1754,6 @@ class AbonnementCantineApp {
       Response.success(res, "Abonnement cantine cree.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de l'abonnement cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -1779,7 +1777,6 @@ class AbonnementCantineApp {
       Response.success(res, "Abonnements cantine en attente de prise en charge Finance.", data);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des abonnements cantine a facturer", 400, error as Error);
-      next(error);
     }
   }
 
@@ -1829,7 +1826,6 @@ class AbonnementCantineApp {
       Response.success(res, "Abonnements cantine en attente de regularisation Finance.", data);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des regularisations cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -1886,7 +1882,6 @@ class AbonnementCantineApp {
       Response.success(res, "Consommations cantine en attente de controle Finance.", data);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des consommations cantine a controler", 400, error as Error);
-      next(error);
     }
   }
 
@@ -1948,7 +1943,6 @@ class AbonnementCantineApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -1980,7 +1974,6 @@ class AbonnementCantineApp {
       Response.success(res, "Abonnements cantine en attente de suspension Finance.", data);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des suspensions cantine Finance", 400, error as Error);
-      next(error);
     }
   }
 
@@ -1995,7 +1988,6 @@ class AbonnementCantineApp {
       Response.success(res, "Liste operationnelle cantine.", data);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de la liste operationnelle cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2397,7 +2389,6 @@ class AbonnementCantineApp {
       });
     } catch (error) {
       Response.error(res, "Erreur lors du rapprochement cantine et Finance", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2449,7 +2440,6 @@ class AbonnementCantineApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de l'anomalie cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2556,7 +2546,6 @@ class AbonnementCantineApp {
       Response.success(res, "Suspension cantine transmise par Finance.", result);
     } catch (error) {
       Response.error(res, "Erreur lors du signal de suspension cantine Finance", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2636,7 +2625,6 @@ class AbonnementCantineApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors de l'enregistrement de l'absence cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2815,7 +2803,6 @@ class AbonnementCantineApp {
       Response.success(res, "Regularisation Finance de l'absence cantine enregistree.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la regularisation Finance de l'absence cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2889,7 +2876,6 @@ class AbonnementCantineApp {
       Response.success(res, "Consommation cantine marquee comme controlee par Finance.", result);
     } catch (error) {
       Response.error(res, "Erreur lors du controle Finance de la consommation cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2945,7 +2931,6 @@ class AbonnementCantineApp {
       Response.success(res, "Facturation cantine generee par Finance.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la generation de la facturation cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3060,7 +3045,6 @@ class AbonnementCantineApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors du changement de formule cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3230,7 +3214,6 @@ class AbonnementCantineApp {
       Response.success(res, "Regularisation cantine generee par Finance.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la regularisation de formule cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3248,7 +3231,6 @@ class AbonnementCantineApp {
       Response.success(res, "Abonnements cantine.", { ...result, data });
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des abonnements cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3267,7 +3249,6 @@ class AbonnementCantineApp {
       Response.success(res, "Abonnement cantine.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de l'abonnement cantine", 404, error as Error);
-      next(error);
     }
   }
 
@@ -3279,7 +3260,6 @@ class AbonnementCantineApp {
       Response.success(res, "Compte cantine.", this.buildWalletResponse(existing));
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation du compte cantine", 404, error as Error);
-      next(error);
     }
   }
 
@@ -3288,7 +3268,6 @@ class AbonnementCantineApp {
       throw new Error("Le rechargement cantine doit etre enregistre depuis le module Finance.");
     } catch (error) {
       Response.error(res, "Erreur lors du rechargement du compte cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3378,7 +3357,6 @@ class AbonnementCantineApp {
       });
     } catch (error) {
       Response.error(res, "Erreur lors de l'enregistrement de la consommation cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3415,7 +3393,6 @@ class AbonnementCantineApp {
       Response.success(res, "Abonnement cantine mis a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de l'abonnement cantine", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3436,7 +3413,6 @@ class AbonnementCantineApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression de l'abonnement cantine", 400, error as Error);
-      next(error);
     }
   }
 }

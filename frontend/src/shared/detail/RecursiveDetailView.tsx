@@ -2516,7 +2516,7 @@ export default function RecursiveDetailView<T extends DetailViewRecord>({
     resolvedCurrentRow,
     previewSettings,
   );
-  const canGoBack = stack.length > 1 || Boolean(onBack);
+  const canGoBack = stack.length > 1;
   const breadcrumbItems = stack.map((item) => item.title);
   const isNestedNode = stack.length > 1;
   const resolvedLoading = isNestedNode ? Boolean(currentNode?.loading) : loading;
@@ -2596,16 +2596,15 @@ export default function RecursiveDetailView<T extends DetailViewRecord>({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 flex-1 items-start gap-3">
               {canGoBack ? (
-                <TableActionButton
-                  variant="secondary"
-                  className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                <button
+                  type="button"
                   onClick={handleBack}
+                  aria-label="Retour"
+                  title="Retour"
+                  className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
                 >
-                  <span className="inline-flex items-center gap-1.5">
-                    <FiArrowLeft className="text-[13px]" />
-                    <span>Retour</span>
-                  </span>
-                </TableActionButton>
+                  <FiArrowLeft className="h-4 w-4" />
+                </button>
               ) : null}
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">

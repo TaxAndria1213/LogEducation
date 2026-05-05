@@ -5,6 +5,9 @@ import ClasseService from "../../../services/classe.service";
 import CoursService from "../../../services/cours.service";
 import CreneauHoraireService from "../../../services/creneauHoraire.service";
 import EmploiDuTempsService from "../../../services/emploiDuTemps.service";
+import ProgrammeService, {
+  type ProgrammeWithRelations,
+} from "../../../services/programme.service";
 import salleService from "../../../services/salle.service";
 import type {
   AnneeScolaire,
@@ -29,6 +32,7 @@ import {
 type CourseRecord = Cours & {
   classe?: Classe | null;
   matiere?: Matiere | null;
+  programme_heures_semaine?: number | null;
   enseignant?: (Enseignant & {
     personnel?: (Personnel & {
       utilisateur?: {
@@ -69,6 +73,7 @@ type State = {
   currentYear: AnneeScolaire | null;
   classes: Classe[];
   courses: CourseRecord[];
+  programmeWeeklyMinutes: number;
   creneaux: CreneauHoraire[];
   persistedCreneaux: CreneauHoraire[];
   salles: RoomRecord[];
@@ -591,6 +596,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
   currentYear: null,
   classes: [],
   courses: [],
+  programmeWeeklyMinutes: 0,
   creneaux: [],
   persistedCreneaux: [],
   salles: [],
@@ -620,6 +626,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
           currentYear: null,
           classes: [],
           courses: [],
+          programmeWeeklyMinutes: 0,
           allEntries: [],
           relatedEntries: [],
           existingEntries: [],
@@ -637,6 +644,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
       const [classesResult, creneauxResult, sallesResult] = await Promise.all([
         classeService.getAll({
           take: 5000,
+          includeTotal: false,
           where: JSON.stringify({
             etablissement_id: etablissementId,
             annee_scolaire_id: currentYear.id,
@@ -649,11 +657,13 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
         }),
         creneauHoraireService.getAll({
           take: 5000,
+          includeTotal: false,
           where: JSON.stringify({ etablissement_id: etablissementId }),
           orderBy: JSON.stringify([{ ordre: "asc" }, { heure_debut: "asc" }]),
         }),
         salleService.getAll({
           take: 5000,
+          includeTotal: false,
           where: JSON.stringify({
             site: {
               etablissement_id: etablissementId,
@@ -697,6 +707,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
       } else {
         set({
           courses: [],
+          programmeWeeklyMinutes: 0,
           allEntries: [],
           relatedEntries: [],
           existingEntries: [],
@@ -727,6 +738,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
     if (!currentYear || !etablissementId || !classeId) {
       set({
         courses: [],
+        programmeWeeklyMinutes: 0,
         allEntries: [],
         relatedEntries: [],
         existingEntries: [],
@@ -739,10 +751,13 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
     try {
       const coursService = new CoursService();
       const emploiDuTempsService = new EmploiDuTempsService();
+      const programmeService = new ProgrammeService();
+      const selectedClasse = get().classes.find((item) => item.id === classeId);
 
-      const [coursesResult, planningResult, relatedEntriesResult] = await Promise.all([
+      const [coursesResult, planningResult, relatedEntriesResult, programmesResult] = await Promise.all([
         coursService.getAll({
           take: 5000,
+          includeTotal: false,
           where: JSON.stringify({
             etablissement_id: etablissementId,
             annee_scolaire_id: currentYear.id,
@@ -769,6 +784,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
         emploiDuTempsService.getClassePlanning(classeId),
         emploiDuTempsService.getAll({
           take: 5000,
+          includeTotal: false,
           where: JSON.stringify({
             classe: {
               etablissement_id: etablissementId,
@@ -804,14 +820,51 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
             creneau: true,
           }),
         }),
+        selectedClasse
+          ? programmeService.getForEtablissement(etablissementId, {
+              take: 5000,
+              includeTotal: false,
+              where: JSON.stringify({
+                annee_scolaire_id: currentYear.id,
+                niveau_scolaire_id: selectedClasse.niveau_scolaire_id,
+              }),
+              includeSpec: JSON.stringify({
+                matieres: true,
+              }),
+            })
+          : Promise.resolve(null),
       ]);
 
+      const weeklyHoursBySubjectId = new Map<string, number | null>();
+      const programmes = programmesResult?.status.success
+        ? (programmesResult.data.data as ProgrammeWithRelations[])
+        : [];
+
+      for (const programme of programmes) {
+        for (const line of programme.matieres ?? []) {
+          if (!weeklyHoursBySubjectId.has(line.matiere_id)) {
+            weeklyHoursBySubjectId.set(line.matiere_id, line.heures_semaine);
+          }
+        }
+      }
+      const programmeWeeklyMinutes = Array.from(weeklyHoursBySubjectId.values()).reduce(
+        (total, weeklyHours) =>
+          total + (typeof weeklyHours === "number" && weeklyHours > 0 ? weeklyHours * 60 : 0),
+        0,
+      );
+
       const courses = coursesResult?.status.success
-        ? [...coursesResult.data.data].sort((a: CourseRecord, b: CourseRecord) =>
-            `${a.matiere?.nom ?? ""} ${getTeacherDisplayLabel(a.enseignant)}`.localeCompare(
-              `${b.matiere?.nom ?? ""} ${getTeacherDisplayLabel(b.enseignant)}`,
-            ),
-          )
+        ? [...coursesResult.data.data]
+            .map((course: CourseRecord) => ({
+              ...course,
+              programme_heures_semaine:
+                weeklyHoursBySubjectId.get(course.matiere_id) ?? null,
+            }))
+            .sort((a: CourseRecord, b: CourseRecord) =>
+              `${a.matiere?.nom ?? ""} ${getTeacherDisplayLabel(a.enseignant)}`.localeCompare(
+                `${b.matiere?.nom ?? ""} ${getTeacherDisplayLabel(b.enseignant)}`,
+              ),
+            )
         : [];
       const allEntries = planningResult?.status.success ? planningResult.data.data : [];
       const relatedEntries = relatedEntriesResult?.status.success
@@ -827,6 +880,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
 
       set({
         courses,
+        programmeWeeklyMinutes,
         allEntries,
         relatedEntries,
         existingEntries,
@@ -836,6 +890,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
     } catch {
       set({
         courses: [],
+        programmeWeeklyMinutes: 0,
         allEntries: [],
         relatedEntries: [],
         existingEntries: [],
@@ -1108,6 +1163,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
 
       const refreshedRelatedEntries = await emploiDuTempsService.getAll({
         take: 5000,
+        includeTotal: false,
         where: JSON.stringify({
           classe: {
             etablissement_id: etablissementId,

@@ -150,9 +150,7 @@ class RessourceBibliothequeApp {
       const result = await this.ressourceBibliotheque.create(data);
       Response.success(res, "Ressource de bibliotheque creee avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation de la ressource", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la creation de la ressource", 400, error as Error);    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction) {
@@ -168,9 +166,7 @@ class RessourceBibliothequeApp {
       const result = await getAllPaginated(scopedQuery as typeof req.query, this.ressourceBibliotheque);
       Response.success(res, "Liste des ressources recuperee.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des ressources", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation des ressources", 400, error as Error);    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction) {
@@ -199,9 +195,7 @@ class RessourceBibliothequeApp {
 
       Response.success(res, "Detail de la ressource.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation de la ressource", 404, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation de la ressource", 404, error as Error);    }
   }
 
   private async update(req: Request, res: R, next: NextFunction) {
@@ -223,9 +217,7 @@ class RessourceBibliothequeApp {
       const result = await this.ressourceBibliotheque.update(req.params.id, data);
       Response.success(res, "Ressource mise a jour avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la mise a jour de la ressource", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la mise a jour de la ressource", 400, error as Error);    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction) {
@@ -244,9 +236,7 @@ class RessourceBibliothequeApp {
       const result = await this.ressourceBibliotheque.delete(req.params.id);
       Response.success(res, "Ressource supprimee avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la suppression de la ressource", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la suppression de la ressource", 400, error as Error);    }
   }
 }
 

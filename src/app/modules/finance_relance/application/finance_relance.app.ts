@@ -641,7 +641,6 @@ class FinanceRelanceApp {
       });
     } catch (error) {
       Response.error(res, "Erreur lors de l'envoi de la relance financiere", 400, error as Error);
-      next(error);
     }
   }
 
@@ -857,7 +856,6 @@ class FinanceRelanceApp {
       Response.success(res, "Calendrier de relance execute.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de l'execution du calendrier de relance", 400, error as Error);
-      next(error);
     }
   }
   private async getHistory(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -925,7 +923,6 @@ class FinanceRelanceApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 }

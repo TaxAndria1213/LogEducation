@@ -1052,9 +1052,7 @@ class FactureApp {
 
       Response.success(res, "Facture creee avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation de la facture", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la creation de la facture", 400, error as Error);    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1071,9 +1069,7 @@ class FactureApp {
       const result = await getAllPaginated(scopedQuery as typeof req.query, this.facture);
       Response.success(res, "Liste des factures recuperee.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des factures", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation des factures", 400, error as Error);    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1091,9 +1087,7 @@ class FactureApp {
 
       Response.success(res, "Detail de la facture.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation de la facture", 404, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation de la facture", 404, error as Error);    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1121,9 +1115,7 @@ class FactureApp {
 
       Response.success(res, "Facture supprimee avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la suppression de la facture", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la suppression de la facture", 400, error as Error);    }
   }
 
   private async update(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1239,9 +1231,7 @@ class FactureApp {
 
       Response.success(res, "Facture mise a jour avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la mise a jour de la facture", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la mise a jour de la facture", 400, error as Error);    }
   }
 
   private async cancel(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1301,9 +1291,7 @@ class FactureApp {
 
       Response.success(res, "Facture annulee avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'annulation de la facture", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de l'annulation de la facture", 400, error as Error);    }
   }
 
   private async createCreditNote(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1401,9 +1389,7 @@ class FactureApp {
 
       Response.success(res, "Avoir cree avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation de l'avoir", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la creation de l'avoir", 400, error as Error);    }
   }
 
   private async applyAvailableCredit(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1441,9 +1427,7 @@ class FactureApp {
 
       Response.success(res, "Le credit disponible a ete applique a la facture.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'application du credit disponible", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de l'application du credit disponible", 400, error as Error);    }
   }
 
   private async emit(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1524,9 +1508,7 @@ class FactureApp {
 
       Response.success(res, "Facture emise avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'emission de la facture", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de l'emission de la facture", 400, error as Error);    }
   }
 
   private async reinvoice(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1632,9 +1614,7 @@ class FactureApp {
 
       Response.success(res, "Refacturation creee avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la refacturation", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la refacturation", 400, error as Error);    }
   }
 }
 

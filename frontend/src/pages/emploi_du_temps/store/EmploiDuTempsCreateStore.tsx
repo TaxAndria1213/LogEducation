@@ -66,11 +66,13 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
     ] = await Promise.all([
       classeService.getAll({
         take: 5000,
+        includeTotal: false,
         where: JSON.stringify({ etablissement_id }),
         orderBy: JSON.stringify([{ nom: "asc" }]),
       }),
       coursService.getForEtablissement(etablissement_id, {
         take: 5000,
+        includeTotal: false,
         includeSpec: JSON.stringify({
           annee: true,
           classe: {
@@ -101,6 +103,7 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
       }),
       matiereService.getForEtablissement(etablissement_id, {
         take: 5000,
+        includeTotal: false,
         includeSpec: JSON.stringify({
           departement: true,
         }),
@@ -108,6 +111,7 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
       }),
       enseignantService.getAll({
         take: 5000,
+        includeTotal: false,
         where: JSON.stringify({
           personnel: {
             etablissement_id,
@@ -127,6 +131,7 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
       }),
       salleService.getAll({
         take: 5000,
+        includeTotal: false,
         where: JSON.stringify({
           site: {
             etablissement_id,
@@ -138,6 +143,7 @@ export const useEmploiDuTempsCreateStore = create<State>((set) => ({
       }),
       creneauHoraireService.getAll({
         take: 5000,
+        includeTotal: false,
         where: JSON.stringify({ etablissement_id }),
         orderBy: JSON.stringify({ ordre: "asc" }),
       }),

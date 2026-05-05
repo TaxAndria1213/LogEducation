@@ -42,7 +42,6 @@ class PersonnelApp {
             Response.success(res, "Personnel created.", result);
         } catch (error) {
             Response.error(res, "Erreur lors de la création du personnel", 400, error as Error);
-            next(error);
         }
     }
 
@@ -52,7 +51,6 @@ class PersonnelApp {
             Response.success(res, "Personnel list.", result);
         } catch (error) {
             Response.error(res, "Erreur lors de la récupération des personnels", 400, error as Error);
-            next(error);
         }
     }
 

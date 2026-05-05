@@ -97,6 +97,87 @@ class OperationFinanciereApp {
     };
   }
 
+  private getListInclude() {
+    return {
+      facture: {
+        select: {
+          id: true,
+          numero_facture: true,
+          statut: true,
+          total_montant: true,
+          devise: true,
+          eleve: {
+            select: {
+              id: true,
+              code_eleve: true,
+              utilisateur: {
+                select: {
+                  profil: {
+                    select: {
+                      prenom: true,
+                      nom: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      paiement: {
+        select: {
+          id: true,
+          numero_recu: true,
+          reference: true,
+          montant: true,
+          statut: true,
+          paye_le: true,
+        },
+      },
+      abonnementCantine: {
+        select: {
+          id: true,
+          code: true,
+          statut: true,
+          formule: {
+            select: {
+              id: true,
+              nom: true,
+            },
+          },
+          eleve: {
+            select: {
+              id: true,
+              code_eleve: true,
+              utilisateur: {
+                select: {
+                  profil: {
+                    select: {
+                      prenom: true,
+                      nom: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      createur: {
+        select: {
+          id: true,
+          email: true,
+          profil: {
+            select: {
+              prenom: true,
+              nom: true,
+            },
+          },
+        },
+      },
+    };
+  }
+
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
       const tenantId = this.resolveTenantId(req);
@@ -107,7 +188,7 @@ class OperationFinanciereApp {
         orderBy:
           req.query.orderBy ??
           JSON.stringify([{ created_at: "desc" }, { updated_at: "desc" }]),
-        includeSpec: req.query.includeSpec ?? JSON.stringify(this.getInclude()),
+        includeSpec: req.query.includeSpec ?? JSON.stringify(this.getListInclude()),
       };
       const result = await getAllPaginated(
         scopedQuery as typeof req.query,
@@ -120,9 +201,7 @@ class OperationFinanciereApp {
         "Erreur lors de la recuperation du journal financier",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -148,9 +227,7 @@ class OperationFinanciereApp {
         "Erreur lors de la recuperation de l'operation financiere",
         404,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 }
 

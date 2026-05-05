@@ -251,7 +251,6 @@ class AnneeScolaireApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -289,7 +288,6 @@ class AnneeScolaireApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -377,7 +375,6 @@ class AnneeScolaireApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -392,7 +389,6 @@ class AnneeScolaireApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -420,7 +416,6 @@ class AnneeScolaireApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -442,7 +437,6 @@ class AnneeScolaireApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 }

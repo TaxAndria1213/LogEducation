@@ -8,12 +8,19 @@ import EvaluationsIndex from "../../pages/pedagogie/evaluations/EvaluationsIndex
 import NotesIndex from "../../pages/pedagogie/notes/NotesIndex";
 import BulletinsIndex from "../../pages/pedagogie/bulletins/BulletinsIndex";
 import ReglesNotesIndex from "../../pages/pedagogie/regles_notes/ReglesNotesIndex";
+import PedagogieInitialisationIndex from "../../pages/pedagogie/initialisation/PedagogieInitialisationIndex";
 
 export const pedagogie: menu = {
     key: "pedagogie",
     name: "Pédagogie",
     icon: <FontAwesomeIcon icon={faChalkboardTeacher} />,
     submodules: [
+      {
+        key: "initialisation",
+        name: "Initialisation",
+        path: "/pedagogie/initialisation",
+        elements: <PedagogieInitialisationIndex />,
+      },
       {
         key: "matieres",
         name: "Matières",

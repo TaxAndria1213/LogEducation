@@ -83,6 +83,12 @@ class Response {
   }
 
   static error(res: R, message: string, code: number, error: Error) {
+    res.locals.errorHandled = true;
+
+    if (res.headersSent) {
+      return;
+    }
+
     const errorMetadata = this.getErrorMetadata(error);
     res.status(code || 500).send({
       message: message,

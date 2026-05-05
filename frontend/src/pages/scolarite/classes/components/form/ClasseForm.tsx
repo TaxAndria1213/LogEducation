@@ -44,6 +44,14 @@ function ClasseForm() {
   const ClasseFields = getFieldsFromZodObjectSchema(ClasseSchema, {
     omit: ["id", "created_at", "updated_at", "etablissement_id"],
 
+    labelByField: {
+      nom: "Nom",
+      annee_scolaire_id: "Année scolaire",
+      niveau_scolaire_id: "Niveau scolaire",
+      site_id: "Site",
+      capacite: "Capacite",
+      enseignant_principal_id: "Enseignant principal",
+    },
     metaByField: {
       created_at: { dateMode: "datetime" },
       updated_at: { dateMode: "datetime" },
@@ -67,14 +75,13 @@ function ClasseForm() {
           options: siteOptions,
         },
       },
-    },
-
-    labelByField: {
-      nom: "Nom",
-      annee_scolaire_id: "Année scolaire",
-      niveau_scolaire_id: "Niveau scolaire",
-      site_id: "Site",
-      enseignant_principal_id: "Enseignant principal",
+      capacite: {
+        fieldProps: {
+          className: "md:col-span-1",
+          placeholder: "Ex: 35",
+          description: "Optionnel. Permet de suivre les places restantes et les alertes de capacite.",
+        },
+      },
     },
   });
 

@@ -181,7 +181,6 @@ class PresenceEleveApp {
       Response.success(res, "Presence eleve creee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de la presence eleve", 400, error as Error);
-      next(error);
     }
   }
 
@@ -198,7 +197,6 @@ class PresenceEleveApp {
       Response.success(res, "Presences eleves.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des presences eleves", 400, error as Error);
-      next(error);
     }
   }
 
@@ -210,7 +208,6 @@ class PresenceEleveApp {
       Response.success(res, "Presence eleve detail.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de la presence eleve", 404, error as Error);
-      next(error);
     }
   }
 
@@ -223,7 +220,6 @@ class PresenceEleveApp {
       Response.success(res, "Presence eleve supprimee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression de la presence eleve", 400, error as Error);
-      next(error);
     }
   }
 
@@ -239,7 +235,6 @@ class PresenceEleveApp {
       Response.success(res, "Presence eleve mise a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de la presence eleve", 400, error as Error);
-      next(error);
     }
   }
 }

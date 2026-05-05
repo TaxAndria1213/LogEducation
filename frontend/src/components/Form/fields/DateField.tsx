@@ -432,7 +432,8 @@ function DateFieldControl<TFieldValues extends FieldValues>({
           disabled={props.disabled}
           aria-haspopup="dialog"
           aria-expanded={open}
-          className={`${getInputClassName(Boolean(fieldState.error))} inline-flex items-center justify-between gap-3 text-left`}
+          aria-label={`Ouvrir le calendrier${props.label ? ` pour ${props.label}` : ""}`}
+          className={`${getInputClassName(Boolean(fieldState.error))} group inline-flex items-center justify-between gap-3 text-left`}
         >
           <span className="min-w-0 truncate">
             {selectedDate
@@ -450,9 +451,27 @@ function DateFieldControl<TFieldValues extends FieldValues>({
           </span>
           <span
             aria-hidden="true"
-            className="hidden shrink-0 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 sm:inline"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition group-hover:text-slate-700"
           >
-            Calendrier
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-[18px] w-[18px]"
+            >
+              <path d="M7 3v3" />
+              <path d="M17 3v3" />
+              <path d="M4 8h16" />
+              <path d="M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+              <path d="M8 12h.01" />
+              <path d="M12 12h.01" />
+              <path d="M16 12h.01" />
+              <path d="M8 16h.01" />
+              <path d="M12 16h.01" />
+            </svg>
           </span>
         </button>
       </div>

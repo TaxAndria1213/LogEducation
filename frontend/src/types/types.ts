@@ -305,6 +305,9 @@ export type componentId =
   | 'BI.EMPRUNTS.MENUACTION.PARAMETRE'
   | 'BI.EMPRUNTS.MENUACTION.ADD'
   | 'BI.EMPRUNTS.MENUACTION.DASHBOARD'
+  // ========= SECTION DOCUMENTS =========
+  | 'DOC.INSCRIPTIONTYPES.PAGE'
+  | 'DOC.INSCRIPTIONTYPES.MANAGE'
 ;
 
 export type WizardDataUserPersonnel = {

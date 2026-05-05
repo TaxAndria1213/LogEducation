@@ -1,9 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { FiArrowLeft, FiCheck, FiChevronRight } from "react-icons/fi";
 import { Form } from "../Form";
 
 type StepKey = string;
+type WizardData = Record<string, any>;
+type WizardSupplementaryContext = {
+  allData: WizardData;
+  currentData: Record<string, any>;
+  stepIndex: number;
+  steps: WizardStep[];
+};
 
 export type WizardStep = {
   key: StepKey;
@@ -15,9 +22,9 @@ export type WizardStep = {
   labelMessage?: string;
   icon?: ReactNode;
   onValuesChange?: (data: Record<string, any>) => void;
+  syncValues?: Partial<Record<string, any>> | ((context: WizardSupplementaryContext) => Partial<Record<string, any>> | undefined);
+  supplementary?: ReactNode | ((context: WizardSupplementaryContext) => ReactNode);
 };
-
-type WizardData = Record<string, any>;
 
 type MultiStepFormWizardProps = {
   title?: string;
@@ -74,15 +81,25 @@ export function MultiStepFormWizard({
   footerRight,
   submitHint,
 }: MultiStepFormWizardProps) {
+  const wizardTopRef = useRef<HTMLDivElement | null>(null);
+  const previousStepKeyRef = useRef<string | null>(null);
   const [step, setStep] = useState(0);
   const [allData, setAllData] = useState<WizardData>({});
   const [completed, setCompleted] = useState<Record<number, boolean>>({});
+  const [currentStepData, setCurrentStepData] = useState<Record<string, any>>({});
 
   const progress = useMemo(
     () => (steps.length > 0 ? ((step + 1) / steps.length) * 100 : 0),
     [step, steps.length],
   );
   const current = steps[step] ?? steps[0];
+
+  useEffect(() => {
+    if (!current) return;
+    if (previousStepKeyRef.current === current.key) return;
+    previousStepKeyRef.current = current.key;
+    setCurrentStepData((allData[current.key] ?? current.initialValues ?? {}) as Record<string, any>);
+  }, [allData, current.initialValues, current.key]);
 
   if (!current) {
     return (
@@ -101,18 +118,62 @@ export function MultiStepFormWizard({
   }
 
   const canJumpTo = (s: number) => s <= step || !!completed[s];
+  const mergedAllData = useMemo(
+    () => ({
+      ...allData,
+      [current.key]: currentStepData,
+    }),
+    [allData, current.key, currentStepData],
+  );
+  const resolvedSupplementary =
+    typeof current.supplementary === "function"
+      ? current.supplementary({
+          allData: mergedAllData,
+          currentData: currentStepData,
+          stepIndex: step,
+          steps,
+        })
+      : current.supplementary;
+  const resolvedSyncValues =
+    typeof current.syncValues === "function"
+      ? current.syncValues({
+          allData: mergedAllData,
+          currentData: currentStepData,
+          stepIndex: step,
+          steps,
+        })
+      : current.syncValues;
 
-  const goBack = () => setStep((s) => (s === 0 ? 0 : s - 1));
+  const scrollToWizardTop = () => {
+    window.requestAnimationFrame(() => {
+      wizardTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const goBack = () => {
+    setStep((s) => {
+      const previousStep = s === 0 ? 0 : s - 1;
+      if (previousStep !== s) scrollToWizardTop();
+      return previousStep;
+    });
+  };
 
   const jumpTo = (s: number) => {
-    if (canJumpTo(s)) setStep(s);
+    if (!canJumpTo(s)) return;
+    setStep((currentStep) => {
+      if (currentStep !== s) scrollToWizardTop();
+      return s;
+    });
   };
 
   const resetAll = () => {
     setAllData({});
     setCompleted({});
     setStep(0);
+    setCurrentStepData({});
+    previousStepKeyRef.current = null;
     onReset?.();
+    scrollToWizardTop();
   };
 
   const handleStepSubmit = async (data: any) => {
@@ -121,20 +182,23 @@ export function MultiStepFormWizard({
     const updatedData = { ...allData, [current.key]: data };
 
     setAllData(updatedData);
+    setCurrentStepData(data);
     setCompleted((prev) => ({ ...prev, [step]: true }));
 
     if (step < steps.length - 1) {
       const nextStep = step + 1;
       setStep(nextStep);
       onStepChange?.(nextStep, updatedData);
+      scrollToWizardTop();
       return;
     }
 
     await onFinish(updatedData);
+    resetAll();
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div ref={wizardTopRef} className="min-h-screen bg-slate-50">
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 xl:grid-cols-[340px_minmax(0,1fr)]">
         <aside className="space-y-5 rounded-[30px] border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
           <div className="space-y-3">
@@ -165,7 +229,9 @@ export function MultiStepFormWizard({
               const isActive = step === index;
               const isDone = !!completed[index];
               const enabled = canJumpTo(index);
-              const preview = getPreviewValue(allData[item.key]);
+              const preview = getPreviewValue(
+                index === step ? mergedAllData[item.key] : allData[item.key],
+              );
 
               return (
                 <button
@@ -288,12 +354,21 @@ export function MultiStepFormWizard({
               initialValues={allData[current.key] ?? current.initialValues ?? {}}
               dataOnly={handleStepSubmit}
               labelMessage={current.labelMessage ?? current.title}
-              onValuesChange={current.onValuesChange}
+              onValuesChange={(data) => {
+                setCurrentStepData(data as Record<string, any>);
+                current.onValuesChange?.(data as Record<string, any>);
+              }}
+              syncValues={resolvedSyncValues}
               submitLabel={
                 step === steps.length - 1 ? "Finaliser l'inscription" : "Enregistrer et continuer"
               }
               submitAlign="end"
             />
+            {resolvedSupplementary ? (
+              <div className="mt-6 border-t border-slate-200 pt-5">
+                {resolvedSupplementary}
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">

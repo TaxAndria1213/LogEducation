@@ -37,6 +37,7 @@ import {
   getTeacherSecondaryLabel,
 } from "../../types";
 import { downloadSchedulePdf } from "../../utils/schedulePdf";
+import StateSelectField from "./StateSelectField";
 
 function parseDateValue(value?: Date | string | null) {
   if (!value) return null;
@@ -193,6 +194,18 @@ function formatHoursFromMinutes(totalMinutes: number) {
   }
 
   return `${hours.toFixed(1).replace(".", ",")} h`;
+}
+
+function formatCompactHoursFromMinutes(totalMinutes: number) {
+  return formatHoursFromMinutes(totalMinutes).replace(/\s/g, "");
+}
+
+function formatCourseWeeklyLoad(usedMinutes: number, weeklyHours?: number | null) {
+  if (typeof weeklyHours !== "number" || weeklyHours <= 0) {
+    return usedMinutes > 0 ? formatCompactHoursFromMinutes(usedMinutes) : "A placer";
+  }
+
+  return `${formatCompactHoursFromMinutes(usedMinutes)}/${weeklyHours}h`;
 }
 
 function timeRangesOverlap(
@@ -398,6 +411,9 @@ export default function ScheduleDashboard() {
   const currentYear = useEmploiDuTempsDashboardStore((state) => state.currentYear);
   const classes = useEmploiDuTempsDashboardStore((state) => state.classes);
   const courses = useEmploiDuTempsDashboardStore((state) => state.courses);
+  const programmeWeeklyMinutes = useEmploiDuTempsDashboardStore(
+    (state) => state.programmeWeeklyMinutes,
+  );
   const creneaux = useEmploiDuTempsDashboardStore((state) => state.creneaux);
   const salles = useEmploiDuTempsDashboardStore((state) => state.salles);
   const allEntries = useEmploiDuTempsDashboardStore((state) => state.allEntries);
@@ -474,6 +490,38 @@ export default function ScheduleDashboard() {
   const selectedClasse = useMemo(
     () => classes.find((item) => item.id === selectedClasseId) ?? null,
     [classes, selectedClasseId],
+  );
+
+  const classeSelectOptions = useMemo(
+    () =>
+      classes.map((classe) => ({
+        value: classe.id,
+        label: classe.nom,
+      })),
+    [classes],
+  );
+
+  const courseSelectOptions = useMemo(
+    () => [
+      {
+        value: PAUSE_COURSE_ID,
+        label: "Pause",
+      },
+      ...courses.map((course) => ({
+        value: course.id,
+        label: getCourseLabel(course),
+      })),
+    ],
+    [courses],
+  );
+
+  const roomSelectOptions = useMemo(
+    () =>
+      salles.map((room) => ({
+        value: room.id,
+        label: getRoomLabel(room),
+      })),
+    [salles],
   );
 
   const creneauDurationById = useMemo(
@@ -1306,31 +1354,25 @@ export default function ScheduleDashboard() {
               </p>
             </div>
 
-            <label className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
-              <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Classe a planifier
-              </span>
-              <select
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
+              <StateSelectField
                 value={selectedClasseId}
-                onChange={(event) => {
-                  void selectClasse(event.target.value);
+                onChange={(value) => {
+                  void selectClasse(value);
                 }}
-                className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+                options={classeSelectOptions}
+                label="Classe a planifier"
+                emptyLabel="Choisir une classe"
+                searchPlaceholder="Rechercher une classe..."
+                noResultsLabel="Aucune classe disponible."
                 disabled={loadingPlanning || saving || classes.length === 0}
-              >
-                <option value="">Choisir une classe</option>
-                {classes.map((classe) => (
-                  <option key={classe.id} value={classe.id}>
-                    {classe.nom}
-                  </option>
-                ))}
-              </select>
+              />
               <p className="mt-3 text-xs leading-5 text-slate-500">
                 {selectedClasse?.site?.nom
                   ? `${selectedClasse.site.nom} - ${selectedClasse?.niveau?.nom ?? "Niveau non precise"}`
                   : "Selectionne la classe a charger dans la grille."}
               </p>
-            </label>
+            </div>
 
             {planningMode === "specific_week" ? (
               <label className="rounded-[24px] border border-cyan-100 bg-cyan-50/70 p-4">
@@ -1458,9 +1500,9 @@ export default function ScheduleDashboard() {
         <StatCard
           icon={<FiLayers />}
           label="Heures planifiees"
-          value={`${formatHoursFromMinutes(plannedMinutes)} / ${formatHoursFromMinutes(totalMinutes)}`}
+          value={`${formatHoursFromMinutes(plannedMinutes)} / ${formatHoursFromMinutes(programmeWeeklyMinutes)}`}
           accent="bg-emerald-100 text-emerald-700"
-          helper="Vue immediate du volume horaire couvert sur la periode."
+          helper="Reference: total hebdomadaire defini dans le programme du niveau."
         />
         <StatCard
           icon={<FiBookOpen />}
@@ -1552,6 +1594,11 @@ export default function ScheduleDashboard() {
             ) : (
               courses.map((course) => {
                 const usageMinutes = courseUsageMinutesById[course.id] ?? 0;
+                const weeklyHours = course.programme_heures_semaine;
+                const isComplete =
+                  typeof weeklyHours === "number" &&
+                  weeklyHours > 0 &&
+                  usageMinutes >= weeklyHours * 60;
 
                 return (
                   <div
@@ -1574,12 +1621,14 @@ export default function ScheduleDashboard() {
                       </div>
                       <span
                         className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                          usageMinutes > 0
+                          isComplete
                             ? "bg-emerald-100 text-emerald-700"
+                            : usageMinutes > 0
+                              ? "bg-cyan-100 text-cyan-700"
                             : "bg-amber-100 text-amber-700"
                         }`}
                       >
-                        {usageMinutes > 0 ? formatHoursFromMinutes(usageMinutes) : "A placer"}
+                        {formatCourseWeeklyLoad(usageMinutes, weeklyHours)}
                       </span>
                     </div>
                   </div>
@@ -1950,6 +1999,11 @@ export default function ScheduleDashboard() {
               ) : (
                 courses.map((course) => {
                   const usageMinutes = courseUsageMinutesById[course.id] ?? 0;
+                  const weeklyHours = course.programme_heures_semaine;
+                  const isComplete =
+                    typeof weeklyHours === "number" &&
+                    weeklyHours > 0 &&
+                    usageMinutes >= weeklyHours * 60;
 
                   return (
                     <div
@@ -1972,12 +2026,14 @@ export default function ScheduleDashboard() {
                         </div>
                         <span
                           className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                            usageMinutes > 0
+                            isComplete
                               ? "bg-emerald-100 text-emerald-700"
+                              : usageMinutes > 0
+                                ? "bg-cyan-100 text-cyan-700"
                               : "bg-amber-100 text-amber-700"
                           }`}
                         >
-                          {usageMinutes > 0 ? formatHoursFromMinutes(usageMinutes) : "A placer"}
+                          {formatCourseWeeklyLoad(usageMinutes, weeklyHours)}
                         </span>
                       </div>
                     </div>
@@ -1993,27 +2049,18 @@ export default function ScheduleDashboard() {
         ? createPortal(
             <div className="absolute right-[calc(100%+0.5rem)] top-1/2 z-10 -translate-y-1/2">
               <div className="flex items-center gap-2">
-                <label className="sr-only" htmlFor="planning-header-classe-select">
-                  Classe a planifier
-                </label>
-                <select
-                  id="planning-header-classe-select"
+                <StateSelectField
                   value={selectedClasseId}
-                  onChange={(event) => {
-                    void selectClasse(event.target.value);
+                  onChange={(value) => {
+                    void selectClasse(value);
                   }}
-                  aria-label="Classe a planifier"
-                  title="Classe a planifier"
-                  className="min-w-[220px] max-w-[280px] rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  options={classeSelectOptions}
+                  emptyLabel="Choisir une classe"
+                  searchPlaceholder="Rechercher une classe..."
+                  noResultsLabel="Aucune classe disponible."
                   disabled={loadingPlanning || saving || classes.length === 0}
-                >
-                  <option value="">Choisir une classe</option>
-                  {classes.map((classe) => (
-                    <option key={classe.id} value={classe.id}>
-                      {classe.nom}
-                    </option>
-                  ))}
-                </select>
+                  className="min-w-[220px] max-w-[280px]"
+                />
                 <button
                   type="button"
                   onClick={handleGeneratePdf}
@@ -2079,51 +2126,31 @@ export default function ScheduleDashboard() {
                   </div>
 
                   <div className="mt-6 space-y-4">
-                    <label className="block">
-                      <span className="mb-2 block text-sm font-medium text-slate-700">
-                        Cours
-                      </span>
-                      <select
-                        value={bulkCourseId}
-                        onChange={(event) => {
-                          setBulkCourseId(event.target.value);
-                          if (
-                            !event.target.value ||
-                            event.target.value === PAUSE_COURSE_ID
-                          ) {
-                            setBulkSalleId("");
-                          }
-                        }}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
-                      >
-                        <option value="">Aucun cours</option>
-                        <option value={PAUSE_COURSE_ID}>Pause</option>
-                        {courses.map((course) => (
-                          <option key={course.id} value={course.id}>
-                            {getCourseLabel(course)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    <StateSelectField
+                      value={bulkCourseId}
+                      onChange={(value) => {
+                        setBulkCourseId(value);
+                        if (!value || value === PAUSE_COURSE_ID) {
+                          setBulkSalleId("");
+                        }
+                      }}
+                      options={courseSelectOptions}
+                      label="Cours"
+                      emptyLabel="Aucun cours"
+                      searchPlaceholder="Rechercher un cours..."
+                      noResultsLabel="Aucun cours disponible."
+                    />
 
-                    <label className="block">
-                      <span className="mb-2 block text-sm font-medium text-slate-700">
-                        Salle
-                      </span>
-                      <select
-                        value={bulkSalleId}
-                        onChange={(event) => setBulkSalleId(event.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
-                        disabled={!bulkCourseId || bulkCourseId === PAUSE_COURSE_ID}
-                      >
-                        <option value="">Salle non definie</option>
-                        {salles.map((room) => (
-                          <option key={room.id} value={room.id}>
-                            {getRoomLabel(room)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    <StateSelectField
+                      value={bulkSalleId}
+                      onChange={setBulkSalleId}
+                      options={roomSelectOptions}
+                      label="Salle"
+                      emptyLabel="Salle non definie"
+                      searchPlaceholder="Rechercher une salle..."
+                      noResultsLabel="Aucune salle disponible."
+                      disabled={!bulkCourseId || bulkCourseId === PAUSE_COURSE_ID}
+                    />
 
                     {bulkCourseId &&
                     bulkCourseId !== PAUSE_COURSE_ID &&

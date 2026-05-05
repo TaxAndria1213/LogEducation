@@ -323,9 +323,7 @@ class CoursApp {
         "Erreur lors de la creation du cours",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -346,9 +344,7 @@ class CoursApp {
         "Erreur lors de la recuperation des cours",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -375,9 +371,7 @@ class CoursApp {
         "Erreur lors de la recuperation du cours",
         404,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -428,9 +422,7 @@ class CoursApp {
         "Erreur lors de la suppression du cours",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async update(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -461,9 +453,7 @@ class CoursApp {
         "Erreur lors de la mise a jour du cours",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 }
 

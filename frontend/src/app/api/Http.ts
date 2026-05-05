@@ -3,7 +3,64 @@
 import ErrorHandler from '../Error'
 import { api, systemApi } from './axios'
 
+export type BackendMessageType = "success" | "error";
+type BackendMessageEntry = { message: string; timestamp: number };
+
+const backendMessages: Partial<Record<BackendMessageType, BackendMessageEntry>> = {};
+const BACKEND_MESSAGE_TTL_MS = 30000;
+
+function extractBackendMessage(data: any) {
+    const message =
+        typeof data?.status?.error?.message === "string" && data.status.error.message.trim()
+            ? data.status.error.message.trim()
+            : typeof data?.status?.message === "string" && data.status.message.trim()
+                ? data.status.message.trim()
+                : typeof data?.message === "string" && data.message.trim()
+                ? data.message.trim()
+                : null;
+
+    return message;
+}
+
+export function consumeBackendResponseMessage(type: BackendMessageType) {
+    const entry = backendMessages[type];
+    if (!entry) return null;
+
+    const elapsed = Date.now() - entry.timestamp;
+    if (elapsed > BACKEND_MESSAGE_TTL_MS) {
+        delete backendMessages[type];
+        return null;
+    }
+
+    const message = entry.message;
+    delete backendMessages[type];
+    return message;
+}
+
+export function consumeBackendSuccessMessage() {
+    return consumeBackendResponseMessage("success");
+}
+
 export class Http {
+    private static rememberMessage(type: BackendMessageType, data: any) {
+        const message = extractBackendMessage(data);
+
+        if (!message) return;
+
+        backendMessages[type] = {
+            message,
+            timestamp: Date.now(),
+        };
+    }
+
+    private static rememberSuccessMessage(data: any) {
+        this.rememberMessage("success", data);
+    }
+
+    private static rememberErrorMessage(error: any) {
+        this.rememberMessage("error", error?.response?.data ?? error);
+    }
+
     private static normalizeError(error: any) {
         if (error?.response) return error;
 
@@ -39,6 +96,7 @@ export class Http {
             }
         } catch (e) {
             const normalizedError = this.normalizeError(e);
+            this.rememberErrorMessage(normalizedError);
             ErrorHandler.handle(normalizedError)
             throw normalizedError;
         }
@@ -48,12 +106,14 @@ export class Http {
         try {
             const { data } = await api.post(url, params)
             if (data?.status?.success) {
+                this.rememberSuccessMessage(data);
                 return { status: data?.status, data: data?.data }
             } else {
                 throw data?.status ?? new Error("La requete a echoue.")
             }
         } catch (e) {
             const normalizedError = this.normalizeError(e);
+            this.rememberErrorMessage(normalizedError);
             ErrorHandler.handle(normalizedError)
             throw normalizedError;
         }
@@ -64,12 +124,14 @@ export class Http {
             const { data } = await api.patch(url, params)
 
             if (data?.status?.success) {
+                this.rememberSuccessMessage(data);
                 return { status: data?.status, data: data?.data }
             } else {
                 throw data?.status ?? new Error("La requete a echoue.")
             }
         } catch (e) {
             const normalizedError = this.normalizeError(e);
+            this.rememberErrorMessage(normalizedError);
             ErrorHandler.handle(normalizedError)
             throw normalizedError;
         }
@@ -79,12 +141,14 @@ export class Http {
         try {
             const { data } = await api.put(url, params)
             if (data?.status?.success) {
+                this.rememberSuccessMessage(data);
                 return { status: data?.status, data: data?.data }
             } else {
                 throw data?.status ?? new Error("La requete a echoue.")
             }
         } catch (e) {
             const normalizedError = this.normalizeError(e);
+            this.rememberErrorMessage(normalizedError);
             ErrorHandler.handle(normalizedError)
             throw normalizedError;
         }
@@ -94,12 +158,14 @@ export class Http {
         try {
             const { data } = await api.delete(url)
             if (data?.status?.success) {
+                this.rememberSuccessMessage(data);
                 return { status: data?.status, data: data?.data }
             } else {
                 throw data?.status ?? new Error("La requete a echoue.")
             }
         } catch (e) {
             const normalizedError = this.normalizeError(e);
+            this.rememberErrorMessage(normalizedError);
             ErrorHandler.handle(normalizedError)
             throw normalizedError;
         }
@@ -118,6 +184,7 @@ export class Http {
             }
         } catch (e) {
             const normalizedError = this.normalizeError(e);
+            this.rememberErrorMessage(normalizedError);
             ErrorHandler.handle(normalizedError)
             throw normalizedError;
         }
@@ -126,14 +193,15 @@ export class Http {
     static async syspost(url: string, params: any) {
         try {
             const { data } = await systemApi.post(url, params)
-            console.log("🚀 ~ Http ~ syspost ~ data:", data)
             if (data?.status?.success) {
+                this.rememberSuccessMessage(data);
                 return { status: data?.status, data: data?.data }
             } else {
                 throw data?.status ?? new Error("La requete systeme a echoue.")
             }
         } catch (e) {
             const normalizedError = this.normalizeError(e);
+            this.rememberErrorMessage(normalizedError);
             ErrorHandler.handle(normalizedError)
             throw normalizedError;
         }
@@ -144,12 +212,14 @@ export class Http {
             const { data } = await systemApi.patch(url, params)
 
             if (data?.status?.success) {
+                this.rememberSuccessMessage(data);
                 return { status: data?.status, data: data?.data }
             } else {
                 throw data?.status ?? new Error("La requete systeme a echoue.")
             }
         } catch (e) {
             const normalizedError = this.normalizeError(e);
+            this.rememberErrorMessage(normalizedError);
             ErrorHandler.handle(normalizedError)
             throw normalizedError;
         }
@@ -159,12 +229,14 @@ export class Http {
         try {
             const { data } = await systemApi.put(url, params)
             if (data?.status?.success) {
+                this.rememberSuccessMessage(data);
                 return { status: data?.status, data: data?.data }
             } else {
                 throw data?.status ?? new Error("La requete systeme a echoue.")
             }
         } catch (e) {
             const normalizedError = this.normalizeError(e);
+            this.rememberErrorMessage(normalizedError);
             ErrorHandler.handle(normalizedError)
             throw normalizedError;
         }
@@ -174,12 +246,14 @@ export class Http {
         try {
             const { data } = await systemApi.delete(url)
             if (data?.status?.success) {
+                this.rememberSuccessMessage(data);
                 return { status: data?.status, data: data?.data }
             } else {
                 throw data?.status ?? new Error("La requete systeme a echoue.")
             }
         } catch (e) {
             const normalizedError = this.normalizeError(e);
+            this.rememberErrorMessage(normalizedError);
             ErrorHandler.handle(normalizedError)
             throw normalizedError;
         }

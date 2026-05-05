@@ -269,9 +269,7 @@ class FinanceRecouvrementApp {
       });
       Response.success(res, "Regle de recouvrement.", policy);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation de la regle de recouvrement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation de la regle de recouvrement", 400, error as Error);    }
   }
 
   private async upsertPolicy(req: Request, res: R, next: NextFunction) {
@@ -303,9 +301,7 @@ class FinanceRecouvrementApp {
 
       Response.success(res, "Regle de recouvrement enregistree.", policy);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'enregistrement de la regle de recouvrement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de l'enregistrement de la regle de recouvrement", 400, error as Error);    }
   }
 
   private async approvePolicy(req: Request, res: R, next: NextFunction) {
@@ -338,9 +334,7 @@ class FinanceRecouvrementApp {
 
       Response.success(res, "Regle de recouvrement approuvee.", updated);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'approbation de la regle de recouvrement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de l'approbation de la regle de recouvrement", 400, error as Error);    }
   }
 
   private async rejectPolicy(req: Request, res: R, next: NextFunction) {
@@ -365,9 +359,7 @@ class FinanceRecouvrementApp {
 
       Response.success(res, "Regle de recouvrement rejetee.", updated);
     } catch (error) {
-      Response.error(res, "Erreur lors du rejet de la regle de recouvrement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors du rejet de la regle de recouvrement", 400, error as Error);    }
   }
 
   private async createPaymentPromise(req: Request, res: R, next: NextFunction) {
@@ -399,9 +391,7 @@ class FinanceRecouvrementApp {
 
       Response.success(res, "Promesse de paiement enregistree.", promise);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'enregistrement de la promesse de paiement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de l'enregistrement de la promesse de paiement", 400, error as Error);    }
   }
 
   private async getPaymentPromises(req: Request, res: R, next: NextFunction) {
@@ -415,9 +405,7 @@ class FinanceRecouvrementApp {
       });
       Response.success(res, "Promesses de paiement.", rows);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des promesses de paiement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation des promesses de paiement", 400, error as Error);    }
   }
 
   private async keepPaymentPromise(req: Request, res: R, next: NextFunction) {
@@ -457,9 +445,7 @@ class FinanceRecouvrementApp {
 
       Response.success(res, "Promesse de paiement marquee comme tenue.", updated);
     } catch (error) {
-      Response.error(res, "Erreur lors de la validation de la promesse de paiement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la validation de la promesse de paiement", 400, error as Error);    }
   }
 
   private async breakPaymentPromise(req: Request, res: R, next: NextFunction) {
@@ -477,9 +463,7 @@ class FinanceRecouvrementApp {
       if (updated.count === 0) throw new Error("Promesse de paiement introuvable.");
       Response.success(res, "Promesse de paiement marquee comme rompue.", { updated: updated.count });
     } catch (error) {
-      Response.error(res, "Erreur lors du traitement de la promesse de paiement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors du traitement de la promesse de paiement", 400, error as Error);    }
   }
 
   private async cancelPaymentPromise(req: Request, res: R, next: NextFunction) {
@@ -497,9 +481,7 @@ class FinanceRecouvrementApp {
       if (updated.count === 0) throw new Error("Promesse de paiement introuvable.");
       Response.success(res, "Promesse de paiement annulee.", { updated: updated.count });
     } catch (error) {
-      Response.error(res, "Erreur lors de l'annulation de la promesse de paiement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de l'annulation de la promesse de paiement", 400, error as Error);    }
   }
 
   private async createAdministrativeRestriction(req: Request, res: R, next: NextFunction) {
@@ -553,9 +535,7 @@ class FinanceRecouvrementApp {
 
       Response.success(res, "Restriction administrative creee.", restriction);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation de la restriction administrative", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la creation de la restriction administrative", 400, error as Error);    }
   }
 
   private async getAdministrativeRestrictions(req: Request, res: R, next: NextFunction) {
@@ -568,9 +548,7 @@ class FinanceRecouvrementApp {
       });
       Response.success(res, "Restrictions administratives.", rows);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des restrictions administratives", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation des restrictions administratives", 400, error as Error);    }
   }
 
   private async liftAdministrativeRestriction(req: Request, res: R, next: NextFunction) {
@@ -604,9 +582,7 @@ class FinanceRecouvrementApp {
 
       Response.success(res, "Restriction administrative levee.", updated);
     } catch (error) {
-      Response.error(res, "Erreur lors de la levee de la restriction administrative", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la levee de la restriction administrative", 400, error as Error);    }
   }
 
   private async createCollectionCase(req: Request, res: R, next: NextFunction) {
@@ -659,9 +635,7 @@ class FinanceRecouvrementApp {
 
       Response.success(res, "Dossier de recouvrement cree.", dossier);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation du dossier de recouvrement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la creation du dossier de recouvrement", 400, error as Error);    }
   }
 
   private async getCollectionCases(req: Request, res: R, next: NextFunction) {
@@ -674,9 +648,7 @@ class FinanceRecouvrementApp {
       });
       Response.success(res, "Dossiers de recouvrement.", rows);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des dossiers de recouvrement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation des dossiers de recouvrement", 400, error as Error);    }
   }
 
   private async writeOffOutstandingDebt(
@@ -828,9 +800,7 @@ class FinanceRecouvrementApp {
 
       Response.success(res, "Statut du dossier de recouvrement mis a jour.", updated);
     } catch (error) {
-      Response.error(res, "Erreur lors de la mise a jour du dossier de recouvrement", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la mise a jour du dossier de recouvrement", 400, error as Error);    }
   }
 
   public static async suggestPenaltyForOverdueSelection(

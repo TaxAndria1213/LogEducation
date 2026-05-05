@@ -32,9 +32,7 @@ class ClasseApp {
             const result = await this.classe.create(data);
             Response.success(res, "Stablisment creation success.", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la création de l'établissement", 400, error as Error);
-            next(error);
-        }
+            Response.error(res, "Erreur lors de la création de l'établissement", 400, error as Error);        }
     }
 
     private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -42,10 +40,7 @@ class ClasseApp {
             const result = await getAllPaginated(req.query, this.classe);
             Response.success(res, "Stablisment list.", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la récupération des établissements", 400, error as Error);
-
-            next(error);
-        }
+            Response.error(res, "Erreur lors de la récupération des établissements", 400, error as Error);        }
     }
     private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
         try {

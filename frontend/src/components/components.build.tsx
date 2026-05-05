@@ -51,6 +51,7 @@ import { transportComponents } from "../pages/transport_cantine/transport/compon
 import { cantineComponents } from "../pages/transport_cantine/cantine/components/CI.cantine";
 import { ressourceBibliothequeComponents } from "../pages/bibliotheque/ressources/components/CI.ressourceBibliotheque";
 import { empruntBibliothequeComponents } from "../pages/bibliotheque/emprunts/components/CI.empruntBibliotheque";
+import { documentsInscriptionComponents } from "../pages/documents/types_inscription/components/CI.documents";
 import {
   extractPermissionCodes,
   permissionMatches,
@@ -163,6 +164,7 @@ const components: ComponentIdentifierType[] = [
   ...cantineComponents,
   ...ressourceBibliothequeComponents,
   ...empruntBibliothequeComponents,
+  ...documentsInscriptionComponents,
 ];
 
 /**

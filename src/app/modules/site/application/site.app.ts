@@ -34,9 +34,7 @@ class SiteApp {
             const result = await this.siteModel.create(body);
             Response.success(res, "Site créé avec succès", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la création du site", 400, error as Error);
-            next(error);
-        }
+            Response.error(res, "Erreur lors de la création du site", 400, error as Error);        }
     }
 
     private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -44,9 +42,7 @@ class SiteApp {
             const result = await getAllPaginated(req.query, this.siteModel);
             Response.success(res, "Sites récupérés avec succès", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la récupération des sites", 400, error as Error);
-            next(error);
-        }
+            Response.error(res, "Erreur lors de la récupération des sites", 400, error as Error);        }
     }
 };
 

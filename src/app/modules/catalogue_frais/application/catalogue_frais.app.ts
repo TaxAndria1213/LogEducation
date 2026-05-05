@@ -553,9 +553,7 @@ class CatalogueFraisApp {
         "Erreur lors de la creation du frais catalogue",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -581,9 +579,7 @@ class CatalogueFraisApp {
         "Erreur lors de la recuperation du catalogue de frais",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -607,9 +603,7 @@ class CatalogueFraisApp {
         "Erreur lors de la recuperation du frais catalogue",
         404,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -633,9 +627,7 @@ class CatalogueFraisApp {
         "Erreur lors de la suppression du frais catalogue",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async update(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -671,9 +663,7 @@ class CatalogueFraisApp {
         "Erreur lors de la mise a jour du frais catalogue",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async approve(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -694,9 +684,7 @@ class CatalogueFraisApp {
 
       Response.success(res, "BarÃ¨me approuve avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'approbation du barÃ¨me", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de l'approbation du barÃ¨me", 400, error as Error);    }
   }
 
   private async reject(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -722,9 +710,7 @@ class CatalogueFraisApp {
 
       Response.success(res, "BarÃ¨me rejete avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors du rejet du barÃ¨me", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors du rejet du barÃ¨me", 400, error as Error);    }
   }
 }
 

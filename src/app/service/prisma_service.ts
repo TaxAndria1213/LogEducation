@@ -28,6 +28,7 @@ type FindManyOptions = {
 
   // Sécurité/Perf
   maxTake?: number;
+  includeTotal?: boolean;
 };
 
 type PaginatedResult<T> = {
@@ -169,6 +170,7 @@ class PrismaService {
       skipCursor = true,
 
       maxTake = 100,
+      includeTotal = true,
     } = options;
 
     const safeTake = this.clampTake(take ?? 20, maxTake);
@@ -217,6 +219,31 @@ class PrismaService {
         : typeof page === "number"
           ? Math.max(0, (Math.max(1, page) - 1) * safeTake)
           : 0;
+
+    if (!includeTotal) {
+      // @ts-expect-error
+      const rows: T[] = await this.prisma[this.modelName].findMany({
+        where,
+        orderBy,
+        select,
+        include,
+        skip: computedSkip,
+        take: safeTake + 1,
+      });
+
+      const hasNextPage = rows.length > safeTake;
+      const data = hasNextPage ? rows.slice(0, safeTake) : rows;
+
+      return {
+        data,
+        meta: {
+          take: safeTake,
+          skip: computedSkip,
+          page: typeof page === "number" ? Math.max(1, page) : undefined,
+          hasNextPage,
+        },
+      };
+    }
 
     // @ts-expect-error
     const total: number = await this.prisma[this.modelName].count({ where });

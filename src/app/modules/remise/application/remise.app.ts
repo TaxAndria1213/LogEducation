@@ -301,9 +301,7 @@ class RemiseApp {
       });
       Response.success(res, "Remise creee avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation de la remise", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la creation de la remise", 400, error as Error);    }
   }
 
   private async updateValidationStatus(
@@ -357,9 +355,7 @@ class RemiseApp {
       const result = await getAllPaginated(scopedQuery as typeof req.query, this.remise);
       Response.success(res, "Liste des remises recuperee.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des remises", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation des remises", 400, error as Error);    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -377,9 +373,7 @@ class RemiseApp {
 
       Response.success(res, "Detail de la remise.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation de la remise", 404, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation de la remise", 404, error as Error);    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -394,9 +388,7 @@ class RemiseApp {
       const result = await this.remise.delete(req.params.id);
       Response.success(res, "Remise supprimee avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la suppression de la remise", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la suppression de la remise", 400, error as Error);    }
   }
 
   private async update(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -442,9 +434,7 @@ class RemiseApp {
       });
       Response.success(res, "Remise mise a jour avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la mise a jour de la remise", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la mise a jour de la remise", 400, error as Error);    }
   }
 
   private async approve(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -459,9 +449,7 @@ class RemiseApp {
       );
       Response.success(res, "Remise approuvee avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'approbation de la remise", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de l'approbation de la remise", 400, error as Error);    }
   }
 
   private async reject(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -476,9 +464,7 @@ class RemiseApp {
       );
       Response.success(res, "Remise refusee avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors du refus de la remise", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors du refus de la remise", 400, error as Error);    }
   }
 }
 

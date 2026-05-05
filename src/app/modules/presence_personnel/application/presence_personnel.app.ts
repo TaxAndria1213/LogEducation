@@ -123,7 +123,6 @@ class PresencePersonnelApp {
       Response.success(res, "Presence personnel creee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de la presence personnel", 400, error as Error);
-      next(error);
     }
   }
 
@@ -140,7 +139,6 @@ class PresencePersonnelApp {
       Response.success(res, "Presences personnel.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des presences personnel", 400, error as Error);
-      next(error);
     }
   }
 
@@ -152,7 +150,6 @@ class PresencePersonnelApp {
       Response.success(res, "Presence personnel detail.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de la presence personnel", 404, error as Error);
-      next(error);
     }
   }
 
@@ -165,7 +162,6 @@ class PresencePersonnelApp {
       Response.success(res, "Presence personnel supprimee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression de la presence personnel", 400, error as Error);
-      next(error);
     }
   }
 
@@ -181,7 +177,6 @@ class PresencePersonnelApp {
       Response.success(res, "Presence personnel mise a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de la presence personnel", 400, error as Error);
-      next(error);
     }
   }
 }

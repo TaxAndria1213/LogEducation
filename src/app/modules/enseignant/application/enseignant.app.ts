@@ -32,7 +32,6 @@ class EnseignantApp {
             Response.success(res, "Enseignant créé.", result);
         } catch (error) {
             Response.error(res, "Erreur lors de la création de l'enseignant", 400, error as Error);
-            next(error);
         }
     }
 
@@ -42,7 +41,6 @@ class EnseignantApp {
             Response.success(res, "Liste des enseignants.", result);
         } catch (error) {
             Response.error(res, "Erreur lors de la récupération des enseignants", 400, error as Error);
-            next(error);
         }
     }
 

@@ -159,7 +159,6 @@ class SanctionDisciplinaireApp {
       Response.success(res, "Sanction disciplinaire creee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de la sanction disciplinaire", 400, error as Error);
-      next(error);
     }
   }
 
@@ -176,7 +175,6 @@ class SanctionDisciplinaireApp {
       Response.success(res, "Sanctions disciplinaires.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des sanctions disciplinaires", 400, error as Error);
-      next(error);
     }
   }
 
@@ -188,7 +186,6 @@ class SanctionDisciplinaireApp {
       Response.success(res, "Sanction disciplinaire detail.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de la sanction disciplinaire", 404, error as Error);
-      next(error);
     }
   }
 
@@ -205,7 +202,6 @@ class SanctionDisciplinaireApp {
       Response.success(res, "Sanction disciplinaire supprimee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression de la sanction disciplinaire", 400, error as Error);
-      next(error);
     }
   }
 
@@ -230,7 +226,6 @@ class SanctionDisciplinaireApp {
       Response.success(res, "Sanction disciplinaire mise a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de la sanction disciplinaire", 400, error as Error);
-      next(error);
     }
   }
 }

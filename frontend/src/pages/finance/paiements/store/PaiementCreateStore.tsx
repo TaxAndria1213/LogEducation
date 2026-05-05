@@ -38,6 +38,7 @@ type State = {
     reference?: string;
     recu_par?: string;
   } | null;
+  setInitialData: (value: State["initialData"]) => void;
   getOptions: (etablissement_id: string) => Promise<void>;
 };
 
@@ -108,11 +109,12 @@ function buildFactureOption(facture: FactureWithRelations): PaiementFactureOptio
   };
 }
 
-export const usePaiementCreateStore = create<State>((set) => ({
+export const usePaiementCreateStore = create<State>((set, get) => ({
   loading: false,
   errorMessage: "",
   factureOptions: [],
   initialData: null,
+  setInitialData: (value) => set({ initialData: value }),
   getOptions: async (etablissement_id: string) => {
     set({ loading: true, errorMessage: "" });
     try {
@@ -133,16 +135,21 @@ export const usePaiementCreateStore = create<State>((set) => ({
         const options = rows
           .map((facture) => buildFactureOption(facture))
           .filter((item) => item.remaining > 0);
+        const existingInitialData = get().initialData;
+        const preferredOption = options.find((item) => item.value === existingInitialData?.facture_id) ?? options[0];
 
         set({
           factureOptions: options,
           initialData: {
-            facture_id: options[0]?.value ?? "",
-            paye_le: new Date().toISOString().slice(0, 10),
-            montant: options[0]?.suggestedAmount ?? options[0]?.remaining ?? 0,
-            methode: "cash",
-            reference: "",
-            recu_par: "",
+            facture_id: preferredOption?.value ?? existingInitialData?.facture_id ?? "",
+            paye_le: existingInitialData?.paye_le ?? new Date().toISOString().slice(0, 10),
+            montant:
+              existingInitialData?.montant != null
+                ? existingInitialData.montant
+                : preferredOption?.suggestedAmount ?? preferredOption?.remaining ?? 0,
+            methode: existingInitialData?.methode ?? "cash",
+            reference: existingInitialData?.reference ?? "",
+            recu_par: existingInitialData?.recu_par ?? "",
           },
         });
       }

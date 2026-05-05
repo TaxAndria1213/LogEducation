@@ -208,9 +208,7 @@ class EmpruntApp {
       const result = await this.emprunt.create(data);
       Response.success(res, "Emprunt cree avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation de l'emprunt", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la creation de l'emprunt", 400, error as Error);    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction) {
@@ -226,9 +224,7 @@ class EmpruntApp {
       const result = await getAllPaginated(scopedQuery as typeof req.query, this.emprunt);
       Response.success(res, "Liste des emprunts recuperee.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des emprunts", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation des emprunts", 400, error as Error);    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction) {
@@ -256,9 +252,7 @@ class EmpruntApp {
 
       Response.success(res, "Detail de l'emprunt.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation de l'emprunt", 404, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la recuperation de l'emprunt", 404, error as Error);    }
   }
 
   private async update(req: Request, res: R, next: NextFunction) {
@@ -280,9 +274,7 @@ class EmpruntApp {
       const result = await this.emprunt.update(req.params.id, data);
       Response.success(res, "Emprunt mis a jour avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la mise a jour de l'emprunt", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la mise a jour de l'emprunt", 400, error as Error);    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction) {
@@ -300,9 +292,7 @@ class EmpruntApp {
       const result = await this.emprunt.delete(req.params.id);
       Response.success(res, "Emprunt supprime avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la suppression de l'emprunt", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors de la suppression de l'emprunt", 400, error as Error);    }
   }
 
   private async markAsReturned(req: Request, res: R, next: NextFunction) {
@@ -324,9 +314,7 @@ class EmpruntApp {
       });
       Response.success(res, "Emprunt retourne avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors du retour de l'emprunt", 400, error as Error);
-      next(error);
-    }
+      Response.error(res, "Erreur lors du retour de l'emprunt", 400, error as Error);    }
   }
 }
 

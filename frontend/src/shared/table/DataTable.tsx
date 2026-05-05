@@ -5,6 +5,7 @@ import Spin from "../../components/anim/Spin";
 import TableActionButton, {
   TableViewActionLabel,
 } from "../../components/actions/TableActionButton";
+import { useERPPageBackButton } from "../../components/page/ERPPage";
 import {
   enrichGeneratedDetailModelHints,
   getGeneratedDetailIncludePaths,
@@ -386,6 +387,8 @@ function DataTableInner<T>(
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [detailError, setDetailError] = React.useState<string | null>(null);
   const detailRequestRef = React.useRef(0);
+  const detailHeaderOwnerId = React.useId();
+  const erpPageBackButton = useERPPageBackButton();
 
   const total = meta?.total ?? rows.length;
   const page = query.page ?? 1;
@@ -659,6 +662,33 @@ function DataTableInner<T>(
     setDetailLoading(false);
     detailView?.onSelectedRowChange?.(null);
   }, [detailView]);
+
+  React.useEffect(() => {
+    if (!erpPageBackButton) return;
+
+    if (hasDetailView && selectedRow && detailMode === "replace") {
+      erpPageBackButton.setBackButtonOverride(detailHeaderOwnerId, {
+        label: title ? `Retour a ${title}` : "Retour",
+        onClick: closeDetail,
+      });
+      return () => {
+        erpPageBackButton.setBackButtonOverride(detailHeaderOwnerId, null);
+      };
+    }
+
+    erpPageBackButton.setBackButtonOverride(detailHeaderOwnerId, null);
+    return () => {
+      erpPageBackButton.setBackButtonOverride(detailHeaderOwnerId, null);
+    };
+  }, [
+    closeDetail,
+    detailHeaderOwnerId,
+    detailMode,
+    erpPageBackButton,
+    hasDetailView,
+    selectedRow,
+    title,
+  ]);
 
   const doReset = React.useCallback(() => {
     setSearch("");

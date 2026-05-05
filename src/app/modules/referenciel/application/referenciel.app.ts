@@ -136,7 +136,6 @@ class ReferencielApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -181,7 +180,6 @@ class ReferencielApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -225,7 +223,6 @@ class ReferencielApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -281,7 +278,6 @@ class ReferencielApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -317,7 +313,6 @@ class ReferencielApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -333,7 +328,6 @@ class ReferencielApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 
@@ -356,7 +350,6 @@ class ReferencielApp {
         400,
         error as Error,
       );
-      next(error);
     }
   }
 

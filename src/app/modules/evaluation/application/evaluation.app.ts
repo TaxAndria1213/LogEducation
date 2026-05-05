@@ -335,9 +335,7 @@ class EvaluationApp {
         "Erreur lors de la creation de l'evaluation",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -359,9 +357,7 @@ class EvaluationApp {
         "Erreur lors de la recuperation des evaluations",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -390,9 +386,7 @@ class EvaluationApp {
         "Erreur lors de la recuperation de l'evaluation",
         404,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -434,9 +428,7 @@ class EvaluationApp {
         "Erreur lors de la suppression de l'evaluation",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async update(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -466,9 +458,7 @@ class EvaluationApp {
         "Erreur lors de la mise a jour de l'evaluation",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 }
 

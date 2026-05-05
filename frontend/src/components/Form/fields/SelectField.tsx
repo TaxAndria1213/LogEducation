@@ -309,9 +309,13 @@ function SelectFieldControl<
 
   React.useEffect(() => {
     if (isOpen) return;
-    setInputValue(selectedOption?.label ?? "");
-    setSearchTerm("");
-  }, [isOpen, selectedOption]);
+    const nextInputValue = selectedOption?.label ?? "";
+
+    setInputValue((current) =>
+      current === nextInputValue ? current : nextInputValue,
+    );
+    setSearchTerm((current) => (current === "" ? current : ""));
+  }, [isOpen, selectedOption?.label]);
 
   React.useEffect(() => {
     if (!isOpen) return undefined;
@@ -319,8 +323,12 @@ function SelectFieldControl<
     const handlePointerDown = (event: MouseEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) {
         setIsOpen(false);
-        setInputValue(selectedOption?.label ?? "");
-        setSearchTerm("");
+        const nextInputValue = selectedOption?.label ?? "";
+
+        setInputValue((current) =>
+          current === nextInputValue ? current : nextInputValue,
+        );
+        setSearchTerm((current) => (current === "" ? current : ""));
       }
     };
 
@@ -328,7 +336,7 @@ function SelectFieldControl<
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
     };
-  }, [isOpen, selectedOption]);
+  }, [isOpen, selectedOption?.label]);
 
   const visibleOptions = React.useMemo(
     () => filterOptions(currentOptions, searchTerm),
@@ -337,16 +345,18 @@ function SelectFieldControl<
 
   const clearSelection = React.useCallback(() => {
     field.onChange(undefined);
-    setInputValue("");
-    setSearchTerm("");
+    setInputValue((current) => (current === "" ? current : ""));
+    setSearchTerm((current) => (current === "" ? current : ""));
     setIsOpen(true);
   }, [field]);
 
   const selectOption = React.useCallback(
     (option: Option<TValue>) => {
       field.onChange(option.value);
-      setInputValue(option.label);
-      setSearchTerm("");
+      setInputValue((current) =>
+        current === option.label ? current : option.label,
+      );
+      setSearchTerm((current) => (current === "" ? current : ""));
       setIsOpen(false);
     },
     [field],
@@ -384,8 +394,14 @@ function SelectFieldControl<
             type="text"
             value={inputValue}
             onChange={(event) => {
-              setInputValue(event.target.value);
-              setSearchTerm(event.target.value);
+              const nextValue = event.target.value;
+
+              setInputValue((current) =>
+                current === nextValue ? current : nextValue,
+              );
+              setSearchTerm((current) =>
+                current === nextValue ? current : nextValue,
+              );
               setIsOpen(true);
             }}
             onFocus={() => {
@@ -407,8 +423,12 @@ function SelectFieldControl<
               if (event.key === "Escape") {
                 event.preventDefault();
                 setIsOpen(false);
-                setInputValue(selectedOption?.label ?? "");
-                setSearchTerm("");
+                const nextInputValue = selectedOption?.label ?? "";
+
+                setInputValue((current) =>
+                  current === nextInputValue ? current : nextInputValue,
+                );
+                setSearchTerm((current) => (current === "" ? current : ""));
               }
             }}
             ref={field.ref}
@@ -508,8 +528,14 @@ function SelectFieldControl<
                   type="button"
                   onMouseDown={(event) => {
                     event.preventDefault();
-                    setInputValue(selectedOption?.label ?? "");
-                    setSearchTerm("");
+                    const nextInputValue = selectedOption?.label ?? "";
+
+                    setInputValue((current) =>
+                      current === nextInputValue ? current : nextInputValue,
+                    );
+                    setSearchTerm((current) =>
+                      current === "" ? current : "",
+                    );
                     void loadRemoteOptions(baseQuery, "replace");
                   }}
                   className="min-h-9 flex-1 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-slate-900 sm:flex-none"

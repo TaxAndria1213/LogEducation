@@ -5,12 +5,33 @@ import { modules } from "./modules";
 
 
 const Dashboard = lazy(() => import("../pages/dashboard/PreviewDashboard"));
+const InscriptionResumePage = lazy(
+  () => import("../pages/scolarite/inscriptions/InscriptionResumePage"),
+);
+const InscriptionEditPage = lazy(
+  () => import("../pages/scolarite/inscriptions/InscriptionEditPage"),
+);
+const EleveDossierPage = lazy(
+  () => import("../pages/scolarite/eleve/EleveDossierPage"),
+);
 
 
 export const routes: RouteObject[] = [
   {
     index: true,
     element: <Dashboard />,
+  },
+  {
+    path: "/scolarite/inscriptions/:id/resume",
+    element: <InscriptionResumePage />,
+  },
+  {
+    path: "/scolarite/inscriptions/:id/edit",
+    element: <InscriptionEditPage />,
+  },
+  {
+    path: "/scolarite/eleves/:id/dossier",
+    element: <EleveDossierPage />,
   },
   ...getAllRoutes(modules),
 ];

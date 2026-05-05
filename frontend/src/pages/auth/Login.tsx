@@ -18,6 +18,27 @@ function getErrorMessage(error: unknown) {
     "status" in error.response.data &&
     typeof error.response.data.status === "object" &&
     error.response.data.status !== null &&
+    "error" in error.response.data.status &&
+    typeof error.response.data.status.error === "object" &&
+    error.response.data.status.error !== null &&
+    "message" in error.response.data.status.error &&
+    typeof error.response.data.status.error.message === "string"
+  ) {
+    return error.response.data.status.error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "data" in error.response &&
+    typeof error.response.data === "object" &&
+    error.response.data !== null &&
+    "status" in error.response.data &&
+    typeof error.response.data.status === "object" &&
+    error.response.data.status !== null &&
     "message" in error.response.data.status &&
     typeof error.response.data.status.message === "string"
   ) {
@@ -34,6 +55,46 @@ function getErrorMessage(error: unknown) {
   }
 
   return "Echec de la connexion";
+}
+
+function getInactiveAccountRedirect(error: unknown, fallbackEmail: string) {
+  if (
+    typeof error !== "object" ||
+    error === null ||
+    !("response" in error) ||
+    typeof error.response !== "object" ||
+    error.response === null ||
+    !("data" in error.response) ||
+    typeof error.response.data !== "object" ||
+    error.response.data === null ||
+    !("status" in error.response.data) ||
+    typeof error.response.data.status !== "object" ||
+    error.response.data.status === null
+  ) {
+    return null;
+  }
+
+  const status = error.response.data.status as {
+    errorCode?: unknown;
+    redirectTo?: unknown;
+  };
+  const errorCode = typeof status.errorCode === "string" ? status.errorCode : "";
+  const inactiveCodes = [
+    "inactive_account",
+    "pending_owner_registration",
+    "rejected_owner_registration",
+  ];
+
+  if (!inactiveCodes.includes(errorCode)) return null;
+
+  if (typeof status.redirectTo === "string" && status.redirectTo.trim()) {
+    return status.redirectTo.trim();
+  }
+
+  const params = new URLSearchParams();
+  if (fallbackEmail.trim()) params.set("email", fallbackEmail.trim());
+  params.set("status", errorCode);
+  return `/compte-inactif?${params.toString()}`;
 }
 
 export default function Login() {
@@ -73,16 +134,10 @@ export default function Login() {
       navigate(from, { replace: true });
     } catch (err) {
       console.error(err);
-      if (
-        typeof err === "object" &&
-        err !== null &&
-        "response" in err &&
-        ["inactive_account", "pending_owner_registration", "rejected_owner_registration"].includes(
-          (
-            err as { response?: { data?: { status?: { errorCode?: string } } } }
-          ).response?.data?.status?.errorCode ?? "",
-        )
-      ) {
+      const inactiveRedirect = getInactiveAccountRedirect(err, email);
+      if (inactiveRedirect) {
+        localStorage.clear();
+        navigate(inactiveRedirect, { replace: true });
         return;
       }
       alert(getErrorMessage(err));

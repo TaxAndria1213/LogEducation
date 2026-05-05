@@ -165,9 +165,7 @@ class FormuleCantineApp {
         "Erreur lors de la creation de la formule de cantine",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -186,9 +184,7 @@ class FormuleCantineApp {
         "Erreur lors de la recuperation des formules de cantine",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {

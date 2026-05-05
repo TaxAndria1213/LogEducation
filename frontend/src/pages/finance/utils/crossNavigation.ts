@@ -4,7 +4,7 @@ type FinanceNavigationPayload = {
   module: FinanceTargetModule;
   id?: string | null;
   record?: unknown;
-  view?: "detail";
+  view?: "detail" | "add";
   timestamp: number;
 };
 
@@ -38,7 +38,7 @@ export function readFinanceNavigationTarget(module: FinanceTargetModule): Financ
       module,
       id: typeof parsed.id === "string" ? parsed.id : null,
       record: parsed.record,
-      view: parsed.view === "detail" ? "detail" : "detail",
+      view: parsed.view === "add" ? "add" : "detail",
       timestamp: typeof parsed.timestamp === "number" ? parsed.timestamp : Date.now(),
     };
   } catch {

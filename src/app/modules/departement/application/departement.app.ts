@@ -32,7 +32,6 @@ class DepartementApp {
             Response.success(res, "Departement created.", result);
         } catch (error) {
             Response.error(res, "Erreur lors de la création du département", 400, error as Error);
-            next(error);
         }
     }
 
@@ -42,7 +41,6 @@ class DepartementApp {
             Response.success(res, "Departements list.", result);
         } catch (error) {
             Response.error(res, "Erreur lors de la récupération des départements", 400, error as Error);
-            next(error);
         }
     }
 

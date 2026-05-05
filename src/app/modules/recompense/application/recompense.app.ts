@@ -144,7 +144,6 @@ class RecompenseApp {
       Response.success(res, "Recompense creee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de la recompense", 400, error as Error);
-      next(error);
     }
   }
 
@@ -161,7 +160,6 @@ class RecompenseApp {
       Response.success(res, "Recompenses.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des recompenses", 400, error as Error);
-      next(error);
     }
   }
 
@@ -173,7 +171,6 @@ class RecompenseApp {
       Response.success(res, "Recompense detail.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de la recompense", 404, error as Error);
-      next(error);
     }
   }
 
@@ -190,7 +187,6 @@ class RecompenseApp {
       Response.success(res, "Recompense supprimee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression de la recompense", 400, error as Error);
-      next(error);
     }
   }
 
@@ -215,7 +211,6 @@ class RecompenseApp {
       Response.success(res, "Recompense mise a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de la recompense", 400, error as Error);
-      next(error);
     }
   }
 }

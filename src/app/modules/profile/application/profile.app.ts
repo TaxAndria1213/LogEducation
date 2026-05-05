@@ -34,9 +34,7 @@ class ProfileApp {
             if(!result) throw new Error();
             Response.success(res, "Profil creation success.", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la création du profil", 400, error as Error);
-            next(error);
-        }
+            Response.error(res, "Erreur lors de la création du profil", 400, error as Error);        }
     }
 
     private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -44,10 +42,7 @@ class ProfileApp {
             const result = await getAllPaginated(req.query, this.profil);
             Response.success(res, "Profil list.", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la récupération des profils", 400, error as Error);
-
-            next(error);
-        }
+            Response.error(res, "Erreur lors de la récupération des profils", 400, error as Error);        }
     }
     private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
         try {
@@ -55,9 +50,7 @@ class ProfileApp {
             const result = await this.profil.findUnique(id);
             Response.success(res, "Profil result.", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la récupération du profil", 400, error as Error);
-            next(error);
-        }
+            Response.error(res, "Erreur lors de la récupération du profil", 400, error as Error);        }
     }
 
     private async getByCode(req: Request, res: R, next: NextFunction): Promise<void> {

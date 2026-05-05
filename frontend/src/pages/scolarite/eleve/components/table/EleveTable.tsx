@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
 import {
   DataTable,
@@ -13,6 +14,7 @@ import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions"
 export default function EleveList() {
   // const { info } = useInfo();
   const { etablissement_id } = useAuth();
+  const navigate = useNavigate();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new EleveService(), []);
 
@@ -62,10 +64,10 @@ export default function EleveList() {
 
   const actions: RowAction<Eleve>[] = [
     {
-      label: "Voir",
+      label: "Dossier",
       variant: "secondary",
       onClick: (row) => {
-        console.log("voir", row);
+        navigate(`/scolarite/eleves/${row.id}/dossier`);
       },
     },
     {

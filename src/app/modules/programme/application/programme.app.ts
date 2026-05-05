@@ -285,9 +285,7 @@ class ProgrammeApp {
         "Erreur lors de la creation du programme",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -310,9 +308,7 @@ class ProgrammeApp {
         "Erreur lors de la recuperation des programmes",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -351,9 +347,7 @@ class ProgrammeApp {
         "Erreur lors de la recuperation du programme",
         404,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -383,9 +377,7 @@ class ProgrammeApp {
         "Erreur lors de la suppression du programme",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async update(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -452,9 +444,7 @@ class ProgrammeApp {
         "Erreur lors de la mise a jour du programme",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 }
 

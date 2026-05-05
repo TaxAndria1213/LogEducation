@@ -22,6 +22,7 @@ export function Form({
   submitLabel = "Enregistrer",
   submitAlign = "start",
   onValuesChange,
+  syncValues,
 }: {
   schema: any;
   fields: any[];
@@ -32,6 +33,7 @@ export function Form({
   submitLabel?: string;
   submitAlign?: "start" | "end";
   onValuesChange?: (data: Partial<FormValues>) => void;
+  syncValues?: Partial<FormValues>;
 }) {
   const [loading, setLoading] = useState(false);
   const { info } = useInfo();
@@ -62,6 +64,18 @@ export function Form({
     return () => subscription.unsubscribe();
   }, [form, onValuesChange]);
 
+  useEffect(() => {
+    if (!syncValues) return;
+
+    Object.entries(syncValues).forEach(([key, value]) => {
+      form.setValue(key as keyof FormValues, value as FormValues[keyof FormValues], {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+    });
+  }, [form, syncValues]);
+
   const onValid = async (data: FormValues) => {
     setLoading(true);
     try {
@@ -70,7 +84,7 @@ export function Form({
           await dataOnly(data);
         } catch (error) {
           console.log(error);
-          info(`${labelMessage} non cree(e) !`, "error");
+          info(error, "error");
         }
         return;
       }
@@ -80,9 +94,11 @@ export function Form({
         return;
       }
 
-      await service.create(data);
-      info(`${labelMessage} cree(e) avec succes !`, "success");
+      const result = await service.create(data);
+      info(result, "success");
       form.reset(defaultValues);
+    } catch (error) {
+      info(error, "error");
     } finally {
       setLoading(false);
     }

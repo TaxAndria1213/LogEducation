@@ -36,9 +36,7 @@ class SalleApp {
             const result = await this.salleModel.create(body);
             Response.success(res, "Salle created successfully", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la création de la salle", 400, error as Error);
-            next(error);
-        }
+            Response.error(res, "Erreur lors de la création de la salle", 400, error as Error);        }
     }
 
     private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -46,10 +44,7 @@ class SalleApp {
             const result = await getAllPaginated(req.query, this.salleModel);
             Response.success(res, "Salles list.", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la récupération des Salles", 400, error as Error);
-
-            next(error);
-        }
+            Response.error(res, "Erreur lors de la récupération des Salles", 400, error as Error);        }
     }
 
     private async delete(req: Request, res: R, next: NextFunction): Promise<void> {

@@ -31,8 +31,7 @@ class RegleNoteApp {
             const result = await this.regleNote.create(data);
             Response.success(res, "RegleNote created.", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la création de la règle de note", 400, error as Error);
-            next(error);
+            Response.error(res, "Erreur lors de la crï¿½ation de la rï¿½gle de note", 400, error as Error);
         }
     }
 
@@ -41,8 +40,7 @@ class RegleNoteApp {
             const result = await getAllPaginated(req.query, this.regleNote);
             Response.success(res, "Regles de note list.", result);
         } catch (error) {
-            Response.error(res, "Erreur lors de la récupération des règles de notes", 400, error as Error);
-            next(error);
+            Response.error(res, "Erreur lors de la rï¿½cupï¿½ration des rï¿½gles de notes", 400, error as Error);
         }
     }
 

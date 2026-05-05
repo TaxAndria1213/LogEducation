@@ -14,6 +14,7 @@ export async function getAllPaginated(query: ParsedQs, model: PrismaService) {
     const includes = parseStringArray(query.includes);
     const includeSpec = parseJSON<object>(query.includeSpec, null);
     const select = parseJSON<object>(query.select, null);
+    const includeTotal = parseBool(query.includeTotal, true);
 
 
     const result = await model.findManyPaginated({
@@ -25,6 +26,7 @@ export async function getAllPaginated(query: ParsedQs, model: PrismaService) {
         includes,
         includeSpec,
         select,
+        includeTotal,
         maxTake: 5000,
     });
 

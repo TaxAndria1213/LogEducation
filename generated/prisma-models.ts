@@ -8,7 +8,17 @@
  */
 export type StatutCompte = "ACTIF" | "INACTIF" | "SUSPENDU";
 
-export type StatutInscription = "INSCRIT" | "TRANSFERE" | "SORTI";
+export type StatutInscription = "PREINSCRIT" | "INSCRIT" | "EN_ATTENTE_PAIEMENT" | "VALIDEE" | "DOSSIER_INCOMPLET" | "ANNULEE" | "TRANSFERE" | "SUSPENDUE" | "SORTI";
+
+export type TypeInscription = "NOUVELLE_INSCRIPTION" | "REINSCRIPTION" | "TRANSFERT_ENTRANT" | "REDOUBLEMENT" | "PASSAGE_CLASSE_SUPERIEURE";
+
+export type StatutAdministratifInscription = "EN_ATTENTE" | "DOSSIER_INCOMPLET" | "EN_ATTENTE_VERIFICATION" | "VALIDE" | "REJETE" | "ANNULE";
+
+export type StatutFinancierInscription = "NON_FACTURE" | "FACTURE" | "NON_PAYE" | "PARTIELLEMENT_PAYE" | "PAYE" | "EN_RETARD" | "EXONERE" | "ANNULE";
+
+export type StatutDossierInscription = "COMPLET" | "INCOMPLET" | "EN_ATTENTE_VERIFICATION" | "VALIDE" | "REJETE";
+
+export type StatutDocumentInscription = "NON_FOURNI" | "FOURNI" | "EN_ATTENTE_VERIFICATION" | "VALIDE" | "REJETE" | "EXPIRE";
 
 export type StatutPresence = "PRESENT" | "ABSENT" | "RETARD" | "EXCUSE";
 
@@ -61,6 +71,7 @@ export interface Etablissement {
   restrictionsAdministratives?: RestrictionAdministrative[];
   dossiersRecouvrement?: DossierRecouvrement[];
   fichiers?: Fichier[];
+  documentTypesInscription?: DocumentTypeInscription[];
   journauxAudit?: JournalAudit[];
   webhooks?: Webhook[];
   jetons?: JetonIntegration[];
@@ -183,6 +194,7 @@ export interface Utilisateur {
   messagesEnvoyes?: Message[];
   notifications?: Notification[];
   fichiers?: Fichier[];
+  documentsInscriptionVerifies?: InscriptionDocument[];
   journauxAudit?: JournalAudit[];
   facturationsRecurrentes?: FacturationRecurrenteExecution[];
   operationsFinancieres?: OperationFinanciere[];
@@ -206,9 +218,13 @@ export interface Profil {
   prenom: string;
   nom: string;
   date_naissance: Date | null;
+  lieu_naissance: string | null;
+  nationalite: string | null;
   genre: string | null;
   photo_url: string | null;
   adresse: string | null;
+  telephone_personnel: string | null;
+  email_personnel: string | null;
   contact_urgence_json: JsonValue | null;
   created_at: Date;
   updated_at: Date;
@@ -289,6 +305,25 @@ export interface Eleve {
   restrictionsAdministratives?: RestrictionAdministrative[];
   dossiersRecouvrement?: DossierRecouvrement[];
   emprunts?: Emprunt[];
+  profilMedical?: EleveMedicalProfile | null;
+}
+
+export interface EleveMedicalProfile {
+  id: string;
+  eleve_id: string;
+  groupe_sanguin: string | null;
+  allergies: string | null;
+  maladies_particulieres: string | null;
+  traitement_medical: string | null;
+  medecin_traitant: string | null;
+  telephone_medecin: string | null;
+  autorisation_prise_en_charge_medicale: boolean;
+  personne_a_contacter_urgence: string | null;
+  telephone_urgence: string | null;
+  notes_json: JsonValue | null;
+  created_at: Date;
+  updated_at: Date;
+  eleve?: Eleve;
 }
 
 export interface ParentTuteur {
@@ -297,8 +332,11 @@ export interface ParentTuteur {
   utilisateur_id: string | null;
   nom_complet: string;
   telephone: string | null;
+  telephone_secondaire: string | null;
   email: string | null;
   adresse: string | null;
+  profession: string | null;
+  lieu_travail: string | null;
   created_at: Date;
   updated_at: Date;
   etablissement?: Etablissement;
@@ -311,6 +349,9 @@ export interface EleveParentTuteur {
   parent_tuteur_id: string;
   relation: string | null;
   est_principal: boolean;
+  est_responsable_legal: boolean;
+  est_responsable_financier: boolean;
+  est_contact_urgence: boolean;
   autorise_recuperation: boolean;
   eleve?: Eleve;
   parent_tuteur?: ParentTuteur;
@@ -325,6 +366,7 @@ export interface NiveauScolaire {
   updated_at: Date;
   etablissement?: Etablissement;
   classes?: Classe[];
+  inscriptions?: Inscription[];
   programmes?: Programme[];
   catalogueFrais?: CatalogueFrais[];
 }
@@ -336,6 +378,7 @@ export interface Classe {
   niveau_scolaire_id: string;
   site_id: string | null;
   nom: string;
+  capacite: number | null;
   enseignant_principal_id: string | null;
   created_at: Date;
   updated_at: Date;
@@ -354,17 +397,47 @@ export interface Classe {
 export interface Inscription {
   id: string;
   eleve_id: string;
-  classe_id: string;
+  niveau_scolaire_id: string | null;
+  classe_id: string | null;
   annee_scolaire_id: string;
   date_inscription: Date;
+  type_inscription: TypeInscription;
   statut: StatutInscription;
+  statut_administratif: StatutAdministratifInscription;
+  statut_financier: StatutFinancierInscription;
+  statut_dossier: StatutDossierInscription;
+  validation_date: Date | null;
+  completion_rate: Decimal | null;
+  acces_systeme_json: JsonValue | null;
+  consentements_json: JsonValue | null;
+  observations_json: JsonValue | null;
   date_sortie: Date | null;
   raison_sortie: string | null;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;
-  classe?: Classe;
+  niveau?: NiveauScolaire | null;
+  classe?: Classe | null;
   annee?: AnneeScolaire;
+  documents?: InscriptionDocument[];
+  historiqueScolaire?: InscriptionSchoolHistory | null;
+}
+
+export interface InscriptionSchoolHistory {
+  id: string;
+  inscription_id: string;
+  ancien_etablissement: string | null;
+  ancienne_classe: string | null;
+  annee_precedente: string | null;
+  derniere_moyenne: Decimal | null;
+  decision_precedente: string | null;
+  mention_precedente: string | null;
+  motif_transfert: string | null;
+  observations: string | null;
+  reprise_auto: boolean;
+  created_at: Date;
+  updated_at: Date;
+  inscription?: Inscription;
 }
 
 export interface IdentifiantEleve {
@@ -1362,6 +1435,7 @@ export interface Fichier {
   etablissement?: Etablissement;
   proprietaire?: Utilisateur | null;
   liens?: LienFichier[];
+  documentsInscriptions?: InscriptionDocument[];
 }
 
 export interface LienFichier {
@@ -1373,6 +1447,42 @@ export interface LienFichier {
   created_at: Date;
   updated_at: Date;
   fichier?: Fichier;
+}
+
+export interface DocumentTypeInscription {
+  id: string;
+  etablissement_id: string | null;
+  code: string;
+  nom: string;
+  description: string | null;
+  type_inscriptions_json: JsonValue | null;
+  est_obligatoire_par_defaut: boolean;
+  est_actif: boolean;
+  ordre: number | null;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement | null;
+  documents?: InscriptionDocument[];
+}
+
+export interface InscriptionDocument {
+  id: string;
+  inscription_id: string;
+  document_type_id: string;
+  fichier_id: string | null;
+  verifie_par_utilisateur_id: string | null;
+  obligatoire: boolean;
+  fourni: boolean;
+  statut: StatutDocumentInscription;
+  date_depot: Date | null;
+  date_verification: Date | null;
+  commentaire_admin: string | null;
+  created_at: Date;
+  updated_at: Date;
+  inscription?: Inscription;
+  documentType?: DocumentTypeInscription;
+  fichier?: Fichier | null;
+  verifiePar?: Utilisateur | null;
 }
 
 /**

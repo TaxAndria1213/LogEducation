@@ -248,16 +248,44 @@ export default function PaiementTable() {
             include: {
               eleve: { include: { utilisateur: { include: { profil: true } } } },
               annee: true,
-              echeances: true,
-              operationsFinancieres: true,
+              echeances: {
+                select: {
+                  id: true,
+                  ordre: true,
+                  libelle: true,
+                  date_echeance: true,
+                  montant_restant: true,
+                  statut: true,
+                },
+                orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
+              },
             },
           },
           affectations: {
             include: {
-              echeance: true,
+              echeance: {
+                select: {
+                  id: true,
+                  plan_paiement_id: true,
+                  ordre: true,
+                  libelle: true,
+                  date_echeance: true,
+                  statut: true,
+                },
+              },
             },
           },
-          operationsFinancieres: true,
+          operationsFinancieres: {
+            select: {
+              id: true,
+              type: true,
+              montant: true,
+              motif: true,
+              details_json: true,
+              created_at: true,
+            },
+            orderBy: [{ created_at: "desc" }],
+          },
         },
       }}
       showSearch

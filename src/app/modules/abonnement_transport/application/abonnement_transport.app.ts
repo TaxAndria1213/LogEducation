@@ -1700,7 +1700,6 @@ class AbonnementTransportApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de l'abonnement transport", 400, error as Error);
-      next(error);
     }
   }
 
@@ -1729,7 +1728,6 @@ class AbonnementTransportApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors de la validation de la demande transport", 400, error as Error);
-      next(error);
     }
   }
 
@@ -1843,7 +1841,6 @@ class AbonnementTransportApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors du signal de suspension transport par Finance", 400, error as Error);
-      next(error);
     }
   }
 
@@ -1907,7 +1904,6 @@ class AbonnementTransportApp {
       Response.success(res, "Suspension transport validee.", updated);
     } catch (error) {
       Response.error(res, "Erreur lors de la validation de la suspension transport", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2003,7 +1999,6 @@ class AbonnementTransportApp {
       Response.success(res, "Suspension transport rejetee.", updated);
     } catch (error) {
       Response.error(res, "Erreur lors du rejet de la suspension transport", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2041,7 +2036,6 @@ class AbonnementTransportApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des demandes transport a facturer", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2227,7 +2221,6 @@ class AbonnementTransportApp {
       });
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de la liste operationnelle transport", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2527,7 +2520,6 @@ class AbonnementTransportApp {
       });
     } catch (error) {
       Response.error(res, "Erreur lors du rapprochement transport et Finance", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2579,7 +2571,6 @@ class AbonnementTransportApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de l'anomalie", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2642,7 +2633,6 @@ class AbonnementTransportApp {
       });
     } catch (error) {
       Response.error(res, "Erreur lors de l'enregistrement du passage transport", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2690,7 +2680,6 @@ class AbonnementTransportApp {
       Response.success(res, "Abonnement transport lie a la facture Finance.", result);
     } catch (error) {
       Response.error(res, "Erreur lors du rattachement de la facture Finance", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2761,7 +2750,6 @@ class AbonnementTransportApp {
       Response.success(res, "Facturation transport generee par Finance.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la facturation transport par Finance", 400, error as Error);
-      next(error);
     }
   }
 
@@ -2970,7 +2958,6 @@ class AbonnementTransportApp {
       Response.success(res, "Regularisation transport calculee par Finance.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la regularisation transport par Finance", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3132,7 +3119,6 @@ class AbonnementTransportApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de la periode transport", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3162,7 +3148,6 @@ class AbonnementTransportApp {
       });
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des abonnements transport", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3181,7 +3166,6 @@ class AbonnementTransportApp {
       Response.success(res, "Abonnement transport.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de l'abonnement transport", 404, error as Error);
-      next(error);
     }
   }
 
@@ -3234,7 +3218,6 @@ class AbonnementTransportApp {
       Response.success(res, "Abonnement transport mis a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de l'abonnement transport", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3398,7 +3381,6 @@ class AbonnementTransportApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors du changement de circuit transport", 400, error as Error);
-      next(error);
     }
   }
 
@@ -3419,7 +3401,6 @@ class AbonnementTransportApp {
       );
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression de l'abonnement transport", 400, error as Error);
-      next(error);
     }
   }
 }

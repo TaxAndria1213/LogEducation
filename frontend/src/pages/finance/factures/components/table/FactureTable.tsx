@@ -185,12 +185,24 @@ export default function FactureTable() {
           eleve: { include: { utilisateur: { include: { profil: true } } } },
           annee: true,
           remise: true,
-          factureOrigine: true,
-          avoirs: true,
-          lignes: { include: { frais: true } },
-          paiements: true,
-          operationsFinancieres: true,
-          echeances: { include: { affectations: true }, orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }] },
+          paiements: {
+            select: {
+              id: true,
+              statut: true,
+              montant: true,
+            },
+          },
+          echeances: {
+            select: {
+              id: true,
+              plan_paiement_id: true,
+              ordre: true,
+              date_echeance: true,
+              montant_restant: true,
+              statut: true,
+            },
+            orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
+          },
         },
       }}
       showSearch

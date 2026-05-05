@@ -1,4 +1,4 @@
-import express, { Application } from "express";
+import express, { Application, NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
@@ -28,7 +28,7 @@ class Server {
             this.systemApp.use(morgan("dev"));
         }
         this.systemApp.use(cors());
-        this.systemApp.use(express.json());
+        this.systemApp.use(express.json({ limit: "15mb" }));
         this.systemApp.use(express.urlencoded({ extended: true }));
         this.systemApp.use("/system-api", (req, res, next) => {
             if (
@@ -41,6 +41,19 @@ class Server {
             }
             Promise.resolve(authGuard.handle(req, res, next)).catch(next);
         }, new SystemApiRoutes(this.systemApp).routes());
+
+        this.systemApp.use((err: Error & { statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
+            if (res.headersSent || res.locals.errorHandled) {
+                return;
+            }
+
+            console.error("System API error:", err);
+            res.status(err.statusCode || 500).json({
+                success: false,
+                message: err.message || "Internal Server Error",
+                ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+            });
+        });
     }
 
     public static getInstance(): Server {

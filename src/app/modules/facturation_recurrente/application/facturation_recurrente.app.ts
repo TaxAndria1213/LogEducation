@@ -50,7 +50,6 @@ class FacturationRecurrenteApp {
       Response.success(res, "Facturation recurrente generee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la generation de la facturation recurrente", 400, error as Error);
-      next(error);
     }
   }
 
@@ -72,7 +71,6 @@ class FacturationRecurrenteApp {
       Response.success(res, "Historique de la facturation recurrente.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de l'historique de facturation recurrente", 400, error as Error);
-      next(error);
     }
   }
 
@@ -93,7 +91,6 @@ class FacturationRecurrenteApp {
       Response.success(res, "Preparation de la facturation recurrente.", result);
     } catch (error) {
       Response.error(res, "Erreur lors du controle de preparation de la facturation recurrente", 400, error as Error);
-      next(error);
     }
   }
 }

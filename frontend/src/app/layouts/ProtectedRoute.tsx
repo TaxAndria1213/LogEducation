@@ -13,7 +13,10 @@ export default function ProtectedRoute() {
   }
 
   if (user.statut === "INACTIF") {
-    return <Navigate to="/compte-inactif" replace />;
+    const params = new URLSearchParams();
+    if (user.email) params.set("email", user.email);
+    params.set("status", "inactive_account");
+    return <Navigate to={`/compte-inactif?${params.toString()}`} replace />;
   }
   return (
     <Suspense fallback={<Loading message="Chargement..." />}>

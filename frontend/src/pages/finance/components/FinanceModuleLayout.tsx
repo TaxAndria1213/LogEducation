@@ -32,6 +32,11 @@ type Props = {
   description: string;
   currentModule: FinanceModuleKey;
   eyebrow?: string;
+  backButton?: {
+    to?: string;
+    onClick?: () => void;
+    label?: string;
+  } | null;
   localViews?: LocalView[];
   heroHighlights?: FinanceHeroHighlight[];
   heroActions?: FinanceHeroAction[];
@@ -43,6 +48,7 @@ export default function FinanceModuleLayout({
   title,
   description,
   currentModule,
+  backButton = null,
   localViews = [],
   children,
 }: Props) {
@@ -134,6 +140,7 @@ export default function FinanceModuleLayout({
     <ERPPage
       title={title}
       description={description}
+      backButton={backButton}
       headerActions={
         hasViewMenu
           ? [

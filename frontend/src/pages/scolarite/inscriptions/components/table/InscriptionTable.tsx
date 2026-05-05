@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { ColumnDef, RowAction } from "../../../../../shared/table/types";
 import {
   DataTable,
@@ -15,6 +16,7 @@ import ClasseService from "../../../../../services/classe.service";
 export default function InscriptionList() {
   const { etablissement_id } = useAuth();
   const { info } = useInfo();
+  const navigate = useNavigate();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new InscriptionService(), []);
   const [classeOptions, setClasseOptions] = useState<Array<{ id: string; nom: string; annee_scolaire_id?: string | null }>>([]);
@@ -88,10 +90,10 @@ export default function InscriptionList() {
 
   const actions: RowAction<Inscription>[] = [
     {
-      label: "Voir",
+      label: "Validation",
       variant: "secondary",
       onClick: (row) => {
-        console.log("voir", row.id);
+        navigate(`/scolarite/inscriptions/${row.id}/resume`);
       },
     },
     {

@@ -314,6 +314,50 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Remise"
       },
+      "reglesRecouvrement": {
+        "key": "reglesRecouvrement",
+        "typeText": "RegleRecouvrementFinance[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RegleRecouvrementFinance"
+      },
+      "promessesPaiement": {
+        "key": "promessesPaiement",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
+      },
+      "restrictionsAdministratives": {
+        "key": "restrictionsAdministratives",
+        "typeText": "RestrictionAdministrative[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RestrictionAdministrative"
+      },
+      "dossiersRecouvrement": {
+        "key": "dossiersRecouvrement",
+        "typeText": "DossierRecouvrement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DossierRecouvrement"
+      },
       "fichiers": {
         "key": "fichiers",
         "typeText": "Fichier[]",
@@ -324,6 +368,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Fichier"
+      },
+      "documentTypesInscription": {
+        "key": "documentTypesInscription",
+        "typeText": "DocumentTypeInscription[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DocumentTypeInscription"
       },
       "journauxAudit": {
         "key": "journauxAudit",
@@ -886,6 +941,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "AbonnementCantine"
+      },
+      "promessesPaiement": {
+        "key": "promessesPaiement",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
+      },
+      "restrictionsAdministratives": {
+        "key": "restrictionsAdministratives",
+        "typeText": "RestrictionAdministrative[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RestrictionAdministrative"
+      },
+      "dossiersRecouvrement": {
+        "key": "dossiersRecouvrement",
+        "typeText": "DossierRecouvrement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DossierRecouvrement"
       }
     }
   },
@@ -1578,6 +1666,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Fichier"
       },
+      "documentsInscriptionVerifies": {
+        "key": "documentsInscriptionVerifies",
+        "typeText": "InscriptionDocument[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "InscriptionDocument"
+      },
       "journauxAudit": {
         "key": "journauxAudit",
         "typeText": "JournalAudit[]",
@@ -1610,6 +1709,94 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "OperationFinanciere"
+      },
+      "cataloguesFraisApprouves": {
+        "key": "cataloguesFraisApprouves",
+        "typeText": "CatalogueFrais[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "CatalogueFrais"
+      },
+      "reglesRecouvrementApprouvees": {
+        "key": "reglesRecouvrementApprouvees",
+        "typeText": "RegleRecouvrementFinance[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RegleRecouvrementFinance"
+      },
+      "promessesPaiementCreees": {
+        "key": "promessesPaiementCreees",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
+      },
+      "promessesPaiementValidees": {
+        "key": "promessesPaiementValidees",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
+      },
+      "restrictionsAdministrativesCreees": {
+        "key": "restrictionsAdministrativesCreees",
+        "typeText": "RestrictionAdministrative[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RestrictionAdministrative"
+      },
+      "restrictionsAdministrativesLevees": {
+        "key": "restrictionsAdministrativesLevees",
+        "typeText": "RestrictionAdministrative[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RestrictionAdministrative"
+      },
+      "dossiersRecouvrementCrees": {
+        "key": "dossiersRecouvrementCrees",
+        "typeText": "DossierRecouvrement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DossierRecouvrement"
+      },
+      "dossiersRecouvrementValides": {
+        "key": "dossiersRecouvrementValides",
+        "typeText": "DossierRecouvrement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DossierRecouvrement"
       },
       "Eleve": {
         "key": "Eleve",
@@ -2540,6 +2727,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "AbonnementCantine"
       },
+      "promessesPaiement": {
+        "key": "promessesPaiement",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
+      },
+      "restrictionsAdministratives": {
+        "key": "restrictionsAdministratives",
+        "typeText": "RestrictionAdministrative[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RestrictionAdministrative"
+      },
+      "dossiersRecouvrement": {
+        "key": "dossiersRecouvrement",
+        "typeText": "DossierRecouvrement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DossierRecouvrement"
+      },
       "emprunts": {
         "key": "emprunts",
         "typeText": "Emprunt[]",
@@ -2567,7 +2787,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Informations principales",
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
-          "nom_complet"
+          "nom_complet",
+          "profession"
         ]
       },
       {
@@ -2576,6 +2797,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Coordonnees et informations de communication.",
         "fields": [
           "telephone",
+          "telephone_secondaire",
           "email",
           "adresse"
         ]
@@ -2637,6 +2859,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "telephone_secondaire": {
+        "key": "telephone_secondaire",
+        "typeText": "string | null",
+        "kind": "phone",
+        "group": "contact",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "email": {
         "key": "email",
         "typeText": "string | null",
@@ -2653,6 +2886,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "string | null",
         "kind": "text",
         "group": "contact",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "profession": {
+        "key": "profession",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -2730,7 +2974,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "fields": [
           "relation",
           "est_principal",
+          "est_responsable_legal",
+          "est_responsable_financier",
           "autorise_recuperation"
+        ]
+      },
+      {
+        "key": "contact",
+        "title": "Contacts et coordination",
+        "description": "Coordonnees et informations de communication.",
+        "fields": [
+          "est_contact_urgence"
         ]
       }
     ],
@@ -2773,6 +3027,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "boolean",
         "kind": "boolean",
         "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "est_responsable_legal": {
+        "key": "est_responsable_legal",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "est_responsable_financier": {
+        "key": "est_responsable_financier",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "est_contact_urgence": {
+        "key": "est_contact_urgence",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "contact",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -2921,6 +3208,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Classe"
+      },
+      "inscriptions": {
+        "key": "inscriptions",
+        "typeText": "Inscription[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Inscription"
       },
       "programmes": {
         "key": "programmes",
@@ -3182,15 +3480,22 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
     "summaryFields": [
       "statut",
       "date_inscription",
-      "date_sortie"
+      "statut_administratif",
+      "statut_financier"
     ],
     "spotlightFields": [
       "date_inscription",
       "statut",
-      "date_sortie"
+      "statut_administratif",
+      "statut_financier",
+      "statut_dossier",
+      "validation_date"
     ],
     "statusFields": [
-      "statut"
+      "statut",
+      "statut_administratif",
+      "statut_financier",
+      "statut_dossier"
     ],
     "groups": [
       {
@@ -3199,7 +3504,16 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Repere temporel du dossier et de sa validite.",
         "fields": [
           "date_inscription",
+          "validation_date",
           "date_sortie"
+        ]
+      },
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "type_inscription"
         ]
       },
       {
@@ -3207,7 +3521,18 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Statuts et decisions",
         "description": "Etat courant, decisions et synchronisation metier.",
         "fields": [
-          "statut"
+          "statut",
+          "statut_administratif",
+          "statut_financier",
+          "statut_dossier"
+        ]
+      },
+      {
+        "key": "financial",
+        "title": "Montants et droits",
+        "description": "Montants, soldes, tarifs et valeurs chiffrees.",
+        "fields": [
+          "completion_rate"
         ]
       },
       {
@@ -3242,9 +3567,20 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "niveau_scolaire_id": {
+        "key": "niveau_scolaire_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
       "classe_id": {
         "key": "classe_id",
-        "typeText": "string",
+        "typeText": "string | null",
         "kind": "technical",
         "group": "technical",
         "isOptional": false,
@@ -3275,11 +3611,77 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "type_inscription": {
+        "key": "type_inscription",
+        "typeText": "TypeInscription",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "statut": {
         "key": "statut",
         "typeText": "StatutInscription",
         "kind": "status",
         "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "statut_administratif": {
+        "key": "statut_administratif",
+        "typeText": "StatutAdministratifInscription",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "statut_financier": {
+        "key": "statut_financier",
+        "typeText": "StatutFinancierInscription",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "statut_dossier": {
+        "key": "statut_dossier",
+        "typeText": "StatutDossierInscription",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validation_date": {
+        "key": "validation_date",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "completion_rate": {
+        "key": "completion_rate",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -3341,9 +3743,20 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Eleve"
       },
+      "niveau": {
+        "key": "niveau",
+        "typeText": "NiveauScolaire | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "NiveauScolaire"
+      },
       "classe": {
         "key": "classe",
-        "typeText": "Classe",
+        "typeText": "Classe | null",
         "kind": "relation",
         "group": "relations",
         "isOptional": true,
@@ -3362,6 +3775,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "AnneeScolaire"
+      },
+      "documents": {
+        "key": "documents",
+        "typeText": "InscriptionDocument[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "InscriptionDocument"
       }
     }
   },
@@ -8004,7 +8428,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Types et categories",
         "description": "Types, modes et dimensions de classement.",
         "fields": [
-          "usage_scope"
+          "usage_scope",
+          "mode_facturation"
         ]
       },
       {
@@ -8017,7 +8442,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
           "nombre_tranches",
           "est_recurrent",
           "periodicite",
-          "prorata_eligible"
+          "prorata_eligible",
+          "plan_paiement_defaut_code"
         ]
       },
       {
@@ -8042,7 +8468,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Donnees structurees",
         "description": "Blocs JSON et configurations structurees.",
         "fields": [
-          "eligibilite_json"
+          "eligibilite_json",
+          "plans_paiement_autorises_json"
         ]
       },
       {
@@ -8162,6 +8589,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "mode_facturation": {
+        "key": "mode_facturation",
+        "typeText": "string",
+        "kind": "text",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "est_recurrent": {
         "key": "est_recurrent",
         "typeText": "boolean",
@@ -8200,6 +8638,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "JsonValue | null",
         "kind": "json",
         "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "plans_paiement_autorises_json": {
+        "key": "plans_paiement_autorises_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "plan_paiement_defaut_code": {
+        "key": "plan_paiement_defaut_code",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -8315,6 +8775,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "FactureLigne"
+      },
+      "lignesTransport": {
+        "key": "lignesTransport",
+        "typeText": "LigneTransport[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "LigneTransport"
+      },
+      "formulesCantine": {
+        "key": "formulesCantine",
+        "typeText": "FormuleCantine[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "FormuleCantine"
       },
       "executionsRecurrentes": {
         "key": "executionsRecurrentes",
@@ -8466,6 +8948,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "EcheancePaiement"
+      },
+      "promessesPaiement": {
+        "key": "promessesPaiement",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
+      },
+      "restrictionsAdministratives": {
+        "key": "restrictionsAdministratives",
+        "typeText": "RestrictionAdministrative[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RestrictionAdministrative"
+      },
+      "dossiersRecouvrement": {
+        "key": "dossiersRecouvrement",
+        "typeText": "DossierRecouvrement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DossierRecouvrement"
       }
     }
   },
@@ -9045,6 +9560,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "EcheancePaiement"
       },
+      "abonnementsTransport": {
+        "key": "abonnementsTransport",
+        "typeText": "AbonnementTransport[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AbonnementTransport"
+      },
+      "abonnementsCantine": {
+        "key": "abonnementsCantine",
+        "typeText": "AbonnementCantine[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AbonnementCantine"
+      },
       "executionsRecurrentes": {
         "key": "executionsRecurrentes",
         "typeText": "FacturationRecurrenteExecution[]",
@@ -9066,6 +9603,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "OperationFinanciere"
+      },
+      "promessesPaiement": {
+        "key": "promessesPaiement",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
+      },
+      "restrictionsAdministratives": {
+        "key": "restrictionsAdministratives",
+        "typeText": "RestrictionAdministrative[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RestrictionAdministrative"
+      },
+      "dossiersRecouvrement": {
+        "key": "dossiersRecouvrement",
+        "typeText": "DossierRecouvrement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DossierRecouvrement"
       }
     }
   },
@@ -9575,6 +10145,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "abonnement_cantine_id": {
+        "key": "abonnement_cantine_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
       "cree_par_utilisateur_id": {
         "key": "cree_par_utilisateur_id",
         "typeText": "string | null",
@@ -9684,6 +10265,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Paiement"
+      },
+      "abonnementCantine": {
+        "key": "abonnementCantine",
+        "typeText": "AbonnementCantine | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AbonnementCantine"
       },
       "createur": {
         "key": "createur",
@@ -9997,6 +10589,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "PaiementEcheanceAffectation"
+      },
+      "promessesPaiement": {
+        "key": "promessesPaiement",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
       }
     }
   },
@@ -10270,6 +10873,1268 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "PlanPaiementEleve"
+      }
+    }
+  },
+  "RegleRecouvrementFinance": {
+    "name": "RegleRecouvrementFinance",
+    "titleFields": [
+      "nom"
+    ],
+    "summaryFields": [
+      "penalite_valeur",
+      "statut_validation",
+      "approuve_le"
+    ],
+    "spotlightFields": [
+      "penalite_valeur",
+      "statut_validation",
+      "approuve_le"
+    ],
+    "statusFields": [
+      "statut_validation"
+    ],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "nom",
+          "jours_grace",
+          "penalite_active"
+        ]
+      },
+      {
+        "key": "structured",
+        "title": "Donnees structurees",
+        "description": "Blocs JSON et configurations structurees.",
+        "fields": [
+          "relance_jours_json"
+        ]
+      },
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "penalite_mode"
+        ]
+      },
+      {
+        "key": "financial",
+        "title": "Montants et droits",
+        "description": "Montants, soldes, tarifs et valeurs chiffrees.",
+        "fields": [
+          "penalite_valeur"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "statut_validation"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "approuve_le"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "motif_rejet"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "nom": {
+        "key": "nom",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "jours_grace": {
+        "key": "jours_grace",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "relance_jours_json": {
+        "key": "relance_jours_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "penalite_active": {
+        "key": "penalite_active",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "penalite_mode": {
+        "key": "penalite_mode",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "penalite_valeur": {
+        "key": "penalite_valeur",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "statut_validation": {
+        "key": "statut_validation",
+        "typeText": "string",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "approuve_par_utilisateur_id": {
+        "key": "approuve_par_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "approuve_le": {
+        "key": "approuve_le",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "motif_rejet": {
+        "key": "motif_rejet",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "approbateur": {
+        "key": "approbateur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
+      }
+    }
+  },
+  "PromessePaiement": {
+    "name": "PromessePaiement",
+    "titleFields": [],
+    "summaryFields": [
+      "statut",
+      "montant_promis",
+      "date_promesse",
+      "date_limite"
+    ],
+    "spotlightFields": [
+      "montant_promis",
+      "date_promesse",
+      "date_limite",
+      "statut",
+      "tenue_le",
+      "rompue_le"
+    ],
+    "statusFields": [
+      "statut"
+    ],
+    "groups": [
+      {
+        "key": "financial",
+        "title": "Montants et droits",
+        "description": "Montants, soldes, tarifs et valeurs chiffrees.",
+        "fields": [
+          "montant_promis"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "date_promesse",
+          "date_limite",
+          "tenue_le",
+          "rompue_le",
+          "annulee_le"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "statut"
+        ]
+      },
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "canal"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "note"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "eleve_id": {
+        "key": "eleve_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "annee_scolaire_id": {
+        "key": "annee_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "facture_id": {
+        "key": "facture_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "plan_paiement_id": {
+        "key": "plan_paiement_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "echeance_paiement_id": {
+        "key": "echeance_paiement_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "montant_promis": {
+        "key": "montant_promis",
+        "typeText": "Decimal",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_promesse": {
+        "key": "date_promesse",
+        "typeText": "Date",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_limite": {
+        "key": "date_limite",
+        "typeText": "Date",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "statut": {
+        "key": "statut",
+        "typeText": "StatutPromessePaiement",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "canal": {
+        "key": "canal",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "note": {
+        "key": "note",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "tenue_le": {
+        "key": "tenue_le",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "rompue_le": {
+        "key": "rompue_le",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "annulee_le": {
+        "key": "annulee_le",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "cree_par_utilisateur_id": {
+        "key": "cree_par_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "valide_par_utilisateur_id": {
+        "key": "valide_par_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "eleve": {
+        "key": "eleve",
+        "typeText": "Eleve",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Eleve"
+      },
+      "annee": {
+        "key": "annee",
+        "typeText": "AnneeScolaire",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AnneeScolaire"
+      },
+      "facture": {
+        "key": "facture",
+        "typeText": "Facture | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Facture"
+      },
+      "planPaiement": {
+        "key": "planPaiement",
+        "typeText": "PlanPaiementEleve | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PlanPaiementEleve"
+      },
+      "echeance": {
+        "key": "echeance",
+        "typeText": "EcheancePaiement | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "EcheancePaiement"
+      },
+      "createur": {
+        "key": "createur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
+      },
+      "validateur": {
+        "key": "validateur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
+      }
+    }
+  },
+  "RestrictionAdministrative": {
+    "name": "RestrictionAdministrative",
+    "titleFields": [
+      "type"
+    ],
+    "summaryFields": [
+      "statut",
+      "date_activation",
+      "date_levee"
+    ],
+    "spotlightFields": [
+      "type",
+      "statut",
+      "date_activation",
+      "date_levee"
+    ],
+    "statusFields": [
+      "statut"
+    ],
+    "groups": [
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "type"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "statut"
+        ]
+      },
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "source"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "motif"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "date_activation",
+          "date_levee"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "eleve_id": {
+        "key": "eleve_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "annee_scolaire_id": {
+        "key": "annee_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "facture_id": {
+        "key": "facture_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "plan_paiement_id": {
+        "key": "plan_paiement_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "type": {
+        "key": "type",
+        "typeText": "TypeRestrictionAdministrative",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "statut": {
+        "key": "statut",
+        "typeText": "StatutRestrictionAdministrative",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "source": {
+        "key": "source",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "motif": {
+        "key": "motif",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_activation": {
+        "key": "date_activation",
+        "typeText": "Date",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_levee": {
+        "key": "date_levee",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "cree_par_utilisateur_id": {
+        "key": "cree_par_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "levee_par_utilisateur_id": {
+        "key": "levee_par_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "eleve": {
+        "key": "eleve",
+        "typeText": "Eleve",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Eleve"
+      },
+      "annee": {
+        "key": "annee",
+        "typeText": "AnneeScolaire",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AnneeScolaire"
+      },
+      "facture": {
+        "key": "facture",
+        "typeText": "Facture | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Facture"
+      },
+      "planPaiement": {
+        "key": "planPaiement",
+        "typeText": "PlanPaiementEleve | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PlanPaiementEleve"
+      },
+      "createur": {
+        "key": "createur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
+      },
+      "leveur": {
+        "key": "leveur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
+      }
+    }
+  },
+  "DossierRecouvrement": {
+    "name": "DossierRecouvrement",
+    "titleFields": [],
+    "summaryFields": [
+      "statut",
+      "montant_reference",
+      "date_statut",
+      "valide_le"
+    ],
+    "spotlightFields": [
+      "statut",
+      "montant_reference",
+      "date_statut",
+      "valide_le"
+    ],
+    "statusFields": [
+      "statut"
+    ],
+    "groups": [
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "statut"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "motif",
+          "note"
+        ]
+      },
+      {
+        "key": "financial",
+        "title": "Montants et droits",
+        "description": "Montants, soldes, tarifs et valeurs chiffrees.",
+        "fields": [
+          "montant_reference"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "date_statut",
+          "valide_le"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "eleve_id": {
+        "key": "eleve_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "annee_scolaire_id": {
+        "key": "annee_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "facture_id": {
+        "key": "facture_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "plan_paiement_id": {
+        "key": "plan_paiement_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "statut": {
+        "key": "statut",
+        "typeText": "StatutDossierRecouvrement",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "motif": {
+        "key": "motif",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "note": {
+        "key": "note",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "montant_reference": {
+        "key": "montant_reference",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_statut": {
+        "key": "date_statut",
+        "typeText": "Date",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "cree_par_utilisateur_id": {
+        "key": "cree_par_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "valide_par_utilisateur_id": {
+        "key": "valide_par_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "valide_le": {
+        "key": "valide_le",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "eleve": {
+        "key": "eleve",
+        "typeText": "Eleve",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Eleve"
+      },
+      "annee": {
+        "key": "annee",
+        "typeText": "AnneeScolaire",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AnneeScolaire"
+      },
+      "facture": {
+        "key": "facture",
+        "typeText": "Facture | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Facture"
+      },
+      "planPaiement": {
+        "key": "planPaiement",
+        "typeText": "PlanPaiementEleve | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PlanPaiementEleve"
+      },
+      "createur": {
+        "key": "createur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
+      },
+      "validateur": {
+        "key": "validateur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
       }
     }
   },
@@ -10901,23 +12766,18 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
     "titleFields": [],
     "summaryFields": [
       "statut",
-      "finance_status",
-      "access_status",
       "date_debut_service",
-      "date_fin_service"
+      "date_fin_service",
+      "prorata_ratio"
     ],
     "spotlightFields": [
       "statut",
       "date_debut_service",
       "date_fin_service",
-      "finance_status",
-      "access_status",
-      "derniere_reactivation_financiere"
+      "prorata_ratio"
     ],
     "statusFields": [
-      "statut",
-      "finance_status",
-      "access_status"
+      "statut"
     ],
     "groups": [
       {
@@ -10926,8 +12786,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
           "zone_transport",
-          "a_facturer",
-          "prorata_ratio"
+          "a_facturer"
         ]
       },
       {
@@ -10935,9 +12794,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Statuts et decisions",
         "description": "Etat courant, decisions et synchronisation metier.",
         "fields": [
-          "statut",
-          "finance_status",
-          "access_status"
+          "statut"
         ]
       },
       {
@@ -10946,8 +12803,15 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Repere temporel du dossier et de sa validite.",
         "fields": [
           "date_debut_service",
-          "date_fin_service",
-          "derniere_reactivation_financiere"
+          "date_fin_service"
+        ]
+      },
+      {
+        "key": "financial",
+        "title": "Montants et droits",
+        "description": "Montants, soldes, tarifs et valeurs chiffrees.",
+        "fields": [
+          "prorata_ratio"
         ]
       }
     ],
@@ -11031,10 +12895,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "a_facturer": {
         "key": "a_facturer",
-        "typeText": "boolean | null",
+        "typeText": "boolean",
         "kind": "boolean",
         "group": "general",
-        "isOptional": true,
+        "isOptional": false,
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
@@ -11075,43 +12939,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "prorata_ratio": {
         "key": "prorata_ratio",
-        "typeText": "number | null",
-        "kind": "number",
-        "group": "general",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
         "isOptional": false,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
-      "finance_status": {
-        "key": "finance_status",
-        "typeText": "string | null",
-        "kind": "status",
-        "group": "status",
-        "isOptional": true,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
-      "access_status": {
-        "key": "access_status",
-        "typeText": "string | null",
-        "kind": "status",
-        "group": "status",
-        "isOptional": true,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
-      "derniere_reactivation_financiere": {
-        "key": "derniere_reactivation_financiere",
-        "typeText": "Date | null",
-        "kind": "date",
-        "group": "dates",
-        "isOptional": true,
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
@@ -11426,6 +13257,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": false,
         "isTechnical": true,
         "relatedModel": null
+      },
+      "abonnementTransport": {
+        "key": "abonnementTransport",
+        "typeText": "AbonnementTransport",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AbonnementTransport"
       }
     }
   },
@@ -11495,8 +13337,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "type_formule": {
         "key": "type_formule",
-        "typeText": "\"FORFAIT\" | \"REPAS_UNITAIRE\" | \"ABONNEMENT\" | \"AUTRE\"",
-        "kind": "enum",
+        "typeText": "string",
+        "kind": "text",
         "group": "classification",
         "isOptional": false,
         "isArray": false,
@@ -11550,8 +13392,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "mode_regularisation_absence": {
         "key": "mode_regularisation_absence",
-        "typeText": "\"AVOIR\" | \"REPORT\" | \"REMBOURSEMENT\" | \"AJUSTEMENT\"",
-        "kind": "enum",
+        "typeText": "string",
+        "kind": "text",
         "group": "classification",
         "isOptional": false,
         "isArray": false,
@@ -11581,17 +13423,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
-      "frais": {
-        "key": "frais",
-        "typeText": "CatalogueFrais | null",
-        "kind": "relation",
-        "group": "relations",
-        "isOptional": true,
-        "isArray": false,
-        "isRelation": true,
-        "isTechnical": false,
-        "relatedModel": "CatalogueFrais"
-      },
       "abonnements": {
         "key": "abonnements",
         "typeText": "AbonnementCantine[]",
@@ -11602,6 +13433,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "AbonnementCantine"
+      },
+      "frais": {
+        "key": "frais",
+        "typeText": "CatalogueFrais | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "CatalogueFrais"
       },
       "historiquesAncienneFormule": {
         "key": "historiquesAncienneFormule",
@@ -11633,13 +13475,12 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
     "summaryFields": [
       "statut",
       "date_effet",
-      "derniere_reactivation_financiere",
-      "solde_prepaye"
+      "solde_prepaye",
+      "solde_min_alerte"
     ],
     "spotlightFields": [
       "date_effet",
       "statut",
-      "derniere_reactivation_financiere",
       "solde_prepaye",
       "solde_min_alerte",
       "dernier_rechargement_le"
@@ -11662,7 +13503,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Repere temporel du dossier et de sa validite.",
         "fields": [
           "date_effet",
-          "derniere_reactivation_financiere",
           "dernier_rechargement_le"
         ]
       },
@@ -11754,20 +13594,9 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
-      "derniere_reactivation_financiere": {
-        "key": "derniere_reactivation_financiere",
-        "typeText": "Date | null",
-        "kind": "date",
-        "group": "dates",
-        "isOptional": true,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
       "solde_prepaye": {
         "key": "solde_prepaye",
-        "typeText": "number",
+        "typeText": "Decimal",
         "kind": "money",
         "group": "financial",
         "isOptional": false,
@@ -11778,7 +13607,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "solde_min_alerte": {
         "key": "solde_min_alerte",
-        "typeText": "number",
+        "typeText": "Decimal",
         "kind": "money",
         "group": "financial",
         "isOptional": false,
@@ -11863,6 +13692,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Facture"
+      },
+      "operationsFinancieres": {
+        "key": "operationsFinancieres",
+        "typeText": "OperationFinanciere[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "OperationFinanciere"
       },
       "historiquesFormule": {
         "key": "historiquesFormule",
@@ -12439,8 +14279,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "type_evenement": {
         "key": "type_evenement",
-        "typeText": "\"ABSENCE\" | \"ANNULATION\"",
-        "kind": "enum",
+        "typeText": "string",
+        "kind": "text",
         "group": "classification",
         "isOptional": false,
         "isArray": false,
@@ -12461,7 +14301,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "etat_metier": {
         "key": "etat_metier",
-        "typeText": "\"SIGNALEE\" | \"EN_ATTENTE_REGULARISATION_FINANCE\" | \"REGULARISATION_TRAITEE\" | \"CLOTUREE_SANS_REGULARISATION\"",
+        "typeText": "string",
         "kind": "status",
         "group": "status",
         "isOptional": false,
@@ -12516,8 +14356,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "mode_regularisation_suggere": {
         "key": "mode_regularisation_suggere",
-        "typeText": "\"AVOIR\" | \"REPORT\" | \"REMBOURSEMENT\" | \"AJUSTEMENT\" | null",
-        "kind": "enum",
+        "typeText": "string | null",
+        "kind": "text",
         "group": "classification",
         "isOptional": false,
         "isArray": false,
@@ -12549,8 +14389,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "decision_finance": {
         "key": "decision_finance",
-        "typeText": "\"AVOIR\" | \"REPORT\" | \"REMBOURSEMENT\" | \"AJUSTEMENT\" | \"REFUS_REGULARISATION\" | null",
-        "kind": "enum",
+        "typeText": "string | null",
+        "kind": "text",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -12804,6 +14644,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "LienFichier"
+      },
+      "documentsInscriptions": {
+        "key": "documentsInscriptions",
+        "typeText": "InscriptionDocument[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "InscriptionDocument"
       }
     }
   },
@@ -12920,6 +14771,428 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Fichier"
+      }
+    }
+  },
+  "DocumentTypeInscription": {
+    "name": "DocumentTypeInscription",
+    "titleFields": [
+      "nom",
+      "code"
+    ],
+    "summaryFields": [],
+    "spotlightFields": [
+      "code"
+    ],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "code",
+          "nom",
+          "est_obligatoire_par_defaut",
+          "est_actif",
+          "ordre"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "description"
+        ]
+      },
+      {
+        "key": "structured",
+        "title": "Donnees structurees",
+        "description": "Blocs JSON et configurations structurees.",
+        "fields": [
+          "type_inscriptions_json"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "code": {
+        "key": "code",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "nom": {
+        "key": "nom",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "description": {
+        "key": "description",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "type_inscriptions_json": {
+        "key": "type_inscriptions_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "est_obligatoire_par_defaut": {
+        "key": "est_obligatoire_par_defaut",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "est_actif": {
+        "key": "est_actif",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "ordre": {
+        "key": "ordre",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "documents": {
+        "key": "documents",
+        "typeText": "InscriptionDocument[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "InscriptionDocument"
+      }
+    }
+  },
+  "InscriptionDocument": {
+    "name": "InscriptionDocument",
+    "titleFields": [],
+    "summaryFields": [
+      "statut",
+      "date_depot",
+      "date_verification"
+    ],
+    "spotlightFields": [
+      "statut",
+      "date_depot",
+      "date_verification"
+    ],
+    "statusFields": [
+      "statut"
+    ],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "obligatoire",
+          "fourni",
+          "commentaire_admin"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "statut"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "date_depot",
+          "date_verification"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "inscription_id": {
+        "key": "inscription_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "document_type_id": {
+        "key": "document_type_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "fichier_id": {
+        "key": "fichier_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "verifie_par_utilisateur_id": {
+        "key": "verifie_par_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "obligatoire": {
+        "key": "obligatoire",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "fourni": {
+        "key": "fourni",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "statut": {
+        "key": "statut",
+        "typeText": "StatutDocumentInscription",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_depot": {
+        "key": "date_depot",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_verification": {
+        "key": "date_verification",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "commentaire_admin": {
+        "key": "commentaire_admin",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "inscription": {
+        "key": "inscription",
+        "typeText": "Inscription",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Inscription"
+      },
+      "documentType": {
+        "key": "documentType",
+        "typeText": "DocumentTypeInscription",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DocumentTypeInscription"
+      },
+      "fichier": {
+        "key": "fichier",
+        "typeText": "Fichier | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Fichier"
+      },
+      "verifiePar": {
+        "key": "verifiePar",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
       }
     }
   },
@@ -13397,16 +15670,16 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       "finance_status",
       "access_status",
       "date_effet",
-      "derniere_reactivation_financiere",
-      "solde_prepaye"
+      "solde_prepaye",
+      "solde_min_alerte"
     ],
     "spotlightFields": [
       "date_effet",
       "statut",
-      "derniere_reactivation_financiere",
       "solde_prepaye",
       "solde_min_alerte",
-      "dernier_rechargement_le"
+      "dernier_rechargement_le",
+      "finance_status"
     ],
     "statusFields": [
       "statut",
@@ -13430,7 +15703,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Repere temporel du dossier et de sa validite.",
         "fields": [
           "date_effet",
-          "derniere_reactivation_financiere",
           "dernier_rechargement_le",
           "validity_start",
           "validity_end"
@@ -13536,20 +15808,9 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
-      "derniere_reactivation_financiere": {
-        "key": "derniere_reactivation_financiere",
-        "typeText": "Date | null",
-        "kind": "date",
-        "group": "dates",
-        "isOptional": true,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
       "solde_prepaye": {
         "key": "solde_prepaye",
-        "typeText": "number",
+        "typeText": "Decimal",
         "kind": "money",
         "group": "financial",
         "isOptional": false,
@@ -13560,7 +15821,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "solde_min_alerte": {
         "key": "solde_min_alerte",
-        "typeText": "number",
+        "typeText": "Decimal",
         "kind": "money",
         "group": "financial",
         "isOptional": false,
@@ -13646,6 +15907,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "operationsFinancieres": {
+        "key": "operationsFinancieres",
+        "typeText": "Array<{\n    id: string;\n    type: string;\n    montant?: number | string | null;\n    motif?: string | null;\n    details_json?: Record<string, unknown> | null;\n    created_at?: string | Date;\n    updated_at?: string | Date;\n  }> | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "historiquesFormule": {
         "key": "historiquesFormule",
         "typeText": "HistoriqueFormuleCantine[] | null",
@@ -13678,17 +15950,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "AbsenceCantine"
-      },
-      "operationsFinancieres": {
-        "key": "operationsFinancieres",
-        "typeText": "Array<{\n    id: string;\n    type: string;\n    montant?: number | string | null;\n    motif?: string | null;\n    details_json?: Record<string, unknown> | null;\n    created_at?: string | Date;\n    updated_at?: string | Date;\n  }> | null",
-        "kind": "unknown",
-        "group": "general",
-        "isOptional": true,
-        "isArray": true,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
       },
       "finance_status": {
         "key": "finance_status",
@@ -13755,16 +16016,16 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       "finance_status",
       "access_status",
       "date_effet",
-      "derniere_reactivation_financiere",
-      "solde_prepaye"
+      "solde_prepaye",
+      "solde_min_alerte"
     ],
     "spotlightFields": [
       "date_effet",
       "statut",
-      "derniere_reactivation_financiere",
       "solde_prepaye",
       "solde_min_alerte",
-      "dernier_rechargement_le"
+      "dernier_rechargement_le",
+      "finance_status"
     ],
     "statusFields": [
       "statut",
@@ -13790,7 +16051,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Repere temporel du dossier et de sa validite.",
         "fields": [
           "date_effet",
-          "derniere_reactivation_financiere",
           "dernier_rechargement_le",
           "validity_start",
           "validity_end",
@@ -13897,20 +16157,9 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
-      "derniere_reactivation_financiere": {
-        "key": "derniere_reactivation_financiere",
-        "typeText": "Date | null",
-        "kind": "date",
-        "group": "dates",
-        "isOptional": true,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
       "solde_prepaye": {
         "key": "solde_prepaye",
-        "typeText": "number",
+        "typeText": "Decimal",
         "kind": "money",
         "group": "financial",
         "isOptional": false,
@@ -13921,7 +16170,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "solde_min_alerte": {
         "key": "solde_min_alerte",
-        "typeText": "number",
+        "typeText": "Decimal",
         "kind": "money",
         "group": "financial",
         "isOptional": false,
@@ -14007,6 +16256,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "operationsFinancieres": {
+        "key": "operationsFinancieres",
+        "typeText": "Array<{\n    id: string;\n    type: string;\n    montant?: number | string | null;\n    motif?: string | null;\n    details_json?: Record<string, unknown> | null;\n    created_at?: string | Date;\n    updated_at?: string | Date;\n  }> | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "historiquesFormule": {
         "key": "historiquesFormule",
         "typeText": "HistoriqueFormuleCantine[] | null",
@@ -14039,17 +16299,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "AbsenceCantine"
-      },
-      "operationsFinancieres": {
-        "key": "operationsFinancieres",
-        "typeText": "Array<{\n    id: string;\n    type: string;\n    montant?: number | string | null;\n    motif?: string | null;\n    details_json?: Record<string, unknown> | null;\n    created_at?: string | Date;\n    updated_at?: string | Date;\n  }> | null",
-        "kind": "unknown",
-        "group": "general",
-        "isOptional": true,
-        "isArray": true,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
       },
       "finance_status": {
         "key": "finance_status",
@@ -14461,8 +16710,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "type_evenement": {
         "key": "type_evenement",
-        "typeText": "\"ABSENCE\" | \"ANNULATION\"",
-        "kind": "enum",
+        "typeText": "string",
+        "kind": "text",
         "group": "classification",
         "isOptional": false,
         "isArray": false,
@@ -14483,7 +16732,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "etat_metier": {
         "key": "etat_metier",
-        "typeText": "\"SIGNALEE\" | \"EN_ATTENTE_REGULARISATION_FINANCE\" | \"REGULARISATION_TRAITEE\" | \"CLOTUREE_SANS_REGULARISATION\"",
+        "typeText": "string",
         "kind": "status",
         "group": "status",
         "isOptional": false,
@@ -14538,8 +16787,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "mode_regularisation_suggere": {
         "key": "mode_regularisation_suggere",
-        "typeText": "\"AVOIR\" | \"REPORT\" | \"REMBOURSEMENT\" | \"AJUSTEMENT\" | null",
-        "kind": "enum",
+        "typeText": "string | null",
+        "kind": "text",
         "group": "classification",
         "isOptional": false,
         "isArray": false,
@@ -14571,8 +16820,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "decision_finance": {
         "key": "decision_finance",
-        "typeText": "\"AVOIR\" | \"REPORT\" | \"REMBOURSEMENT\" | \"AJUSTEMENT\" | \"REFUS_REGULARISATION\" | null",
-        "kind": "enum",
+        "typeText": "string | null",
+        "kind": "text",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -14978,23 +17227,18 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
     "titleFields": [],
     "summaryFields": [
       "statut",
-      "finance_status",
-      "access_status",
       "date_debut_service",
-      "date_fin_service"
+      "date_fin_service",
+      "prorata_ratio"
     ],
     "spotlightFields": [
       "statut",
       "date_debut_service",
       "date_fin_service",
-      "finance_status",
-      "access_status",
-      "derniere_reactivation_financiere"
+      "prorata_ratio"
     ],
     "statusFields": [
-      "statut",
-      "finance_status",
-      "access_status"
+      "statut"
     ],
     "groups": [
       {
@@ -15004,7 +17248,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "fields": [
           "zone_transport",
           "a_facturer",
-          "prorata_ratio",
           "eleve",
           "annee",
           "facture"
@@ -15015,9 +17258,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Statuts et decisions",
         "description": "Etat courant, decisions et synchronisation metier.",
         "fields": [
-          "statut",
-          "finance_status",
-          "access_status"
+          "statut"
         ]
       },
       {
@@ -15026,8 +17267,15 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Repere temporel du dossier et de sa validite.",
         "fields": [
           "date_debut_service",
-          "date_fin_service",
-          "derniere_reactivation_financiere"
+          "date_fin_service"
+        ]
+      },
+      {
+        "key": "financial",
+        "title": "Montants et droits",
+        "description": "Montants, soldes, tarifs et valeurs chiffrees.",
+        "fields": [
+          "prorata_ratio"
         ]
       }
     ],
@@ -15111,10 +17359,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "a_facturer": {
         "key": "a_facturer",
-        "typeText": "boolean | null",
+        "typeText": "boolean",
         "kind": "boolean",
         "group": "general",
-        "isOptional": true,
+        "isOptional": false,
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
@@ -15155,43 +17403,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "prorata_ratio": {
         "key": "prorata_ratio",
-        "typeText": "number | null",
-        "kind": "number",
-        "group": "general",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
         "isOptional": false,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
-      "finance_status": {
-        "key": "finance_status",
-        "typeText": "string | null",
-        "kind": "status",
-        "group": "status",
-        "isOptional": true,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
-      "access_status": {
-        "key": "access_status",
-        "typeText": "string | null",
-        "kind": "status",
-        "group": "status",
-        "isOptional": true,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
-      "derniere_reactivation_financiere": {
-        "key": "derniere_reactivation_financiere",
-        "typeText": "Date | null",
-        "kind": "date",
-        "group": "dates",
-        "isOptional": true,
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
@@ -15292,23 +17507,20 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
     "titleFields": [],
     "summaryFields": [
       "statut",
-      "finance_status",
-      "access_status",
       "date_debut_service",
-      "date_fin_service"
+      "date_fin_service",
+      "prorata_ratio"
     ],
     "spotlightFields": [
       "statut",
       "date_debut_service",
       "date_fin_service",
-      "finance_status",
-      "access_status",
-      "derniere_reactivation_financiere"
+      "prorata_ratio",
+      "operational_status",
+      "evaluation_date"
     ],
     "statusFields": [
       "statut",
-      "finance_status",
-      "access_status",
       "operational_status"
     ],
     "groups": [
@@ -15319,7 +17531,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "fields": [
           "zone_transport",
           "a_facturer",
-          "prorata_ratio",
           "eleve",
           "annee",
           "facture",
@@ -15335,8 +17546,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Etat courant, decisions et synchronisation metier.",
         "fields": [
           "statut",
-          "finance_status",
-          "access_status",
           "operational_status"
         ]
       },
@@ -15347,9 +17556,16 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "fields": [
           "date_debut_service",
           "date_fin_service",
-          "derniere_reactivation_financiere",
           "evaluation_date",
           "latest_usage_at"
+        ]
+      },
+      {
+        "key": "financial",
+        "title": "Montants et droits",
+        "description": "Montants, soldes, tarifs et valeurs chiffrees.",
+        "fields": [
+          "prorata_ratio"
         ]
       }
     ],
@@ -15433,10 +17649,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "a_facturer": {
         "key": "a_facturer",
-        "typeText": "boolean | null",
+        "typeText": "boolean",
         "kind": "boolean",
         "group": "general",
-        "isOptional": true,
+        "isOptional": false,
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
@@ -15477,43 +17693,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "prorata_ratio": {
         "key": "prorata_ratio",
-        "typeText": "number | null",
-        "kind": "number",
-        "group": "general",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
         "isOptional": false,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
-      "finance_status": {
-        "key": "finance_status",
-        "typeText": "string | null",
-        "kind": "status",
-        "group": "status",
-        "isOptional": true,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
-      "access_status": {
-        "key": "access_status",
-        "typeText": "string | null",
-        "kind": "status",
-        "group": "status",
-        "isOptional": true,
-        "isArray": false,
-        "isRelation": false,
-        "isTechnical": false,
-        "relatedModel": null
-      },
-      "derniere_reactivation_financiere": {
-        "key": "derniere_reactivation_financiere",
-        "typeText": "Date | null",
-        "kind": "date",
-        "group": "dates",
-        "isOptional": true,
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
@@ -16320,7 +18503,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Types et categories",
         "description": "Types, modes et dimensions de classement.",
         "fields": [
-          "usage_scope"
+          "usage_scope",
+          "mode_facturation"
         ]
       },
       {
@@ -16334,6 +18518,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
           "est_recurrent",
           "periodicite",
           "prorata_eligible",
+          "plan_paiement_defaut_code",
           "niveau",
           "approbateur",
           "_count"
@@ -16361,7 +18546,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Donnees structurees",
         "description": "Blocs JSON et configurations structurees.",
         "fields": [
-          "eligibilite_json"
+          "eligibilite_json",
+          "plans_paiement_autorises_json"
         ]
       },
       {
@@ -16481,6 +18667,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "mode_facturation": {
+        "key": "mode_facturation",
+        "typeText": "string",
+        "kind": "text",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "est_recurrent": {
         "key": "est_recurrent",
         "typeText": "boolean",
@@ -16519,6 +18716,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "JsonValue | null",
         "kind": "json",
         "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "plans_paiement_autorises_json": {
+        "key": "plans_paiement_autorises_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "plan_paiement_defaut_code": {
+        "key": "plan_paiement_defaut_code",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -16634,6 +18853,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "FactureLigne"
+      },
+      "lignesTransport": {
+        "key": "lignesTransport",
+        "typeText": "LigneTransport[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "LigneTransport"
+      },
+      "formulesCantine": {
+        "key": "formulesCantine",
+        "typeText": "FormuleCantine[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "FormuleCantine"
       },
       "executionsRecurrentes": {
         "key": "executionsRecurrentes",
@@ -18279,6 +20520,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "abonnementsTransport": {
+        "key": "abonnementsTransport",
+        "typeText": "AbonnementTransport[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AbonnementTransport"
+      },
+      "abonnementsCantine": {
+        "key": "abonnementsCantine",
+        "typeText": "AbonnementCantine[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AbonnementCantine"
+      },
       "executionsRecurrentes": {
         "key": "executionsRecurrentes",
         "typeText": "FacturationRecurrenteExecution[]",
@@ -18300,6 +20563,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": false,
         "isTechnical": false,
         "relatedModel": null
+      },
+      "promessesPaiement": {
+        "key": "promessesPaiement",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
+      },
+      "restrictionsAdministratives": {
+        "key": "restrictionsAdministratives",
+        "typeText": "RestrictionAdministrative[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RestrictionAdministrative"
+      },
+      "dossiersRecouvrement": {
+        "key": "dossiersRecouvrement",
+        "typeText": "DossierRecouvrement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DossierRecouvrement"
       }
     }
   },
@@ -19173,6 +21469,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "AbonnementCantine"
       },
+      "promessesPaiement": {
+        "key": "promessesPaiement",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
+      },
+      "restrictionsAdministratives": {
+        "key": "restrictionsAdministratives",
+        "typeText": "RestrictionAdministrative[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RestrictionAdministrative"
+      },
+      "dossiersRecouvrement": {
+        "key": "dossiersRecouvrement",
+        "typeText": "DossierRecouvrement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DossierRecouvrement"
+      },
       "emprunts": {
         "key": "emprunts",
         "typeText": "Emprunt[]",
@@ -19984,6 +22313,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": false,
         "isTechnical": false,
         "relatedModel": null
+      },
+      "promessesPaiement": {
+        "key": "promessesPaiement",
+        "typeText": "PromessePaiement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PromessePaiement"
+      },
+      "restrictionsAdministratives": {
+        "key": "restrictionsAdministratives",
+        "typeText": "RestrictionAdministrative[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "RestrictionAdministrative"
+      },
+      "dossiersRecouvrement": {
+        "key": "dossiersRecouvrement",
+        "typeText": "DossierRecouvrement[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "DossierRecouvrement"
       }
     }
   },
@@ -21503,6 +23865,10 @@ export const generatedDetailFieldMetaIndex: Record<
       "EcheancePaiement",
       "PaiementEcheanceAffectation",
       "Remise",
+      "RegleRecouvrementFinance",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "RessourceBibliotheque",
       "Emprunt",
       "LigneTransport",
@@ -21516,6 +23882,8 @@ export const generatedDetailFieldMetaIndex: Record<
       "AbsenceCantine",
       "Fichier",
       "LienFichier",
+      "DocumentTypeInscription",
+      "InscriptionDocument",
       "JournalAudit",
       "Webhook",
       "JetonIntegration",
@@ -21583,9 +23951,11 @@ export const generatedDetailFieldMetaIndex: Record<
       "CanalCommunication",
       "CatalogueFrais",
       "Remise",
+      "RegleRecouvrementFinance",
       "LigneTransport",
       "ArretTransport",
       "FormuleCantine",
+      "DocumentTypeInscription",
       "CatalogueFraisWithRelations",
       "ClasseWithRelations",
       "MatiereWithRelations",
@@ -21609,6 +23979,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "Permission",
       "Matiere",
       "RessourceBibliotheque",
+      "DocumentTypeInscription",
       "CantineControlAnomalyRow",
       "TransportControlAnomalyRow",
       "MatiereWithRelations",
@@ -21707,6 +24078,10 @@ export const generatedDetailFieldMetaIndex: Record<
       "EcheancePaiement",
       "PaiementEcheanceAffectation",
       "Remise",
+      "RegleRecouvrementFinance",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "RessourceBibliotheque",
       "Emprunt",
       "LigneTransport",
@@ -21720,6 +24095,8 @@ export const generatedDetailFieldMetaIndex: Record<
       "AbsenceCantine",
       "Fichier",
       "LienFichier",
+      "DocumentTypeInscription",
+      "InscriptionDocument",
       "JournalAudit",
       "Webhook",
       "JetonIntegration",
@@ -21822,6 +24199,10 @@ export const generatedDetailFieldMetaIndex: Record<
       "EcheancePaiement",
       "PaiementEcheanceAffectation",
       "Remise",
+      "RegleRecouvrementFinance",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "RessourceBibliotheque",
       "Emprunt",
       "LigneTransport",
@@ -21835,6 +24216,8 @@ export const generatedDetailFieldMetaIndex: Record<
       "AbsenceCantine",
       "Fichier",
       "LienFichier",
+      "DocumentTypeInscription",
+      "InscriptionDocument",
       "JournalAudit",
       "Webhook",
       "JetonIntegration",
@@ -22090,6 +24473,84 @@ export const generatedDetailFieldMetaIndex: Record<
       "Etablissement"
     ]
   },
+  "reglesRecouvrement": {
+    "key": "reglesRecouvrement",
+    "typeText": "RegleRecouvrementFinance[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "RegleRecouvrementFinance",
+    "models": [
+      "Etablissement"
+    ]
+  },
+  "promessesPaiement": {
+    "key": "promessesPaiement",
+    "typeText": "PromessePaiement[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "PromessePaiement",
+    "models": [
+      "Etablissement",
+      "AnneeScolaire",
+      "Eleve",
+      "PlanPaiementEleve",
+      "Facture",
+      "EcheancePaiement",
+      "FactureWithRelations",
+      "EleveWithRelations",
+      "PlanPaiementEleveWithRelations"
+    ]
+  },
+  "restrictionsAdministratives": {
+    "key": "restrictionsAdministratives",
+    "typeText": "RestrictionAdministrative[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "RestrictionAdministrative",
+    "models": [
+      "Etablissement",
+      "AnneeScolaire",
+      "Eleve",
+      "PlanPaiementEleve",
+      "Facture",
+      "FactureWithRelations",
+      "EleveWithRelations",
+      "PlanPaiementEleveWithRelations"
+    ]
+  },
+  "dossiersRecouvrement": {
+    "key": "dossiersRecouvrement",
+    "typeText": "DossierRecouvrement[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "DossierRecouvrement",
+    "models": [
+      "Etablissement",
+      "AnneeScolaire",
+      "Eleve",
+      "PlanPaiementEleve",
+      "Facture",
+      "FactureWithRelations",
+      "EleveWithRelations",
+      "PlanPaiementEleveWithRelations"
+    ]
+  },
   "fichiers": {
     "key": "fichiers",
     "typeText": "Fichier[]",
@@ -22103,6 +24564,20 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "Etablissement",
       "Utilisateur"
+    ]
+  },
+  "documentTypesInscription": {
+    "key": "documentTypesInscription",
+    "typeText": "DocumentTypeInscription[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "DocumentTypeInscription",
+    "models": [
+      "Etablissement"
     ]
   },
   "journauxAudit": {
@@ -22304,6 +24779,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "Utilisateur",
       "Facture",
       "Paiement",
+      "AbonnementCantine",
       "AbonnementCantineWithRelations",
       "CantineOperationalRow",
       "FactureWithRelations",
@@ -22349,10 +24825,15 @@ export const generatedDetailFieldMetaIndex: Record<
       "Facture",
       "OperationFinanciere",
       "Remise",
+      "RegleRecouvrementFinance",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "RessourceBibliotheque",
       "LigneTransport",
       "FormuleCantine",
       "Fichier",
+      "DocumentTypeInscription",
       "JournalAudit",
       "Webhook",
       "JetonIntegration",
@@ -22437,7 +24918,12 @@ export const generatedDetailFieldMetaIndex: Record<
       "Facture",
       "OperationFinanciere",
       "Remise",
+      "RegleRecouvrementFinance",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "Fichier",
+      "DocumentTypeInscription",
       "JournalAudit",
       "Webhook",
       "JetonIntegration",
@@ -22571,6 +25057,7 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "AnneeScolaire",
       "Eleve",
+      "NiveauScolaire",
       "Classe",
       "ClasseWithRelations",
       "EleveWithRelations"
@@ -22680,6 +25167,8 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "AnneeScolaire",
       "Eleve",
+      "Facture",
+      "FactureWithRelations",
       "EleveWithRelations"
     ]
   },
@@ -22696,6 +25185,8 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "AnneeScolaire",
       "Eleve",
+      "Facture",
+      "FactureWithRelations",
       "EleveWithRelations"
     ]
   },
@@ -22719,6 +25210,9 @@ export const generatedDetailFieldMetaIndex: Record<
       "FacturationRecurrenteExecution",
       "Facture",
       "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "AbonnementTransport",
       "AbonnementCantine",
       "AbonnementCantineWithRelations",
@@ -22749,7 +25243,8 @@ export const generatedDetailFieldMetaIndex: Record<
       "NiveauScolaire",
       "CreneauHoraire",
       "EcheancePaiement",
-      "ArretTransport"
+      "ArretTransport",
+      "DocumentTypeInscription"
     ]
   },
   "annee": {
@@ -22772,6 +25267,9 @@ export const generatedDetailFieldMetaIndex: Record<
       "FacturationRecurrenteExecution",
       "Facture",
       "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "RessourceBibliotheque",
       "AbonnementTransport",
       "AbonnementCantine",
@@ -22872,6 +25370,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "Notification",
       "OperationFinanciere",
       "Remise",
+      "RestrictionAdministrative",
       "RessourceBibliotheque",
       "EvaluationWithRelations",
       "OperationFinanciereWithRelations",
@@ -23049,9 +25548,13 @@ export const generatedDetailFieldMetaIndex: Record<
       "Facture",
       "Paiement",
       "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "Emprunt",
       "AbonnementTransport",
       "AbonnementCantine",
+      "InscriptionDocument",
       "AbonnementCantineWithRelations",
       "CantineOperationalRow",
       "AbonnementTransportWithRelations",
@@ -23136,6 +25639,132 @@ export const generatedDetailFieldMetaIndex: Record<
     "isRelation": true,
     "isTechnical": false,
     "relatedModel": "Notification",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "documentsInscriptionVerifies": {
+    "key": "documentsInscriptionVerifies",
+    "typeText": "InscriptionDocument[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "InscriptionDocument",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "cataloguesFraisApprouves": {
+    "key": "cataloguesFraisApprouves",
+    "typeText": "CatalogueFrais[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "CatalogueFrais",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "reglesRecouvrementApprouvees": {
+    "key": "reglesRecouvrementApprouvees",
+    "typeText": "RegleRecouvrementFinance[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "RegleRecouvrementFinance",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "promessesPaiementCreees": {
+    "key": "promessesPaiementCreees",
+    "typeText": "PromessePaiement[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "PromessePaiement",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "promessesPaiementValidees": {
+    "key": "promessesPaiementValidees",
+    "typeText": "PromessePaiement[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "PromessePaiement",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "restrictionsAdministrativesCreees": {
+    "key": "restrictionsAdministrativesCreees",
+    "typeText": "RestrictionAdministrative[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "RestrictionAdministrative",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "restrictionsAdministrativesLevees": {
+    "key": "restrictionsAdministrativesLevees",
+    "typeText": "RestrictionAdministrative[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "RestrictionAdministrative",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "dossiersRecouvrementCrees": {
+    "key": "dossiersRecouvrementCrees",
+    "typeText": "DossierRecouvrement[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "DossierRecouvrement",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "dossiersRecouvrementValides": {
+    "key": "dossiersRecouvrementValides",
+    "typeText": "DossierRecouvrement[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "DossierRecouvrement",
     "models": [
       "Utilisateur"
     ]
@@ -23311,6 +25940,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "EvenementCalendrier",
       "IncidentDisciplinaire",
       "CatalogueFrais",
+      "DocumentTypeInscription",
       "CatalogueFraisWithRelations",
       "IncidentDisciplinaireWithRelations"
     ]
@@ -23551,6 +26181,34 @@ export const generatedDetailFieldMetaIndex: Record<
       "ParentTuteur"
     ]
   },
+  "telephone_secondaire": {
+    "key": "telephone_secondaire",
+    "typeText": "string | null",
+    "kind": "phone",
+    "group": "contact",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ParentTuteur"
+    ]
+  },
+  "profession": {
+    "key": "profession",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ParentTuteur"
+    ]
+  },
   "eleve_id": {
     "key": "eleve_id",
     "typeText": "string",
@@ -23575,6 +26233,9 @@ export const generatedDetailFieldMetaIndex: Record<
       "FacturationRecurrenteExecution",
       "Facture",
       "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "Emprunt",
       "AbonnementTransport",
       "AbonnementCantine",
@@ -23637,6 +26298,48 @@ export const generatedDetailFieldMetaIndex: Record<
       "EleveParentTuteur"
     ]
   },
+  "est_responsable_legal": {
+    "key": "est_responsable_legal",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveParentTuteur"
+    ]
+  },
+  "est_responsable_financier": {
+    "key": "est_responsable_financier",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveParentTuteur"
+    ]
+  },
+  "est_contact_urgence": {
+    "key": "est_contact_urgence",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "contact",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveParentTuteur"
+    ]
+  },
   "autorise_recuperation": {
     "key": "autorise_recuperation",
     "typeText": "boolean",
@@ -23675,6 +26378,9 @@ export const generatedDetailFieldMetaIndex: Record<
       "FacturationRecurrenteExecution",
       "Facture",
       "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "Emprunt",
       "AbonnementTransport",
       "AbonnementCantine",
@@ -23719,6 +26425,7 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "Classe",
+      "Inscription",
       "Programme",
       "CatalogueFrais",
       "CatalogueFraisWithRelations",
@@ -23753,6 +26460,7 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": "NiveauScolaire",
     "models": [
       "Classe",
+      "Inscription",
       "Programme",
       "CatalogueFrais",
       "CatalogueFraisWithRelations",
@@ -23797,7 +26505,7 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "classe_id": {
     "key": "classe_id",
-    "typeText": "string",
+    "typeText": "string | null",
     "kind": "technical",
     "group": "technical",
     "isOptional": false,
@@ -23822,6 +26530,90 @@ export const generatedDetailFieldMetaIndex: Record<
     "typeText": "Date",
     "kind": "date",
     "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Inscription"
+    ]
+  },
+  "type_inscription": {
+    "key": "type_inscription",
+    "typeText": "TypeInscription",
+    "kind": "enum",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Inscription"
+    ]
+  },
+  "statut_administratif": {
+    "key": "statut_administratif",
+    "typeText": "StatutAdministratifInscription",
+    "kind": "status",
+    "group": "status",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Inscription"
+    ]
+  },
+  "statut_financier": {
+    "key": "statut_financier",
+    "typeText": "StatutFinancierInscription",
+    "kind": "status",
+    "group": "status",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Inscription"
+    ]
+  },
+  "statut_dossier": {
+    "key": "statut_dossier",
+    "typeText": "StatutDossierInscription",
+    "kind": "status",
+    "group": "status",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Inscription"
+    ]
+  },
+  "validation_date": {
+    "key": "validation_date",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Inscription"
+    ]
+  },
+  "completion_rate": {
+    "key": "completion_rate",
+    "typeText": "Decimal | null",
+    "kind": "money",
+    "group": "financial",
     "isOptional": false,
     "isArray": false,
     "isRelation": false,
@@ -23861,7 +26653,7 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "classe": {
     "key": "classe",
-    "typeText": "Classe",
+    "typeText": "Classe | null",
     "kind": "relation",
     "group": "relations",
     "isOptional": true,
@@ -23879,6 +26671,21 @@ export const generatedDetailFieldMetaIndex: Record<
       "CoursWithRelations",
       "EmploiDuTempsWithRelations",
       "SessionAppelWithRelations"
+    ]
+  },
+  "documents": {
+    "key": "documents",
+    "typeText": "InscriptionDocument[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "InscriptionDocument",
+    "models": [
+      "Inscription",
+      "DocumentTypeInscription"
     ]
   },
   "delivre_le": {
@@ -24464,6 +27271,9 @@ export const generatedDetailFieldMetaIndex: Record<
       "Evaluation",
       "FacturationRecurrenteExecution",
       "OperationFinanciere",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "EvaluationWithRelations",
       "OperationFinanciereWithRelations"
     ]
@@ -24985,6 +27795,8 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "PresenceEleve",
       "PresencePersonnel",
+      "PromessePaiement",
+      "DossierRecouvrement",
       "ConsommationCantine",
       "AbsenceCantine",
       "ConsommationCantineWithRelations",
@@ -25080,6 +27892,7 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "JustificatifAbsence",
       "CatalogueFrais",
+      "RegleRecouvrementFinance",
       "CatalogueFraisWithRelations",
       "JustificatifAbsenceWithRelations"
     ]
@@ -25097,6 +27910,8 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "JustificatifAbsence",
       "OperationFinanciere",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "CantineControlAnomalyRow",
       "TransportControlAnomalyRow",
       "JustificatifAbsenceWithRelations",
@@ -25521,6 +28336,21 @@ export const generatedDetailFieldMetaIndex: Record<
       "CatalogueFraisWithRelations"
     ]
   },
+  "mode_facturation": {
+    "key": "mode_facturation",
+    "typeText": "string",
+    "kind": "text",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "CatalogueFrais",
+      "CatalogueFraisWithRelations"
+    ]
+  },
   "est_recurrent": {
     "key": "est_recurrent",
     "typeText": "boolean",
@@ -25582,6 +28412,36 @@ export const generatedDetailFieldMetaIndex: Record<
       "CatalogueFraisWithRelations"
     ]
   },
+  "plans_paiement_autorises_json": {
+    "key": "plans_paiement_autorises_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "CatalogueFrais",
+      "CatalogueFraisWithRelations"
+    ]
+  },
+  "plan_paiement_defaut_code": {
+    "key": "plan_paiement_defaut_code",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "CatalogueFrais",
+      "CatalogueFraisWithRelations"
+    ]
+  },
   "statut_validation": {
     "key": "statut_validation",
     "typeText": "string",
@@ -25594,6 +28454,7 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "CatalogueFrais",
+      "RegleRecouvrementFinance",
       "CatalogueFraisWithRelations"
     ]
   },
@@ -25609,6 +28470,7 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "CatalogueFrais",
+      "RegleRecouvrementFinance",
       "CatalogueFraisWithRelations"
     ]
   },
@@ -25624,6 +28486,7 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "CatalogueFrais",
+      "RegleRecouvrementFinance",
       "CatalogueFraisWithRelations"
     ]
   },
@@ -25639,6 +28502,7 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": "Utilisateur",
     "models": [
       "CatalogueFrais",
+      "RegleRecouvrementFinance",
       "CatalogueFraisWithRelations"
     ]
   },
@@ -25652,6 +28516,36 @@ export const generatedDetailFieldMetaIndex: Record<
     "isRelation": true,
     "isTechnical": false,
     "relatedModel": "FactureLigne",
+    "models": [
+      "CatalogueFrais",
+      "CatalogueFraisWithRelations"
+    ]
+  },
+  "lignesTransport": {
+    "key": "lignesTransport",
+    "typeText": "LigneTransport[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "LigneTransport",
+    "models": [
+      "CatalogueFrais",
+      "CatalogueFraisWithRelations"
+    ]
+  },
+  "formulesCantine": {
+    "key": "formulesCantine",
+    "typeText": "FormuleCantine[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "FormuleCantine",
     "models": [
       "CatalogueFrais",
       "CatalogueFraisWithRelations"
@@ -25787,6 +28681,9 @@ export const generatedDetailFieldMetaIndex: Record<
       "Paiement",
       "OperationFinanciere",
       "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "AbonnementTransport",
       "AbonnementCantine",
       "AbonnementCantineWithRelations",
@@ -25870,6 +28767,9 @@ export const generatedDetailFieldMetaIndex: Record<
       "Paiement",
       "OperationFinanciere",
       "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "AbonnementTransport",
       "AbonnementCantine",
       "AbonnementCantineWithRelations",
@@ -26227,6 +29127,27 @@ export const generatedDetailFieldMetaIndex: Record<
       "OperationFinanciereWithRelations"
     ]
   },
+  "abonnement_cantine_id": {
+    "key": "abonnement_cantine_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "OperationFinanciere",
+      "HistoriqueFormuleCantine",
+      "ConsommationCantine",
+      "AbsenceCantine",
+      "ConsommationCantineWithRelations",
+      "AbsenceCantineWithRelations",
+      "CantineControlAnomalyRow",
+      "OperationFinanciereWithRelations"
+    ]
+  },
   "cree_par_utilisateur_id": {
     "key": "cree_par_utilisateur_id",
     "typeText": "string | null",
@@ -26239,6 +29160,9 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "OperationFinanciere",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
       "OperationFinanciereWithRelations"
     ]
   },
@@ -26279,6 +29203,21 @@ export const generatedDetailFieldMetaIndex: Record<
       "OperationFinanciereWithRelations"
     ]
   },
+  "abonnementCantine": {
+    "key": "abonnementCantine",
+    "typeText": "AbonnementCantine | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "AbonnementCantine",
+    "models": [
+      "OperationFinanciere",
+      "OperationFinanciereWithRelations"
+    ]
+  },
   "plan_paiement_id": {
     "key": "plan_paiement_id",
     "typeText": "string | null",
@@ -26290,7 +29229,10 @@ export const generatedDetailFieldMetaIndex: Record<
     "isTechnical": true,
     "relatedModel": null,
     "models": [
-      "EcheancePaiement"
+      "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement"
     ]
   },
   "montant_prevu": {
@@ -26346,7 +29288,10 @@ export const generatedDetailFieldMetaIndex: Record<
     "isTechnical": false,
     "relatedModel": "PlanPaiementEleve",
     "models": [
-      "EcheancePaiement"
+      "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement"
     ]
   },
   "echeance_paiement_id": {
@@ -26360,7 +29305,8 @@ export const generatedDetailFieldMetaIndex: Record<
     "isTechnical": true,
     "relatedModel": null,
     "models": [
-      "PaiementEcheanceAffectation"
+      "PaiementEcheanceAffectation",
+      "PromessePaiement"
     ]
   },
   "echeance": {
@@ -26374,7 +29320,8 @@ export const generatedDetailFieldMetaIndex: Record<
     "isTechnical": false,
     "relatedModel": "EcheancePaiement",
     "models": [
-      "PaiementEcheanceAffectation"
+      "PaiementEcheanceAffectation",
+      "PromessePaiement"
     ]
   },
   "regles_json": {
@@ -26390,6 +29337,316 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "Remise",
       "RemiseWithRelations"
+    ]
+  },
+  "jours_grace": {
+    "key": "jours_grace",
+    "typeText": "number",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "RegleRecouvrementFinance"
+    ]
+  },
+  "relance_jours_json": {
+    "key": "relance_jours_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "RegleRecouvrementFinance"
+    ]
+  },
+  "penalite_active": {
+    "key": "penalite_active",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "RegleRecouvrementFinance"
+    ]
+  },
+  "penalite_mode": {
+    "key": "penalite_mode",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "RegleRecouvrementFinance"
+    ]
+  },
+  "penalite_valeur": {
+    "key": "penalite_valeur",
+    "typeText": "Decimal | null",
+    "kind": "money",
+    "group": "financial",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "RegleRecouvrementFinance"
+    ]
+  },
+  "montant_promis": {
+    "key": "montant_promis",
+    "typeText": "Decimal",
+    "kind": "money",
+    "group": "financial",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PromessePaiement"
+    ]
+  },
+  "date_promesse": {
+    "key": "date_promesse",
+    "typeText": "Date",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PromessePaiement"
+    ]
+  },
+  "date_limite": {
+    "key": "date_limite",
+    "typeText": "Date",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PromessePaiement"
+    ]
+  },
+  "canal": {
+    "key": "canal",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PromessePaiement"
+    ]
+  },
+  "tenue_le": {
+    "key": "tenue_le",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PromessePaiement"
+    ]
+  },
+  "rompue_le": {
+    "key": "rompue_le",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PromessePaiement"
+    ]
+  },
+  "annulee_le": {
+    "key": "annulee_le",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PromessePaiement"
+    ]
+  },
+  "valide_par_utilisateur_id": {
+    "key": "valide_par_utilisateur_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "PromessePaiement",
+      "DossierRecouvrement"
+    ]
+  },
+  "validateur": {
+    "key": "validateur",
+    "typeText": "Utilisateur | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Utilisateur",
+    "models": [
+      "PromessePaiement",
+      "DossierRecouvrement"
+    ]
+  },
+  "source": {
+    "key": "source",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "RestrictionAdministrative"
+    ]
+  },
+  "date_activation": {
+    "key": "date_activation",
+    "typeText": "Date",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "RestrictionAdministrative"
+    ]
+  },
+  "date_levee": {
+    "key": "date_levee",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "RestrictionAdministrative"
+    ]
+  },
+  "levee_par_utilisateur_id": {
+    "key": "levee_par_utilisateur_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "RestrictionAdministrative"
+    ]
+  },
+  "leveur": {
+    "key": "leveur",
+    "typeText": "Utilisateur | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Utilisateur",
+    "models": [
+      "RestrictionAdministrative"
+    ]
+  },
+  "montant_reference": {
+    "key": "montant_reference",
+    "typeText": "Decimal | null",
+    "kind": "money",
+    "group": "financial",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "DossierRecouvrement"
+    ]
+  },
+  "date_statut": {
+    "key": "date_statut",
+    "typeText": "Date",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "DossierRecouvrement"
+    ]
+  },
+  "valide_le": {
+    "key": "valide_le",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "DossierRecouvrement"
     ]
   },
   "auteur": {
@@ -26653,10 +29910,10 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "a_facturer": {
     "key": "a_facturer",
-    "typeText": "boolean | null",
+    "typeText": "boolean",
     "kind": "boolean",
     "group": "general",
-    "isOptional": true,
+    "isOptional": false,
     "isArray": false,
     "isRelation": false,
     "isTechnical": false,
@@ -26701,9 +29958,9 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "prorata_ratio": {
     "key": "prorata_ratio",
-    "typeText": "number | null",
-    "kind": "number",
-    "group": "general",
+    "typeText": "Decimal | null",
+    "kind": "money",
+    "group": "financial",
     "isOptional": false,
     "isArray": false,
     "isRelation": false,
@@ -26711,64 +29968,6 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "AbonnementTransport",
-      "AbonnementTransportWithRelations",
-      "OperationalTransportRow"
-    ]
-  },
-  "finance_status": {
-    "key": "finance_status",
-    "typeText": "string | null",
-    "kind": "status",
-    "group": "status",
-    "isOptional": true,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": false,
-    "relatedModel": null,
-    "models": [
-      "AbonnementTransport",
-      "AbonnementCantineWithRelations",
-      "CantineOperationalRow",
-      "CantineControlAnomalyRow",
-      "AbonnementTransportWithRelations",
-      "OperationalTransportRow",
-      "TransportControlAnomalyRow"
-    ]
-  },
-  "access_status": {
-    "key": "access_status",
-    "typeText": "string | null",
-    "kind": "status",
-    "group": "status",
-    "isOptional": true,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": false,
-    "relatedModel": null,
-    "models": [
-      "AbonnementTransport",
-      "AbonnementCantineWithRelations",
-      "CantineOperationalRow",
-      "CantineControlAnomalyRow",
-      "AbonnementTransportWithRelations",
-      "OperationalTransportRow"
-    ]
-  },
-  "derniere_reactivation_financiere": {
-    "key": "derniere_reactivation_financiere",
-    "typeText": "Date | null",
-    "kind": "date",
-    "group": "dates",
-    "isOptional": true,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": false,
-    "relatedModel": null,
-    "models": [
-      "AbonnementTransport",
-      "AbonnementCantine",
-      "AbonnementCantineWithRelations",
-      "CantineOperationalRow",
       "AbonnementTransportWithRelations",
       "OperationalTransportRow"
     ]
@@ -26967,10 +30166,24 @@ export const generatedDetailFieldMetaIndex: Record<
       "HistoriqueFormuleCantine"
     ]
   },
+  "abonnementTransport": {
+    "key": "abonnementTransport",
+    "typeText": "AbonnementTransport",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "AbonnementTransport",
+    "models": [
+      "HistoriqueAffectationTransport"
+    ]
+  },
   "type_formule": {
     "key": "type_formule",
-    "typeText": "\"FORFAIT\" | \"REPAS_UNITAIRE\" | \"ABONNEMENT\" | \"AUTRE\"",
-    "kind": "enum",
+    "typeText": "string",
+    "kind": "text",
     "group": "classification",
     "isOptional": false,
     "isArray": false,
@@ -27025,8 +30238,8 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "mode_regularisation_absence": {
     "key": "mode_regularisation_absence",
-    "typeText": "\"AVOIR\" | \"REPORT\" | \"REMBOURSEMENT\" | \"AJUSTEMENT\"",
-    "kind": "enum",
+    "typeText": "string",
+    "kind": "text",
     "group": "classification",
     "isOptional": false,
     "isArray": false,
@@ -27084,7 +30297,7 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "solde_prepaye": {
     "key": "solde_prepaye",
-    "typeText": "number",
+    "typeText": "Decimal",
     "kind": "money",
     "group": "financial",
     "isOptional": false,
@@ -27100,7 +30313,7 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "solde_min_alerte": {
     "key": "solde_min_alerte",
-    "typeText": "number",
+    "typeText": "Decimal",
     "kind": "money",
     "group": "financial",
     "isOptional": false,
@@ -27192,26 +30405,6 @@ export const generatedDetailFieldMetaIndex: Record<
       "AbonnementCantine",
       "AbonnementCantineWithRelations",
       "CantineOperationalRow"
-    ]
-  },
-  "abonnement_cantine_id": {
-    "key": "abonnement_cantine_id",
-    "typeText": "string",
-    "kind": "technical",
-    "group": "technical",
-    "isOptional": false,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": true,
-    "relatedModel": null,
-    "models": [
-      "HistoriqueFormuleCantine",
-      "ConsommationCantine",
-      "AbsenceCantine",
-      "ConsommationCantineWithRelations",
-      "AbsenceCantineWithRelations",
-      "CantineControlAnomalyRow",
-      "OperationFinanciereWithRelations"
     ]
   },
   "ancienne_formule_cantine_id": {
@@ -27402,8 +30595,8 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "type_evenement": {
     "key": "type_evenement",
-    "typeText": "\"ABSENCE\" | \"ANNULATION\"",
-    "kind": "enum",
+    "typeText": "string",
+    "kind": "text",
     "group": "classification",
     "isOptional": false,
     "isArray": false,
@@ -27432,7 +30625,7 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "etat_metier": {
     "key": "etat_metier",
-    "typeText": "\"SIGNALEE\" | \"EN_ATTENTE_REGULARISATION_FINANCE\" | \"REGULARISATION_TRAITEE\" | \"CLOTUREE_SANS_REGULARISATION\"",
+    "typeText": "string",
     "kind": "status",
     "group": "status",
     "isOptional": false,
@@ -27477,8 +30670,8 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "mode_regularisation_suggere": {
     "key": "mode_regularisation_suggere",
-    "typeText": "\"AVOIR\" | \"REPORT\" | \"REMBOURSEMENT\" | \"AJUSTEMENT\" | null",
-    "kind": "enum",
+    "typeText": "string | null",
+    "kind": "text",
     "group": "classification",
     "isOptional": false,
     "isArray": false,
@@ -27492,8 +30685,8 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "decision_finance": {
     "key": "decision_finance",
-    "typeText": "\"AVOIR\" | \"REPORT\" | \"REMBOURSEMENT\" | \"AJUSTEMENT\" | \"REFUS_REGULARISATION\" | null",
-    "kind": "enum",
+    "typeText": "string | null",
+    "kind": "text",
     "group": "general",
     "isOptional": false,
     "isArray": false,
@@ -27631,6 +30824,20 @@ export const generatedDetailFieldMetaIndex: Record<
       "Fichier"
     ]
   },
+  "documentsInscriptions": {
+    "key": "documentsInscriptions",
+    "typeText": "InscriptionDocument[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "InscriptionDocument",
+    "models": [
+      "Fichier"
+    ]
+  },
   "fichier_id": {
     "key": "fichier_id",
     "typeText": "string",
@@ -27642,7 +30849,8 @@ export const generatedDetailFieldMetaIndex: Record<
     "isTechnical": true,
     "relatedModel": null,
     "models": [
-      "LienFichier"
+      "LienFichier",
+      "InscriptionDocument"
     ]
   },
   "type_entite": {
@@ -27700,7 +30908,205 @@ export const generatedDetailFieldMetaIndex: Record<
     "isTechnical": false,
     "relatedModel": "Fichier",
     "models": [
-      "LienFichier"
+      "LienFichier",
+      "InscriptionDocument"
+    ]
+  },
+  "type_inscriptions_json": {
+    "key": "type_inscriptions_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "DocumentTypeInscription"
+    ]
+  },
+  "est_obligatoire_par_defaut": {
+    "key": "est_obligatoire_par_defaut",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "DocumentTypeInscription"
+    ]
+  },
+  "est_actif": {
+    "key": "est_actif",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "DocumentTypeInscription",
+      "Webhook"
+    ]
+  },
+  "inscription_id": {
+    "key": "inscription_id",
+    "typeText": "string",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "InscriptionDocument"
+    ]
+  },
+  "document_type_id": {
+    "key": "document_type_id",
+    "typeText": "string",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "InscriptionDocument"
+    ]
+  },
+  "verifie_par_utilisateur_id": {
+    "key": "verifie_par_utilisateur_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "InscriptionDocument"
+    ]
+  },
+  "obligatoire": {
+    "key": "obligatoire",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionDocument"
+    ]
+  },
+  "fourni": {
+    "key": "fourni",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionDocument"
+    ]
+  },
+  "date_depot": {
+    "key": "date_depot",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionDocument"
+    ]
+  },
+  "date_verification": {
+    "key": "date_verification",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionDocument"
+    ]
+  },
+  "commentaire_admin": {
+    "key": "commentaire_admin",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionDocument"
+    ]
+  },
+  "inscription": {
+    "key": "inscription",
+    "typeText": "Inscription",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Inscription",
+    "models": [
+      "InscriptionDocument"
+    ]
+  },
+  "documentType": {
+    "key": "documentType",
+    "typeText": "DocumentTypeInscription",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "DocumentTypeInscription",
+    "models": [
+      "InscriptionDocument"
+    ]
+  },
+  "verifiePar": {
+    "key": "verifiePar",
+    "typeText": "Utilisateur | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Utilisateur",
+    "models": [
+      "InscriptionDocument"
     ]
   },
   "acteur_utilisateur_id": {
@@ -27843,20 +31249,6 @@ export const generatedDetailFieldMetaIndex: Record<
       "Webhook"
     ]
   },
-  "est_actif": {
-    "key": "est_actif",
-    "typeText": "boolean",
-    "kind": "boolean",
-    "group": "general",
-    "isOptional": false,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": false,
-    "relatedModel": null,
-    "models": [
-      "Webhook"
-    ]
-  },
   "fournisseur": {
     "key": "fournisseur",
     "typeText": "string",
@@ -27883,6 +31275,39 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "JetonIntegration"
+    ]
+  },
+  "finance_status": {
+    "key": "finance_status",
+    "typeText": "string | null",
+    "kind": "status",
+    "group": "status",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AbonnementCantineWithRelations",
+      "CantineOperationalRow",
+      "CantineControlAnomalyRow",
+      "TransportControlAnomalyRow"
+    ]
+  },
+  "access_status": {
+    "key": "access_status",
+    "typeText": "string | null",
+    "kind": "status",
+    "group": "status",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AbonnementCantineWithRelations",
+      "CantineOperationalRow",
+      "CantineControlAnomalyRow"
     ]
   },
   "access_reason": {
@@ -28260,20 +31685,6 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "CatalogueFraisWithRelations"
-    ]
-  },
-  "abonnementCantine": {
-    "key": "abonnementCantine",
-    "typeText": "{\n    id: string;\n    formule?: {\n      nom?: string | null;\n    } | null;\n    eleve?: {\n      code_eleve?: string | null;\n      utilisateur?: {\n        profil?: {\n          prenom?: string | null;\n          nom?: string | null;\n        } | null;\n      } | null;\n    } | null;\n  } | null",
-    "kind": "unknown",
-    "group": "general",
-    "isOptional": true,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": false,
-    "relatedModel": null,
-    "models": [
-      "OperationFinanciereWithRelations"
     ]
   }
 };

@@ -1,5 +1,7 @@
-import React, { useCallback, useRef, useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { InfoContext, type InfoType } from "../hooks/useInfo";
+import { consumeBackendResponseMessage } from "../app/api/Http";
 
 
 type Toast = {
@@ -17,24 +19,99 @@ const stylesByType: Record<InfoType, string> = {
   info: "bg-blue-600 text-white",
 };
 
+const durationByType: Record<InfoType, number> = {
+  success: 5000,
+  info: 7000,
+  warning: 9000,
+  error: 12000,
+};
+
+function extractMessage(value: unknown) {
+  if (typeof value === "string" && value.trim()) return value.trim();
+
+  if (!value || typeof value !== "object") return null;
+
+  const record = value as Record<string, any>;
+  const candidates = [
+    record.response?.data?.status?.error?.message,
+    record.status?.error?.message,
+    record.data?.status?.error?.message,
+    record.status?.message,
+    record.response?.data?.status?.message,
+    record.response?.data?.message,
+    record.data?.status?.message,
+    record.data?.message,
+    record.message,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  return null;
+}
+
 export function InfoProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<Toast | null>(null);
   const timerRef = useRef<number | null>(null);
+  const startedAtRef = useRef<number | null>(null);
+  const remainingMsRef = useRef(0);
   const idRef = useRef(0);
 
-  const info = useCallback((message: string, type: InfoType = "info") => {
-    idRef.current += 1;
-
-    // reset timer si on réaffiche une alerte
-    if (timerRef.current) window.clearTimeout(timerRef.current);
-
-    setToast({ id: idRef.current, message, type });
-
-    timerRef.current = window.setTimeout(() => {
-      setToast(null);
+  const clearDismissTimer = useCallback(() => {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
       timerRef.current = null;
-    }, 3000);
+    }
   }, []);
+
+  const closeToast = useCallback(() => {
+    clearDismissTimer();
+    startedAtRef.current = null;
+    remainingMsRef.current = 0;
+    setToast(null);
+  }, [clearDismissTimer]);
+
+  const startDismissTimer = useCallback((duration: number) => {
+    clearDismissTimer();
+    remainingMsRef.current = duration;
+    startedAtRef.current = Date.now();
+    timerRef.current = window.setTimeout(closeToast, duration);
+  }, [clearDismissTimer, closeToast]);
+
+  const pauseDismissTimer = useCallback(() => {
+    if (!timerRef.current) return;
+    window.clearTimeout(timerRef.current);
+    timerRef.current = null;
+
+    if (startedAtRef.current != null) {
+      const elapsed = Date.now() - startedAtRef.current;
+      remainingMsRef.current = Math.max(0, remainingMsRef.current - elapsed);
+    }
+  }, []);
+
+  const resumeDismissTimer = useCallback(() => {
+    if (!toast || timerRef.current || remainingMsRef.current <= 0) return;
+    startedAtRef.current = Date.now();
+    timerRef.current = window.setTimeout(closeToast, remainingMsRef.current);
+  }, [closeToast, toast]);
+
+  useEffect(() => clearDismissTimer, [clearDismissTimer]);
+
+  const info = useCallback((message: unknown, type: InfoType = "info") => {
+    idRef.current += 1;
+    const backendMessage =
+      type === "success" || type === "error"
+        ? consumeBackendResponseMessage(type)
+        : null;
+    const resolvedMessage =
+      backendMessage ?? extractMessage(message) ?? "Operation effectuee.";
+
+    setToast({ id: idRef.current, message: resolvedMessage, type });
+    startDismissTimer(durationByType[type]);
+  }, [startDismissTimer]);
 
   return (
     <InfoContext.Provider value={{ info }}>
@@ -47,11 +124,29 @@ export function InfoProvider({ children }: { children: React.ReactNode }) {
             key={toast.id}
             className={`pointer-events-auto flex items-center gap-2 rounded-xl px-4 py-3 text-sm shadow-lg ring-1 ring-black/10
             ${stylesByType[toast.type]}`}
-            role="status"
+            role={toast.type === "error" || toast.type === "warning" ? "alert" : "status"}
             aria-live="polite"
+            onMouseEnter={pauseDismissTimer}
+            onMouseLeave={resumeDismissTimer}
+            onFocus={pauseDismissTimer}
+            onBlur={resumeDismissTimer}
           >
             <Icon type={toast.type} />
             <span className="max-w-[80vw] break-words">{toast.message}</span>
+            <button
+              type="button"
+              className="ml-2 rounded-full p-1 text-current/80 transition hover:bg-white/15 hover:text-current focus:outline-none focus:ring-2 focus:ring-white/70"
+              aria-label="Fermer la notification"
+              onClick={closeToast}
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
           </div>
         ) : null}
       </div>

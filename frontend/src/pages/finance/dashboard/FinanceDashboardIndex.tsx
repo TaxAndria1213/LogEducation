@@ -43,6 +43,10 @@ import PaiementService, {
 import FinanceRelanceService, {
   type FinanceRelanceHistoryItem,
 } from "../../../services/financeRelance.service";
+import FinanceDashboardService, {
+  type FinanceDashboardActivity,
+  type FinanceDashboardSummary,
+} from "../../../services/financeDashboard.service";
 import FacturationRecurrenteService, {
   type FacturationRecurrenteHistoryItem,
   type FacturationRecurrenteReadiness,
@@ -418,6 +422,8 @@ export default function FinanceDashboardIndex() {
   const [relances, setRelances] = useState<FinanceRelanceHistoryItem[]>([]);
   const [facturationsRecurrentes, setFacturationsRecurrentes] = useState<FacturationRecurrenteHistoryItem[]>([]);
   const [recurringReadiness, setRecurringReadiness] = useState<FacturationRecurrenteReadiness | null>(null);
+  const [dashboardSummary, setDashboardSummary] = useState<FinanceDashboardSummary | null>(null);
+  const [dashboardActivity, setDashboardActivity] = useState<FinanceDashboardActivity | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [sendingRelanceId, setSendingRelanceId] = useState<string | null>(null);
@@ -466,12 +472,15 @@ export default function FinanceDashboardIndex() {
         const planService = new PlanPaiementEleveService();
         const catalogueService = new CatalogueFraisService();
         const remiseService = new RemiseService();
+        const financeDashboardService = new FinanceDashboardService();
         const relanceService = new FinanceRelanceService();
         const recurringService = new FacturationRecurrenteService();
         const transportService = new AbonnementTransportService();
         const cantineService = new AbonnementCantineService();
 
         const [
+          summaryResult,
+          activityResult,
           facturesResult,
           paiementsResult,
           plansResult,
@@ -491,9 +500,12 @@ export default function FinanceDashboardIndex() {
           cantineControlAnomaliesResult,
         ] =
           await Promise.all([
+            financeDashboardService.getSummary(etablissement_id),
+            financeDashboardService.getActivity(etablissement_id),
             factureService.getForEtablissement(etablissement_id, {
               page: 1,
-              take: 500,
+              take: 120,
+              includeTotal: false,
               includeSpec: JSON.stringify({
                 eleve: {
                   include: {
@@ -510,17 +522,51 @@ export default function FinanceDashboardIndex() {
                   },
                 },
                 annee: true,
-                lignes: { include: { frais: true } },
-                paiements: true,
+                lignes: {
+                  select: {
+                    id: true,
+                    libelle: true,
+                    montant: true,
+                    catalogue_frais_id: true,
+                    frais: {
+                      select: {
+                        id: true,
+                        nom: true,
+                        usage_scope: true,
+                      },
+                    },
+                  },
+                },
+                paiements: {
+                  select: {
+                    id: true,
+                    montant: true,
+                    statut: true,
+                    paye_le: true,
+                    methode: true,
+                  },
+                },
                 echeances: {
                   orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
-                  include: { affectations: true },
+                  select: {
+                    id: true,
+                    plan_paiement_id: true,
+                    ordre: true,
+                    libelle: true,
+                    date_echeance: true,
+                    montant_prevu: true,
+                    montant_regle: true,
+                    montant_restant: true,
+                    statut: true,
+                    devise: true,
+                  },
                 },
               }),
             }),
             paiementService.getForEtablissement(etablissement_id, {
               page: 1,
-              take: 500,
+              take: 120,
+              includeTotal: false,
               includeSpec: JSON.stringify({
                 facture: {
                   include: {
@@ -541,16 +587,39 @@ export default function FinanceDashboardIndex() {
                     annee: true,
                   },
                 },
+                operationsFinancieres: {
+                  select: {
+                    id: true,
+                    type: true,
+                    montant: true,
+                    details_json: true,
+                    created_at: true,
+                  },
+                  orderBy: [{ created_at: "desc" }],
+                },
               }),
             }),
             planService.getForEtablissement(etablissement_id, {
               page: 1,
-              take: 400,
+              take: 120,
+              includeTotal: false,
               includeSpec: JSON.stringify({
                 eleve: { include: { utilisateur: { include: { profil: true } } } },
                 annee: true,
                 remise: true,
                 echeances: {
+                  select: {
+                    id: true,
+                    ordre: true,
+                    libelle: true,
+                    date_echeance: true,
+                    montant_prevu: true,
+                    montant_regle: true,
+                    montant_restant: true,
+                    statut: true,
+                    devise: true,
+                    facture_id: true,
+                  },
                   orderBy: [{ ordre: "asc" }, { date_echeance: "asc" }],
                 },
               }),
@@ -558,10 +627,12 @@ export default function FinanceDashboardIndex() {
             catalogueService.getForEtablissement(etablissement_id, {
               page: 1,
               take: 200,
+              includeTotal: false,
             }),
             remiseService.getForEtablissement(etablissement_id, {
               page: 1,
               take: 200,
+              includeTotal: false,
             }),
             relanceService.getHistory({
               take: 20,
@@ -574,6 +645,7 @@ export default function FinanceDashboardIndex() {
             transportService.getForEtablissement(etablissement_id, {
               page: 1,
               take: 500,
+              includeTotal: false,
               includeSpec: JSON.stringify({
                 eleve: { include: { utilisateur: { include: { profil: true } } } },
                 annee: true,
@@ -593,6 +665,12 @@ export default function FinanceDashboardIndex() {
 
         if (!active) return;
 
+        setDashboardSummary(
+          summaryResult?.status.success ? ((summaryResult.data as FinanceDashboardSummary) ?? null) : null,
+        );
+        setDashboardActivity(
+          activityResult?.status.success ? ((activityResult.data as FinanceDashboardActivity) ?? null) : null,
+        );
         setFactures(
           facturesResult?.status.success ? ((facturesResult.data.data as DashboardFactureRecord[]) ?? []) : [],
         );
@@ -702,34 +780,41 @@ export default function FinanceDashboardIndex() {
     };
   }, [canAccess, etablissement_id]);
 
-  const totalFacture = useMemo(
+  const rowTotalFacture = useMemo(
     () =>
       factures
         .filter((item) => (item.statut ?? "").toUpperCase() !== "ANNULEE")
         .reduce((sum, item) => sum + toNumber(item.total_montant), 0),
     [factures],
   );
+  const totalFacture = dashboardSummary?.metrics.totalFacture ?? rowTotalFacture;
 
-  const totalEncaisse = useMemo(
+  const rowTotalEncaisse = useMemo(
     () =>
       paiements
         .filter((item) => isActivePaiementStatus(item.statut))
         .reduce((sum, item) => sum + toNumber(item.montant), 0),
     [paiements],
   );
-  const activePaiementsCount = useMemo(
+  const totalEncaisse = dashboardSummary?.metrics.totalEncaisse ?? rowTotalEncaisse;
+
+  const rowActivePaiementsCount = useMemo(
     () => paiements.filter((item) => isActivePaiementStatus(item.statut)).length,
     [paiements],
   );
-  const reversedPaiementsCount = useMemo(
+  const activePaiementsCount = dashboardSummary?.metrics.activePaiementsCount ?? rowActivePaiementsCount;
+
+  const rowReversedPaiementsCount = useMemo(
     () => paiements.filter((item) => !isActivePaiementStatus(item.statut)).length,
     [paiements],
   );
+  const reversedPaiementsCount = dashboardSummary?.metrics.reversedPaiementsCount ?? rowReversedPaiementsCount;
 
-  const partiallyPaidInvoices = useMemo(
+  const rowPartiallyPaidInvoices = useMemo(
     () => factures.filter((item) => (item.statut ?? "").toUpperCase() === "PARTIELLE").length,
     [factures],
   );
+  const partiallyPaidInvoices = dashboardSummary?.metrics.partiallyPaidInvoices ?? rowPartiallyPaidInvoices;
 
   // const paidInvoices = useMemo(
   //   () => factures.filter((item) => (item.statut ?? "").toUpperCase() === "PAYEE").length,
@@ -799,20 +884,23 @@ export default function FinanceDashboardIndex() {
   const today = useMemo(() => startOfDay(new Date()), []);
   const nextThirtyDays = useMemo(() => addDays(today, 30), [today]);
 
-  const overdueEcheances = useMemo(
+  const rowOverdueEcheances = useMemo(
     () =>
       openEcheances
         .filter((item) => isOverdueEcheance(item, today))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [openEcheances, today],
   );
+  const overdueEcheances = dashboardActivity?.overdueEcheances ?? rowOverdueEcheances;
 
-  const impactedOverdueInvoices = useMemo(
+  const rowImpactedOverdueInvoices = useMemo(
     () => new Set(overdueEcheances.map((item) => item.factureId).filter(Boolean)).size,
     [overdueEcheances],
   );
+  const impactedOverdueInvoices =
+    dashboardSummary?.metrics.impactedOverdueInvoices ?? rowImpactedOverdueInvoices;
 
-  const overdueStudents = useMemo<DashboardOverdueStudent[]>(() => {
+  const rowOverdueStudents = useMemo<DashboardOverdueStudent[]>(() => {
     const grouped = new Map<string, DashboardOverdueStudent>();
 
     overdueEcheances.forEach((item) => {
@@ -849,13 +937,18 @@ export default function FinanceDashboardIndex() {
         new Date(a.oldestDate).getTime() - new Date(b.oldestDate).getTime(),
     );
   }, [overdueEcheances]);
+  const overdueStudents = dashboardActivity?.overdueStudents ?? rowOverdueStudents;
 
-  const resteARecouvrer = useMemo(
+  const rowResteARecouvrer = useMemo(
     () => openEcheances.reduce((sum, item) => sum + item.montantRestant, 0),
     [openEcheances],
   );
+  const resteARecouvrer = dashboardSummary?.metrics.resteARecouvrer ?? rowResteARecouvrer;
+  const openEcheancesCount = dashboardSummary?.metrics.openEcheancesCount ?? openEcheances.length;
+  const overdueEcheancesCount = dashboardSummary?.metrics.overdueEcheancesCount ?? overdueEcheances.length;
+  const overdueStudentsCount = dashboardSummary?.metrics.overdueStudentsCount ?? overdueStudents.length;
 
-  const upcomingEcheances = useMemo(
+  const rowUpcomingEcheances = useMemo(
     () =>
       openEcheances
         .filter((item) => {
@@ -870,8 +963,9 @@ export default function FinanceDashboardIndex() {
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [nextThirtyDays, openEcheances, today],
   );
+  const upcomingEcheances = dashboardActivity?.upcomingEcheances ?? rowUpcomingEcheances;
 
-  const recentFactures = useMemo(
+  const rowRecentFactures = useMemo(
     () =>
       [...factures]
         .sort(
@@ -882,8 +976,9 @@ export default function FinanceDashboardIndex() {
         .slice(0, 6),
     [factures],
   );
+  const recentFactures = dashboardActivity?.recentFactures ?? rowRecentFactures;
 
-  const recentPaiements = useMemo(
+  const rowRecentPaiements = useMemo(
     () =>
       [...paiements]
         .sort(
@@ -893,8 +988,9 @@ export default function FinanceDashboardIndex() {
         .slice(0, 6),
     [paiements],
   );
+  const recentPaiements = dashboardActivity?.recentPaiements ?? rowRecentPaiements;
 
-  const topFrais = useMemo(() => {
+  const rowTopFrais = useMemo(() => {
     const usage = new Map<string, { label: string; count: number; montant: number }>();
     factures.forEach((facture) => {
       facture.lignes?.forEach((ligne) => {
@@ -907,6 +1003,7 @@ export default function FinanceDashboardIndex() {
     });
     return [...usage.values()].sort((a, b) => b.count - a.count || b.montant - a.montant).slice(0, 5);
   }, [factures]);
+  const topFrais = dashboardActivity?.topFrais ?? rowTopFrais;
 
   const recurrentFraisCount = useMemo(
     () => catalogueFrais.filter((item) => Boolean(item.est_recurrent)).length,
@@ -1031,7 +1128,7 @@ export default function FinanceDashboardIndex() {
     [factures],
   );
 
-  const dailyReceipts = useMemo<DashboardDailyReceipt[]>(() => {
+  const rowDailyReceipts = useMemo<DashboardDailyReceipt[]>(() => {
     const grouped = new Map<string, DashboardDailyReceipt>();
 
     paiements
@@ -1073,8 +1170,9 @@ export default function FinanceDashboardIndex() {
       .sort((a, b) => b.dayKey.localeCompare(a.dayKey))
       .slice(0, 10);
   }, [paiements]);
+  const dailyReceipts = dashboardSummary ? dashboardSummary.dailyReceipts : rowDailyReceipts;
 
-  const paymentChannelStats = useMemo<DashboardChannelSummary[]>(() => {
+  const rowPaymentChannelStats = useMemo<DashboardChannelSummary[]>(() => {
     const grouped = new Map<string, DashboardChannelSummary>([
       ["cash", { key: "cash", label: "Caisse", count: 0, total: 0 }],
       ["bank", { key: "bank", label: "Banque", count: 0, total: 0 }],
@@ -1094,8 +1192,9 @@ export default function FinanceDashboardIndex() {
 
     return [...grouped.values()].sort((a, b) => b.total - a.total || b.count - a.count);
   }, [paiements]);
+  const paymentChannelStats = dashboardSummary ? dashboardSummary.paymentChannelStats : rowPaymentChannelStats;
 
-  const reconciliationStats = useMemo<DashboardChannelSummary[]>(() => {
+  const rowReconciliationStats = useMemo<DashboardChannelSummary[]>(() => {
     const grouped = new Map<string, DashboardChannelSummary>([
       ["Rapproche", { key: "Rapproche", label: "Rapproches", count: 0, total: 0 }],
       ["En attente", { key: "En attente", label: "En attente", count: 0, total: 0 }],
@@ -1112,6 +1211,7 @@ export default function FinanceDashboardIndex() {
 
     return [...grouped.values()].sort((a, b) => b.total - a.total || b.count - a.count);
   }, [paiements]);
+  const reconciliationStats = dashboardSummary ? dashboardSummary.reconciliationStats : rowReconciliationStats;
 
   const classFinancialRows = useMemo<DashboardEducationReportRow[]>(() => {
     const grouped = new Map<string, DashboardEducationReportRow & { studentIds: Set<string> }>();
@@ -1194,7 +1294,7 @@ export default function FinanceDashboardIndex() {
       .slice(0, 8);
   }, [standardFactures]);
 
-  const ageingBuckets = useMemo<DashboardAgeingBucket[]>(() => {
+  const rowAgeingBuckets = useMemo<DashboardAgeingBucket[]>(() => {
     const buckets: Array<DashboardAgeingBucket & { minDays: number; maxDays: number | null }> = [
       { key: "1-30", label: "1 a 30 jours", minDays: 1, maxDays: 30, count: 0, total: 0 },
       { key: "31-60", label: "31 a 60 jours", minDays: 31, maxDays: 60, count: 0, total: 0 },
@@ -1216,6 +1316,7 @@ export default function FinanceDashboardIndex() {
 
     return buckets;
   }, [overdueEcheances, today]);
+  const ageingBuckets = dashboardSummary ? dashboardSummary.ageingBuckets : rowAgeingBuckets;
 
   const handleSendRelance = async (echeance: DashboardEcheance) => {
     try {
@@ -1310,8 +1411,8 @@ export default function FinanceDashboardIndex() {
     .reduce((sum, item) => sum + item.count, 0);
 
   const dashboardViews = [
-    { id: "synthese", label: "Synthese", helper: `${openEcheances.length} ouvertes`, onClick: () => setActiveTab("synthese"), active: activeTab === "synthese" },
-    { id: "retards", label: "Retards", helper: `${overdueStudents.length} eleves`, onClick: () => setActiveTab("retards"), active: activeTab === "retards", tone: overdueEcheances.length > 0 ? ("primary" as const) : undefined },
+    { id: "synthese", label: "Synthese", helper: `${openEcheancesCount} ouvertes`, onClick: () => setActiveTab("synthese"), active: activeTab === "synthese" },
+    { id: "retards", label: "Retards", helper: `${overdueStudentsCount} eleves`, onClick: () => setActiveTab("retards"), active: activeTab === "retards", tone: overdueEcheancesCount > 0 ? ("primary" as const) : undefined },
     { id: "activite", label: "Activite", helper: `${recentPaiements.length} paiements`, onClick: () => setActiveTab("activite"), active: activeTab === "activite" },
     { id: "reporting", label: "Reporting", helper: `${dailyReceipts.length} jour(s)`, onClick: () => setActiveTab("reporting"), active: activeTab === "reporting" },
     { id: "automatisation", label: "Automatisation", helper: `${recurrentFraisCount} recurrents`, onClick: () => setActiveTab("automatisation"), active: activeTab === "automatisation" },
@@ -1324,6 +1425,7 @@ export default function FinanceDashboardIndex() {
       service.getForEtablissement(etablissement_id ?? "", {
         page: 1,
         take: 500,
+        includeTotal: false,
         includeSpec: JSON.stringify({
           eleve: { include: { utilisateur: { include: { profil: true } } } },
           annee: true,
@@ -1672,13 +1774,13 @@ export default function FinanceDashboardIndex() {
           <div className="grid gap-4 lg:grid-cols-2">
             <FinanceControlBanner
               label="Controle factures"
-              title={overdueEcheances.length > 0 ? `${overdueEcheances.length} echeance(s) en retard` : "Aucun retard critique"}
+              title={overdueEcheancesCount > 0 ? `${overdueEcheancesCount} echeance(s) en retard` : "Aucun retard critique"}
               description={
-                overdueEcheances.length > 0
-                  ? `${overdueStudents.length} eleve(s) demandent une relance ou un suivi de recouvrement.`
+                overdueEcheancesCount > 0
+                  ? `${overdueStudentsCount} eleve(s) demandent une relance ou un suivi de recouvrement.`
                   : "Les echeances ouvertes restent sous controle sur la periode chargee."
               }
-              tone={overdueEcheances.length > 0 ? "danger" : "success"}
+              tone={overdueEcheancesCount > 0 ? "danger" : "success"}
               action={
                 <button
                   type="button"
@@ -1740,7 +1842,7 @@ export default function FinanceDashboardIndex() {
                 </div>
                 <div className="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3">
                   <span>Controle service / periode</span>
-                  <span className="font-semibold text-slate-900">{openEcheances.length} echeances</span>
+                  <span className="font-semibold text-slate-900">{openEcheancesCount} echeances</span>
                 </div>
               </div>
             </div>
@@ -1788,8 +1890,8 @@ export default function FinanceDashboardIndex() {
           <FinanceMetricCard
             icon={<FiAlertCircle />}
             label="Echeances en retard"
-            value={String(overdueEcheances.length)}
-            helper={`${overdueStudents.length} eleve(s) concernes, ${impactedOverdueInvoices} facture(s) impactees`}
+            value={String(overdueEcheancesCount)}
+            helper={`${overdueStudentsCount} eleve(s) concernes, ${impactedOverdueInvoices} facture(s) impactees`}
           />
         </section>
         <section
@@ -1996,7 +2098,7 @@ export default function FinanceDashboardIndex() {
                     </div>
                     <p className="mt-3 text-2xl font-semibold text-slate-900">{upcomingEcheances.length}</p>
                     <p className="mt-2 text-xs text-slate-500">
-                      {openEcheances.length} tranche(s) encore ouverte(s)
+                      {openEcheancesCount} tranche(s) encore ouverte(s)
                     </p>
                   </div>
                   <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
@@ -2007,7 +2109,7 @@ export default function FinanceDashboardIndex() {
                     <p className="mt-3 text-2xl font-semibold text-slate-900">
                       {plans.filter((item) => (item.plan_json?.mode_paiement ?? "").toUpperCase() !== "COMPTANT").length}
                     </p>
-                    <p className="mt-2 text-xs text-slate-500">{overdueEcheances.length} echeance(s) en retard</p>
+                    <p className="mt-2 text-xs text-slate-500">{overdueEcheancesCount} echeance(s) en retard</p>
                   </div>
                   <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="flex items-center gap-3 text-slate-500">

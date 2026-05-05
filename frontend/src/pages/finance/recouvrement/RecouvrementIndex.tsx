@@ -4,6 +4,7 @@ import FinanceModuleLayout from "../components/FinanceModuleLayout";
 import { FinanceControlBanner, FinanceMetricCard } from "../components/financeUi";
 import { useAuth } from "../../../hooks/useAuth";
 import { useInfo } from "../../../hooks/useInfo";
+import EtablissementService, { type EnrollmentFinancePolicySettings } from "../../../services/etablissement.service";
 import FinanceRelanceService from "../../../services/financeRelance.service";
 import FinanceRecouvrementService from "../../../services/financeRecouvrement.service";
 import NotFound from "../../NotFound";
@@ -38,17 +39,40 @@ function fmtMoney(value?: number | null) {
   return `${Number(value ?? 0).toLocaleString("fr-FR")} MGA`;
 }
 
+function describeEnrollmentPolicy(policy?: Pick<EnrollmentFinancePolicySettings, "mode" | "value" | "due_soon_days"> | null) {
+  if (!policy || policy.mode === "NONE") {
+    return "Aucun paiement minimum n'est exige avant validation administrative.";
+  }
+
+  if (policy.mode === "PERCENT") {
+    return `La validation exige au moins ${Number(policy.value ?? 0).toLocaleString("fr-FR")}% du total facture, avec alerte echeance proche a ${policy.due_soon_days} jour(s).`;
+  }
+
+  if (policy.mode === "AMOUNT") {
+    return `La validation exige au moins ${fmtMoney(policy.value)} avant validation, avec alerte echeance proche a ${policy.due_soon_days} jour(s).`;
+  }
+
+  if (policy.mode === "INSCRIPTION_FEE") {
+    return `La validation exige le paiement complet du droit d'inscription, avec alerte echeance proche a ${policy.due_soon_days} jour(s).`;
+  }
+
+  return `La validation exige le droit d'inscription et la premiere tranche de scolarite, avec alerte echeance proche a ${policy.due_soon_days} jour(s).`;
+}
+
 export default function RecouvrementIndex() {
   const { etablissement_id } = useAuth();
   const { info } = useInfo();
   const service = useMemo(() => new FinanceRecouvrementService(), []);
   const relanceService = useMemo(() => new FinanceRelanceService(), []);
+  const etablissementService = useMemo(() => new EtablissementService(), []);
   const [loading, setLoading] = useState(true);
   const [policy, setPolicy] = useState<any>(null);
+  const [enrollmentPolicy, setEnrollmentPolicy] = useState<EnrollmentFinancePolicySettings | null>(null);
   const [promises, setPromises] = useState<any[]>([]);
   const [restrictions, setRestrictions] = useState<any[]>([]);
   const [cases, setCases] = useState<any[]>([]);
   const [processingKey, setProcessingKey] = useState<string | null>(null);
+  const [savingEnrollmentPolicy, setSavingEnrollmentPolicy] = useState(false);
   const [policyForm, setPolicyForm] = useState({
     nom: "Regle de recouvrement par defaut",
     jours_grace: "0",
@@ -56,6 +80,11 @@ export default function RecouvrementIndex() {
     penalite_active: false,
     penalite_mode: "FIXED",
     penalite_valeur: "",
+  });
+  const [enrollmentPolicyForm, setEnrollmentPolicyForm] = useState({
+    mode: "NONE",
+    value: "0",
+    due_soon_days: "7",
   });
   const [promiseForm, setPromiseForm] = useState({
     facture_id: "",
@@ -86,8 +115,9 @@ export default function RecouvrementIndex() {
     if (!etablissement_id) return;
     setLoading(true);
     try {
-      const [policyResult, promiseResult, restrictionResult, caseResult] = await Promise.all([
+      const [policyResult, enrollmentPolicyResult, promiseResult, restrictionResult, caseResult] = await Promise.all([
         service.getPolicy(),
+        etablissementService.getEnrollmentFinancePolicy(),
         service.getPaymentPromises({}),
         service.getAdministrativeRestrictions({}),
         service.getCollectionCases({}),
@@ -103,6 +133,15 @@ export default function RecouvrementIndex() {
         penalite_active: Boolean(nextPolicy?.penalite_active),
         penalite_mode: nextPolicy?.penalite_mode === "PERCENT" ? "PERCENT" : "FIXED",
         penalite_valeur: nextPolicy?.penalite_valeur != null ? String(nextPolicy.penalite_valeur) : "",
+      });
+      const nextEnrollmentPolicy = enrollmentPolicyResult?.status?.success
+        ? (enrollmentPolicyResult.data as EnrollmentFinancePolicySettings)
+        : null;
+      setEnrollmentPolicy(nextEnrollmentPolicy);
+      setEnrollmentPolicyForm({
+        mode: nextEnrollmentPolicy?.mode ?? "NONE",
+        value: String(nextEnrollmentPolicy?.value ?? 0),
+        due_soon_days: String(nextEnrollmentPolicy?.due_soon_days ?? 7),
       });
       setPromises(promiseResult?.status?.success ? promiseResult.data ?? [] : []);
       setRestrictions(restrictionResult?.status?.success ? restrictionResult.data ?? [] : []);
@@ -143,6 +182,25 @@ export default function RecouvrementIndex() {
       await load();
     } catch (error) {
       info(readError(error, "Impossible d'enregistrer la regle."), "error");
+    }
+  };
+
+  const saveEnrollmentPolicy = async () => {
+    try {
+      setSavingEnrollmentPolicy(true);
+      await etablissementService.saveEnrollmentFinancePolicy({
+        mode: enrollmentPolicyForm.mode as EnrollmentFinancePolicySettings["mode"],
+        value: ["NONE", "INSCRIPTION_FEE", "INSCRIPTION_AND_FIRST_SCOLARITE_TRANCHE"].includes(enrollmentPolicyForm.mode)
+          ? 0
+          : Number(enrollmentPolicyForm.value || 0),
+        due_soon_days: Number(enrollmentPolicyForm.due_soon_days || 7),
+      });
+      info("Politique de paiement minimum enregistree.", "success");
+      await load();
+    } catch (error) {
+      info(readError(error, "Impossible d'enregistrer la politique de validation."), "error");
+    } finally {
+      setSavingEnrollmentPolicy(false);
     }
   };
 
@@ -344,6 +402,131 @@ export default function RecouvrementIndex() {
               <input type="number" min="0" className="rounded-2xl border border-slate-200 px-4 py-3" placeholder="Valeur" value={policyForm.penalite_valeur} onChange={(event) => setPolicyForm((current) => ({ ...current, penalite_valeur: event.target.value }))} />
             </div>
             <button type="button" onClick={savePolicy} className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white">Enregistrer la regle</button>
+          </section>
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-[0.95fr,1.2fr]">
+          <FinanceControlBanner
+            label="Validation d'inscription"
+            title={
+              enrollmentPolicy?.mode === "PERCENT"
+                ? `Seuil a ${Number(enrollmentPolicy.value).toLocaleString("fr-FR")}%`
+                : enrollmentPolicy?.mode === "AMOUNT"
+                  ? `Seuil a ${fmtMoney(enrollmentPolicy.value)}`
+                  : enrollmentPolicy?.mode === "INSCRIPTION_FEE"
+                    ? "Droit d'inscription paye"
+                    : enrollmentPolicy?.mode === "INSCRIPTION_AND_FIRST_SCOLARITE_TRANCHE"
+                      ? "Droit + 1re tranche"
+                  : "Aucun paiement minimum obligatoire"
+            }
+            description={describeEnrollmentPolicy(enrollmentPolicy)}
+            tone={enrollmentPolicy?.mode === "NONE" ? "info" : "warning"}
+          />
+
+          <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Politique de paiement minimum</h2>
+                <p className="text-sm text-slate-500">
+                  Ce reglage pilote la validation des inscriptions et les alertes finance du resume d'inscription.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <p className="font-medium text-slate-900">Impact actuel</p>
+                <p>{describeEnrollmentPolicy(enrollmentPolicyForm)}</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 text-sm text-slate-700">
+                <span className="font-medium">Mode de validation financiere</span>
+                <select
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                  value={enrollmentPolicyForm.mode}
+                  onChange={(event) =>
+                    setEnrollmentPolicyForm((current) => ({
+                      ...current,
+                      mode: event.target.value,
+                      value: ["NONE", "INSCRIPTION_FEE", "INSCRIPTION_AND_FIRST_SCOLARITE_TRANCHE"].includes(event.target.value)
+                        ? "0"
+                        : current.value,
+                    }))
+                  }
+                >
+                  <option value="NONE">Aucun minimum</option>
+                  <option value="PERCENT">Pourcentage du total facture</option>
+                  <option value="AMOUNT">Montant fixe minimum</option>
+                  <option value="INSCRIPTION_FEE">Droit d'inscription paye</option>
+                  <option value="INSCRIPTION_AND_FIRST_SCOLARITE_TRANCHE">Droit + premiere tranche de scolarite</option>
+                </select>
+              </label>
+
+              <label className="space-y-2 text-sm text-slate-700">
+                <span className="font-medium">
+                  {enrollmentPolicyForm.mode === "PERCENT"
+                    ? "Pourcentage minimum"
+                    : enrollmentPolicyForm.mode === "AMOUNT"
+                      ? "Montant minimum"
+                      : "Valeur calculee automatiquement"}
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  max={enrollmentPolicyForm.mode === "PERCENT" ? "100" : undefined}
+                  step={enrollmentPolicyForm.mode === "PERCENT" ? "0.01" : "1"}
+                  disabled={["NONE", "INSCRIPTION_FEE", "INSCRIPTION_AND_FIRST_SCOLARITE_TRANCHE"].includes(enrollmentPolicyForm.mode)}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-50"
+                  placeholder={enrollmentPolicyForm.mode === "PERCENT" ? "Ex: 30" : "Ex: 150000"}
+                  value={enrollmentPolicyForm.value}
+                  onChange={(event) =>
+                    setEnrollmentPolicyForm((current) => ({ ...current, value: event.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="space-y-2 text-sm text-slate-700 md:col-span-2">
+                <span className="font-medium">Seuil d'alerte pour une echeance proche</span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                  placeholder="Nombre de jours"
+                  value={enrollmentPolicyForm.due_soon_days}
+                  onChange={(event) =>
+                    setEnrollmentPolicyForm((current) => ({ ...current, due_soon_days: event.target.value }))
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Si un minimum est defini, une inscription ne pourra etre validee que lorsque ce seuil sera atteint, meme si le dossier administratif est complet.
+            </div>
+
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setEnrollmentPolicyForm({
+                    mode: enrollmentPolicy?.mode ?? "NONE",
+                    value: String(enrollmentPolicy?.value ?? 0),
+                    due_soon_days: String(enrollmentPolicy?.due_soon_days ?? 7),
+                  })
+                }
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
+              >
+                Reinitialiser
+              </button>
+              <button
+                type="button"
+                onClick={saveEnrollmentPolicy}
+                disabled={savingEnrollmentPolicy}
+                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingEnrollmentPolicy ? "Enregistrement..." : "Enregistrer la politique"}
+              </button>
+            </div>
           </section>
         </section>
 

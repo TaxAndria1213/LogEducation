@@ -4,6 +4,7 @@ import { useAuth } from "../../../auth/AuthContext";
 import PaiementService, { type PaiementWithRelations } from "../../../services/paiement.service";
 import FinanceModuleLayout from "../components/FinanceModuleLayout";
 import { usePaiementStore } from "./store/PaiementIndexStore";
+import { usePaiementCreateStore } from "./store/PaiementCreateStore";
 import {
   clearFinanceNavigationTarget,
   readFinanceNavigationTarget,
@@ -18,6 +19,7 @@ export default function PaiementsIndex() {
   const setRenderState = usePaiementStore((state) => state.setRenderState);
   const setRenderedComponent = usePaiementStore((state) => state.setRenderedComponent);
   const setSelectedPaiement = usePaiementStore((state) => state.setSelectedPaiement);
+  const setInitialData = usePaiementCreateStore((state) => state.setInitialData);
 
   useEffect(() => {
     if (renderedElement) setRender(renderedElement);
@@ -33,6 +35,26 @@ export default function PaiementsIndex() {
       if (!pending) return;
 
       try {
+        if (pending.view === "add") {
+          if (cancelled) return;
+          setInitialData(
+            pending.record && typeof pending.record === "object"
+              ? (pending.record as {
+                  facture_id?: string;
+                  paye_le?: string;
+                  montant?: number;
+                  methode?: string;
+                  reference?: string;
+                  recu_par?: string;
+                })
+              : null,
+          );
+          setSelectedPaiement(null);
+          setRenderedComponent("add");
+          clearFinanceNavigationTarget();
+          return;
+        }
+
         if (pending.record) {
           if (cancelled) return;
           setSelectedPaiement(pending.record as PaiementWithRelations);
@@ -86,7 +108,7 @@ export default function PaiementsIndex() {
     return () => {
       cancelled = true;
     };
-  }, [etablissement_id, service, setRenderedComponent, setSelectedPaiement]);
+  }, [etablissement_id, service, setInitialData, setRenderedComponent, setSelectedPaiement]);
 
   const localViews = [
     {

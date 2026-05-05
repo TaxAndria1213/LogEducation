@@ -362,7 +362,6 @@ class SessionAppelApp {
       Response.success(res, "Session d'appel creee.", full);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de la session d'appel", 400, error as Error);
-      next(error);
     }
   }
 
@@ -379,7 +378,6 @@ class SessionAppelApp {
       Response.success(res, "Sessions d'appel.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des sessions d'appel", 400, error as Error);
-      next(error);
     }
   }
 
@@ -391,7 +389,6 @@ class SessionAppelApp {
       Response.success(res, "Session d'appel detail.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de la session d'appel", 404, error as Error);
-      next(error);
     }
   }
 
@@ -408,7 +405,6 @@ class SessionAppelApp {
       Response.success(res, "Session d'appel supprimee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression de la session d'appel", 400, error as Error);
-      next(error);
     }
   }
 
@@ -428,7 +424,6 @@ class SessionAppelApp {
       Response.success(res, "Session d'appel mise a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de la session d'appel", 400, error as Error);
-      next(error);
     }
   }
 }

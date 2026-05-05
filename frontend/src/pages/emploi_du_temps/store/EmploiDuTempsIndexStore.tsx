@@ -3,7 +3,6 @@ import type { JSX } from "react";
 import NotFound from "../../NotFound";
 import CreneauManager from "../components/EmploiDuTemps/CreneauManager";
 import ScheduleDashboard from "../components/EmploiDuTemps/ScheduleDashboard";
-import ScheduleForm from "../components/EmploiDuTemps/ScheduleForm";
 import ScheduleList from "../components/EmploiDuTemps/ScheduleList";
 
 type MenuComponent = {
@@ -16,7 +15,7 @@ const renderList: MenuComponent[] = [
   { id: "dashboard", component: <ScheduleDashboard />, renderState: 0 },
   { id: "list", component: <ScheduleList />, renderState: 1 },
   { id: "parametre", component: <CreneauManager />, renderState: 2 },
-  { id: "add", component: <ScheduleForm />, renderState: 3 },
+  { id: "add", component: <ScheduleDashboard />, renderState: 3 },
 ];
 
 type State = {

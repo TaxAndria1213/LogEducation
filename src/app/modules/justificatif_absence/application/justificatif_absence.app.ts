@@ -142,7 +142,6 @@ class JustificatifAbsenceApp {
       Response.success(res, "Justificatif d'absence cree.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation du justificatif d'absence", 400, error as Error);
-      next(error);
     }
   }
 
@@ -159,7 +158,6 @@ class JustificatifAbsenceApp {
       Response.success(res, "Justificatifs d'absence.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des justificatifs d'absence", 400, error as Error);
-      next(error);
     }
   }
 
@@ -171,7 +169,6 @@ class JustificatifAbsenceApp {
       Response.success(res, "Justificatif d'absence detail.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation du justificatif d'absence", 404, error as Error);
-      next(error);
     }
   }
 
@@ -184,7 +181,6 @@ class JustificatifAbsenceApp {
       Response.success(res, "Justificatif d'absence supprime.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression du justificatif d'absence", 400, error as Error);
-      next(error);
     }
   }
 
@@ -199,7 +195,6 @@ class JustificatifAbsenceApp {
       Response.success(res, "Justificatif d'absence mis a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour du justificatif d'absence", 400, error as Error);
-      next(error);
     }
   }
 }

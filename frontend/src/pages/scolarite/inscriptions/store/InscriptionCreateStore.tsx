@@ -23,6 +23,7 @@ import LigneTransportService, {
 } from "../../../../services/ligneTransport.service";
 import RemiseService from "../../../../services/remise.service";
 import ParentTuteurService from "../../../../services/parentTuteur.service";
+import NiveauScolaireService from "../../../../services/niveau.service";
 
 export type InscriptionCreateInput = Partial<Inscription>;
 type Option = { value: string; label: string };
@@ -71,11 +72,20 @@ type State = {
   >;
   parentTuteurOptions: Array<
     Option & {
+      nom_complet?: string | null;
+      prenom?: string | null;
+      nom?: string | null;
       telephone?: string | null;
+      telephone_secondaire?: string | null;
       email?: string | null;
+      adresse?: string | null;
+      profession?: string | null;
+      lieu_travail?: string | null;
     }
   >;
+  niveauOptions: Option[];
   anneeScolaireId: string | null;
+  anneeScolaireLabel: string | null;
 
   onCreate: (inscription: InscriptionCreateInput) => Promise<any>;
   onCreateFull: (payload: any) => Promise<any>;
@@ -98,7 +108,9 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
   catalogueFraisOptions: [],
   remiseOptions: [],
   parentTuteurOptions: [],
+  niveauOptions: [],
   anneeScolaireId: null,
+  anneeScolaireLabel: null,
 
   setLoading: (loading: boolean) => set({ loading }),
 
@@ -114,6 +126,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
       if (!anneeScolaire?.id) {
         set({
           anneeScolaireId: null,
+          anneeScolaireLabel: null,
           classeOptions: [],
           transportLineOptions: [],
           transportStopOptions: [],
@@ -121,11 +134,12 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
           catalogueFraisOptions: [],
           remiseOptions: [],
           parentTuteurOptions: [],
+          niveauOptions: [],
         });
         throw new Error("Aucune annee scolaire active n'est disponible.");
       }
 
-      set({ anneeScolaireId: anneeScolaire.id });
+      set({ anneeScolaireId: anneeScolaire.id, anneeScolaireLabel: anneeScolaire.nom ?? null });
 
       const inscriptionService = new InscriptionService();
       const registeredNumber =
@@ -139,6 +153,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
       const code = `E${annee}${(registeredNumber + 1).toString().padStart(4, "0")}`;
 
       const classeService = new ClasseService();
+      const niveauService = new NiveauScolaireService();
       const ligneTransportService = new LigneTransportService();
       const arretTransportService = new ArretTransportService();
       const formuleCantineService = new FormuleCantineService();
@@ -146,7 +161,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
       const remiseService = new RemiseService();
       const parentTuteurService = new ParentTuteurService();
 
-      const [classes, lignes, arrets, formules, catalogueFrais, remises, parentsTuteurs] = await Promise.all([
+      const [classes, niveaux, lignes, arrets, formules, catalogueFrais, remises, parentsTuteurs] = await Promise.all([
         classeService.getAll({
           take: 1000,
           where: JSON.stringify({
@@ -158,6 +173,13 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
             site: true,
           }),
           orderBy: JSON.stringify([{ nom: "asc" }]),
+        }),
+        niveauService.getAll({
+          take: 1000,
+          where: JSON.stringify({
+            etablissement_id,
+          }),
+          orderBy: JSON.stringify([{ ordre: "asc" }, { nom: "asc" }]),
         }),
         ligneTransportService.getForEtablissement(etablissement_id, {
           take: 1000,
@@ -186,6 +208,13 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
         parentTuteurService.getAll({
           take: 1000,
           where: JSON.stringify({ etablissement_id }),
+          includeSpec: JSON.stringify({
+            utilisateur: {
+              include: {
+                profil: true,
+              },
+            },
+          }),
           orderBy: JSON.stringify([{ nom_complet: "asc" }]),
         }),
       ]);
@@ -201,6 +230,14 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
                 .filter(Boolean)
                 .join(" - "),
               niveau_scolaire_id: classe.niveau_scolaire_id ?? null,
+            }))
+          : [];
+
+      const niveauOptions =
+        niveaux?.status.success
+          ? niveaux.data.data.map((niveau: { id: string; nom?: string | null }) => ({
+              value: niveau.id,
+              label: niveau.nom?.trim() || "Niveau",
             }))
           : [];
 
@@ -311,8 +348,18 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
           ? parentsTuteurs.data.data.map((parent: {
               id: string;
               nom_complet?: string | null;
+              utilisateur?: {
+                profil?: {
+                  prenom?: string | null;
+                  nom?: string | null;
+                } | null;
+              } | null;
               telephone?: string | null;
+              telephone_secondaire?: string | null;
               email?: string | null;
+              adresse?: string | null;
+              profession?: string | null;
+              lieu_travail?: string | null;
             }) => ({
               value: parent.id,
               label: [
@@ -322,8 +369,15 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
               ]
                 .filter(Boolean)
                 .join(" - "),
+              nom_complet: parent.nom_complet ?? null,
+              prenom: parent.utilisateur?.profil?.prenom ?? null,
+              nom: parent.utilisateur?.profil?.nom ?? null,
               telephone: parent.telephone ?? null,
+              telephone_secondaire: parent.telephone_secondaire ?? null,
               email: parent.email ?? null,
+              adresse: parent.adresse ?? null,
+              profession: parent.profession ?? null,
+              lieu_travail: parent.lieu_travail ?? null,
             }))
           : [];
 
@@ -336,6 +390,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
         catalogueFraisOptions,
         remiseOptions,
         parentTuteurOptions,
+        niveauOptions,
         scolariteInitialData: {
           ...get().scolariteInitialData,
           code_eleve: code,
@@ -381,7 +436,7 @@ export const useInscriptionCreateStore = create<State>((set, get) => ({
       throw new Error();
     } catch (error) {
       console.log("Erreur creation inscription complete :", error);
-      return { status: { success: false } };
+      throw error;
     }
   },
 }));

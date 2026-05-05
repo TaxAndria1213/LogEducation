@@ -54,8 +54,10 @@ import FinanceRelanceApp from "../modules/finance_relance/application/finance_re
 import FacturationRecurrenteApp from "../modules/facturation_recurrente/application/facturation_recurrente.app";
 import OperationFinanciereApp from "../modules/operation_financiere/application/operation_financiere.app";
 import FinanceRecouvrementApp from "../modules/finance_recouvrement/application/finance_recouvrement.app";
+import FinanceDashboardApp from "../modules/finance_dashboard/application/finance_dashboard.app";
 import RessourceBibliothequeApp from "../modules/ressource_bibliotheque/application/ressource_bibliotheque.app";
 import EmpruntApp from "../modules/emprunt/application/emprunt.app";
+import DocumentTypeInscriptionApp from "../modules/document_type_inscription/application/document_type_inscription.app";
 
 export class ApiRoutes {
   public app: Application;
@@ -119,8 +121,10 @@ export class ApiRoutes {
   private facturationRecurrente: FacturationRecurrenteApp;
   private operationFinanciere: OperationFinanciereApp;
   private financeRecouvrement: FinanceRecouvrementApp;
+  private financeDashboard: FinanceDashboardApp;
   private ressourceBibliotheque: RessourceBibliothequeApp;
   private empruntBibliotheque: EmpruntApp;
+  private documentTypeInscription: DocumentTypeInscriptionApp;
 
   constructor(app: Application) {
     this.app = app;
@@ -179,8 +183,10 @@ export class ApiRoutes {
     this.facturationRecurrente = new FacturationRecurrenteApp(app);
     this.operationFinanciere = new OperationFinanciereApp(app);
     this.financeRecouvrement = new FinanceRecouvrementApp(app);
+    this.financeDashboard = new FinanceDashboardApp(app);
     this.ressourceBibliotheque = new RessourceBibliothequeApp(app);
     this.empruntBibliotheque = new EmpruntApp(app);
+    this.documentTypeInscription = new DocumentTypeInscriptionApp(app);
     this.routes();
   }
 
@@ -204,6 +210,7 @@ export class ApiRoutes {
     );
     this.router.use("/periode", this.periode.routes());
     this.router.use("/referenciel", this.referenciel.routes());
+    this.router.use("/document-type-inscription", this.documentTypeInscription.routes());
 
     this.router.use("/inscription", this.inscription.routes());
     this.router.use("/classe", this.classe.routes());
@@ -249,6 +256,7 @@ export class ApiRoutes {
     this.router.use("/facturation-recurrente", this.facturationRecurrente.routes());
     this.router.use("/operation-financiere", this.operationFinanciere.routes());
     this.router.use("/finance-recouvrement", this.financeRecouvrement.routes());
+    this.router.use("/finance-dashboard", this.financeDashboard.routes());
     this.router.use("/ressource-bibliotheque", this.ressourceBibliotheque.routes());
     this.router.use("/emprunt", this.empruntBibliotheque.routes());
 

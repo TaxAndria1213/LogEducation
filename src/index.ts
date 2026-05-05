@@ -60,7 +60,7 @@ class Server {
     };
     this.app.use(cors(corsOptions));
 
-    this.app.use(express.json());
+    this.app.use(express.json({ limit: "15mb" }));
     this.app.use(express.urlencoded({ extended: true }));
 
     this.app.use(
@@ -82,6 +82,10 @@ class Server {
 
     // Global error handler
     this.app.use((err: Error & { statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
+      if (res.headersSent || res.locals.errorHandled) {
+        return;
+      }
+
       console.error("Error:", err);
       const statusCode = err.statusCode || 500;
       const message = err.message || "Internal Server Error";

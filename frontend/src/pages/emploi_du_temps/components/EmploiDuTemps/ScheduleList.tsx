@@ -19,6 +19,7 @@ import { useEmploiDuTempsDashboardStore } from "../../store/EmploiDuTempsDashboa
 import { buildVirtualCreneaux } from "../../utils/virtualCreneaux";
 import ScheduleGridListView from "./ScheduleGridListView";
 import ScheduleKanbanView from "./ScheduleKanbanView";
+import StateSelectField from "./StateSelectField";
 
 type ScopeFilter = "all" | "recurrent" | "specific";
 type ViewMode = "grid" | "kanban";
@@ -111,18 +112,20 @@ export default function ScheduleList() {
       try {
         const classeService = new ClasseService();
 
-        const [year, classesResult] = await Promise.all([
-          anneeScolaireService.getCurrent(etablissement_id),
-          classeService.getAll({
+        const year = await anneeScolaireService.getCurrent(etablissement_id);
+        const classesResult = await classeService.getAll({
             take: 5000,
-            where: JSON.stringify({ etablissement_id }),
+            includeTotal: false,
+            where: JSON.stringify({
+              etablissement_id,
+              ...(year?.id ? { annee_scolaire_id: year.id } : {}),
+            }),
             includeSpec: JSON.stringify({
               niveau: true,
               site: true,
             }),
             orderBy: JSON.stringify([{ nom: "asc" }]),
-          }),
-        ]);
+        });
 
         setCurrentYear((year as CurrentYear | null) ?? null);
         setClasses(classesResult?.status.success ? classesResult.data.data : []);
@@ -140,6 +143,24 @@ export default function ScheduleList() {
   const selectedClasse = React.useMemo(
     () => classes.find((item) => item.id === selectedClasseFilter) ?? null,
     [classes, selectedClasseFilter],
+  );
+
+  const classeSelectOptions = React.useMemo(
+    () =>
+      classes.map((classe) => ({
+        value: classe.id,
+        label: classe.nom,
+      })),
+    [classes],
+  );
+
+  const scopeSelectOptions = React.useMemo(
+    () => [
+      { value: "all", label: "Toutes" },
+      { value: "recurrent", label: "Recurrentes" },
+      { value: "specific", label: "Specifiques" },
+    ],
+    [],
   );
 
   const sharedWhere = React.useMemo(() => {
@@ -205,6 +226,7 @@ export default function ScheduleList() {
       const result = await service.getForEtablissement(etablissement_id, {
         page: 1,
         take: 1000,
+        includeTotal: false,
         where: sharedWhere,
         includeSpec: EMPLOI_DU_TEMPS_INCLUDE_SPEC,
         orderBy: EMPLOI_DU_TEMPS_ORDER_BY,
@@ -319,22 +341,16 @@ export default function ScheduleList() {
             </p>
           </label>
 
-          <label className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
-            <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Classe
-            </span>
-            <select
+          <div className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
+            <StateSelectField
               value={selectedClasseFilter}
-              onChange={(event) => setSelectedClasseFilter(event.target.value)}
-              className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-            >
-              <option value="">Toutes les classes</option>
-              {classes.map((classe) => (
-                <option key={classe.id} value={classe.id}>
-                  {classe.nom}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedClasseFilter}
+              options={classeSelectOptions}
+              label="Classe"
+              emptyLabel="Toutes les classes"
+              searchPlaceholder="Rechercher une classe..."
+              noResultsLabel="Aucune classe disponible."
+            />
             <p className="mt-2 text-xs text-slate-500">
               {selectedClasse?.site?.nom
                 ? `${selectedClasse.site.nom} - ${selectedClasse?.niveau?.nom ?? "Niveau"}`
@@ -342,21 +358,18 @@ export default function ScheduleList() {
                   ? "La classe active du dashboard peut etre reprise ici."
                   : "Filtre la lecture sur une seule classe si besoin."}
             </p>
-          </label>
+          </div>
 
-          <label className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
-            <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Portee
-            </span>
-            <select
+          <div className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
+            <StateSelectField
               value={scopeFilter}
-              onChange={(event) => setScopeFilter(event.target.value as ScopeFilter)}
-              className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-            >
-              <option value="all">Toutes</option>
-              <option value="recurrent">Recurrentes</option>
-              <option value="specific">Specifiques</option>
-            </select>
+              onChange={(value) => setScopeFilter(value as ScopeFilter)}
+              options={scopeSelectOptions}
+              label="Portee"
+              emptyLabel="Toutes"
+              searchPlaceholder="Rechercher une portee..."
+              noResultsLabel="Aucune portee disponible."
+            />
             <p className="mt-2 text-xs text-slate-500">
               {scopeFilter === "all"
                 ? "Vue mixte annuelle et specifique."
@@ -364,7 +377,7 @@ export default function ScheduleList() {
                   ? "Base annuelle uniquement."
                   : "Overrides et semaines specifiques uniquement."}
             </p>
-          </label>
+          </div>
 
           <div className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">

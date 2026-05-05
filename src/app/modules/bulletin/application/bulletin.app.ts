@@ -426,6 +426,11 @@ class BulletinApp {
       const tenantId = this.resolveTenantId(req);
       const payload = this.normalizePayload(req.body);
       const { inscription } = await this.validateContext(payload, tenantId);
+      const classeId = inscription.classe_id ?? undefined;
+
+      if (!classeId) {
+        throw new Error("Impossible de creer un bulletin sans classe affectee.");
+      }
 
       await this.ensureUniqueBulletin(payload.eleve_id, payload.periode_id);
 
@@ -433,7 +438,7 @@ class BulletinApp {
         data: {
           eleve_id: payload.eleve_id,
           periode_id: payload.periode_id,
-          classe_id: inscription.classe_id,
+          classe_id: classeId,
           publie_le: payload.publie_le ?? null,
           statut: payload.statut ?? "EN_COURS",
         },
@@ -443,7 +448,7 @@ class BulletinApp {
         bulletin.id,
         payload.eleve_id,
         payload.periode_id,
-        inscription.classe_id,
+        classeId,
         Boolean(payload.publie_le) || payload.statut === "PUBLIE",
       );
 
@@ -454,9 +459,7 @@ class BulletinApp {
         "Erreur lors de la creation du bulletin",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async generate(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -492,9 +495,7 @@ class BulletinApp {
         "Erreur lors de la generation du bulletin",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -515,9 +516,7 @@ class BulletinApp {
         "Erreur lors de la recuperation des bulletins",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -546,9 +545,7 @@ class BulletinApp {
         "Erreur lors de la recuperation du bulletin",
         404,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -580,9 +577,7 @@ class BulletinApp {
         "Erreur lors de la suppression du bulletin",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 
   private async update(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -597,6 +592,11 @@ class BulletinApp {
 
       const payload = this.normalizePayload(req.body);
       const { inscription } = await this.validateContext(payload, tenantId);
+      const classeId = inscription.classe_id ?? undefined;
+
+      if (!classeId) {
+        throw new Error("Impossible de mettre a jour un bulletin sans classe affectee.");
+      }
 
       await this.ensureUniqueBulletin(payload.eleve_id, payload.periode_id, id);
 
@@ -605,7 +605,7 @@ class BulletinApp {
         data: {
           eleve_id: payload.eleve_id,
           periode_id: payload.periode_id,
-          classe_id: inscription.classe_id,
+          classe_id: classeId,
           publie_le: payload.publie_le ?? null,
           statut: payload.statut ?? existing.statut ?? "EN_COURS",
         },
@@ -615,7 +615,7 @@ class BulletinApp {
         id,
         payload.eleve_id,
         payload.periode_id,
-        inscription.classe_id,
+        classeId,
         Boolean(payload.publie_le) || payload.statut === "PUBLIE",
       );
 
@@ -626,9 +626,7 @@ class BulletinApp {
         "Erreur lors de la mise a jour du bulletin",
         400,
         error as Error,
-      );
-      next(error);
-    }
+      );    }
   }
 }
 

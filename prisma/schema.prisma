@@ -29,9 +29,60 @@ enum StatutCompte {
 }
 
 enum StatutInscription {
+  PREINSCRIT
   INSCRIT
+  EN_ATTENTE_PAIEMENT
+  VALIDEE
+  DOSSIER_INCOMPLET
+  ANNULEE
   TRANSFERE
+  SUSPENDUE
   SORTI
+}
+
+enum TypeInscription {
+  NOUVELLE_INSCRIPTION
+  REINSCRIPTION
+  TRANSFERT_ENTRANT
+  REDOUBLEMENT
+  PASSAGE_CLASSE_SUPERIEURE
+}
+
+enum StatutAdministratifInscription {
+  EN_ATTENTE
+  DOSSIER_INCOMPLET
+  EN_ATTENTE_VERIFICATION
+  VALIDE
+  REJETE
+  ANNULE
+}
+
+enum StatutFinancierInscription {
+  NON_FACTURE
+  FACTURE
+  NON_PAYE
+  PARTIELLEMENT_PAYE
+  PAYE
+  EN_RETARD
+  EXONERE
+  ANNULE
+}
+
+enum StatutDossierInscription {
+  COMPLET
+  INCOMPLET
+  EN_ATTENTE_VERIFICATION
+  VALIDE
+  REJETE
+}
+
+enum StatutDocumentInscription {
+  NON_FOURNI
+  FOURNI
+  EN_ATTENTE_VERIFICATION
+  VALIDE
+  REJETE
+  EXPIRE
 }
 
 enum StatutPresence {
@@ -134,6 +185,7 @@ model Etablissement {
   restrictionsAdministratives RestrictionAdministrative[]
   dossiersRecouvrement     DossierRecouvrement[]
   fichiers                 Fichier[]
+  documentTypesInscription DocumentTypeInscription[]
   journauxAudit            JournalAudit[]
   webhooks                 Webhook[]
   jetons                   JetonIntegration[]
@@ -285,6 +337,7 @@ model Utilisateur {
   messagesEnvoyes     Message[]             @relation("messages_envoyes")
   notifications       Notification[]
   fichiers            Fichier[]             @relation("fichiers_proprietaire")
+  documentsInscriptionVerifies InscriptionDocument[] @relation("documents_inscription_verifies")
   journauxAudit       JournalAudit[]
   facturationsRecurrentes FacturationRecurrenteExecution[] @relation("facturation_recurrente_createur")
   operationsFinancieres OperationFinanciere[] @relation("operations_financieres_createur")
@@ -312,9 +365,13 @@ model Profil {
   prenom               String
   nom                  String
   date_naissance       DateTime?
+  lieu_naissance       String?
+  nationalite          String?
   genre                String?
   photo_url            String?
   adresse              String?
+  telephone_personnel  String?
+  email_personnel      String?
   contact_urgence_json Json?
 
   created_at DateTime @default(now())
@@ -419,10 +476,34 @@ model Eleve {
   restrictionsAdministratives RestrictionAdministrative[]
   dossiersRecouvrement DossierRecouvrement[]
   emprunts             Emprunt[]
+  profilMedical        EleveMedicalProfile?
 
   @@unique([etablissement_id, code_eleve])
   @@index([etablissement_id])
   @@map("eleves")
+}
+
+model EleveMedicalProfile {
+  id                                  String   @id @default(uuid())
+  eleve_id                            String   @unique
+  groupe_sanguin                      String?
+  allergies                           String?
+  maladies_particulieres              String?
+  traitement_medical                  String?
+  medecin_traitant                    String?
+  telephone_medecin                   String?
+  autorisation_prise_en_charge_medicale Boolean @default(false)
+  personne_a_contacter_urgence        String?
+  telephone_urgence                   String?
+  notes_json                          Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve Eleve @relation(fields: [eleve_id], references: [id], onDelete: Cascade)
+
+  @@index([eleve_id])
+  @@map("eleves_profils_medicaux")
 }
 
 model ParentTuteur {
@@ -431,8 +512,11 @@ model ParentTuteur {
   utilisateur_id   String?
   nom_complet      String
   telephone        String?
+  telephone_secondaire String?
   email            String?
   adresse          String?
+  profession       String?
+  lieu_travail     String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -450,6 +534,9 @@ model EleveParentTuteur {
   parent_tuteur_id      String
   relation              String? // pere/mere/tuteur
   est_principal         Boolean @default(false)
+  est_responsable_legal Boolean @default(false)
+  est_responsable_financier Boolean @default(false)
+  est_contact_urgence   Boolean @default(false)
   autorise_recuperation Boolean @default(true)
 
   eleve         Eleve        @relation(fields: [eleve_id], references: [id])
@@ -470,6 +557,7 @@ model NiveauScolaire {
 
   etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
   classes       Classe[]
+  inscriptions  Inscription[]
   programmes    Programme[]
   catalogueFrais CatalogueFrais[]
 
@@ -484,6 +572,7 @@ model Classe {
   niveau_scolaire_id      String
   site_id                 String?
   nom                     String // ex: 3A
+  capacite                Int?
   enseignant_principal_id String? // référence vers Enseignant
 
   created_at DateTime @default(now())
@@ -508,26 +597,63 @@ model Classe {
 }
 
 model Inscription {
-  id                String            @id @default(uuid())
-  eleve_id          String
-  classe_id         String
-  annee_scolaire_id String
-  date_inscription  DateTime          @default(now())
-  statut            StatutInscription @default(INSCRIT)
-  date_sortie       DateTime?
-  raison_sortie     String?
+  id                   String                         @id @default(uuid())
+  eleve_id             String
+  niveau_scolaire_id   String?
+  classe_id            String?
+  annee_scolaire_id    String
+  date_inscription     DateTime                       @default(now())
+  type_inscription     TypeInscription                @default(NOUVELLE_INSCRIPTION)
+  statut               StatutInscription              @default(INSCRIT)
+  statut_administratif StatutAdministratifInscription @default(EN_ATTENTE)
+  statut_financier     StatutFinancierInscription     @default(NON_FACTURE)
+  statut_dossier       StatutDossierInscription       @default(INCOMPLET)
+  validation_date      DateTime?
+  completion_rate      Decimal?                       @db.Decimal(5, 2)
+  acces_systeme_json   Json?
+  consentements_json   Json?
+  observations_json    Json?
+  date_sortie          DateTime?
+  raison_sortie        String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  eleve  Eleve         @relation(fields: [eleve_id], references: [id])
-  classe Classe        @relation(fields: [classe_id], references: [id])
-  annee  AnneeScolaire @relation(fields: [annee_scolaire_id], references: [id])
+  eleve     Eleve               @relation(fields: [eleve_id], references: [id])
+  niveau    NiveauScolaire?     @relation(fields: [niveau_scolaire_id], references: [id])
+  classe    Classe?             @relation(fields: [classe_id], references: [id])
+  annee     AnneeScolaire       @relation(fields: [annee_scolaire_id], references: [id])
+  documents InscriptionDocument[]
+  historiqueScolaire InscriptionSchoolHistory?
 
   @@unique([eleve_id, annee_scolaire_id])
   @@index([eleve_id])
+  @@index([niveau_scolaire_id])
+  @@index([classe_id])
   @@index([annee_scolaire_id])
   @@map("inscriptions")
+}
+
+model InscriptionSchoolHistory {
+  id                  String   @id @default(uuid())
+  inscription_id      String   @unique
+  ancien_etablissement String?
+  ancienne_classe     String?
+  annee_precedente    String?
+  derniere_moyenne    Decimal? @db.Decimal(5, 2)
+  decision_precedente String?
+  mention_precedente  String?
+  motif_transfert     String?
+  observations        String?
+  reprise_auto        Boolean  @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  inscription Inscription @relation(fields: [inscription_id], references: [id], onDelete: Cascade)
+
+  @@index([inscription_id])
+  @@map("inscriptions_historiques_scolaires")
 }
 
 model IdentifiantEleve {
@@ -1845,6 +1971,7 @@ model Fichier {
   etablissement Etablissement @relation(fields: [etablissement_id], references: [id])
   proprietaire  Utilisateur?  @relation("fichiers_proprietaire", fields: [proprietaire_utilisateur_id], references: [id])
   liens         LienFichier[]
+  documentsInscriptions InscriptionDocument[]
 
   @@index([etablissement_id])
   @@map("fichiers")
@@ -1864,6 +1991,57 @@ model LienFichier {
 
   @@index([fichier_id])
   @@map("liens_fichiers")
+}
+
+model DocumentTypeInscription {
+  id                         String   @id @default(uuid())
+  etablissement_id           String?
+  code                       String
+  nom                        String
+  description                String?
+  type_inscriptions_json     Json?
+  est_obligatoire_par_defaut Boolean  @default(false)
+  est_actif                  Boolean  @default(true)
+  ordre                      Int?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement Etablissement?         @relation(fields: [etablissement_id], references: [id])
+  documents     InscriptionDocument[]
+
+  @@unique([etablissement_id, code])
+  @@index([etablissement_id])
+  @@map("documents_types_inscription")
+}
+
+model InscriptionDocument {
+  id                         String                    @id @default(uuid())
+  inscription_id             String
+  document_type_id           String
+  fichier_id                 String?
+  verifie_par_utilisateur_id String?
+  obligatoire                Boolean                   @default(false)
+  fourni                     Boolean                   @default(false)
+  statut                     StatutDocumentInscription @default(NON_FOURNI)
+  date_depot                 DateTime?
+  date_verification          DateTime?
+  commentaire_admin          String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  inscription  Inscription             @relation(fields: [inscription_id], references: [id])
+  documentType DocumentTypeInscription @relation(fields: [document_type_id], references: [id])
+  fichier      Fichier?                @relation(fields: [fichier_id], references: [id])
+  verifiePar   Utilisateur?            @relation("documents_inscription_verifies", fields: [verifie_par_utilisateur_id], references: [id])
+
+  @@unique([inscription_id, document_type_id])
+  @@index([inscription_id])
+  @@index([document_type_id])
+  @@index([fichier_id])
+  @@index([verifie_par_utilisateur_id])
+  @@map("inscriptions_documents")
 }
 
 /**

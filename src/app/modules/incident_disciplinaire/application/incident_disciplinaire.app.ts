@@ -158,7 +158,6 @@ class IncidentDisciplinaireApp {
       Response.success(res, "Incident disciplinaire cree.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de l'incident disciplinaire", 400, error as Error);
-      next(error);
     }
   }
 
@@ -175,7 +174,6 @@ class IncidentDisciplinaireApp {
       Response.success(res, "Incidents disciplinaires.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des incidents disciplinaires", 400, error as Error);
-      next(error);
     }
   }
 
@@ -187,7 +185,6 @@ class IncidentDisciplinaireApp {
       Response.success(res, "Incident disciplinaire detail.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation de l'incident disciplinaire", 404, error as Error);
-      next(error);
     }
   }
 
@@ -207,7 +204,6 @@ class IncidentDisciplinaireApp {
       Response.success(res, "Incident disciplinaire supprime.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression de l'incident disciplinaire", 400, error as Error);
-      next(error);
     }
   }
 
@@ -232,7 +228,6 @@ class IncidentDisciplinaireApp {
       Response.success(res, "Incident disciplinaire mis a jour.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la mise a jour de l'incident disciplinaire", 400, error as Error);
-      next(error);
     }
   }
 }

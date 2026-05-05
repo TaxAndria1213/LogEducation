@@ -124,6 +124,7 @@ class EmploiDuTempsService extends Service {
   async getClassePlanning(classe_id: string) {
     return this.getAll({
       take: 5000,
+      includeTotal: false,
       where: JSON.stringify({ classe_id }),
       includeSpec: JSON.stringify(EMPLOI_DU_TEMPS_INCLUDE_SPEC),
       orderBy: JSON.stringify(EMPLOI_DU_TEMPS_ORDER_BY),

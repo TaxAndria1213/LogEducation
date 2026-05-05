@@ -132,7 +132,6 @@ class PeriodeApp {
       Response.success(res, "Periode creee avec succes", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la creation de la periode", 400, error as Error);
-      next(error);
     }
   }
 
@@ -142,7 +141,6 @@ class PeriodeApp {
       Response.success(res, "Periodes recuperees avec succes", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la recuperation des periodes", 400, error as Error);
-      next(error);
     }
   }
 
@@ -153,7 +151,6 @@ class PeriodeApp {
       Response.success(res, "Periode supprimee.", result);
     } catch (error) {
       Response.error(res, "Erreur lors de la suppression de la periode", 400, error as Error);
-      next(error);
     }
   }
 }

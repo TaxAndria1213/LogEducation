@@ -8,13 +8,31 @@
  */
 export type StatutCompte = "ACTIF" | "INACTIF" | "SUSPENDU";
 
-export type StatutInscription = "INSCRIT" | "TRANSFERE" | "SORTI";
+export type StatutInscription = "PREINSCRIT" | "INSCRIT" | "EN_ATTENTE_PAIEMENT" | "VALIDEE" | "DOSSIER_INCOMPLET" | "ANNULEE" | "TRANSFERE" | "SUSPENDUE" | "SORTI";
+
+export type TypeInscription = "NOUVELLE_INSCRIPTION" | "REINSCRIPTION" | "TRANSFERT_ENTRANT" | "REDOUBLEMENT" | "PASSAGE_CLASSE_SUPERIEURE";
+
+export type StatutAdministratifInscription = "EN_ATTENTE" | "DOSSIER_INCOMPLET" | "EN_ATTENTE_VERIFICATION" | "VALIDE" | "REJETE" | "ANNULE";
+
+export type StatutFinancierInscription = "NON_FACTURE" | "FACTURE" | "NON_PAYE" | "PARTIELLEMENT_PAYE" | "PAYE" | "EN_RETARD" | "EXONERE" | "ANNULE";
+
+export type StatutDossierInscription = "COMPLET" | "INCOMPLET" | "EN_ATTENTE_VERIFICATION" | "VALIDE" | "REJETE";
+
+export type StatutDocumentInscription = "NON_FOURNI" | "FOURNI" | "EN_ATTENTE_VERIFICATION" | "VALIDE" | "REJETE" | "EXPIRE";
 
 export type StatutPresence = "PRESENT" | "ABSENT" | "RETARD" | "EXCUSE";
 
 export type StatutFacture = "BROUILLON" | "EMISE" | "PARTIELLE" | "PAYEE" | "ANNULEE" | "EN_RETARD";
 
 export type StatutEcheancePaiement = "A_VENIR" | "PARTIELLE" | "PAYEE" | "ANNULEE" | "EN_RETARD";
+
+export type StatutPromessePaiement = "EN_ATTENTE" | "TENUE" | "ROMPUE" | "ANNULEE";
+
+export type TypeRestrictionAdministrative = "BULLETIN" | "EXAMEN" | "REINSCRIPTION";
+
+export type StatutRestrictionAdministrative = "ACTIVE" | "LEVEE" | "ANNULEE";
+
+export type StatutDossierRecouvrement = "OUVERT" | "RENFORCE" | "CONTENTIEUX" | "IRRECOUVRABLE" | "ABANDON_EN_ATTENTE" | "ABANDONNE" | "CLOTURE";
 
 export type TypeCanal = "EMAIL" | "SMS" | "APP";
 
@@ -48,7 +66,12 @@ export interface Etablissement {
   catalogueFrais?: CatalogueFrais[];
   facturationsRecurrentes?: FacturationRecurrenteExecution[];
   remises?: Remise[];
+  reglesRecouvrement?: RegleRecouvrementFinance[];
+  promessesPaiement?: PromessePaiement[];
+  restrictionsAdministratives?: RestrictionAdministrative[];
+  dossiersRecouvrement?: DossierRecouvrement[];
   fichiers?: Fichier[];
+  documentTypesInscription?: DocumentTypeInscription[];
   journauxAudit?: JournalAudit[];
   webhooks?: Webhook[];
   jetons?: JetonIntegration[];
@@ -100,6 +123,9 @@ export interface AnneeScolaire {
   facturationsRecurrentes?: FacturationRecurrenteExecution[];
   abonnementsTransport?: AbonnementTransport[];
   abonnementsCantine?: AbonnementCantine[];
+  promessesPaiement?: PromessePaiement[];
+  restrictionsAdministratives?: RestrictionAdministrative[];
+  dossiersRecouvrement?: DossierRecouvrement[];
 }
 
 export interface Periode {
@@ -168,9 +194,18 @@ export interface Utilisateur {
   messagesEnvoyes?: Message[];
   notifications?: Notification[];
   fichiers?: Fichier[];
+  documentsInscriptionVerifies?: InscriptionDocument[];
   journauxAudit?: JournalAudit[];
   facturationsRecurrentes?: FacturationRecurrenteExecution[];
   operationsFinancieres?: OperationFinanciere[];
+  cataloguesFraisApprouves?: CatalogueFrais[];
+  reglesRecouvrementApprouvees?: RegleRecouvrementFinance[];
+  promessesPaiementCreees?: PromessePaiement[];
+  promessesPaiementValidees?: PromessePaiement[];
+  restrictionsAdministrativesCreees?: RestrictionAdministrative[];
+  restrictionsAdministrativesLevees?: RestrictionAdministrative[];
+  dossiersRecouvrementCrees?: DossierRecouvrement[];
+  dossiersRecouvrementValides?: DossierRecouvrement[];
   Eleve?: Eleve[];
   ParentTuteur?: ParentTuteur[];
   Personnel?: Personnel[];
@@ -262,7 +297,29 @@ export interface Eleve {
   facturationsRecurrentes?: FacturationRecurrenteExecution[];
   abonnementsTransport?: AbonnementTransport[];
   abonnementsCantine?: AbonnementCantine[];
+  promessesPaiement?: PromessePaiement[];
+  restrictionsAdministratives?: RestrictionAdministrative[];
+  dossiersRecouvrement?: DossierRecouvrement[];
   emprunts?: Emprunt[];
+  profilMedical?: EleveMedicalProfile | null;
+}
+
+export interface EleveMedicalProfile {
+  id: string;
+  eleve_id: string;
+  groupe_sanguin: string | null;
+  allergies: string | null;
+  maladies_particulieres: string | null;
+  traitement_medical: string | null;
+  medecin_traitant: string | null;
+  telephone_medecin: string | null;
+  autorisation_prise_en_charge_medicale: boolean;
+  personne_a_contacter_urgence: string | null;
+  telephone_urgence: string | null;
+  notes_json: JsonValue | null;
+  created_at: Date;
+  updated_at: Date;
+  eleve?: Eleve;
 }
 
 export interface ParentTuteur {
@@ -271,8 +328,10 @@ export interface ParentTuteur {
   utilisateur_id: string | null;
   nom_complet: string;
   telephone: string | null;
+  telephone_secondaire: string | null;
   email: string | null;
   adresse: string | null;
+  profession: string | null;
   created_at: Date;
   updated_at: Date;
   etablissement?: Etablissement;
@@ -285,6 +344,9 @@ export interface EleveParentTuteur {
   parent_tuteur_id: string;
   relation: string | null;
   est_principal: boolean;
+  est_responsable_legal: boolean;
+  est_responsable_financier: boolean;
+  est_contact_urgence: boolean;
   autorise_recuperation: boolean;
   eleve?: Eleve;
   parent_tuteur?: ParentTuteur;
@@ -299,6 +361,7 @@ export interface NiveauScolaire {
   updated_at: Date;
   etablissement?: Etablissement;
   classes?: Classe[];
+  inscriptions?: Inscription[];
   programmes?: Programme[];
   catalogueFrais?: CatalogueFrais[];
 }
@@ -310,6 +373,7 @@ export interface Classe {
   niveau_scolaire_id: string;
   site_id: string | null;
   nom: string;
+  capacite: number | null;
   enseignant_principal_id: string | null;
   created_at: Date;
   updated_at: Date;
@@ -328,17 +392,44 @@ export interface Classe {
 export interface Inscription {
   id: string;
   eleve_id: string;
-  classe_id: string;
+  niveau_scolaire_id: string | null;
+  classe_id: string | null;
   annee_scolaire_id: string;
   date_inscription: Date;
+  type_inscription: TypeInscription;
   statut: StatutInscription;
+  statut_administratif: StatutAdministratifInscription;
+  statut_financier: StatutFinancierInscription;
+  statut_dossier: StatutDossierInscription;
+  validation_date: Date | null;
+  completion_rate: Decimal | null;
   date_sortie: Date | null;
   raison_sortie: string | null;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;
-  classe?: Classe;
+  niveau?: NiveauScolaire | null;
+  classe?: Classe | null;
   annee?: AnneeScolaire;
+  documents?: InscriptionDocument[];
+  historiqueScolaire?: InscriptionSchoolHistory | null;
+}
+
+export interface InscriptionSchoolHistory {
+  id: string;
+  inscription_id: string;
+  ancien_etablissement: string | null;
+  ancienne_classe: string | null;
+  annee_precedente: string | null;
+  derniere_moyenne: Decimal | null;
+  decision_precedente: string | null;
+  mention_precedente: string | null;
+  motif_transfert: string | null;
+  observations: string | null;
+  reprise_auto: boolean;
+  created_at: Date;
+  updated_at: Date;
+  inscription?: Inscription;
 }
 
 export interface IdentifiantEleve {
@@ -825,6 +916,8 @@ export interface CatalogueFrais {
   niveau?: NiveauScolaire | null;
   approbateur?: Utilisateur | null;
   lignesFacture?: FactureLigne[];
+  lignesTransport?: LigneTransport[];
+  formulesCantine?: FormuleCantine[];
   executionsRecurrentes?: FacturationRecurrenteExecution[];
 }
 
@@ -840,6 +933,9 @@ export interface PlanPaiementEleve {
   annee?: AnneeScolaire;
   remise?: Remise | null;
   echeances?: EcheancePaiement[];
+  promessesPaiement?: PromessePaiement[];
+  restrictionsAdministratives?: RestrictionAdministrative[];
+  dossiersRecouvrement?: DossierRecouvrement[];
 }
 
 export interface FacturationRecurrenteExecution {
@@ -890,8 +986,13 @@ export interface Facture {
   lignes?: FactureLigne[];
   paiements?: Paiement[];
   echeances?: EcheancePaiement[];
+  abonnementsTransport?: AbonnementTransport[];
+  abonnementsCantine?: AbonnementCantine[];
   executionsRecurrentes?: FacturationRecurrenteExecution[];
   operationsFinancieres?: OperationFinanciere[];
+  promessesPaiement?: PromessePaiement[];
+  restrictionsAdministratives?: RestrictionAdministrative[];
+  dossiersRecouvrement?: DossierRecouvrement[];
 }
 
 export interface FactureLigne {
@@ -933,6 +1034,7 @@ export interface OperationFinanciere {
   etablissement_id: string;
   facture_id: string | null;
   paiement_id: string | null;
+  abonnement_cantine_id: string | null;
   cree_par_utilisateur_id: string | null;
   type: string;
   montant: Decimal | null;
@@ -943,6 +1045,7 @@ export interface OperationFinanciere {
   etablissement?: Etablissement;
   facture?: Facture | null;
   paiement?: Paiement | null;
+  abonnementCantine?: AbonnementCantine | null;
   createur?: Utilisateur | null;
 }
 
@@ -968,6 +1071,7 @@ export interface EcheancePaiement {
   eleve?: Eleve;
   annee?: AnneeScolaire;
   affectations?: PaiementEcheanceAffectation[];
+  promessesPaiement?: PromessePaiement[];
 }
 
 export interface PaiementEcheanceAffectation {
@@ -993,6 +1097,108 @@ export interface Remise {
   etablissement?: Etablissement;
   factures?: Facture[];
   plansPaiement?: PlanPaiementEleve[];
+}
+
+export interface RegleRecouvrementFinance {
+  id: string;
+  etablissement_id: string;
+  nom: string;
+  jours_grace: number;
+  relance_jours_json: JsonValue | null;
+  penalite_active: boolean;
+  penalite_mode: string | null;
+  penalite_valeur: Decimal | null;
+  statut_validation: string;
+  approuve_par_utilisateur_id: string | null;
+  approuve_le: Date | null;
+  motif_rejet: string | null;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement;
+  approbateur?: Utilisateur | null;
+}
+
+export interface PromessePaiement {
+  id: string;
+  etablissement_id: string;
+  eleve_id: string;
+  annee_scolaire_id: string;
+  facture_id: string | null;
+  plan_paiement_id: string | null;
+  echeance_paiement_id: string | null;
+  montant_promis: Decimal;
+  date_promesse: Date;
+  date_limite: Date;
+  statut: StatutPromessePaiement;
+  canal: string | null;
+  note: string | null;
+  tenue_le: Date | null;
+  rompue_le: Date | null;
+  annulee_le: Date | null;
+  cree_par_utilisateur_id: string | null;
+  valide_par_utilisateur_id: string | null;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement;
+  eleve?: Eleve;
+  annee?: AnneeScolaire;
+  facture?: Facture | null;
+  planPaiement?: PlanPaiementEleve | null;
+  echeance?: EcheancePaiement | null;
+  createur?: Utilisateur | null;
+  validateur?: Utilisateur | null;
+}
+
+export interface RestrictionAdministrative {
+  id: string;
+  etablissement_id: string;
+  eleve_id: string;
+  annee_scolaire_id: string;
+  facture_id: string | null;
+  plan_paiement_id: string | null;
+  type: TypeRestrictionAdministrative;
+  statut: StatutRestrictionAdministrative;
+  source: string | null;
+  motif: string | null;
+  date_activation: Date;
+  date_levee: Date | null;
+  cree_par_utilisateur_id: string | null;
+  levee_par_utilisateur_id: string | null;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement;
+  eleve?: Eleve;
+  annee?: AnneeScolaire;
+  facture?: Facture | null;
+  planPaiement?: PlanPaiementEleve | null;
+  createur?: Utilisateur | null;
+  leveur?: Utilisateur | null;
+}
+
+export interface DossierRecouvrement {
+  id: string;
+  etablissement_id: string;
+  eleve_id: string;
+  annee_scolaire_id: string;
+  facture_id: string | null;
+  plan_paiement_id: string | null;
+  statut: StatutDossierRecouvrement;
+  motif: string | null;
+  note: string | null;
+  montant_reference: Decimal | null;
+  date_statut: Date;
+  cree_par_utilisateur_id: string | null;
+  valide_par_utilisateur_id: string | null;
+  valide_le: Date | null;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement;
+  eleve?: Eleve;
+  annee?: AnneeScolaire;
+  facture?: Facture | null;
+  planPaiement?: PlanPaiementEleve | null;
+  createur?: Utilisateur | null;
+  validateur?: Utilisateur | null;
 }
 
 /**
@@ -1071,14 +1277,11 @@ export interface AbonnementTransport {
   arret_transport_id: string | null;
   zone_transport: string | null;
   facture_id: string | null;
-  a_facturer?: boolean | null;
+  a_facturer: boolean;
   statut: string | null;
   date_debut_service: Date | null;
   date_fin_service: Date | null;
-  prorata_ratio: number | null;
-  finance_status?: string | null;
-  access_status?: string | null;
-  derniere_reactivation_financiere?: Date | null;
+  prorata_ratio: Decimal | null;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;
@@ -1105,22 +1308,23 @@ export interface HistoriqueAffectationTransport {
   details_json: JsonValue | null;
   created_at: Date;
   updated_at: Date;
+  abonnementTransport?: AbonnementTransport;
 }
 
 export interface FormuleCantine {
   id: string;
   etablissement_id: string;
   nom: string;
-  type_formule: "FORFAIT" | "REPAS_UNITAIRE" | "ABONNEMENT" | "AUTRE";
+  type_formule: string;
   catalogue_frais_id: string | null;
   transmettre_consommations_finance: boolean;
   max_repas_par_jour: number;
   regulariser_absence_annulation: boolean;
-  mode_regularisation_absence: "AVOIR" | "REPORT" | "REMBOURSEMENT" | "AJUSTEMENT";
+  mode_regularisation_absence: string;
   created_at: Date;
   updated_at: Date;
-  frais?: CatalogueFrais | null;
   abonnements?: AbonnementCantine[];
+  frais?: CatalogueFrais | null;
   historiquesAncienneFormule?: HistoriqueFormuleCantine[];
   historiquesNouvelleFormule?: HistoriqueFormuleCantine[];
 }
@@ -1133,9 +1337,8 @@ export interface AbonnementCantine {
   facture_id: string | null;
   statut: string | null;
   date_effet: Date | null;
-  derniere_reactivation_financiere?: Date | null;
-  solde_prepaye: number;
-  solde_min_alerte: number;
+  solde_prepaye: Decimal;
+  solde_min_alerte: Decimal;
   dernier_rechargement_le: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -1143,6 +1346,7 @@ export interface AbonnementCantine {
   annee?: AnneeScolaire;
   formule?: FormuleCantine;
   facture?: Facture | null;
+  operationsFinancieres?: OperationFinanciere[];
   historiquesFormule?: HistoriqueFormuleCantine[];
   consommations?: ConsommationCantine[];
   absences?: AbsenceCantine[];
@@ -1185,17 +1389,17 @@ export interface ConsommationCantine {
 export interface AbsenceCantine {
   id: string;
   abonnement_cantine_id: string;
-  type_evenement: "ABSENCE" | "ANNULATION";
+  type_evenement: string;
   date_repas: Date;
-  etat_metier: "SIGNALEE" | "EN_ATTENTE_REGULARISATION_FINANCE" | "REGULARISATION_TRAITEE" | "CLOTUREE_SANS_REGULARISATION";
+  etat_metier: string;
   note: string | null;
   statut_acces_snapshot: string | null;
   finance_status_snapshot: string | null;
   ouvre_droit_regularisation: boolean;
-  mode_regularisation_suggere: "AVOIR" | "REPORT" | "REMBOURSEMENT" | "AJUSTEMENT" | null;
+  mode_regularisation_suggere: string | null;
   transmission_finance: boolean;
   finance_processed_at: Date | null;
-  decision_finance: "AVOIR" | "REPORT" | "REMBOURSEMENT" | "AJUSTEMENT" | "REFUS_REGULARISATION" | null;
+  decision_finance: string | null;
   details_json: JsonValue | null;
   created_at: Date;
   updated_at: Date;
@@ -1223,6 +1427,7 @@ export interface Fichier {
   etablissement?: Etablissement;
   proprietaire?: Utilisateur | null;
   liens?: LienFichier[];
+  documentsInscriptions?: InscriptionDocument[];
 }
 
 export interface LienFichier {
@@ -1234,6 +1439,42 @@ export interface LienFichier {
   created_at: Date;
   updated_at: Date;
   fichier?: Fichier;
+}
+
+export interface DocumentTypeInscription {
+  id: string;
+  etablissement_id: string | null;
+  code: string;
+  nom: string;
+  description: string | null;
+  type_inscriptions_json: JsonValue | null;
+  est_obligatoire_par_defaut: boolean;
+  est_actif: boolean;
+  ordre: number | null;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement | null;
+  documents?: InscriptionDocument[];
+}
+
+export interface InscriptionDocument {
+  id: string;
+  inscription_id: string;
+  document_type_id: string;
+  fichier_id: string | null;
+  verifie_par_utilisateur_id: string | null;
+  obligatoire: boolean;
+  fourni: boolean;
+  statut: StatutDocumentInscription;
+  date_depot: Date | null;
+  date_verification: Date | null;
+  commentaire_admin: string | null;
+  created_at: Date;
+  updated_at: Date;
+  inscription?: Inscription;
+  documentType?: DocumentTypeInscription;
+  fichier?: Fichier | null;
+  verifiePar?: Utilisateur | null;
 }
 
 /**
