@@ -1,5 +1,6 @@
 ﻿import { create } from "zustand";
 import type { Note } from "../../../../types/models";
+import anneeScolaireService from "../../../../services/anneeScolaire.service";
 import EleveService from "../../../../services/eleve.service";
 import EvaluationService, {
   getEvaluationDisplayLabel,
@@ -74,14 +75,43 @@ export const useNoteCreateStore = create<State>((set) => ({
         },
       });
 
+      const currentYear = await anneeScolaireService.getCurrent(etablissement_id);
+
+      if (!currentYear) {
+        set({
+          loading: false,
+          errorMessage: "Aucune annee scolaire active n'a ete trouvee pour preparer une note.",
+          evaluationOptions: [],
+          eleveOptions: [],
+          evaluations: [],
+          eleves: [],
+          initialData: {
+            note_le: new Date(),
+          },
+        });
+        return;
+      }
+
       const evaluationService = new EvaluationService();
       const eleveService = new EleveService();
 
       const [evaluationResult, eleveResult] = await Promise.all([
         evaluationService.getForEtablissement(etablissement_id, {
           take: 1000,
+          where: {
+            cours: {
+              annee_scolaire_id: currentYear.id,
+            },
+          },
           includeSpec: JSON.stringify({
             periode: true,
+            gradingScale: {
+              include: {
+                levels: {
+                  orderBy: [{ display_order: "asc" }, { code: "asc" }],
+                },
+              },
+            },
             cours: {
               include: {
                 annee: true,
@@ -95,6 +125,14 @@ export const useNoteCreateStore = create<State>((set) => ({
           take: 1000,
           where: JSON.stringify({
             etablissement_id,
+            inscriptions: {
+              some: {
+                annee_scolaire_id: currentYear.id,
+                statut: {
+                  in: ["INSCRIT", "VALIDEE"],
+                },
+              },
+            },
           }),
           includeSpec: JSON.stringify({
             utilisateur: {

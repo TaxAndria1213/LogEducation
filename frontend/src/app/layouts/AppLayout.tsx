@@ -13,6 +13,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { modules } from "../../routes/modules";
 import Header from "./Header";
 import type { menu } from "../../types/types";
+import StartupChecklistWidget from "../../components/startup/StartupChecklistWidget";
 
 function moduleMatchesSearch(module: menu, query: string) {
   if (!query) return true;
@@ -371,6 +372,8 @@ export default function AppLayout() {
           {new Date().getFullYear()} EducAr - ERP scolaire - Powered by ArhexiaMG
         </footer>
       </div>
+
+      <StartupChecklistWidget />
     </div>
   );
 }

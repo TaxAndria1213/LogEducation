@@ -8,8 +8,8 @@ import {
 } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import BulletinService, {
-  getBulletinAverage,
   getBulletinDisplayLabel,
+  getBulletinGeneralAverage,
   getBulletinSecondaryLabel,
   type BulletinWithRelations,
 } from "../../../../../services/bulletin.service";
@@ -142,7 +142,7 @@ function BulletinOverview({ mode = "overview" }: Props) {
 
   const averageGeneral = useMemo(() => {
     const averages = bulletins
-      .map((item) => getBulletinAverage(item.lignes))
+      .map((item) => getBulletinGeneralAverage(item))
       .filter((value): value is number => value !== null);
 
     if (averages.length === 0) return 0;

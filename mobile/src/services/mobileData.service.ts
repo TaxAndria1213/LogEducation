@@ -234,6 +234,17 @@ function getMergedScheduleFeedItems(items: EmploiDuTempsItem[]) {
 }
 
 function averageFromBulletin(bulletin?: BulletinItem | null) {
+  const snapshotAverage =
+    typeof (bulletin as { affichage_bulletin?: { summary?: { general_average?: unknown } } } | null)
+      ?.affichage_bulletin?.summary?.general_average === "number"
+      ? ((bulletin as { affichage_bulletin?: { summary?: { general_average?: number } } })
+          .affichage_bulletin?.summary?.general_average ?? null)
+      : null;
+
+  if (snapshotAverage !== null) {
+    return snapshotAverage;
+  }
+
   const lines = bulletin?.lignes ?? [];
   const valid = lines.filter((line) => typeof line.moyenne === "number");
   if (!valid.length) return null;

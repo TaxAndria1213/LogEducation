@@ -5,6 +5,12 @@ import CoursService, {
   getCoursDisplayLabel,
   type CoursWithRelations,
 } from "../../../../services/cours.service";
+import GradingScaleService, {
+  type GradingScaleWithRelations,
+} from "../../../../services/gradingScale.service";
+import PedagogicalItemService, {
+  type PedagogicalItemWithRelations,
+} from "../../../../services/pedagogicalItem.service";
 import PeriodeService from "../../../../services/periode.service";
 
 export type EvaluationCreateInput = Omit<
@@ -28,6 +34,8 @@ type State = {
   periodeOptions: SelectOption[];
   cours: CoursWithRelations[];
   periodes: Periode[];
+  pedagogicalItems: PedagogicalItemWithRelations[];
+  gradingScales: GradingScaleWithRelations[];
   setLoading: (loading: boolean) => void;
   getOptions: (etablissement_id: string) => Promise<void>;
 };
@@ -59,6 +67,8 @@ export const useEvaluationCreateStore = create<State>((set) => ({
   periodeOptions: [],
   cours: [],
   periodes: [],
+  pedagogicalItems: [],
+  gradingScales: [],
 
   setLoading: (loading: boolean) => set({ loading }),
 
@@ -75,11 +85,16 @@ export const useEvaluationCreateStore = create<State>((set) => ({
           periodeOptions: [],
           cours: [],
           periodes: [],
+          pedagogicalItems: [],
+          gradingScales: [],
           initialData: {
             date: new Date(),
             note_max: 20,
             est_publiee: false,
             type: "AUTRE",
+            include_in_average: true,
+            show_in_report_card: false,
+            is_final_exam: false,
           },
           errorMessage:
             "Aucune annee scolaire active n'a ete trouvee pour preparer une evaluation.",
@@ -88,7 +103,10 @@ export const useEvaluationCreateStore = create<State>((set) => ({
       }
 
       const coursService = new CoursService();
-      const [coursResult, periodeResult] = await Promise.all([
+      const pedagogicalItemService = new PedagogicalItemService();
+      const gradingScaleService = new GradingScaleService();
+      const [coursResult, periodeResult, pedagogicalItemsResult, gradingScalesResult] =
+        await Promise.all([
         coursService.getForEtablissement(etablissement_id, {
           take: 1000,
           where: {
@@ -133,6 +151,33 @@ export const useEvaluationCreateStore = create<State>((set) => ({
           }),
           orderBy: JSON.stringify([{ ordre: "asc" }, { date_debut: "asc" }]),
         }),
+        pedagogicalItemService.getForEtablissement(etablissement_id, {
+          take: 2000,
+          where: {
+            annee_scolaire_id: currentYear.id,
+            is_active: true,
+            is_evaluable: true,
+          },
+          includeSpec: JSON.stringify({
+            parent: true,
+            matiere: true,
+            niveau: true,
+          }),
+          orderBy: JSON.stringify([{ display_order: "asc" }, { nom: "asc" }]),
+        }),
+        gradingScaleService.getForEtablissement(etablissement_id, {
+          take: 500,
+          where: {
+            annee_scolaire_id: currentYear.id,
+            is_active: true,
+          },
+          includeSpec: JSON.stringify({
+            levels: {
+              orderBy: [{ display_order: "asc" }, { code: "asc" }],
+            },
+          }),
+          orderBy: JSON.stringify([{ is_default: "desc" }, { nom: "asc" }]),
+        }),
       ]);
 
       const cours = coursResult?.status.success
@@ -140,6 +185,12 @@ export const useEvaluationCreateStore = create<State>((set) => ({
         : [];
       const periodes = periodeResult?.status.success
         ? ((periodeResult.data.data as Periode[]) ?? [])
+        : [];
+      const pedagogicalItems = pedagogicalItemsResult?.status.success
+        ? ((pedagogicalItemsResult.data.data as PedagogicalItemWithRelations[]) ?? [])
+        : [];
+      const gradingScales = gradingScalesResult?.status.success
+        ? ((gradingScalesResult.data.data as GradingScaleWithRelations[]) ?? [])
         : [];
 
       set({
@@ -150,6 +201,9 @@ export const useEvaluationCreateStore = create<State>((set) => ({
           note_max: 20,
           est_publiee: false,
           type: "AUTRE",
+          include_in_average: true,
+          show_in_report_card: false,
+          is_final_exam: false,
         },
         coursOptions: cours.map((item) => ({
           value: item.id,
@@ -161,6 +215,8 @@ export const useEvaluationCreateStore = create<State>((set) => ({
         })),
         cours,
         periodes,
+        pedagogicalItems,
+        gradingScales,
       });
     } catch (error: unknown) {
       set({
@@ -170,6 +226,8 @@ export const useEvaluationCreateStore = create<State>((set) => ({
         periodeOptions: [],
         cours: [],
         periodes: [],
+        pedagogicalItems: [],
+        gradingScales: [],
       });
     }
   },

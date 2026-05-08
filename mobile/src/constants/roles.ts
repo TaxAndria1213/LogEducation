@@ -26,7 +26,7 @@ export const ROLE_TABS: Record<RoleName, MobileTabKey[]> = {
   ADMIN: ["Home", "Agenda", "Operations", "Profile"],
   DIRECTION: ["Home", "Agenda", "Presence", "Academic", "Profile"],
   SECRETARIAT: ["Home", "Presence", "Operations", "Profile"],
-  ENSEIGNANT: ["Home", "Agenda", "Presence", "Academic", "Profile"],
+  ENSEIGNANT: ["Home", "Classes", "Notes", "Messages", "Profile"],
   COMPTABLE: ["Home", "Operations", "Profile"],
   SURVEILLANT: ["Home", "Agenda", "Presence", "Profile"],
   PARENT: ["Home", "Agenda", "Academic", "Operations", "Profile"],
@@ -47,9 +47,9 @@ export const ROLE_QUICK_ACTIONS: Record<RoleName, QuickAction[]> = {
     { id: "sec-ops", label: "Repertoires", description: "Eleves, parents, classes", target: "Operations" },
   ],
   ENSEIGNANT: [
-    { id: "ens-agenda", label: "Agenda", description: "Cours du jour", target: "Agenda" },
-    { id: "ens-presence", label: "Appels", description: "Presences eleves", target: "Presence" },
-    { id: "ens-academic", label: "Evaluations", description: "Notes et suivi", target: "Academic" },
+    { id: "ens-classes", label: "Classes", description: "Classes et eleves suivis", target: "Classes" },
+    { id: "ens-notes", label: "Notes", description: "Evaluations et saisie", target: "Notes" },
+    { id: "ens-messages", label: "Messages", description: "Communication de classe", target: "Messages" },
   ],
   COMPTABLE: [
     { id: "comp-ops", label: "Dossiers", description: "Eleves et responsables", target: "Operations" },

@@ -10,6 +10,9 @@ export type RoleName =
 
 export type MobileTabKey =
   | "Home"
+  | "Classes"
+  | "Notes"
+  | "Messages"
   | "Agenda"
   | "Presence"
   | "Academic"
@@ -338,4 +341,295 @@ export type TeacherAttendanceBundle = {
   sessionId: string | null;
   sessionStatus: "ready" | "idle";
   students: TeacherAttendanceStudent[];
+};
+
+export type TeacherDashboardCourse = {
+  id: string;
+  classId: string;
+  className: string;
+  levelName: string;
+  subjectName: string;
+  roomName: string;
+  startTime: string;
+  endTime: string;
+  slotLabel: string;
+  status: "EN_COURS" | "A_VENIR" | "TERMINE";
+};
+
+export type TeacherDashboardData = {
+  teacher: {
+    id: string;
+    fullName: string;
+    firstName?: string | null;
+  };
+  academicYear: {
+    id: string;
+    name: string;
+  };
+  todayDate: string;
+  stats: {
+    classCount: number;
+    totalCourses: number;
+    coursesToday: number;
+    pendingGradeSheets: number;
+    pendingRemarks: number;
+    unreadMessages: number;
+    recentAbsences: number;
+  };
+  todayCourses: TeacherDashboardCourse[];
+  upcomingEvaluations: Array<{
+    id: string;
+    title: string;
+    date: string;
+    className: string;
+    subjectName: string;
+    status: "PUBLIEE" | "BROUILLON";
+  }>;
+};
+
+export type TeacherClassAssignment = {
+  id: string;
+  courseId: string;
+  classId: string;
+  className: string;
+  levelName: string;
+  siteName?: string | null;
+  subjectName: string;
+  studentCount: number;
+  evaluationCount: number;
+  recentAbsences: number;
+  averageScore: number | null;
+};
+
+export type TeacherClassesResponse = {
+  academicYear: {
+    id: string;
+    name: string;
+  };
+  items: TeacherClassAssignment[];
+};
+
+export type TeacherClassDetail = {
+  academicYear: {
+    id: string;
+    name: string;
+  };
+  class: {
+    courseId: string;
+    classId: string;
+    className: string;
+    levelName: string;
+    siteName?: string | null;
+    subjectName: string;
+    studentCount: number;
+    evaluationCount: number;
+    averageScore: number | null;
+  };
+  students: Array<{
+    eleveId: string;
+    code: string;
+    fullName: string;
+    photoUrl?: string | null;
+    averageScore: number | null;
+    absences: number;
+    retards: number;
+    lastAttendanceStatus?: string | null;
+    difficulty: boolean;
+  }>;
+};
+
+export type TeacherCourseSummary = {
+  id: string;
+  classId: string;
+  className: string;
+  levelName: string;
+  subjectName: string;
+  coefficient: number | null;
+  weeklyHours: number;
+  evaluationCount: number;
+  totalNotes: number;
+  pendingEvaluations: number;
+  averageScore: number | null;
+  progressionPercent: number | null;
+};
+
+export type TeacherCoursesResponse = {
+  academicYear: {
+    id: string;
+    name: string;
+  };
+  items: TeacherCourseSummary[];
+};
+
+export type TeacherEvaluationProgress = {
+  id: string;
+  title: string;
+  date: string;
+  className: string;
+  subjectName: string;
+  noteMax: number;
+  enteredNotes: number;
+  expectedNotes: number;
+  completionRate: number;
+  status: "COMPLET" | "EN_SAISIE" | "BROUILLON";
+};
+
+export type TeacherNotesOverview = {
+  academicYear: {
+    id: string;
+    name: string;
+  };
+  stats: {
+    totalCourses: number;
+    totalEvaluations: number;
+    pendingEvaluations: number;
+    completedEvaluations: number;
+  };
+  items: TeacherEvaluationProgress[];
+};
+
+export type TeacherProfileData = {
+  id: string;
+  fullName: string;
+  matricule?: string | null;
+  email?: string | null;
+  telephone?: string | null;
+  address?: string | null;
+  photoUrl?: string | null;
+  specialty?: string | null;
+  academicYearName: string;
+  subjects: string[];
+  classes: string[];
+};
+
+export type TeacherEvaluationFormOptions = {
+  academicYear: {
+    id: string;
+    name: string;
+  };
+  courses: Array<{
+    id: string;
+    levelId: string;
+    subjectId: string;
+    className: string;
+    levelName: string;
+    subjectName: string;
+  }>;
+  periods: Array<{
+    id: string;
+    nom?: string | null;
+    date_debut: string;
+    date_fin: string;
+  }>;
+  typeOptions: Array<{
+    value: string;
+    label: string;
+  }>;
+  typeReferences: Array<{
+    id: string;
+    nom: string;
+    poids_defaut?: number | null;
+    default_max_score?: number | null;
+    include_in_average?: boolean;
+    show_in_report_card?: boolean;
+    is_final_exam?: boolean;
+  }>;
+  pedagogicalItems: Array<{
+    id: string;
+    nom: string;
+    item_type: string;
+    niveau_scolaire_id: string;
+    matiere_id?: string | null;
+    parent_id?: string | null;
+    parent?: {
+      id: string;
+      nom: string;
+    } | null;
+  }>;
+  gradingScales: Array<{
+    id: string;
+    nom: string;
+    grading_type: string;
+    base_score?: number | null;
+    use_for_calculation: boolean;
+    allow_decimal: boolean;
+    is_default: boolean;
+  }>;
+};
+
+export type TeacherCreateEvaluationPayload = {
+  cours_id: string;
+  periode_id: string;
+  pedagogical_item_id?: string | null;
+  grading_scale_id?: string | null;
+  titre: string;
+  date: string;
+  type: string;
+  note_max: number;
+  poids?: number | null;
+  est_publiee?: boolean;
+  include_in_average?: boolean;
+  show_in_report_card?: boolean;
+  is_final_exam?: boolean;
+  type_evaluation_id?: string | null;
+};
+
+export type TeacherEvaluationDetail = {
+  id: string;
+  cours_id: string;
+  periode_id: string;
+  pedagogical_item_id?: string | null;
+  grading_scale_id?: string | null;
+  titre: string;
+  date: string;
+  type: string;
+  note_max: number;
+  poids?: number | null;
+  est_publiee: boolean;
+  include_in_average?: boolean;
+  show_in_report_card?: boolean;
+  is_final_exam?: boolean;
+  type_evaluation_id?: string | null;
+  className: string;
+  subjectName: string;
+};
+
+export type TeacherGradeSheet = {
+  evaluation: {
+    id: string;
+    title: string;
+    date: string;
+    noteMax: number;
+    status: "PUBLIEE" | "BROUILLON";
+    workflowStatus?: string | null;
+    gradingScaleId?: string | null;
+    gradingScaleName?: string | null;
+    gradingType: string;
+    gradingBaseScore: number;
+    gradingLevels: Array<{
+      id: string;
+      code: string;
+      label: string;
+      color?: string | null;
+      numericValue?: number | null;
+    }>;
+    periodName: string;
+    className: string;
+    levelName: string;
+    subjectName: string;
+  };
+  students: Array<{
+    eleveId: string;
+    inscriptionId: string;
+    noteId: string | null;
+    resultId?: string | null;
+    fullName: string;
+    code: string;
+    score: number | null;
+    status: string;
+    scaleLevelId?: string | null;
+    textValue?: string;
+    displayValue?: string;
+    comment: string;
+  }>;
 };

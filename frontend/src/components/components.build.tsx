@@ -31,6 +31,8 @@ import { evaluationComponents } from "../pages/pedagogie/evaluations/components/
 import { noteComponents } from "../pages/pedagogie/notes/components/CI.note";
 import { bulletinComponents } from "../pages/pedagogie/bulletins/components/CI.bulletin";
 import { regleNoteComponents } from "../pages/pedagogie/regles_notes/components/CI.regleNote";
+import { typeEvaluationRefComponents } from "../pages/pedagogie/types_evaluations/components/CI.typeEvaluationRef";
+import { reportCardTemplateComponents } from "../pages/pedagogie/modeles_bulletins/components/CI.reportCardTemplate";
 import { emploiDuTempsComponents } from "../pages/emploi_du_temps/components/CI.emploiDuTemps";
 import { evenementCalendrierComponents } from "../pages/emploi_du_temps/components/CI.evenement";
 import { sessionAppelComponents } from "../pages/presences/sessions_appel/components/CI.sessionAppel";
@@ -144,6 +146,8 @@ const components: ComponentIdentifierType[] = [
   ...noteComponents,
   ...bulletinComponents,
   ...regleNoteComponents,
+  ...typeEvaluationRefComponents,
+  ...reportCardTemplateComponents,
   ...emploiDuTempsComponents,
   ...evenementCalendrierComponents,
   ...sessionAppelComponents,

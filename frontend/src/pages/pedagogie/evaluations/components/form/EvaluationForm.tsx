@@ -17,22 +17,31 @@ import EvaluationService, {
   getEvaluationTypeLabel,
 } from "../../../../../services/evaluation.service";
 import { getCoursDisplayLabel, getCoursSecondaryLabel } from "../../../../../services/cours.service";
+import { getGradingScaleDisplayLabel } from "../../../../../services/gradingScale.service";
+import { getPedagogicalItemDisplayLabel } from "../../../../../services/pedagogicalItem.service";
 import { useEvaluationCreateStore } from "../../store/EvaluationCreateStore";
 
 type EvaluationFormValues = {
   cours_id: string;
   periode_id: string;
+  pedagogical_item_id: string | null;
+  grading_scale_id: string | null;
   type: "DEVOIR" | "EXAMEN" | "ORAL" | "AUTRE";
   titre: string;
   date: string;
   note_max: number;
   poids: number | null;
   est_publiee: boolean;
+  include_in_average: boolean;
+  show_in_report_card: boolean;
+  is_final_exam: boolean;
 };
 
 const evaluationSchema = z.object({
   cours_id: z.string().min(1, "Le cours est requis."),
   periode_id: z.string().min(1, "La periode est requise."),
+  pedagogical_item_id: z.string().trim().min(1).nullable(),
+  grading_scale_id: z.string().trim().min(1).nullable(),
   type: z.enum(["DEVOIR", "EXAMEN", "ORAL", "AUTRE"]),
   titre: z
     .string()
@@ -53,6 +62,9 @@ const evaluationSchema = z.object({
     z.number().min(0.1, "Le poids doit etre superieur a 0.").max(1000).nullable(),
   ),
   est_publiee: z.boolean(),
+  include_in_average: z.boolean(),
+  show_in_report_card: z.boolean(),
+  is_final_exam: z.boolean(),
 });
 
 function getErrorMessage(error: unknown) {
@@ -91,6 +103,8 @@ function EvaluationForm() {
   const initialData = useEvaluationCreateStore((state) => state.initialData);
   const cours = useEvaluationCreateStore((state) => state.cours);
   const periodes = useEvaluationCreateStore((state) => state.periodes);
+  const pedagogicalItems = useEvaluationCreateStore((state) => state.pedagogicalItems);
+  const gradingScales = useEvaluationCreateStore((state) => state.gradingScales);
   const getOptions = useEvaluationCreateStore((state) => state.getOptions);
 
   useEffect(() => {
@@ -103,6 +117,8 @@ function EvaluationForm() {
     () => ({
       cours_id: initialData?.cours_id ?? "",
       periode_id: initialData?.periode_id ?? "",
+      pedagogical_item_id: initialData?.pedagogical_item_id ?? null,
+      grading_scale_id: initialData?.grading_scale_id ?? null,
       type: (initialData?.type as EvaluationFormValues["type"]) ?? "AUTRE",
       titre: initialData?.titre ?? "",
       date: formatDateTimeLocal(
@@ -115,6 +131,9 @@ function EvaluationForm() {
       note_max: initialData?.note_max ?? 20,
       poids: initialData?.poids ?? null,
       est_publiee: initialData?.est_publiee ?? false,
+      include_in_average: initialData?.include_in_average ?? true,
+      show_in_report_card: initialData?.show_in_report_card ?? false,
+      is_final_exam: initialData?.is_final_exam ?? false,
     }),
     [initialData],
   );
@@ -129,9 +148,12 @@ function EvaluationForm() {
     form.reset(defaultValues);
   }, [defaultValues, form]);
 
-  const { control, handleSubmit, watch, formState, reset, setError, clearErrors } = form;
+  const { control, handleSubmit, watch, formState, reset, setError, clearErrors, setValue } =
+    form;
   const selectedCoursId = watch("cours_id");
   const selectedPeriodeId = watch("periode_id");
+  const selectedPedagogicalItemId = watch("pedagogical_item_id");
+  const selectedGradingScaleId = watch("grading_scale_id");
   const selectedDate = watch("date");
 
   const selectedCours = useMemo(
@@ -142,6 +164,37 @@ function EvaluationForm() {
     () => periodes.find((item) => item.id === selectedPeriodeId) ?? null,
     [periodes, selectedPeriodeId],
   );
+  const filteredPedagogicalItems = useMemo(() => {
+    if (!selectedCours) return pedagogicalItems;
+
+    return pedagogicalItems.filter((item) => {
+      const sameLevel =
+        !item.niveau_scolaire_id ||
+        item.niveau_scolaire_id === selectedCours.classe?.niveau_scolaire_id;
+      const sameSubject =
+        !item.matiere_id || item.matiere_id === selectedCours.matiere_id;
+      return sameLevel && sameSubject;
+    });
+  }, [pedagogicalItems, selectedCours]);
+  const selectedPedagogicalItem = useMemo(
+    () =>
+      filteredPedagogicalItems.find((item) => item.id === selectedPedagogicalItemId) ??
+      null,
+    [filteredPedagogicalItems, selectedPedagogicalItemId],
+  );
+  const selectedGradingScale = useMemo(
+    () => gradingScales.find((item) => item.id === selectedGradingScaleId) ?? null,
+    [gradingScales, selectedGradingScaleId],
+  );
+
+  useEffect(() => {
+    if (
+      selectedPedagogicalItemId &&
+      !filteredPedagogicalItems.some((item) => item.id === selectedPedagogicalItemId)
+    ) {
+      setValue("pedagogical_item_id", null, { shouldDirty: true });
+    }
+  }, [filteredPedagogicalItems, selectedPedagogicalItemId, setValue]);
 
   const typeOptions = useMemo(
     () => ["DEVOIR", "EXAMEN", "ORAL", "AUTRE"].map((value) => ({
@@ -184,6 +237,8 @@ function EvaluationForm() {
     try {
       await service.create({
         ...data,
+        pedagogical_item_id: data.pedagogical_item_id || null,
+        grading_scale_id: data.grading_scale_id || null,
         date: new Date(data.date),
       });
       info("Evaluation creee avec succes !", "success");
@@ -191,10 +246,15 @@ function EvaluationForm() {
         ...defaultValues,
         cours_id: "",
         periode_id: "",
+        pedagogical_item_id: null,
+        grading_scale_id: null,
         titre: "",
         date: formatDateTimeLocal(new Date()),
         poids: null,
         est_publiee: false,
+        include_in_average: true,
+        show_in_report_card: false,
+        is_final_exam: false,
       });
     } catch (error: unknown) {
       info(getErrorMessage(error), "error");
@@ -305,6 +365,68 @@ function EvaluationForm() {
                         {periodes.map((option) => (
                           <option key={option.id} value={option.id}>
                             {option.nom}
+                          </option>
+                        ))}
+                      </select>
+                    </FieldWrapper>
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="pedagogical_item_id"
+                  render={({ field, fieldState }) => (
+                    <FieldWrapper
+                      id="pedagogical_item_id"
+                      label="Element pedagogique"
+                      error={fieldState.error?.message}
+                      description="Optionnel. Rattache l'evaluation a un domaine, une competence ou un objectif du niveau."
+                    >
+                      <select
+                        id="pedagogical_item_id"
+                        value={field.value ?? ""}
+                        onChange={(event) =>
+                          field.onChange(event.target.value ? event.target.value : null)
+                        }
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        className={getInputClassName(Boolean(fieldState.error))}
+                      >
+                        <option value="">Aucun element pedagogique</option>
+                        {filteredPedagogicalItems.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {getPedagogicalItemDisplayLabel(option)}
+                          </option>
+                        ))}
+                      </select>
+                    </FieldWrapper>
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="grading_scale_id"
+                  render={({ field, fieldState }) => (
+                    <FieldWrapper
+                      id="grading_scale_id"
+                      label="Echelle de notation"
+                      error={fieldState.error?.message}
+                      description="Optionnel. Prepare la future saisie multi-notation tout en gardant la note maximale numerique."
+                    >
+                      <select
+                        id="grading_scale_id"
+                        value={field.value ?? ""}
+                        onChange={(event) =>
+                          field.onChange(event.target.value ? event.target.value : null)
+                        }
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        className={getInputClassName(Boolean(fieldState.error))}
+                      >
+                        <option value="">Aucune echelle specifique</option>
+                        {gradingScales.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {getGradingScaleDisplayLabel(option)}
                           </option>
                         ))}
                       </select>
@@ -481,6 +603,71 @@ function EvaluationForm() {
                 )}
               />
 
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                <Controller
+                  control={control}
+                  name="include_in_average"
+                  render={({ field }) => (
+                    <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(field.value)}
+                        onChange={(event) => field.onChange(event.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+                      />
+                      <span>
+                        <span className="block font-semibold text-slate-900">Inclure dans la moyenne</span>
+                        <span className="mt-1 block text-slate-600">
+                          L'evaluation reste stockee meme si elle n'entre pas dans le calcul de moyenne.
+                        </span>
+                      </span>
+                    </label>
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="show_in_report_card"
+                  render={({ field }) => (
+                    <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(field.value)}
+                        onChange={(event) => field.onChange(event.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+                      />
+                      <span>
+                        <span className="block font-semibold text-slate-900">Visible dans le bulletin</span>
+                        <span className="mt-1 block text-slate-600">
+                          Active seulement si cette note detaillee peut apparaitre dans un bulletin detaille.
+                        </span>
+                      </span>
+                    </label>
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="is_final_exam"
+                  render={({ field }) => (
+                    <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(field.value)}
+                        onChange={(event) => field.onChange(event.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+                      />
+                      <span>
+                        <span className="block font-semibold text-slate-900">Examen final / composition</span>
+                        <span className="mt-1 block text-slate-600">
+                          Sert aux bulletins qui affichent uniquement la composition ou l'examen final.
+                        </span>
+                      </span>
+                    </label>
+                  )}
+                />
+              </div>
+
               {isDateOutOfPeriod ? (
                 <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                   La date selectionnee est en dehors de la periode choisie. Le back refusera l'enregistrement tant que cette incoherence persiste.
@@ -520,6 +707,19 @@ function EvaluationForm() {
                       {selectedPeriode
                         ? `Du ${new Intl.DateTimeFormat("fr-FR").format(new Date(selectedPeriode.date_debut))} au ${new Intl.DateTimeFormat("fr-FR").format(new Date(selectedPeriode.date_fin))}`
                         : "Les bornes de la periode apparaitront ici."}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="font-semibold text-slate-900">
+                      {selectedPedagogicalItem
+                        ? getPedagogicalItemDisplayLabel(selectedPedagogicalItem)
+                        : "Aucun element pedagogique cible"}
+                    </p>
+                    <p className="mt-1 text-slate-600">
+                      {selectedGradingScale
+                        ? getGradingScaleDisplayLabel(selectedGradingScale)
+                        : "Aucune echelle de notation specifique"}
                     </p>
                   </div>
                 </div>

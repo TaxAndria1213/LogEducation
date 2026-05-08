@@ -8,6 +8,7 @@ import EvaluationService, {
   getEvaluationDisplayLabel,
   getEvaluationSecondaryLabel,
   getEvaluationTypeLabel,
+  getEvaluationWorkflowStatusLabel,
   type EvaluationWithRelations,
 } from "../../../../../services/evaluation.service";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
@@ -54,8 +55,10 @@ export default function EvaluationTable() {
       header: "Suivi",
       render: (row) => (
         <div className="space-y-1 text-xs text-slate-600">
-          <p>{row.est_publiee ? "Publiee" : "Brouillon"}</p>
-          <p>{row.notes?.length ?? 0} note(s)</p>
+          <p>{getEvaluationWorkflowStatusLabel(row.status)}</p>
+          <p>
+            {row.assessmentResults?.length ?? row.notes?.length ?? 0} resultat(s)
+          </p>
         </div>
       ),
       sortable: false,
@@ -74,6 +77,23 @@ export default function EvaluationTable() {
       label: "Voir",
       variant: "secondary",
       onClick: (row) => console.log("voir", row.id),
+    },
+    {
+      label: "Valider les resultats",
+      variant: "primary",
+      show: (row) =>
+        row.status !== "VALIDATED" &&
+        row.status !== "LOCKED" &&
+        row.status !== "ARCHIVED",
+      confirm: {
+        title: "Validation des resultats",
+        message:
+          "Valider tous les resultats de cette evaluation et verrouiller la saisie standard ?",
+      },
+      onClick: async (row) => {
+        await service.validateResults(row.id);
+        tableRef.current?.refresh();
+      },
     },
     {
       label: "Supprimer",
@@ -139,6 +159,13 @@ export default function EvaluationTable() {
           },
           periode: true,
           typeRef: true,
+          assessmentResults: {
+            select: {
+              id: true,
+              student_id: true,
+              is_validated: true,
+            },
+          },
           createur: {
             include: {
               personnel: {

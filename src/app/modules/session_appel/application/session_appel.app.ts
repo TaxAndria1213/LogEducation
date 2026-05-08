@@ -34,6 +34,8 @@ function getDateBounds(value: Date) {
   return { start, end };
 }
 
+const ATTENDANCE_ACTIVE_INSCRIPTION_STATUSES = ["INSCRIT", "VALIDEE"] as const;
+
 class SessionAppelApp {
   public app: Application;
   public router: Router;
@@ -313,7 +315,7 @@ class SessionAppelApp {
       where: {
         classe_id,
         annee_scolaire_id: classe.annee_scolaire_id,
-        statut: "INSCRIT",
+        statut: { in: [...ATTENDANCE_ACTIVE_INSCRIPTION_STATUSES] },
       },
       select: { eleve_id: true },
       orderBy: { created_at: "asc" },

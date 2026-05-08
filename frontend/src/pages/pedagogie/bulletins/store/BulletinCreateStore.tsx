@@ -95,6 +95,9 @@ export const useBulletinCreateStore = create<State>((set) => ({
           take: 1000,
           where: JSON.stringify({
             annee_scolaire_id: currentYear.id,
+            statut: {
+              in: ["INSCRIT", "VALIDEE"],
+            },
             classe: {
               etablissement_id,
             },

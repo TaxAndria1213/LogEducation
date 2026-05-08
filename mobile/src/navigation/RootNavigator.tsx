@@ -2,6 +2,7 @@ import { ActivityIndicator, View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { theme } from "@/constants/theme";
 import { AppTabs } from "@/navigation/AppTabs";
+import { PresenceNavigator } from "@/navigation/PresenceNavigator";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -32,7 +33,10 @@ export function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {status === "authenticated" ? (
-        <Stack.Screen name="AppTabs" component={AppTabs} />
+        <>
+          <Stack.Screen name="AppTabs" component={AppTabs} />
+          <Stack.Screen name="PresenceFlow" component={PresenceNavigator} />
+        </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />
       )}

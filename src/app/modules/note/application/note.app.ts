@@ -5,6 +5,11 @@ import NoteModel from "../models/note.model";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import { assertNoAdministrativeRestriction } from "../../finance_shared/utils/recovery_restrictions";
+import {
+  ACTIVE_ACADEMIC_ENROLLMENT_STATUSES,
+  getRequestUserId,
+  getRequiredActiveAcademicYear,
+} from "../../pedagogie_shared/utils/academicScope";
 import { prisma } from "../../../service/prisma";
 
 type NotePayload = Pick<
@@ -68,7 +73,6 @@ class NoteApp {
       typeof raw.commentaire === "string" && raw.commentaire.trim()
         ? raw.commentaire.trim().replace(/\s+/g, " ")
         : null;
-    const note_par = typeof raw.note_par === "string" && raw.note_par.trim() ? raw.note_par.trim() : null;
     const noteLeValue = raw.note_le ? new Date(raw.note_le) : new Date();
     const scoreRaw = (raw as { score?: unknown }).score;
     const score = Number(scoreRaw);
@@ -95,7 +99,7 @@ class NoteApp {
       score,
       commentaire,
       note_le: noteLeValue,
-      note_par,
+      note_par: null,
     };
   }
 
@@ -213,12 +217,14 @@ class NoteApp {
   }
 
   private async validateReferences(payload: NotePayload, tenantId: string) {
+    const activeYear = await getRequiredActiveAcademicYear(this.prisma, tenantId);
     const [evaluation, eleve] = await Promise.all([
       this.prisma.evaluation.findFirst({
         where: {
           id: payload.evaluation_id,
           cours: {
             etablissement_id: tenantId,
+            annee_scolaire_id: activeYear.id,
           },
         },
         select:
@@ -226,6 +232,12 @@ class NoteApp {
           id: true,
           type: true,
           note_max: true,
+          periode: {
+            select: {
+              id: true,
+              annee_scolaire_id: true,
+            },
+          },
           cours: {
             select: {
               classe_id: true,
@@ -242,10 +254,15 @@ class NoteApp {
         select: {
           id: true,
           inscriptions: {
+            where: {
+              annee_scolaire_id: activeYear.id,
+              statut: { in: [...ACTIVE_ACADEMIC_ENROLLMENT_STATUSES] },
+            },
             select: {
               id: true,
               classe_id: true,
               annee_scolaire_id: true,
+              statut: true,
             },
           },
         },
@@ -253,11 +270,15 @@ class NoteApp {
     ]);
 
     if (!evaluation) {
-      throw new Error("L'evaluation selectionnee n'appartient pas a l'etablissement actif.");
+      throw new Error("L'evaluation selectionnee n'appartient pas a l'annee scolaire courante.");
     }
 
     if (!eleve) {
       throw new Error("L'eleve selectionne n'appartient pas a l'etablissement actif.");
+    }
+
+    if (evaluation.cours.annee_scolaire_id !== activeYear.id || evaluation.periode?.annee_scolaire_id !== activeYear.id) {
+      throw new Error("L'evaluation selectionnee n'appartient pas a l'annee scolaire courante.");
     }
 
     if (payload.score > evaluation.note_max) {
@@ -290,12 +311,16 @@ class NoteApp {
     try {
       const tenantId = this.resolveTenantId(req);
       const payload = this.normalizePayload(req.body);
+      const actorId = getRequestUserId(req);
 
       await this.validateReferences(payload, tenantId);
       await this.ensureUniqueNote(payload);
 
       const result = await this.prisma.note.create({
-        data: payload,
+        data: {
+          ...payload,
+          note_par: actorId,
+        },
         include: this.getDetailInclude(),
       });
 
@@ -392,13 +417,17 @@ class NoteApp {
       }
 
       const payload = this.normalizePayload(req.body);
+      const actorId = getRequestUserId(req);
 
       await this.validateReferences(payload, tenantId);
       await this.ensureUniqueNote(payload, id);
 
       const result = await this.prisma.note.update({
         where: { id },
-        data: payload,
+        data: {
+          ...payload,
+          note_par: actorId ?? existing.note_par ?? null,
+        },
         include: this.getDetailInclude(),
       });
 

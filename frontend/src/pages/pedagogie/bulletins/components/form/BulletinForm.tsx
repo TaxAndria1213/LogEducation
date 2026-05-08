@@ -20,14 +20,14 @@ import { useBulletinCreateStore } from "../../store/BulletinCreateStore";
 type BulletinFormValues = {
   eleve_id: string;
   periode_id: string;
-  statut: "EN_COURS" | "PUBLIE";
+  statut: "EN_COURS";
   publie_le: string;
 };
 
 const bulletinSchema = z.object({
   eleve_id: z.string().min(1, "L'eleve est requis."),
   periode_id: z.string().min(1, "La periode est requise."),
-  statut: z.enum(["EN_COURS", "PUBLIE"]),
+  statut: z.enum(["EN_COURS"]),
   publie_le: z.string().optional(),
 });
 
@@ -104,8 +104,6 @@ function BulletinForm() {
   const { control, handleSubmit, watch, formState, reset } = form;
   const selectedEleveId = watch("eleve_id");
   const selectedPeriodeId = watch("periode_id");
-  const selectedStatut = watch("statut");
-
   const selectedInscription = useMemo(
     () => inscriptions.find((item) => item.eleve_id === selectedEleveId) ?? null,
     [inscriptions, selectedEleveId],
@@ -120,8 +118,8 @@ function BulletinForm() {
       await service.create({
         eleve_id: data.eleve_id,
         periode_id: data.periode_id,
-        statut: data.statut,
-        publie_le: data.statut === "PUBLIE" ? new Date(data.publie_le) : null,
+        statut: "EN_COURS",
+        publie_le: null,
       });
       info("Bulletin cree avec succes !", "success");
       reset({
@@ -257,61 +255,14 @@ function BulletinForm() {
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900">Publication</h3>
                   <p className="text-sm text-slate-500">
-                    Le bulletin peut rester en cours ou etre publie immediatement apres generation.
+                    La creation prepare un bulletin de travail. La publication intervient apres validation administrative.
                   </p>
                 </div>
               </div>
 
-              <div className="grid gap-5 md:grid-cols-2">
-                <Controller
-                  control={control}
-                  name="statut"
-                  render={({ field, fieldState }) => (
-                    <FieldWrapper
-                      id="statut"
-                      label="Statut"
-                      required
-                      error={fieldState.error?.message}
-                      description="En cours pour preparer, publie pour figer et distribuer le bulletin." 
-                    >
-                      <select
-                        id="statut"
-                        value={field.value}
-                        onChange={(event) => field.onChange(event.target.value)}
-                        onBlur={field.onBlur}
-                        ref={field.ref}
-                        className={getInputClassName(Boolean(fieldState.error))}
-                      >
-                        <option value="EN_COURS">En cours</option>
-                        <option value="PUBLIE">Publie</option>
-                      </select>
-                    </FieldWrapper>
-                  )}
-                />
-
-                <Controller
-                  control={control}
-                  name="publie_le"
-                  render={({ field, fieldState }) => (
-                    <FieldWrapper
-                      id="publie_le"
-                      label="Date de publication"
-                      error={fieldState.error?.message}
-                      description="Utilisee uniquement si le statut est publie."
-                    >
-                      <input
-                        id="publie_le"
-                        type="datetime-local"
-                        value={field.value ?? ""}
-                        onChange={(event) => field.onChange(event.target.value)}
-                        onBlur={field.onBlur}
-                        ref={field.ref}
-                        disabled={selectedStatut !== "PUBLIE"}
-                        className={getInputClassName(Boolean(fieldState.error))}
-                      />
-                    </FieldWrapper>
-                  )}
-                />
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700">
+                Le bulletin sera cree avec le statut <strong>En cours</strong>, puis regenere depuis les notes de la periode.
+                La validation, le verrouillage et la publication restent des etapes distinctes du workflow metier.
               </div>
             </section>
 

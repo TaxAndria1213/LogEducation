@@ -6,6 +6,8 @@ import { parseJSON } from "../../../common/utils/query";
 import { prisma } from "../../../service/prisma";
 import PresenceEleveModel from "../models/presence_eleve.model";
 
+const ATTENDANCE_ACTIVE_INSCRIPTION_STATUSES = ["INSCRIT", "VALIDEE"] as const;
+
 type PresenceElevePayload = {
   session_appel_id: string;
   eleve_id: string;
@@ -146,7 +148,7 @@ class PresenceEleveApp {
         eleve_id: payload.eleve_id,
         classe_id: session.classe_id,
         annee_scolaire_id: session.classe.annee_scolaire_id,
-        statut: "INSCRIT",
+        statut: { in: [...ATTENDANCE_ACTIVE_INSCRIPTION_STATUSES] },
       },
       select: { id: true },
     });

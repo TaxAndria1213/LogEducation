@@ -190,6 +190,14 @@ async function ensureSession(
   return data.data.id;
 }
 
+async function rehydrateEmptySession(sessionId: string, teacherId: string, now: Date) {
+  await api.put(`/api/session-appel/${sessionId}`, {
+    date: now.toISOString(),
+    pris_par_enseignant_id: teacherId,
+    pris_le: now.toISOString(),
+  });
+}
+
 async function getSessionPresences(sessionId: string) {
   const rows = await getRows<PresenceEleveItem>("presence-eleve", {
     take: 120,
@@ -273,7 +281,11 @@ export async function loadTeacherAttendanceBundle(
   }
 
   const sessionId = await ensureSession(selectedCourse, teacherId, now);
-  const students = await getSessionPresences(sessionId);
+  let students = await getSessionPresences(sessionId);
+  if (students.length === 0) {
+    await rehydrateEmptySession(sessionId, teacherId, now);
+    students = await getSessionPresences(sessionId);
+  }
   const todayCourseCards = todayCourses.map((item) => getCourseLabel(item));
 
   return {

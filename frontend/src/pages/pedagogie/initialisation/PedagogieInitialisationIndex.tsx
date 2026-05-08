@@ -33,13 +33,21 @@ import ProgrammeService, {
   type ProgrammeLine,
   type ProgrammeWithRelations,
 } from "../../../services/programme.service";
-import RegleNoteService from "../../../services/regleNote.service";
+import PedagogieInitialisationService, {
+  DEFAULT_NOTE_RULES,
+  type PedagogieBulletinConfig,
+  type PedagogieInitialisationConfigRecord,
+  type PedagogieInitialisationConfigResponse,
+  type PedagogieEvaluationTypeConfig,
+  type PedagogieNoteRules,
+  type ReportCardTemplateType,
+  normalizePedagogieNoteRules,
+} from "../../../services/pedagogieInitialisation.service";
 import type {
   AnneeScolaire,
   Classe,
   NiveauScolaire,
   Periode,
-  RegleNote,
 } from "../../../types/models";
 
 type WizardMode = "RAPIDE" | "AVANCE";
@@ -67,28 +75,31 @@ type LevelSubjectSetting = {
 };
 
 type LevelSubjectSettings = Record<string, Record<string, LevelSubjectSetting>>;
+type TeacherAssignments = Record<string, Record<string, string>>;
+type ExistingTeacherAssignmentMap = Record<string, Record<string, string>>;
+type ExistingTeacherConflictMap = Record<string, Record<string, string[]>>;
+type PersistedPedagogieConfig = {
+  mode_initialisation?: unknown;
+  default_teacher_id?: unknown;
+  teacher_assignments?: unknown;
+  evaluation_types?: unknown;
+  note_rules?: unknown;
+  bulletin_config?: unknown;
+};
 
 type EvaluationTypeDraft = {
   code: "DEVOIR" | "EXAMEN" | "ORAL" | "AUTRE";
   label: string;
   poids: number;
   note_max: number;
+  include_in_average: boolean;
+  show_in_report_card: boolean;
+  is_final_exam: boolean;
 };
 
-type NoteRulesDraft = {
-  moyenne: "PONDEREE" | "SIMPLE";
-  arrondi: "0.25" | "0.5" | "1";
-  absence_non_notee: boolean;
-  autoriser_rattrapage: boolean;
-};
+type NoteRulesDraft = PedagogieNoteRules;
 
-type BulletinConfigDraft = {
-  afficher_rang: boolean;
-  afficher_absences: boolean;
-  afficher_signature: boolean;
-  afficher_decision: boolean;
-  publier_par_defaut: boolean;
-};
+type BulletinConfigDraft = PedagogieBulletinConfig;
 
 type InitSummary = {
   periodesCreated: number;
@@ -137,12 +148,239 @@ const DEFAULT_SUBJECTS: SubjectDraft[] = [
 ];
 
 const DEFAULT_EVALUATION_TYPES: EvaluationTypeDraft[] = [
-  { code: "DEVOIR", label: "Devoir", poids: 1, note_max: 20 },
-  { code: "EXAMEN", label: "Composition", poids: 2, note_max: 20 },
-  { code: "ORAL", label: "Oral / participation", poids: 1, note_max: 20 },
+  {
+    code: "DEVOIR",
+    label: "Devoir",
+    poids: 1,
+    note_max: 20,
+    include_in_average: true,
+    show_in_report_card: false,
+    is_final_exam: false,
+  },
+  {
+    code: "EXAMEN",
+    label: "Composition",
+    poids: 2,
+    note_max: 20,
+    include_in_average: true,
+    show_in_report_card: true,
+    is_final_exam: true,
+  },
+  {
+    code: "ORAL",
+    label: "Oral / participation",
+    poids: 1,
+    note_max: 20,
+    include_in_average: true,
+    show_in_report_card: false,
+    is_final_exam: false,
+  },
 ];
 
-const SUMMARY_SCOPE = "PEDAGOGIE_INITIALISATION";
+const DEFAULT_BULLETIN_CONFIG: BulletinConfigDraft = {
+  template_type: "STANDARD",
+  description: null,
+  show_assessment_details: false,
+  show_assessment_type_summary: false,
+  show_only_final_exam: false,
+  show_subject_average: true,
+  show_subject_coefficient: true,
+  show_subject_points: false,
+  show_subject_rank: true,
+  show_teacher_appreciation: true,
+  show_general_average: true,
+  show_total_coefficients: true,
+  show_total_points: false,
+  show_general_rank: true,
+  show_mention: true,
+  show_decision: true,
+  show_general_appreciation: true,
+  show_absences: false,
+  show_late_count: false,
+  show_logo: true,
+  show_signature: true,
+  publier_par_defaut: false,
+};
+
+function normalizeEvaluationTypeDraft(
+  item: unknown,
+  fallback?: EvaluationTypeDraft,
+): EvaluationTypeDraft | null {
+  if (!isPlainObject(item)) return null;
+
+  const code =
+    item.code === "EXAMEN" ||
+    item.code === "ORAL" ||
+    item.code === "AUTRE"
+      ? item.code
+      : "DEVOIR";
+
+  const fallbackDraft =
+    fallback ?? DEFAULT_EVALUATION_TYPES.find((entry) => entry.code === code);
+
+  return {
+    code,
+    label:
+      typeof item.label === "string" && item.label.trim()
+        ? item.label.trim()
+        : fallbackDraft?.label ?? "Evaluation",
+    poids:
+      typeof item.poids === "number" && Number.isFinite(item.poids)
+        ? item.poids
+        : fallbackDraft?.poids ?? 1,
+    note_max:
+      typeof item.note_max === "number" && Number.isFinite(item.note_max)
+        ? item.note_max
+        : fallbackDraft?.note_max ?? 20,
+    include_in_average:
+      typeof item.include_in_average === "boolean"
+        ? item.include_in_average
+        : fallbackDraft?.include_in_average ?? true,
+    show_in_report_card:
+      typeof item.show_in_report_card === "boolean"
+        ? item.show_in_report_card
+        : fallbackDraft?.show_in_report_card ?? code === "EXAMEN",
+    is_final_exam:
+      typeof item.is_final_exam === "boolean"
+        ? item.is_final_exam
+        : fallbackDraft?.is_final_exam ?? code === "EXAMEN",
+  };
+}
+
+function normalizeBulletinConfigDraft(raw: unknown): BulletinConfigDraft {
+  const source = isPlainObject(raw) ? raw : {};
+  const templateType: ReportCardTemplateType =
+    source.template_type === "DETAILED" ||
+    source.template_type === "ASSESSMENT_TYPE_SUMMARY" ||
+    source.template_type === "FINAL_EXAM_ONLY" ||
+    source.template_type === "CUSTOM"
+      ? source.template_type
+      : "STANDARD";
+
+  const config: BulletinConfigDraft = {
+    ...DEFAULT_BULLETIN_CONFIG,
+    template_type: templateType,
+    description:
+      typeof source.description === "string" && source.description.trim()
+        ? source.description.trim()
+        : null,
+    show_assessment_details:
+      typeof source.show_assessment_details === "boolean"
+        ? source.show_assessment_details
+        : DEFAULT_BULLETIN_CONFIG.show_assessment_details,
+    show_assessment_type_summary:
+      typeof source.show_assessment_type_summary === "boolean"
+        ? source.show_assessment_type_summary
+        : DEFAULT_BULLETIN_CONFIG.show_assessment_type_summary,
+    show_only_final_exam:
+      typeof source.show_only_final_exam === "boolean"
+        ? source.show_only_final_exam
+        : DEFAULT_BULLETIN_CONFIG.show_only_final_exam,
+    show_subject_average:
+      typeof source.show_subject_average === "boolean"
+        ? source.show_subject_average
+        : DEFAULT_BULLETIN_CONFIG.show_subject_average,
+    show_subject_coefficient:
+      typeof source.show_subject_coefficient === "boolean"
+        ? source.show_subject_coefficient
+        : DEFAULT_BULLETIN_CONFIG.show_subject_coefficient,
+    show_subject_points:
+      typeof source.show_subject_points === "boolean"
+        ? source.show_subject_points
+        : DEFAULT_BULLETIN_CONFIG.show_subject_points,
+    show_subject_rank:
+      typeof source.show_subject_rank === "boolean"
+        ? source.show_subject_rank
+        : DEFAULT_BULLETIN_CONFIG.show_subject_rank,
+    show_teacher_appreciation:
+      typeof source.show_teacher_appreciation === "boolean"
+        ? source.show_teacher_appreciation
+        : DEFAULT_BULLETIN_CONFIG.show_teacher_appreciation,
+    show_general_average:
+      typeof source.show_general_average === "boolean"
+        ? source.show_general_average
+        : DEFAULT_BULLETIN_CONFIG.show_general_average,
+    show_total_coefficients:
+      typeof source.show_total_coefficients === "boolean"
+        ? source.show_total_coefficients
+        : DEFAULT_BULLETIN_CONFIG.show_total_coefficients,
+    show_total_points:
+      typeof source.show_total_points === "boolean"
+        ? source.show_total_points
+        : DEFAULT_BULLETIN_CONFIG.show_total_points,
+    show_general_rank:
+      typeof source.show_general_rank === "boolean"
+        ? source.show_general_rank
+        : DEFAULT_BULLETIN_CONFIG.show_general_rank,
+    show_mention:
+      typeof source.show_mention === "boolean"
+        ? source.show_mention
+        : DEFAULT_BULLETIN_CONFIG.show_mention,
+    show_decision:
+      typeof source.show_decision === "boolean"
+        ? source.show_decision
+        : DEFAULT_BULLETIN_CONFIG.show_decision,
+    show_general_appreciation:
+      typeof source.show_general_appreciation === "boolean"
+        ? source.show_general_appreciation
+        : DEFAULT_BULLETIN_CONFIG.show_general_appreciation,
+    show_absences:
+      typeof source.show_absences === "boolean"
+        ? source.show_absences
+        : DEFAULT_BULLETIN_CONFIG.show_absences,
+    show_late_count:
+      typeof source.show_late_count === "boolean"
+        ? source.show_late_count
+        : DEFAULT_BULLETIN_CONFIG.show_late_count,
+    show_logo:
+      typeof source.show_logo === "boolean"
+        ? source.show_logo
+        : DEFAULT_BULLETIN_CONFIG.show_logo,
+    show_signature:
+      typeof source.show_signature === "boolean"
+        ? source.show_signature
+        : DEFAULT_BULLETIN_CONFIG.show_signature,
+    publier_par_defaut:
+      typeof source.publier_par_defaut === "boolean"
+        ? source.publier_par_defaut
+        : DEFAULT_BULLETIN_CONFIG.publier_par_defaut,
+  };
+
+  if (templateType === "STANDARD") {
+    config.show_assessment_details = false;
+    config.show_assessment_type_summary = false;
+    config.show_only_final_exam = false;
+  }
+
+  if (templateType === "DETAILED") {
+    config.show_assessment_details = true;
+    config.show_assessment_type_summary = false;
+    config.show_only_final_exam = false;
+  }
+
+  if (templateType === "ASSESSMENT_TYPE_SUMMARY") {
+    config.show_assessment_details = false;
+    config.show_assessment_type_summary = true;
+    config.show_only_final_exam = false;
+  }
+
+  if (templateType === "FINAL_EXAM_ONLY") {
+    config.show_assessment_details = true;
+    config.show_assessment_type_summary = false;
+    config.show_only_final_exam = true;
+  }
+
+  if (config.show_only_final_exam) {
+    config.show_assessment_details = true;
+    config.show_assessment_type_summary = false;
+  }
+
+  if (config.show_assessment_type_summary) {
+    config.show_assessment_details = false;
+  }
+
+  return config;
+}
 
 function normalizeText(value?: string | null) {
   return (value ?? "").trim().replace(/\s+/g, " ").toUpperCase();
@@ -226,6 +464,88 @@ function getClasseLabel(classe: Classe & { niveau?: { nom?: string | null } | nu
   return [classe.nom, classe.niveau?.nom].filter(Boolean).join(" - ");
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parsePersistedTeacherAssignments(value: unknown): TeacherAssignments {
+  if (!isPlainObject(value)) return {};
+
+  const parsed: TeacherAssignments = {};
+
+  Object.entries(value).forEach(([levelId, subjects]) => {
+    if (!isPlainObject(subjects)) return;
+
+    const subjectAssignments: Record<string, string> = {};
+
+    Object.entries(subjects).forEach(([subjectCode, teacherId]) => {
+      if (typeof teacherId !== "string" || !teacherId.trim()) return;
+      subjectAssignments[subjectCode] = teacherId.trim();
+    });
+
+    if (Object.keys(subjectAssignments).length > 0) {
+      parsed[levelId] = subjectAssignments;
+    }
+  });
+
+  return parsed;
+}
+
+function readPersistedPedagogieConfig(raw: unknown): PersistedPedagogieConfig | null {
+  return isPlainObject(raw) ? (raw as PersistedPedagogieConfig) : null;
+}
+
+function buildExistingTeacherAssignmentMaps(
+  courses: CoursWithRelations[],
+): {
+  assignments: ExistingTeacherAssignmentMap;
+  conflicts: ExistingTeacherConflictMap;
+} {
+  const teacherNames = new Map<string, string>();
+  const buckets = new Map<string, Set<string>>();
+
+  courses.forEach((course) => {
+    const levelId = course.classe?.niveau?.id ?? null;
+    const subjectCode = normalizeText(course.matiere?.code);
+    const teacherId = course.enseignant_id?.trim() || course.enseignant?.id?.trim() || "";
+
+    if (!levelId || !subjectCode || !teacherId) return;
+
+    teacherNames.set(teacherId, getTeacherDisplayLabel(course.enseignant));
+
+    const bucketKey = `${levelId}::${subjectCode}`;
+    const current = buckets.get(bucketKey) ?? new Set<string>();
+    current.add(teacherId);
+    buckets.set(bucketKey, current);
+  });
+
+  const assignments: ExistingTeacherAssignmentMap = {};
+  const conflicts: ExistingTeacherConflictMap = {};
+
+  buckets.forEach((teacherIds, bucketKey) => {
+    const [levelId, subjectCode] = bucketKey.split("::");
+    if (!levelId || !subjectCode) return;
+
+    if (teacherIds.size === 1) {
+      const teacherId = [...teacherIds][0];
+      assignments[levelId] = {
+        ...(assignments[levelId] ?? {}),
+        [subjectCode]: teacherId,
+      };
+      return;
+    }
+
+    conflicts[levelId] = {
+      ...(conflicts[levelId] ?? {}),
+      [subjectCode]: [...teacherIds].map(
+        (teacherId) => teacherNames.get(teacherId) ?? teacherId,
+      ),
+    };
+  });
+
+  return { assignments, conflicts };
+}
+
 export default function PedagogieInitialisationIndex() {
   const { etablissement_id } = useAuth();
   const { info } = useInfo();
@@ -236,7 +556,6 @@ export default function PedagogieInitialisationIndex() {
   const classeService = useMemo(() => new ClasseService(), []);
   const coursService = useMemo(() => new CoursService(), []);
   const enseignantService = useMemo(() => new EnseignantService(), []);
-  const regleNoteService = useMemo(() => new RegleNoteService(), []);
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -249,7 +568,8 @@ export default function PedagogieInitialisationIndex() {
   const [programmes, setProgrammes] = useState<ProgrammeWithRelations[]>([]);
   const [cours, setCours] = useState<CoursWithRelations[]>([]);
   const [enseignants, setEnseignants] = useState<EnseignantWithRelations[]>([]);
-  const [regles, setRegles] = useState<RegleNote[]>([]);
+  const [existingConfig, setExistingConfig] =
+    useState<PedagogieInitialisationConfigRecord | null>(null);
 
   const [wizardMode, setWizardMode] = useState<WizardMode>("RAPIDE");
   const [periodMode, setPeriodMode] = useState<PeriodMode>("TRIMESTRE");
@@ -261,21 +581,12 @@ export default function PedagogieInitialisationIndex() {
     useState<LevelSubjectSettings>({});
   const [generateCourses, setGenerateCourses] = useState(true);
   const [defaultTeacherId, setDefaultTeacherId] = useState("");
-  const [teacherBySubjectCode, setTeacherBySubjectCode] = useState<Record<string, string>>({});
+  const [teacherByLevelSubject, setTeacherByLevelSubject] =
+    useState<TeacherAssignments>({});
   const [evaluationTypes, setEvaluationTypes] = useState<EvaluationTypeDraft[]>(DEFAULT_EVALUATION_TYPES);
-  const [noteRules, setNoteRules] = useState<NoteRulesDraft>({
-    moyenne: "PONDEREE",
-    arrondi: "0.25",
-    absence_non_notee: true,
-    autoriser_rattrapage: true,
-  });
-  const [bulletinConfig, setBulletinConfig] = useState<BulletinConfigDraft>({
-    afficher_rang: true,
-    afficher_absences: true,
-    afficher_signature: true,
-    afficher_decision: true,
-    publier_par_defaut: false,
-  });
+  const [noteRules, setNoteRules] = useState<NoteRulesDraft>(DEFAULT_NOTE_RULES);
+  const [bulletinConfig, setBulletinConfig] =
+    useState<BulletinConfigDraft>(DEFAULT_BULLETIN_CONFIG);
   const [summary, setSummary] = useState<InitSummary | null>(null);
 
   const selectedSubjects = useMemo(
@@ -303,14 +614,14 @@ export default function PedagogieInitialisationIndex() {
     [activeYear?.id, cours],
   );
 
+  const existingTeacherAssignments = useMemo(
+    () => buildExistingTeacherAssignmentMaps(activeYearCours),
+    [activeYearCours],
+  );
+
   const existingSubjectCodes = useMemo(
     () => new Set(matieres.map((item) => normalizeText(item.code))),
     [matieres],
-  );
-
-  const existingConfig = useMemo(
-    () => regles.find((item) => item.scope === SUMMARY_SCOPE) ?? null,
-    [regles],
   );
 
   const loadData = async () => {
@@ -323,7 +634,7 @@ export default function PedagogieInitialisationIndex() {
       setProgrammes([]);
       setCours([]);
       setEnseignants([]);
-      setRegles([]);
+      setExistingConfig(null);
       return;
     }
 
@@ -339,7 +650,6 @@ export default function PedagogieInitialisationIndex() {
         programmesResult,
         coursResult,
         enseignantsResult,
-        reglesResult,
       ] = await Promise.all([
         PeriodeService.getAll({
           take: 1000,
@@ -388,12 +698,15 @@ export default function PedagogieInitialisationIndex() {
             personnel: { include: { utilisateur: { include: { profil: true } } } },
           }),
         }),
-        regleNoteService.getAll({
-          take: 1000,
-          where: JSON.stringify({ etablissement_id }),
-          orderBy: JSON.stringify([{ created_at: "desc" }]),
-        }),
       ]);
+
+      const configResponse = await PedagogieInitialisationService.getConfig(
+        etablissement_id,
+        year?.id ?? null,
+      );
+      const persistedConfig =
+        ((configResponse.data as PedagogieInitialisationConfigResponse | null)
+          ?.config as PedagogieInitialisationConfigRecord | null) ?? null;
 
       const loadedNiveaux = niveauxResult?.status.success
         ? ((niveauxResult.data.data as NiveauScolaire[]) ?? [])
@@ -407,7 +720,7 @@ export default function PedagogieInitialisationIndex() {
       setProgrammes(programmesResult?.status.success ? ((programmesResult.data.data as ProgrammeWithRelations[]) ?? []) : []);
       setCours(coursResult?.status.success ? ((coursResult.data.data as CoursWithRelations[]) ?? []) : []);
       setEnseignants(enseignantsResult?.status.success ? ((enseignantsResult.data.data as EnseignantWithRelations[]) ?? []) : []);
-      setRegles(reglesResult?.status.success ? ((reglesResult.data.data as RegleNote[]) ?? []) : []);
+      setExistingConfig(persistedConfig);
 
       setSelectedLevelIds((current) => (current.length > 0 ? current : loadedNiveaux.map((niveau) => niveau.id)));
       setProgrammeNames((current) => {
@@ -473,6 +786,80 @@ export default function PedagogieInitialisationIndex() {
     });
   }, [niveaux, subjects]);
 
+  useEffect(() => {
+    const persistedConfig = readPersistedPedagogieConfig(existingConfig?.regle_json);
+    if (!persistedConfig) return;
+
+    if (
+      persistedConfig.mode_initialisation === "RAPIDE" ||
+      persistedConfig.mode_initialisation === "AVANCE"
+    ) {
+      setWizardMode(persistedConfig.mode_initialisation);
+    }
+
+    setDefaultTeacherId(
+      typeof persistedConfig.default_teacher_id === "string"
+        ? persistedConfig.default_teacher_id.trim()
+        : "",
+    );
+
+    const persistedAssignments = parsePersistedTeacherAssignments(
+      persistedConfig.teacher_assignments,
+    );
+    setTeacherByLevelSubject(() => persistedAssignments);
+
+    if (Array.isArray(persistedConfig.evaluation_types)) {
+      const parsedEvaluationTypes = persistedConfig.evaluation_types
+        .map((item) => normalizeEvaluationTypeDraft(item))
+        .filter((item): item is EvaluationTypeDraft => Boolean(item));
+
+      if (parsedEvaluationTypes.length > 0) {
+        setEvaluationTypes(parsedEvaluationTypes);
+      }
+    }
+
+    setNoteRules(normalizePedagogieNoteRules(persistedConfig.note_rules));
+
+    if (isPlainObject(persistedConfig.bulletin_config)) {
+      setBulletinConfig(
+        normalizeBulletinConfigDraft(persistedConfig.bulletin_config),
+      );
+    }
+  }, [existingConfig]);
+
+  useEffect(() => {
+    setTeacherByLevelSubject((current) => {
+      let hasChanges = false;
+      const next: TeacherAssignments = { ...current };
+
+      selectedLevels.forEach((niveau) => {
+        const inferredForLevel =
+          existingTeacherAssignments.assignments[niveau.id] ?? {};
+
+        getSelectedSubjectsForLevel(niveau.id).forEach((subject) => {
+          const subjectCode = normalizeText(subject.code);
+          const inferredTeacherId = inferredForLevel[subjectCode];
+
+          if (!inferredTeacherId) return;
+          if (current[niveau.id]?.[subject.code]) return;
+
+          next[niveau.id] = {
+            ...(next[niveau.id] ?? {}),
+            [subject.code]: inferredTeacherId,
+          };
+          hasChanges = true;
+        });
+      });
+
+      return hasChanges ? next : current;
+    });
+  }, [
+    existingTeacherAssignments.assignments,
+    levelSubjectSettings,
+    selectedLevels,
+    subjects,
+  ]);
+
   const goToStep = (index: number) => {
     setStep(Math.max(0, Math.min(STEP_DEFINITIONS.length - 1, index)));
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
@@ -486,6 +873,9 @@ export default function PedagogieInitialisationIndex() {
     if (step === 5 && selectedLevels.some((niveau) => getSelectedSubjectsForLevel(niveau.id).length === 0)) return "Chaque niveau selectionne doit garder au moins une matiere active.";
     if (step === 6 && generateCourses && activeYearClasses.length === 0) return "Aucune classe n'existe sur l'annee active.";
     if (step === 7 && generateCourses && enseignants.length === 0) return "Aucun enseignant n'est disponible pour generer les cours.";
+    if (step === 7 && generateCourses && enseignants.length > 0 && missingTeacherAssignments.length > 0) {
+      return "Definis un enseignant par defaut ou complete les affectations niveau par niveau pour continuer.";
+    }
     return "";
   };
 
@@ -565,6 +955,67 @@ export default function PedagogieInitialisationIndex() {
     );
   };
 
+  const updateBulletinConfig = (patch: Partial<BulletinConfigDraft>) => {
+    setBulletinConfig((current) =>
+      normalizeBulletinConfigDraft({
+        ...current,
+        ...patch,
+      }),
+    );
+  };
+
+  const getTeacherAssignment = (levelId: string, subjectCode: string) =>
+    teacherByLevelSubject[levelId]?.[subjectCode] ?? "";
+
+  const updateTeacherAssignment = (
+    levelId: string,
+    subjectCode: string,
+    teacherId: string,
+  ) => {
+    setTeacherByLevelSubject((current) => ({
+      ...current,
+      [levelId]: {
+        ...(current[levelId] ?? {}),
+        [subjectCode]: teacherId,
+      },
+    }));
+  };
+
+  const missingTeacherAssignments = useMemo(
+    () =>
+      selectedLevels.flatMap((niveau) =>
+        getSelectedSubjectsForLevel(niveau.id)
+          .filter(
+            (subject) =>
+              !defaultTeacherId && !getTeacherAssignment(niveau.id, subject.code),
+          )
+          .map((subject) => `${niveau.nom} - ${subject.nom}`),
+      ),
+    [defaultTeacherId, selectedLevels, teacherByLevelSubject, levelSubjectSettings, subjects],
+  );
+
+  const conflictingTeacherAssignments = useMemo(
+    () =>
+      selectedLevels.flatMap((niveau) =>
+        getSelectedSubjectsForLevel(niveau.id)
+          .map((subject) => ({
+            levelName: niveau.nom,
+            subjectName: subject.nom,
+            teachers:
+              existingTeacherAssignments.conflicts[niveau.id]?.[
+                normalizeText(subject.code)
+              ] ?? [],
+          }))
+          .filter((entry) => entry.teachers.length > 1),
+      ),
+    [
+      existingTeacherAssignments.conflicts,
+      levelSubjectSettings,
+      selectedLevels,
+      subjects,
+    ],
+  );
+
   const commitInitialization = async () => {
     if (!etablissement_id) {
       info("Aucun etablissement actif n'est disponible.", "error");
@@ -582,8 +1033,11 @@ export default function PedagogieInitialisationIndex() {
       info("Chaque niveau selectionne doit avoir au moins une matiere active.", "error");
       return;
     }
-    if (generateCourses && enseignants.length > 0 && !defaultTeacherId) {
-      info("Choisis un enseignant par defaut pour generer les cours.", "error");
+    if (generateCourses && enseignants.length > 0 && missingTeacherAssignments.length > 0) {
+      info(
+        "Renseigne un enseignant par defaut ou complete les affectations par niveau et par matiere avant de generer les cours.",
+        "error",
+      );
       return;
     }
 
@@ -704,7 +1158,9 @@ export default function PedagogieInitialisationIndex() {
               continue;
             }
 
-            const teacherId = teacherBySubjectCode[subject.code] || defaultTeacherId;
+            const teacherId =
+              getTeacherAssignment(classe.niveau_scolaire_id, subject.code) ||
+              defaultTeacherId;
             if (!teacherId) {
               result.coursWithoutTeacher += 1;
               continue;
@@ -727,27 +1183,45 @@ export default function PedagogieInitialisationIndex() {
       const reglePayload = {
         mode_initialisation: wizardMode,
         annee_scolaire_id: activeYear.id,
+        default_teacher_id: defaultTeacherId || null,
+        teacher_assignments: Object.fromEntries(
+          selectedLevels
+            .map((niveau) => {
+              const assignments = Object.fromEntries(
+                getSelectedSubjectsForLevel(niveau.id)
+                  .map((subject) => [subject.code, getTeacherAssignment(niveau.id, subject.code)] as const)
+                  .filter(([, teacherId]) => Boolean(teacherId)),
+              );
+
+              return [niveau.id, assignments] as const;
+            })
+            .filter(([, assignments]) => Object.keys(assignments).length > 0),
+        ),
         evaluation_types: evaluationTypes,
         note_rules: noteRules,
         bulletin_config: bulletinConfig,
         updated_at: new Date().toISOString(),
       };
 
-      if (existingConfig?.id) {
-        await regleNoteService.update(existingConfig.id, {
-          etablissement_id,
-          scope: SUMMARY_SCOPE,
-          regle_json: reglePayload,
-        });
-        result.configUpdated = true;
-      } else {
-        await regleNoteService.create({
-          etablissement_id,
-          scope: SUMMARY_SCOPE,
-          regle_json: reglePayload,
-        });
-        result.configCreated = true;
-      }
+      const configSaveResponse = await PedagogieInitialisationService.saveConfig({
+        etablissement_id,
+        annee_scolaire_id: activeYear.id,
+        mode_initialisation: wizardMode,
+        default_teacher_id: defaultTeacherId || null,
+        teacher_assignments:
+          (reglePayload.teacher_assignments as Record<string, Record<string, string>>) ??
+          {},
+        evaluation_types: evaluationTypes as PedagogieEvaluationTypeConfig[],
+        note_rules: noteRules,
+        bulletin_config: bulletinConfig,
+      });
+
+      const persistedConfig =
+        ((configSaveResponse.data as PedagogieInitialisationConfigResponse | null)
+          ?.config as PedagogieInitialisationConfigRecord | null) ?? null;
+      setExistingConfig(persistedConfig);
+      result.configUpdated = Boolean(existingConfig?.id);
+      result.configCreated = !existingConfig?.id;
 
       setSummary(result);
       await loadData();
@@ -1060,26 +1534,106 @@ export default function PedagogieInitialisationIndex() {
       case 7:
         return (
           <div className="space-y-5">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">Enseignant par defaut</label>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <label className="mb-2 block text-sm font-semibold text-slate-700">
+                Enseignant par defaut
+              </label>
               <select className={getInputClassName(false)} value={defaultTeacherId} onChange={(event) => setDefaultTeacherId(event.target.value)}>
-                <option value="">Selectionner un enseignant</option>
+                <option value="">Aucun enseignant par defaut</option>
                 {enseignants.map((teacher) => (
                   <option key={teacher.id} value={teacher.id}>{getTeacherDisplayLabel(teacher)}</option>
                 ))}
               </select>
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                Optionnel. Si tu choisis un enseignant ici, il sera reutilise
+                partout sauf si une affectation plus precise est definie sur un
+                niveau et une matiere.
+              </p>
             </div>
-            <div className="grid min-w-0 gap-3 md:grid-cols-2">
-              {selectedSubjects.map((subject) => (
-                <div key={subject.code} className="min-w-0 rounded-2xl border border-slate-200 p-4">
-                  <p className="mb-2 break-words font-semibold text-slate-900">{subject.nom}</p>
-                  <select className={getInputClassName(false)} value={teacherBySubjectCode[subject.code] ?? ""} onChange={(event) => setTeacherBySubjectCode((current) => ({ ...current, [subject.code]: event.target.value }))}>
-                    <option value="">Utiliser l'enseignant par defaut</option>
-                    {enseignants.map((teacher) => (
-                      <option key={teacher.id} value={teacher.id}>{getTeacherDisplayLabel(teacher)}</option>
+
+            {missingTeacherAssignments.length > 0 ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+                Certaines lignes n'ont encore aucun enseignant explicite et
+                aucun enseignant par defaut n'est defini.
+              </div>
+            ) : null}
+
+            {conflictingTeacherAssignments.length > 0 ? (
+              <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-800">
+                Certaines combinaisons niveau-matiere utilisent deja plusieurs
+                enseignants dans les cours existants. Le wizard ne force donc
+                aucun pre-remplissage sur ces lignes pour te laisser choisir.
+              </div>
+            ) : null}
+
+            <div className="space-y-4">
+              {selectedLevels.map((niveau) => (
+                <section key={niveau.id} className="rounded-[26px] border border-slate-200 bg-white p-4">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-lg font-semibold text-slate-900">{niveau.nom}</h4>
+                      <p className="text-sm text-slate-500">
+                        Choisis un enseignant pour chaque matiere active de ce niveau.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                      {getSelectedSubjectsForLevel(niveau.id).length} matiere(s)
+                    </span>
+                  </div>
+
+                  <div className="grid min-w-0 gap-3 md:grid-cols-2">
+                    {getSelectedSubjectsForLevel(niveau.id).map((subject) => (
+                      <div key={`${niveau.id}-${subject.code}`} className="min-w-0 rounded-2xl border border-slate-200 p-4">
+                        <p className="mb-1 break-words font-semibold text-slate-900">{subject.nom}</p>
+                        <p className="mb-3 text-xs text-slate-500">
+                          {subject.code} • {subject.heures_semaine} h/sem. • coef. {subject.coefficient}
+                        </p>
+                        <select
+                          className={getInputClassName(false)}
+                          value={getTeacherAssignment(niveau.id, subject.code)}
+                          onChange={(event) =>
+                            updateTeacherAssignment(
+                              niveau.id,
+                              subject.code,
+                              event.target.value,
+                            )
+                          }
+                        >
+                          <option value="">
+                            {defaultTeacherId
+                              ? "Utiliser l'enseignant par defaut"
+                              : "Selectionner un enseignant"}
+                          </option>
+                          {enseignants.map((teacher) => (
+                            <option key={teacher.id} value={teacher.id}>
+                              {getTeacherDisplayLabel(teacher)}
+                            </option>
+                          ))}
+                        </select>
+                        {existingTeacherAssignments.assignments[niveau.id]?.[
+                          normalizeText(subject.code)
+                        ] &&
+                        !existingTeacherAssignments.conflicts[niveau.id]?.[
+                          normalizeText(subject.code)
+                        ] ? (
+                          <p className="mt-2 text-xs text-emerald-700">
+                            Pre-rempli depuis les cours existants de ce niveau.
+                          </p>
+                        ) : null}
+                        {(existingTeacherAssignments.conflicts[niveau.id]?.[
+                          normalizeText(subject.code)
+                        ]?.length ?? 0) > 1 ? (
+                          <p className="mt-2 text-xs leading-5 text-amber-700">
+                            Plusieurs enseignants deja detectes:{" "}
+                            {existingTeacherAssignments.conflicts[niveau.id][
+                              normalizeText(subject.code)
+                            ].join(", ")}
+                          </p>
+                        ) : null}
+                      </div>
                     ))}
-                  </select>
-                </div>
+                  </div>
+                </section>
               ))}
             </div>
           </div>
@@ -1087,18 +1641,56 @@ export default function PedagogieInitialisationIndex() {
 
       case 8:
         return (
-          <div className="space-y-3">
+          <div className="space-y-4">
+            <QuickAccessCard
+              title="Structure pedagogique detaillee"
+              description="Ouvre l'ecran dedie pour construire l'arbre matieres, domaines, sous-domaines, competences et objectifs utilises dans les evaluations et les bulletins."
+              href="/pedagogie/structure_pedagogique"
+              ctaLabel="Ouvrir la structure pedagogique"
+            />
+            <QuickAccessCard
+              title="Edition avancee des types d'evaluation"
+              description="Ouvre le module dedie pour ajuster les types apres l'initialisation, avec historique et CRUD complet."
+              href="/pedagogie/types_evaluations"
+              ctaLabel="Gerer les types d'evaluation"
+            />
             {evaluationTypes.map((type, index) => (
-              <div key={`${type.code}-${index}`} className="grid min-w-0 gap-3 rounded-2xl border border-slate-200 p-4 lg:grid-cols-[minmax(135px,160px)_minmax(180px,1fr)_minmax(95px,120px)_minmax(95px,120px)]">
-                <select className={getInputClassName(false)} value={type.code} onChange={(event) => updateEvaluationType(index, { code: event.target.value as EvaluationTypeDraft["code"] })}>
-                  <option value="DEVOIR">Devoir</option>
-                  <option value="EXAMEN">Examen</option>
-                  <option value="ORAL">Oral</option>
-                  <option value="AUTRE">Autre</option>
-                </select>
-                <input className={getInputClassName(false)} value={type.label} onChange={(event) => updateEvaluationType(index, { label: event.target.value })} />
-                <input type="number" min={0} step="0.5" className={getInputClassName(false)} value={type.poids} onChange={(event) => updateEvaluationType(index, { poids: Number(event.target.value) })} />
-                <input type="number" min={1} className={getInputClassName(false)} value={type.note_max} onChange={(event) => updateEvaluationType(index, { note_max: Number(event.target.value) })} />
+              <div key={`${type.code}-${index}`} className="space-y-4 rounded-2xl border border-slate-200 p-4">
+                <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(135px,160px)_minmax(180px,1fr)_minmax(95px,120px)_minmax(95px,120px)]">
+                  <select className={getInputClassName(false)} value={type.code} onChange={(event) => updateEvaluationType(index, { code: event.target.value as EvaluationTypeDraft["code"] })}>
+                    <option value="DEVOIR">Devoir</option>
+                    <option value="EXAMEN">Examen</option>
+                    <option value="ORAL">Oral</option>
+                    <option value="AUTRE">Autre</option>
+                  </select>
+                  <input className={getInputClassName(false)} value={type.label} onChange={(event) => updateEvaluationType(index, { label: event.target.value })} />
+                  <input type="number" min={0} step="0.5" className={getInputClassName(false)} value={type.poids} onChange={(event) => updateEvaluationType(index, { poids: Number(event.target.value) })} />
+                  <input type="number" min={1} className={getInputClassName(false)} value={type.note_max} onChange={(event) => updateEvaluationType(index, { note_max: Number(event.target.value) })} />
+                </div>
+
+                <div className="grid min-w-0 gap-3 md:grid-cols-3">
+                  <ToggleSetting
+                    label="Entre dans la moyenne"
+                    checked={type.include_in_average}
+                    onChange={(value) =>
+                      updateEvaluationType(index, { include_in_average: value })
+                    }
+                  />
+                  <ToggleSetting
+                    label="Visible dans bulletin detaille"
+                    checked={type.show_in_report_card}
+                    onChange={(value) =>
+                      updateEvaluationType(index, { show_in_report_card: value })
+                    }
+                  />
+                  <ToggleSetting
+                    label="Considere comme examen final"
+                    checked={type.is_final_exam}
+                    onChange={(value) =>
+                      updateEvaluationType(index, { is_final_exam: value })
+                    }
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -1106,22 +1698,104 @@ export default function PedagogieInitialisationIndex() {
 
       case 9:
         return (
-          <div className="grid min-w-0 gap-4 md:grid-cols-2">
-            <SelectSetting label="Calcul de moyenne" value={noteRules.moyenne} onChange={(value) => setNoteRules((current) => ({ ...current, moyenne: value as NoteRulesDraft["moyenne"] }))} options={[["PONDEREE", "Moyenne ponderee"], ["SIMPLE", "Moyenne simple"]]} />
-            <SelectSetting label="Arrondi" value={noteRules.arrondi} onChange={(value) => setNoteRules((current) => ({ ...current, arrondi: value as NoteRulesDraft["arrondi"] }))} options={[["0.25", "0.25"], ["0.5", "0.5"], ["1", "1"]]} />
-            <ToggleSetting label="Absence non notee" checked={noteRules.absence_non_notee} onChange={(value) => setNoteRules((current) => ({ ...current, absence_non_notee: value }))} />
-            <ToggleSetting label="Autoriser le rattrapage" checked={noteRules.autoriser_rattrapage} onChange={(value) => setNoteRules((current) => ({ ...current, autoriser_rattrapage: value }))} />
+          <div className="space-y-4">
+            <QuickAccessCard
+              title="Regles de notes completes"
+              description="Le module dedie permet de revoir ces choix apres l'initialisation et pilote maintenant le calcul bulletin."
+              href="/pedagogie/regles_notes"
+              ctaLabel="Ouvrir les regles de notes"
+            />
+            <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <SelectSetting label="Calcul de moyenne" value={noteRules.moyenne} onChange={(value) => setNoteRules((current) => ({ ...current, moyenne: value as NoteRulesDraft["moyenne"] }))} options={[["PONDEREE", "Moyenne ponderee"], ["SIMPLE", "Moyenne simple"]]} />
+              <SelectSetting label="Arrondi" value={noteRules.arrondi} onChange={(value) => setNoteRules((current) => ({ ...current, arrondi: value as NoteRulesDraft["arrondi"] }))} options={[["0.25", "0.25"], ["0.5", "0.5"], ["1", "1"]]} />
+              <SelectSetting label="Notes manquantes" value={noteRules.missing_grade_policy} onChange={(value) => setNoteRules((current) => ({ ...current, missing_grade_policy: value as NoteRulesDraft["missing_grade_policy"] }))} options={[["IGNORE", "Ignorer"], ["ZERO", "Compter comme 0"], ["BLOCK", "Bloquer la moyenne"]]} />
+              <SelectSetting label="Mode de classement" value={noteRules.ranking_mode} onChange={(value) => setNoteRules((current) => ({ ...current, ranking_mode: value as NoteRulesDraft["ranking_mode"] }))} options={[["COMPETITION", "Competition"], ["DENSE", "Dense"]]} />
+              <ToggleSetting label="Absence non notee" checked={noteRules.absence_non_notee} onChange={(value) => setNoteRules((current) => ({ ...current, absence_non_notee: value }))} />
+              <ToggleSetting label="Autoriser le rattrapage" checked={noteRules.autoriser_rattrapage} onChange={(value) => setNoteRules((current) => ({ ...current, autoriser_rattrapage: value }))} />
+              <ToggleSetting label="Exclure les eleves non classes du rang" checked={noteRules.exclude_ungraded_from_ranking} onChange={(value) => setNoteRules((current) => ({ ...current, exclude_ungraded_from_ranking: value }))} />
+            </div>
           </div>
         );
 
       case 10:
         return (
-          <div className="grid min-w-0 gap-4 md:grid-cols-2">
-            <ToggleSetting label="Afficher le rang" checked={bulletinConfig.afficher_rang} onChange={(value) => setBulletinConfig((current) => ({ ...current, afficher_rang: value }))} />
-            <ToggleSetting label="Afficher les absences" checked={bulletinConfig.afficher_absences} onChange={(value) => setBulletinConfig((current) => ({ ...current, afficher_absences: value }))} />
-            <ToggleSetting label="Afficher la signature" checked={bulletinConfig.afficher_signature} onChange={(value) => setBulletinConfig((current) => ({ ...current, afficher_signature: value }))} />
-            <ToggleSetting label="Afficher la decision" checked={bulletinConfig.afficher_decision} onChange={(value) => setBulletinConfig((current) => ({ ...current, afficher_decision: value }))} />
-            <ToggleSetting label="Publier par defaut" checked={bulletinConfig.publier_par_defaut} onChange={(value) => setBulletinConfig((current) => ({ ...current, publier_par_defaut: value }))} />
+          <div className="space-y-4">
+            <QuickAccessCard
+              title="Modeles de bulletin detailles"
+              description="Ouvre la gestion dediee des modeles pour previsualiser, dupliquer et definir le modele par defaut."
+              href="/pedagogie/modeles_bulletins"
+              ctaLabel="Ouvrir les modeles de bulletin"
+            />
+            <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)]">
+              <SelectSetting
+                label="Type de modele"
+                value={bulletinConfig.template_type}
+                onChange={(value) =>
+                  updateBulletinConfig({
+                    template_type: value as ReportCardTemplateType,
+                  })
+                }
+                options={[
+                  ["STANDARD", "Standard recommande"],
+                  ["DETAILED", "Detaille"],
+                  ["ASSESSMENT_TYPE_SUMMARY", "Par type d'evaluation"],
+                  ["FINAL_EXAM_ONLY", "Examen final uniquement"],
+                  ["CUSTOM", "Personnalise"],
+                ]}
+              />
+              <label className="block min-w-0 rounded-2xl border border-slate-200 bg-white p-4">
+                <span className="mb-2 block break-words font-semibold text-slate-900">
+                  Description interne
+                </span>
+                <textarea
+                  className={getInputClassName(false)}
+                  value={bulletinConfig.description ?? ""}
+                  onChange={(event) =>
+                    updateBulletinConfig({ description: event.target.value })
+                  }
+                  rows={4}
+                  placeholder="Ex: Bulletin standard officiel de l'etablissement"
+                />
+              </label>
+            </div>
+
+            <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <ToggleSetting label="Afficher les notes detaillees" checked={bulletinConfig.show_assessment_details} onChange={(value) => updateBulletinConfig({ show_assessment_details: value })} />
+              <ToggleSetting label="Afficher la synthese par type" checked={bulletinConfig.show_assessment_type_summary} onChange={(value) => updateBulletinConfig({ show_assessment_type_summary: value })} />
+              <ToggleSetting label="Afficher uniquement l'examen final" checked={bulletinConfig.show_only_final_exam} onChange={(value) => updateBulletinConfig({ show_only_final_exam: value })} />
+              <ToggleSetting label="Afficher la moyenne matiere" checked={bulletinConfig.show_subject_average} onChange={(value) => updateBulletinConfig({ show_subject_average: value })} />
+              <ToggleSetting label="Afficher le coefficient" checked={bulletinConfig.show_subject_coefficient} onChange={(value) => updateBulletinConfig({ show_subject_coefficient: value })} />
+              <ToggleSetting label="Afficher les points" checked={bulletinConfig.show_subject_points} onChange={(value) => updateBulletinConfig({ show_subject_points: value })} />
+              <ToggleSetting label="Afficher le rang matiere" checked={bulletinConfig.show_subject_rank} onChange={(value) => updateBulletinConfig({ show_subject_rank: value })} />
+              <ToggleSetting label="Afficher l'appreciation enseignant" checked={bulletinConfig.show_teacher_appreciation} onChange={(value) => updateBulletinConfig({ show_teacher_appreciation: value })} />
+              <ToggleSetting label="Afficher les absences" checked={bulletinConfig.show_absences} onChange={(value) => updateBulletinConfig({ show_absences: value })} />
+              <ToggleSetting label="Afficher les retards" checked={bulletinConfig.show_late_count} onChange={(value) => updateBulletinConfig({ show_late_count: value })} />
+              <ToggleSetting label="Afficher le logo" checked={bulletinConfig.show_logo} onChange={(value) => updateBulletinConfig({ show_logo: value })} />
+              <ToggleSetting label="Afficher la signature" checked={bulletinConfig.show_signature} onChange={(value) => updateBulletinConfig({ show_signature: value })} />
+              <ToggleSetting label="Afficher la moyenne generale" checked={bulletinConfig.show_general_average} onChange={(value) => updateBulletinConfig({ show_general_average: value })} />
+              <ToggleSetting label="Afficher le total des coefficients" checked={bulletinConfig.show_total_coefficients} onChange={(value) => updateBulletinConfig({ show_total_coefficients: value })} />
+              <ToggleSetting label="Afficher le total des points" checked={bulletinConfig.show_total_points} onChange={(value) => updateBulletinConfig({ show_total_points: value })} />
+              <ToggleSetting label="Afficher le rang general" checked={bulletinConfig.show_general_rank} onChange={(value) => updateBulletinConfig({ show_general_rank: value })} />
+              <ToggleSetting label="Afficher la mention" checked={bulletinConfig.show_mention} onChange={(value) => updateBulletinConfig({ show_mention: value })} />
+              <ToggleSetting label="Afficher la decision" checked={bulletinConfig.show_decision} onChange={(value) => updateBulletinConfig({ show_decision: value })} />
+              <ToggleSetting label="Afficher l'appreciation generale" checked={bulletinConfig.show_general_appreciation} onChange={(value) => updateBulletinConfig({ show_general_appreciation: value })} />
+              <ToggleSetting label="Publier par defaut" checked={bulletinConfig.publier_par_defaut} onChange={(value) => updateBulletinConfig({ publier_par_defaut: value })} />
+            </div>
+
+            <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-900">
+              <p className="font-semibold">Apercu du modele actif</p>
+              <p className="mt-2">
+                {bulletinConfig.template_type === "STANDARD"
+                  ? "Bulletin synthetique: la moyenne par matiere reste visible, sans details de devoirs."
+                  : bulletinConfig.template_type === "DETAILED"
+                    ? "Bulletin detaille: les notes publiees et autorisees par type d'evaluation pourront apparaitre en clair."
+                    : bulletinConfig.template_type === "ASSESSMENT_TYPE_SUMMARY"
+                      ? "Bulletin groupe: les notes seront resumees par type d'evaluation pour eviter une mise en page trop chargee."
+                      : bulletinConfig.template_type === "FINAL_EXAM_ONLY"
+                        ? "Bulletin cible examen final: seules les compositions ou examens finaux visibles apparaitront."
+                        : "Bulletin personnalise: les options ci-dessus pilotent directement l'affichage final."}
+              </p>
+            </div>
           </div>
         );
 
@@ -1149,7 +1823,15 @@ export default function PedagogieInitialisationIndex() {
               )}
               helper={`${activeYearCours.length} cours existant(s)`}
             />
-            <InfoCard title="Enseignants" value={String(enseignants.length)} helper={defaultTeacherId ? "Affectation prete" : "Affectation a verifier"} />
+            <InfoCard
+              title="Enseignants"
+              value={String(enseignants.length)}
+              helper={
+                missingTeacherAssignments.length === 0
+                  ? "Affectation prete"
+                  : `${missingTeacherAssignments.length} affectation(s) a completer`
+              }
+            />
             <InfoCard title="Configuration" value={existingConfig ? "Mise a jour" : "Creation"} helper="Evaluations, notes et bulletin" />
             {summary ? (
               <div className="md:col-span-2 xl:col-span-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
@@ -1270,6 +1952,33 @@ function InfoCard({ title, value, helper }: { title: string; value: string; help
       <p className="break-words text-sm font-semibold text-slate-600">{title}</p>
       <p className="mt-2 break-words text-2xl font-semibold text-slate-950">{value}</p>
       <p className="mt-2 break-words text-sm leading-6 text-slate-500">{helper}</p>
+    </div>
+  );
+}
+
+function QuickAccessCard({
+  title,
+  description,
+  href,
+  ctaLabel,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  ctaLabel: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-4 rounded-[24px] border border-sky-200 bg-sky-50 p-5 md:flex-row md:items-center md:justify-between">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-sky-900">{title}</p>
+        <p className="mt-2 text-sm leading-6 text-sky-800">{description}</p>
+      </div>
+      <a
+        href={href}
+        className="inline-flex shrink-0 items-center justify-center rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm transition hover:bg-sky-100"
+      >
+        {ctaLabel}
+      </a>
     </div>
   );
 }

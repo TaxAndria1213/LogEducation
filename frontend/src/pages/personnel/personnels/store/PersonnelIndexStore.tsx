@@ -2,8 +2,8 @@ import { create } from "zustand";
 import NotFound from "../../../NotFound";
 import type { JSX } from "react";
 import PersonnelList from "../components/table/PersonnelTable";
-import PersonnelForm from "../components/form/PersonnelForm";
 import PersonnelOverview from "../components/dashboard/PersonnelOverview";
+import PersonnelAccountRolePicker from "../components/account/PersonnelAccountRolePicker";
 
 type MenuItemToComponent = {
   id: string;
@@ -19,7 +19,7 @@ const renderList: MenuItemToComponent[] = [
   },
   {
     id: "add",
-    component: <PersonnelForm />,
+    component: <PersonnelAccountRolePicker />,
     renderState: 3,
   },
   {

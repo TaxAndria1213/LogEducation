@@ -38,6 +38,20 @@ export type TypeCanal = "EMAIL" | "SMS" | "APP";
 
 export type TypeEvaluation = "DEVOIR" | "EXAMEN" | "ORAL" | "AUTRE";
 
+export type ReportCardTemplateType = "STANDARD" | "DETAILED" | "ASSESSMENT_TYPE_SUMMARY" | "FINAL_EXAM_ONLY" | "CUSTOM";
+
+export type PedagogicalDisplayMode = "SUBJECTS_ONLY" | "SUBJECTS_AND_DOMAINS" | "FULL_HIERARCHY" | "COMPETENCIES_ONLY" | "CUSTOM";
+
+export type PedagogicalItemType = "SUBJECT" | "GROUP" | "DOMAIN" | "SUBDOMAIN" | "COMPETENCY" | "OBJECTIVE";
+
+export type PedagogicalCalculationMode = "NONE" | "SIMPLE_AVERAGE" | "WEIGHTED_AVERAGE" | "SUM" | "MANUAL";
+
+export type GradingType = "POINTS" | "LETTER" | "LEVEL" | "DESCRIPTIVE" | "PERCENTAGE" | "VALIDATION";
+
+export type AssessmentWorkflowStatus = "DRAFT" | "PUBLISHED" | "RESULTS_ENTERED" | "VALIDATED" | "LOCKED" | "ARCHIVED";
+
+export type AssessmentResultStatus = "GRADED" | "JUSTIFIED_ABSENCE" | "UNJUSTIFIED_ABSENCE" | "EXEMPTED" | "NOT_SUBMITTED" | "NOT_EVALUATED";
+
 /**
  * *
  *  * =========================
@@ -81,6 +95,9 @@ export interface Etablissement {
   Programme?: Programme[];
   Cours?: Cours[];
   RegleNote?: RegleNote[];
+  reportCardTemplates?: ReportCardTemplate[];
+  pedagogicalItems?: PedagogicalItem[];
+  gradingScales?: GradingScale[];
   EvenementCalendrier?: EvenementCalendrier[];
   Annonce?: Annonce[];
   Message?: Message[];
@@ -126,6 +143,9 @@ export interface AnneeScolaire {
   promessesPaiement?: PromessePaiement[];
   restrictionsAdministratives?: RestrictionAdministrative[];
   dossiersRecouvrement?: DossierRecouvrement[];
+  reportCardTemplates?: ReportCardTemplate[];
+  pedagogicalItems?: PedagogicalItem[];
+  gradingScales?: GradingScale[];
 }
 
 export interface Periode {
@@ -290,6 +310,7 @@ export interface Eleve {
   inscriptions?: Inscription[];
   identifiants?: IdentifiantEleve[];
   notes?: Note[];
+  assessmentResults?: AssessmentResult[];
   presences?: PresenceEleve[];
   justificatifs?: JustificatifAbsence[];
   incidents?: IncidentDisciplinaire[];
@@ -369,6 +390,8 @@ export interface NiveauScolaire {
   inscriptions?: Inscription[];
   programmes?: Programme[];
   catalogueFrais?: CatalogueFrais[];
+  reportCardTemplates?: ReportCardTemplate[];
+  pedagogicalItems?: PedagogicalItem[];
 }
 
 export interface Classe {
@@ -520,7 +543,76 @@ export interface Matiere {
   cours?: Cours[];
   lignesProgramme?: ProgrammeMatiere[];
   lignesBulletin?: BulletinLigne[];
+  pedagogicalItems?: PedagogicalItem[];
   EmploiDuTemps?: EmploiDuTemps[];
+}
+
+export interface PedagogicalItem {
+  id: string;
+  etablissement_id: string;
+  annee_scolaire_id: string;
+  niveau_scolaire_id: string;
+  parent_id: string | null;
+  matiere_id: string | null;
+  item_type: PedagogicalItemType;
+  code: string | null;
+  nom: string;
+  description: string | null;
+  display_order: number;
+  coefficient: number | null;
+  weight: number | null;
+  is_evaluable: boolean;
+  is_visible_on_report: boolean;
+  is_required: boolean;
+  calculation_mode: PedagogicalCalculationMode;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement;
+  annee?: AnneeScolaire;
+  niveau?: NiveauScolaire;
+  matiere?: Matiere | null;
+  parent?: PedagogicalItem | null;
+  enfants?: PedagogicalItem[];
+  evaluations?: Evaluation[];
+  reportCardTemplateItems?: ReportCardTemplatePedagogicalItem[];
+}
+
+export interface GradingScale {
+  id: string;
+  etablissement_id: string;
+  annee_scolaire_id: string;
+  nom: string;
+  grading_type: GradingType;
+  base_score: number | null;
+  use_for_calculation: boolean;
+  allow_decimal: boolean;
+  is_default: boolean;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement;
+  annee?: AnneeScolaire;
+  levels?: GradingScaleLevel[];
+  evaluations?: Evaluation[];
+}
+
+export interface GradingScaleLevel {
+  id: string;
+  grading_scale_id: string;
+  code: string;
+  label: string;
+  numeric_value: number | null;
+  min_value: number | null;
+  max_value: number | null;
+  display_order: number;
+  color: string | null;
+  is_success_level: boolean;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+  gradingScale?: GradingScale;
+  assessmentResults?: AssessmentResult[];
 }
 
 export interface Programme {
@@ -571,8 +663,14 @@ export interface Cours {
 export interface TypeEvaluationRef {
   id: string;
   etablissement_id: string;
+  code: TypeEvaluation;
   nom: string;
   poids_defaut: number | null;
+  default_max_score: number | null;
+  include_in_average: boolean;
+  show_in_report_card: boolean;
+  is_final_exam: boolean;
+  is_active: boolean;
   created_at: Date;
   updated_at: Date;
   evaluations?: Evaluation[];
@@ -582,21 +680,31 @@ export interface Evaluation {
   id: string;
   cours_id: string;
   periode_id: string;
+  pedagogical_item_id: string | null;
+  grading_scale_id: string | null;
   type_evaluation_id: string | null;
   type: TypeEvaluation;
   titre: string;
+  description: string | null;
   date: Date;
   note_max: number;
   poids: number | null;
   est_publiee: boolean;
+  include_in_average: boolean;
+  show_in_report_card: boolean;
+  is_final_exam: boolean;
+  status: AssessmentWorkflowStatus;
   cree_par_enseignant_id: string | null;
   created_at: Date;
   updated_at: Date;
   cours?: Cours;
   periode?: Periode;
+  pedagogicalItem?: PedagogicalItem | null;
+  gradingScale?: GradingScale | null;
   typeRef?: TypeEvaluationRef | null;
   createur?: Enseignant | null;
   notes?: Note[];
+  assessmentResults?: AssessmentResult[];
 }
 
 export interface Note {
@@ -613,6 +721,52 @@ export interface Note {
   eleve?: Eleve;
 }
 
+export interface AssessmentResult {
+  id: string;
+  assessment_id: string;
+  student_id: string;
+  raw_score: number | null;
+  max_score: number | null;
+  normalized_score: number | null;
+  scale_level_id: string | null;
+  text_value: string | null;
+  display_value: string | null;
+  status: AssessmentResultStatus;
+  observation: string | null;
+  is_validated: boolean;
+  validated_at: Date | null;
+  validated_by: string | null;
+  created_at: Date;
+  updated_at: Date;
+  assessment?: Evaluation;
+  student?: Eleve;
+  scaleLevel?: GradingScaleLevel | null;
+  history?: AssessmentResultHistory[];
+}
+
+export interface AssessmentResultHistory {
+  id: string;
+  assessment_result_id: string;
+  old_raw_score: number | null;
+  new_raw_score: number | null;
+  old_max_score: number | null;
+  new_max_score: number | null;
+  old_normalized_score: number | null;
+  new_normalized_score: number | null;
+  old_scale_level_id: string | null;
+  new_scale_level_id: string | null;
+  old_text_value: string | null;
+  new_text_value: string | null;
+  old_display_value: string | null;
+  new_display_value: string | null;
+  old_status: AssessmentResultStatus | null;
+  new_status: AssessmentResultStatus | null;
+  reason: string | null;
+  changed_by: string | null;
+  changed_at: Date;
+  assessmentResult?: AssessmentResult;
+}
+
 export interface RegleNote {
   id: string;
   etablissement_id: string;
@@ -623,18 +777,99 @@ export interface RegleNote {
   etablissement?: Etablissement;
 }
 
+export interface ReportCardTemplate {
+  id: string;
+  etablissement_id: string;
+  annee_scolaire_id: string;
+  niveau_scolaire_id: string | null;
+  nom: string;
+  description: string | null;
+  template_type: ReportCardTemplateType;
+  pedagogical_display_mode: PedagogicalDisplayMode;
+  show_assessment_details: boolean;
+  show_assessment_type_summary: boolean;
+  show_only_final_exam: boolean;
+  show_subjects: boolean;
+  show_groups: boolean;
+  show_domains: boolean;
+  show_subdomains: boolean;
+  show_competencies: boolean;
+  show_objectives: boolean;
+  show_only_evaluated_items: boolean;
+  show_non_evaluated_items: boolean;
+  non_evaluated_label: string;
+  group_items_by_parent: boolean;
+  show_hierarchical_indent: boolean;
+  max_hierarchy_depth: number;
+  show_subject_summary: boolean;
+  show_domain_summary: boolean;
+  show_subdomain_summary: boolean;
+  show_competency_results: boolean;
+  show_subject_average: boolean;
+  show_subject_coefficient: boolean;
+  show_subject_points: boolean;
+  show_subject_rank: boolean;
+  show_teacher_appreciation: boolean;
+  show_general_average: boolean;
+  show_total_coefficients: boolean;
+  show_total_points: boolean;
+  show_general_rank: boolean;
+  show_mention: boolean;
+  show_decision: boolean;
+  show_general_appreciation: boolean;
+  show_absences: boolean;
+  show_late_count: boolean;
+  show_logo: boolean;
+  show_signature: boolean;
+  is_default: boolean;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement;
+  annee?: AnneeScolaire;
+  niveau?: NiveauScolaire | null;
+  bulletins?: Bulletin[];
+  pedagogicalItems?: ReportCardTemplatePedagogicalItem[];
+}
+
+export interface ReportCardTemplatePedagogicalItem {
+  id: string;
+  template_id: string;
+  pedagogical_item_id: string;
+  is_visible: boolean;
+  custom_label: string | null;
+  display_order: number;
+  show_result: boolean;
+  show_appreciation: boolean;
+  show_children: boolean;
+  created_at: Date;
+  updated_at: Date;
+  template?: ReportCardTemplate;
+  pedagogicalItem?: PedagogicalItem;
+}
+
 export interface Bulletin {
   id: string;
   eleve_id: string;
   periode_id: string;
   classe_id: string;
+  report_card_template_id: string | null;
   publie_le: Date | null;
   statut: string | null;
+  general_average: Decimal | null;
+  total_coefficients: Decimal | null;
+  total_points: Decimal | null;
+  general_rank: number | null;
+  mention: string | null;
+  decision: string | null;
+  general_appreciation: string | null;
+  display_snapshot_json: JsonValue | null;
   created_at: Date;
   updated_at: Date;
   eleve?: Eleve;
   periode?: Periode;
   classe?: Classe;
+  reportCardTemplate?: ReportCardTemplate | null;
   lignes?: BulletinLigne[];
 }
 

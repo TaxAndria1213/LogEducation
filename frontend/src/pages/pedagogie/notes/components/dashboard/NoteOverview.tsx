@@ -1,17 +1,18 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FiBarChart2,
   FiCheckCircle,
   FiLayers,
-  FiSettings,
   FiUsers,
 } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
-import NoteService, {
-  getEleveDisplayLabel,
-  getNotePercentage,
-  type NoteWithRelations,
-} from "../../../../../services/note.service";
+import AssessmentResultService, {
+  getAssessmentResultDisplayLabel,
+  getAssessmentResultPercentage,
+  getAssessmentResultStatusLabel,
+  type AssessmentResultWithRelations,
+} from "../../../../../services/assessmentResult.service";
+import { getEleveDisplayLabel } from "../../../../../services/note.service";
 import { getEvaluationDisplayLabel } from "../../../../../services/evaluation.service";
 
 type Props = {
@@ -34,7 +35,7 @@ function getErrorMessage(error: unknown) {
     return error.response.data.message;
   }
 
-  return "Impossible de charger les notes.";
+  return "Impossible de charger les resultats.";
 }
 
 function formatDate(value?: Date | string | null) {
@@ -50,7 +51,7 @@ function formatDate(value?: Date | string | null) {
 
 function NoteOverview({ mode = "overview" }: Props) {
   const { etablissement_id } = useAuth();
-  const [notes, setNotes] = useState<NoteWithRelations[]>([]);
+  const [results, setResults] = useState<AssessmentResultWithRelations[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -59,7 +60,7 @@ function NoteOverview({ mode = "overview" }: Props) {
 
     const loadData = async () => {
       if (!etablissement_id) {
-        setNotes([]);
+        setResults([]);
         return;
       }
 
@@ -67,14 +68,19 @@ function NoteOverview({ mode = "overview" }: Props) {
       setErrorMessage("");
 
       try {
-        const service = new NoteService();
+        const service = new AssessmentResultService();
         const result = await service.getForEtablissement(etablissement_id, {
           page: 1,
           take: 500,
           includeSpec: JSON.stringify({
-            evaluation: {
+            assessment: {
               include: {
                 periode: true,
+                gradingScale: {
+                  include: {
+                    levels: true,
+                  },
+                },
                 cours: {
                   include: {
                     annee: true,
@@ -84,7 +90,7 @@ function NoteOverview({ mode = "overview" }: Props) {
                 },
               },
             },
-            eleve: {
+            student: {
               include: {
                 utilisateur: {
                   include: {
@@ -93,15 +99,16 @@ function NoteOverview({ mode = "overview" }: Props) {
                 },
               },
             },
+            scaleLevel: true,
           }),
-          orderBy: JSON.stringify([{ note_le: "desc" }, { created_at: "desc" }]),
+          orderBy: JSON.stringify([{ updated_at: "desc" }, { created_at: "desc" }]),
         });
 
         if (!active) return;
 
-        setNotes(
+        setResults(
           result?.status.success
-            ? ((result.data.data as NoteWithRelations[]) ?? [])
+            ? ((result.data.data as AssessmentResultWithRelations[]) ?? [])
             : [],
         );
       } catch (error: unknown) {
@@ -121,62 +128,97 @@ function NoteOverview({ mode = "overview" }: Props) {
     };
   }, [etablissement_id]);
 
-  const distinctEvaluations = useMemo(
-    () => new Set(notes.map((item) => item.evaluation_id).filter(Boolean)).size,
-    [notes],
+  const distinctAssessments = useMemo(
+    () => new Set(results.map((item) => item.assessment_id).filter(Boolean)).size,
+    [results],
   );
 
   const distinctStudents = useMemo(
-    () => new Set(notes.map((item) => item.eleve_id).filter(Boolean)).size,
-    [notes],
+    () => new Set(results.map((item) => item.student_id).filter(Boolean)).size,
+    [results],
   );
 
-  const withComment = useMemo(
-    () => notes.filter((item) => Boolean(item.commentaire?.trim())).length,
-    [notes],
+  const withObservation = useMemo(
+    () => results.filter((item) => Boolean(item.observation?.trim())).length,
+    [results],
   );
 
   const averagePercentage = useMemo(() => {
-    const percentages = notes
-      .map((item) => getNotePercentage(item))
+    const percentages = results
+      .map((item) => getAssessmentResultPercentage(item))
       .filter((value): value is number => value !== null);
 
     if (percentages.length === 0) return 0;
-    return Math.round((percentages.reduce((sum, value) => sum + value, 0) / percentages.length) * 10) / 10;
-  }, [notes]);
+    return Math.round(
+      (percentages.reduce((sum, value) => sum + value, 0) / percentages.length) * 10,
+    ) / 10;
+  }, [results]);
 
-  const recentNotes = useMemo(() => notes.slice(0, 6), [notes]);
+  const recentResults = useMemo(() => results.slice(0, 6), [results]);
 
   const classDistribution = useMemo(() => {
     const counts = new Map<string, number>();
 
-    notes.forEach((item) => {
-      const key = item.evaluation?.cours?.classe?.nom?.trim() || "Classe non renseignee";
+    results.forEach((item) => {
+      const key =
+        item.assessment?.cours?.classe?.nom?.trim() || "Classe non renseignee";
       counts.set(key, (counts.get(key) ?? 0) + 1);
     });
 
-    return [...counts.entries()].sort((left, right) => right[1] - left[1]).slice(0, 6);
-  }, [notes]);
+    return [...counts.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 6);
+  }, [results]);
 
-  const evaluationDistribution = useMemo(() => {
+  const assessmentDistribution = useMemo(() => {
     const counts = new Map<string, number>();
 
-    notes.forEach((item) => {
-      const key = getEvaluationDisplayLabel(item.evaluation);
+    results.forEach((item) => {
+      const key = getEvaluationDisplayLabel(item.assessment);
       counts.set(key, (counts.get(key) ?? 0) + 1);
     });
 
-    return [...counts.entries()].sort((left, right) => right[1] - left[1]).slice(0, 6);
-  }, [notes]);
+    return [...counts.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 6);
+  }, [results]);
+
+  const statusDistribution = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    results.forEach((item) => {
+      const key = getAssessmentResultStatusLabel(item.status);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+
+    return [...counts.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 6);
+  }, [results]);
 
   return (
-    <div className="space-y-6">      {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Chargement...</div> : null}      {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errorMessage}</div> : null}      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">
+      {loading ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          Chargement...
+        </div>
+      ) : null}
+
+      {errorMessage ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {errorMessage}
+        </div>
+      ) : null}
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiBarChart2 />
-            <span className="text-sm font-medium">Notes saisies</span>
+            <span className="text-sm font-medium">Resultats saisis</span>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{notes.length}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">
+            {results.length}
+          </p>
         </div>
 
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -184,15 +226,19 @@ function NoteOverview({ mode = "overview" }: Props) {
             <FiLayers />
             <span className="text-sm font-medium">Evaluations couvertes</span>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{distinctEvaluations}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">
+            {distinctAssessments}
+          </p>
         </div>
 
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3 text-slate-500">
             <FiUsers />
-            <span className="text-sm font-medium">Eleves notes</span>
+            <span className="text-sm font-medium">Eleves evalues</span>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{distinctStudents}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">
+            {distinctStudents}
+          </p>
         </div>
 
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -200,7 +246,9 @@ function NoteOverview({ mode = "overview" }: Props) {
             <FiCheckCircle />
             <span className="text-sm font-medium">Moyenne normalisee</span>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{averagePercentage}%</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">
+            {averagePercentage}%
+          </p>
         </div>
       </section>
 
@@ -208,36 +256,41 @@ function NoteOverview({ mode = "overview" }: Props) {
         <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
           <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">Notes recentes</h3>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Resultats recents
+              </h3>
               <p className="text-sm text-slate-500">
-                Les dernieres notes enregistrees avec leur contexte principal.
+                Les derniers resultats enregistres avec leur contexte principal.
               </p>
             </div>
 
-            {recentNotes.length > 0 ? (
+            {recentResults.length > 0 ? (
               <div className="mt-5 space-y-3">
-                {recentNotes.map((item) => (
+                {recentResults.map((item) => (
                   <div
                     key={item.id}
                     className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4"
                   >
                     <div>
                       <p className="text-sm font-semibold text-slate-900">
-                        {getEleveDisplayLabel(item.eleve)}
+                        {getEleveDisplayLabel(item.student)}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
-                        {getEvaluationDisplayLabel(item.evaluation)}
+                        {getEvaluationDisplayLabel(item.assessment)}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
-                        Saisie le {formatDate(item.note_le)}
+                        Saisi le {formatDate(item.validated_at ?? item.updated_at)}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
                       <span className="rounded-full bg-white px-3 py-1 font-medium text-slate-700">
-                        {item.score}/{item.evaluation?.note_max ?? "-"}
+                        {getAssessmentResultDisplayLabel(item)}
                       </span>
                       <span className="rounded-full bg-white px-3 py-1 font-medium text-slate-700">
-                        {getNotePercentage(item) ?? "-"}%
+                        {getAssessmentResultStatusLabel(item.status)}
+                      </span>
+                      <span className="rounded-full bg-white px-3 py-1 font-medium text-slate-700">
+                        {getAssessmentResultPercentage(item) ?? "-"}%
                       </span>
                     </div>
                   </div>
@@ -245,7 +298,7 @@ function NoteOverview({ mode = "overview" }: Props) {
               </div>
             ) : (
               <div className="mt-5 rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
-                Aucune note n'est encore enregistree pour cet etablissement.
+                Aucun resultat n'est encore enregistre pour cet etablissement.
               </div>
             )}
           </article>
@@ -256,9 +309,11 @@ function NoteOverview({ mode = "overview" }: Props) {
                 <FiLayers />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Reperes rapides</h3>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Reperes rapides
+                </h3>
                 <p className="text-sm text-slate-500">
-                  Une lecture rapide des classes, evaluations et commentaires.
+                  Une lecture rapide des classes, evaluations et statuts de saisie.
                 </p>
               </div>
             </div>
@@ -271,14 +326,21 @@ function NoteOverview({ mode = "overview" }: Props) {
                 {classDistribution.length > 0 ? (
                   <div className="mt-3 space-y-2">
                     {classDistribution.map(([classe, count]) => (
-                      <div key={classe} className="flex items-center justify-between gap-3 text-sm text-slate-700">
+                      <div
+                        key={classe}
+                        className="flex items-center justify-between gap-3 text-sm text-slate-700"
+                      >
                         <span>{classe}</span>
-                        <span className="rounded-full bg-white px-3 py-1 font-medium text-slate-700">{count}</span>
+                        <span className="rounded-full bg-white px-3 py-1 font-medium text-slate-700">
+                          {count}
+                        </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-slate-500">Les classes apparaitront ici des les premieres notes.</p>
+                  <p className="mt-3 text-sm text-slate-500">
+                    Les classes apparaitront ici des les premiers resultats.
+                  </p>
                 )}
               </div>
 
@@ -286,17 +348,24 @@ function NoteOverview({ mode = "overview" }: Props) {
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                   Evaluations les plus alimentees
                 </p>
-                {evaluationDistribution.length > 0 ? (
+                {assessmentDistribution.length > 0 ? (
                   <div className="mt-3 space-y-2">
-                    {evaluationDistribution.map(([evaluation, count]) => (
-                      <div key={evaluation} className="flex items-center justify-between gap-3 text-sm text-slate-700">
-                        <span>{evaluation}</span>
-                        <span className="rounded-full bg-white px-3 py-1 font-medium text-slate-700">{count}</span>
+                    {assessmentDistribution.map(([assessment, count]) => (
+                      <div
+                        key={assessment}
+                        className="flex items-center justify-between gap-3 text-sm text-slate-700"
+                      >
+                        <span>{assessment}</span>
+                        <span className="rounded-full bg-white px-3 py-1 font-medium text-slate-700">
+                          {count}
+                        </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-slate-500">Les evaluations apparaitront ici des les premieres notes.</p>
+                  <p className="mt-3 text-sm text-slate-500">
+                    Les evaluations apparaitront ici des les premiers resultats.
+                  </p>
                 )}
               </div>
 
@@ -305,10 +374,35 @@ function NoteOverview({ mode = "overview" }: Props) {
                   Qualite de saisie
                 </p>
                 <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
-                  <li>{withComment} note(s) avec commentaire.</li>
-                  <li>{notes.length - withComment} note(s) sans commentaire.</li>
+                  <li>{withObservation} resultat(s) avec commentaire.</li>
+                  <li>{results.length - withObservation} resultat(s) sans commentaire.</li>
                   <li>{averagePercentage}% de moyenne normalisee sur l'ensemble visible.</li>
                 </ul>
+              </div>
+
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Repartition par statut
+                </p>
+                {statusDistribution.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {statusDistribution.map(([statusLabel, count]) => (
+                      <div
+                        key={statusLabel}
+                        className="flex items-center justify-between gap-3 text-sm text-slate-700"
+                      >
+                        <span>{statusLabel}</span>
+                        <span className="rounded-full bg-white px-3 py-1 font-medium text-slate-700">
+                          {count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-500">
+                    Les statuts de saisie apparaitront ici des les premiers resultats.
+                  </p>
+                )}
               </div>
             </div>
           </article>
@@ -319,5 +413,3 @@ function NoteOverview({ mode = "overview" }: Props) {
 }
 
 export default NoteOverview;
-
-

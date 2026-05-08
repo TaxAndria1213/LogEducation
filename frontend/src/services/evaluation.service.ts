@@ -1,4 +1,5 @@
 import Service from "../app/api/Service";
+import { Http } from "../app/api/Http";
 import type {
   Evaluation,
   Periode,
@@ -14,8 +15,26 @@ export type EvaluationWithRelations = Evaluation & {
   cours?: CoursWithRelations | null;
   periode?: Pick<Periode, "id" | "nom" | "date_debut" | "date_fin" | "ordre"> | null;
   typeRef?: Pick<TypeEvaluationRef, "id" | "nom" | "poids_defaut"> | null;
+  gradingScale?: {
+    id: string;
+    nom: string;
+    grading_type: string;
+    base_score?: number | null;
+    levels?: Array<{
+      id: string;
+      code: string;
+      label: string;
+      color?: string | null;
+      numeric_value?: number | null;
+    }>;
+  } | null;
   createur?: EnseignantWithRelations | null;
   notes?: Array<{ id: string; score?: number | null }>;
+  assessmentResults?: Array<{
+    id: string;
+    student_id?: string | null;
+    is_validated?: boolean;
+  }>;
 };
 
 function parseObjectParam(value: unknown): Record<string, unknown> | undefined {
@@ -47,6 +66,23 @@ export function getEvaluationTypeLabel(type?: TypeEvaluation | string | null) {
       return "Oral";
     default:
       return "Autre";
+  }
+}
+
+export function getEvaluationWorkflowStatusLabel(status?: string | null) {
+  switch (status) {
+    case "VALIDATED":
+      return "Validee";
+    case "LOCKED":
+      return "Verrouillee";
+    case "ARCHIVED":
+      return "Archivee";
+    case "RESULTS_ENTERED":
+      return "Resultats saisis";
+    case "PUBLISHED":
+      return "Publiee";
+    default:
+      return "Brouillon";
   }
 }
 
@@ -92,6 +128,21 @@ class EvaluationService extends Service {
           ? params.orderBy
           : JSON.stringify(params.orderBy ?? [{ date: "desc" }, { created_at: "desc" }]),
     } as Record<string, string | number | Date | boolean>);
+  }
+
+  async updateDisplaySettings(
+    id: string,
+    payload: {
+      include_in_average?: boolean;
+      show_in_report_card?: boolean;
+      is_final_exam?: boolean;
+    },
+  ) {
+    return Http.put(["/api", this.url, id, "display-settings"].join("/"), payload);
+  }
+
+  async validateResults(id: string) {
+    return Http.post(["/api", this.url, id, "results", "validate"].join("/"), {});
   }
 
   private buildScopedWhere(etablissementId: string, whereParam?: unknown) {

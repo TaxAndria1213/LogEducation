@@ -5,8 +5,8 @@ import {
   type DataTableHandle,
 } from "../../../../../shared/table/DataTable";
 import BulletinService, {
-  getBulletinAverage,
   getBulletinDisplayLabel,
+  getBulletinGeneralAverage,
   getBulletinSecondaryLabel,
   type BulletinWithRelations,
 } from "../../../../../services/bulletin.service";
@@ -23,47 +23,124 @@ import {
 const formatDate = (value?: Date | string | null) =>
   value ? formatDateWithLocalTimezone(value.toString()).date : "-";
 
+const formatSummaryValue = (value: number | string | null | undefined) => {
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? `${value}` : value.toFixed(2);
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  return "-";
+};
+
 export default function BulletinTable() {
   const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new BulletinService(), []);
 
-  const buildPdf = (row: BulletinWithRelations) => {
+  const buildPdf = async (row: BulletinWithRelations) => {
+    const detailResponse = await service.get(row.id);
+    const detail = (detailResponse?.data as BulletinWithRelations | undefined) ?? row;
     const doc = createPdfDocument();
+    const display = detail.affichage_bulletin;
+    const headerStartY = display?.template?.show_logo ? 30 : 18;
+    const pdfColumns =
+      display?.columns?.length
+        ? display.columns
+        : [
+            { key: "subject", label: "Matiere" },
+            { key: "average", label: "Moyenne" },
+            { key: "rank", label: "Rang" },
+            { key: "appreciation", label: "Commentaire enseignant" },
+          ];
+
+    if (display?.template?.show_logo) {
+      doc.setDrawColor(148, 163, 184);
+      doc.rect(14, 12, 24, 12);
+      doc.setFontSize(8);
+      doc.text("LOGO", 26, 19, { align: "center" });
+    }
 
     const headerY = addPdfHeader(doc, {
       title: "Bulletin de notes",
       metadata: [
-        { label: "Eleve", value: row.eleve ? getBulletinDisplayLabel(row).split(" - ")[0] : "-" },
-        { label: "Classe", value: row.classe?.nom ?? "-" },
-        { label: "Periode", value: row.periode?.nom ?? "-" },
-        { label: "Statut", value: row.statut ?? "-" },
-        { label: "Publie le", value: formatDate(row.publie_le) },
+        { label: "Eleve", value: detail.eleve ? getBulletinDisplayLabel(detail).split(" - ")[0] : "-" },
+        { label: "Classe", value: detail.classe?.nom ?? "-" },
+        { label: "Periode", value: detail.periode?.nom ?? "-" },
+        { label: "Statut", value: detail.statut ?? "-" },
+        { label: "Publie le", value: formatDate(detail.publie_le) },
         { label: "Genere le", value: formatDate(new Date()) },
       ],
+      startY: headerStartY,
     });
 
-    const lignes = row.lignes ?? [];
+    const lignes = detail.affichage_bulletin?.lines ?? [];
     const finalY = addPdfTable(doc, {
       startY: headerY,
-      head: ["Matiere", "Moyenne", "Rang", "Commentaire enseignant"],
-      body: lignes.map((l) => [
-        l.matiere?.nom ?? "-",
-        l.moyenne !== null && l.moyenne !== undefined ? l.moyenne.toFixed(2) : "-",
-        l.rang ?? "-",
-        l.commentaire_enseignant ?? "",
-      ]),
+      head: pdfColumns.map((column) => column.label),
+      body:
+        lignes.length > 0
+          ? lignes.map((line) =>
+              pdfColumns.map((column) => line.display_cells?.[column.key] ?? "-"),
+            )
+          : (detail.lignes ?? []).map((line) => [
+              line.matiere?.nom ?? "-",
+              line.moyenne !== null && line.moyenne !== undefined ? line.moyenne.toFixed(2) : "-",
+              line.rang ?? "-",
+              line.commentaire_enseignant ?? "",
+            ]),
     });
 
-    const moyenne = getBulletinAverage(lignes);
     doc.setFontSize(12);
-    doc.text(
-      `Moyenne generale : ${moyenne !== null ? moyenne.toFixed(2) : "-"}`,
-      14,
-      finalY + 12,
-    );
+    const summaryLines = [
+      display?.template?.show_general_average
+        ? `Moyenne generale : ${formatSummaryValue(display?.summary?.general_average ?? getBulletinGeneralAverage(detail))}`
+        : null,
+      display?.template?.show_total_coefficients
+        ? `Total coefficients : ${formatSummaryValue(display?.summary?.total_coefficients)}`
+        : null,
+      display?.template?.show_total_points
+        ? `Total points : ${formatSummaryValue(display?.summary?.total_points)}`
+        : null,
+      display?.template?.show_general_rank
+        ? `Rang general : ${formatSummaryValue(display?.summary?.rank)}`
+        : null,
+      display?.template?.show_mention
+        ? `Mention : ${formatSummaryValue(display?.summary?.mention)}`
+        : null,
+      display?.template?.show_decision
+        ? `Decision : ${formatSummaryValue(display?.summary?.decision)}`
+        : null,
+      display?.template?.show_general_appreciation
+        ? `Appreciation generale : ${formatSummaryValue(display?.summary?.general_appreciation)}`
+        : null,
+      display?.template?.show_absences
+        ? `Absences : ${formatSummaryValue(display?.summary?.absence_count)}`
+        : null,
+      display?.template?.show_late_count
+        ? `Retards : ${formatSummaryValue(display?.summary?.late_count)}`
+        : null,
+    ].filter((line): line is string => Boolean(line));
 
-    const filename = `bulletin-${row.eleve?.code_eleve ?? row.id}.pdf`;
+    summaryLines.forEach((line, index) => {
+      doc.text(line, 14, finalY + 12 + index * 8);
+    });
+
+    if (display?.warnings?.length) {
+      doc.setFontSize(10);
+      doc.text(`Alertes : ${display.warnings.join(" ")}`, 14, finalY + 18 + summaryLines.length * 8);
+    }
+
+    if (display?.template?.show_signature) {
+      const signatureY = finalY + 32 + summaryLines.length * 8 + (display.warnings?.length ? 10 : 0);
+      doc.line(130, signatureY, 190, signatureY);
+      doc.setFontSize(10);
+      doc.text("Signature", 160, signatureY + 5, { align: "center" });
+    }
+
+    const filename = `bulletin-${detail.eleve?.code_eleve ?? detail.id}.pdf`;
     savePdf(doc, filename);
   };
 
@@ -91,7 +168,7 @@ export default function BulletinTable() {
       key: "moyenne_generale",
       header: "Moy. generale",
       render: (row) => {
-        const moy = getBulletinAverage(row.lignes);
+        const moy = getBulletinGeneralAverage(row);
         return moy !== null ? moy.toFixed(2) : "-";
       },
       sortable: false,
@@ -124,7 +201,7 @@ export default function BulletinTable() {
     {
       label: "PDF",
       variant: "secondary",
-      onClick: (row) => buildPdf(row),
+      onClick: async (row) => buildPdf(row),
     },
     {
       label: "Voir",

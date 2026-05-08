@@ -12,32 +12,33 @@ import type { PersistedSession } from "@/types/models";
 function useSessionQuery<T>(
   key: string,
   loader: (session: PersistedSession) => Promise<T>,
+  enabled = true,
 ) {
   const { session, status, activeRole } = useAuth();
 
   return useQuery({
     queryKey: [key, session?.user.id, activeRole],
     queryFn: () => loader(session!),
-    enabled: status === "authenticated" && !!session,
+    enabled: status === "authenticated" && !!session && enabled,
   });
 }
 
-export function useHomeBundle() {
-  return useSessionQuery("mobile-home", loadHomeBundle);
+export function useHomeBundle(enabled = true) {
+  return useSessionQuery("mobile-home", loadHomeBundle, enabled);
 }
 
-export function useAgendaBundle() {
-  return useSessionQuery("mobile-agenda", loadAgendaBundle);
+export function useAgendaBundle(enabled = true) {
+  return useSessionQuery("mobile-agenda", loadAgendaBundle, enabled);
 }
 
-export function usePresenceBundle() {
-  return useSessionQuery("mobile-presence", loadPresenceBundle);
+export function usePresenceBundle(enabled = true) {
+  return useSessionQuery("mobile-presence", loadPresenceBundle, enabled);
 }
 
-export function useAcademicBundle() {
-  return useSessionQuery("mobile-academic", loadAcademicBundle);
+export function useAcademicBundle(enabled = true) {
+  return useSessionQuery("mobile-academic", loadAcademicBundle, enabled);
 }
 
-export function useOperationsBundle() {
-  return useSessionQuery("mobile-operations", loadOperationsBundle);
+export function useOperationsBundle(enabled = true) {
+  return useSessionQuery("mobile-operations", loadOperationsBundle, enabled);
 }

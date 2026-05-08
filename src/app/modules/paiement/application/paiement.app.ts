@@ -172,7 +172,7 @@ class PaiementApp {
       case "virement":
         return "virement";
       case "cheque":
-      case "chÃ¨que":
+      case "chèque":
         return "cheque";
       case "bank":
       case "banque":
@@ -1499,7 +1499,8 @@ class PaiementApp {
 
       Response.success(res, "Paiement cree avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation du paiement", 400, error as Error);    }
+      Response.error(res, "Erreur lors de la creation du paiement", 400, error as Error);
+    }
   }
 
   private async createMixed(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1644,7 +1645,8 @@ class PaiementApp {
 
       Response.success(res, "Paiement mixte cree avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation du paiement mixte", 400, error as Error);    }
+      Response.error(res, "Erreur lors de la creation du paiement mixte", 400, error as Error);
+    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1659,7 +1661,8 @@ class PaiementApp {
       const result = await getAllPaginated(scopedQuery as typeof req.query, this.paiement);
       Response.success(res, "Liste des paiements recuperee.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des paiements", 400, error as Error);    }
+      Response.error(res, "Erreur lors de la recuperation des paiements", 400, error as Error);
+    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1680,7 +1683,8 @@ class PaiementApp {
 
       Response.success(res, "Detail du paiement.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation du paiement", 404, error as Error);    }
+      Response.error(res, "Erreur lors de la recuperation du paiement", 404, error as Error);
+    }
   }
 
   private async delete(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1741,7 +1745,8 @@ class PaiementApp {
 
       Response.success(res, "Paiement supprime avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la suppression du paiement", 400, error as Error);    }
+      Response.error(res, "Erreur lors de la suppression du paiement", 400, error as Error);
+    }
   }
 
   private async update(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1824,7 +1829,8 @@ class PaiementApp {
 
       Response.success(res, "Paiement mis a jour avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la mise a jour du paiement", 400, error as Error);    }
+      Response.error(res, "Erreur lors de la mise a jour du paiement", 400, error as Error);
+    }
   }
 
   private async reallocate(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -1932,7 +1938,8 @@ class PaiementApp {
 
       Response.success(res, "Paiement reaffecte avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la reaffectation du paiement", 400, error as Error);    }
+      Response.error(res, "Erreur lors de la reaffectation du paiement", 400, error as Error);
+    }
   }
 
   private async handleStatusOperation(
@@ -2017,7 +2024,8 @@ class PaiementApp {
 
       Response.success(res, successMessage, result);
     } catch (error) {
-      Response.error(res, "Erreur lors de l'operation comptable sur le paiement", 400, error as Error);    }
+      Response.error(res, "Erreur lors de l'operation comptable sur le paiement", 400, error as Error);
+    }
   }
 
   private async cancel(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -2109,7 +2117,8 @@ class PaiementApp {
 
       Response.success(res, "Trop-percu rembourse avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors du remboursement du trop-percu", 400, error as Error);    }
+      Response.error(res, "Erreur lors du remboursement du trop-percu", 400, error as Error);
+    }
   }
 
   private async reconcile(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -2152,7 +2161,8 @@ class PaiementApp {
 
       Response.success(res, "Paiement rapproche avec succes.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors du rapprochement du paiement", 400, error as Error);    }
+      Response.error(res, "Erreur lors du rapprochement du paiement", 400, error as Error);
+    }
   }
 }
 

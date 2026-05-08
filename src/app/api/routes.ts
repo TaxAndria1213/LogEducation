@@ -58,6 +58,12 @@ import FinanceDashboardApp from "../modules/finance_dashboard/application/financ
 import RessourceBibliothequeApp from "../modules/ressource_bibliotheque/application/ressource_bibliotheque.app";
 import EmpruntApp from "../modules/emprunt/application/emprunt.app";
 import DocumentTypeInscriptionApp from "../modules/document_type_inscription/application/document_type_inscription.app";
+import InitialisationPedagogiqueApp from "../modules/initialisation_pedagogique/application/initialisation_pedagogique.app";
+import TypeEvaluationRefApp from "../modules/type_evaluation_ref/application/type_evaluation_ref.app";
+import ReportCardTemplateApp from "../modules/report_card_template/application/report_card_template.app";
+import PedagogicalItemApp from "../modules/pedagogical_item/application/pedagogical_item.app";
+import GradingScaleApp from "../modules/grading_scale/application/grading_scale.app";
+import AssessmentResultApp from "../modules/assessment_result/application/assessment_result.app";
 
 export class ApiRoutes {
   public app: Application;
@@ -125,6 +131,12 @@ export class ApiRoutes {
   private ressourceBibliotheque: RessourceBibliothequeApp;
   private empruntBibliotheque: EmpruntApp;
   private documentTypeInscription: DocumentTypeInscriptionApp;
+  private initialisationPedagogique: InitialisationPedagogiqueApp;
+  private typeEvaluationRef: TypeEvaluationRefApp;
+  private reportCardTemplate: ReportCardTemplateApp;
+  private pedagogicalItem: PedagogicalItemApp;
+  private gradingScale: GradingScaleApp;
+  private assessmentResult: AssessmentResultApp;
 
   constructor(app: Application) {
     this.app = app;
@@ -187,6 +199,12 @@ export class ApiRoutes {
     this.ressourceBibliotheque = new RessourceBibliothequeApp(app);
     this.empruntBibliotheque = new EmpruntApp(app);
     this.documentTypeInscription = new DocumentTypeInscriptionApp(app);
+    this.initialisationPedagogique = new InitialisationPedagogiqueApp(app);
+    this.typeEvaluationRef = new TypeEvaluationRefApp(app);
+    this.reportCardTemplate = new ReportCardTemplateApp(app);
+    this.pedagogicalItem = new PedagogicalItemApp(app);
+    this.gradingScale = new GradingScaleApp(app);
+    this.assessmentResult = new AssessmentResultApp(app);
     this.routes();
   }
 
@@ -211,6 +229,15 @@ export class ApiRoutes {
     this.router.use("/periode", this.periode.routes());
     this.router.use("/referenciel", this.referenciel.routes());
     this.router.use("/document-type-inscription", this.documentTypeInscription.routes());
+    this.router.use(
+      "/initialisation-pedagogique",
+      this.initialisationPedagogique.routes(),
+    );
+    this.router.use("/type-evaluation-ref", this.typeEvaluationRef.routes());
+    this.router.use("/report-card-template", this.reportCardTemplate.routes());
+    this.router.use("/pedagogical-item", this.pedagogicalItem.routes());
+    this.router.use("/grading-scale", this.gradingScale.routes());
+    this.router.use("/assessment-result", this.assessmentResult.routes());
 
     this.router.use("/inscription", this.inscription.routes());
     this.router.use("/classe", this.classe.routes());

@@ -8,9 +8,12 @@ import { useAuth } from "@/providers/AuthProvider";
 import { AcademicsScreen } from "@/screens/AcademicsScreen";
 import { AgendaScreen } from "@/screens/AgendaScreen";
 import { HomeScreen } from "@/screens/HomeScreen";
+import { TeacherClassesNavigator } from "@/navigation/TeacherClassesNavigator";
+import { TeacherNotesNavigator } from "@/navigation/TeacherNotesNavigator";
 import { OperationsScreen } from "@/screens/OperationsScreen";
 import { PresenceNavigator } from "@/navigation/PresenceNavigator";
 import { ProfileScreen } from "@/screens/ProfileScreen";
+import { TeacherMessagesScreen } from "@/screens/TeacherMessagesScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -23,6 +26,9 @@ const screenMap: Record<
   }
 > = {
   Home: { label: "Accueil", icon: "home", component: HomeScreen },
+  Classes: { label: "Classes", icon: "users", component: TeacherClassesNavigator },
+  Notes: { label: "Notes", icon: "edit-3", component: TeacherNotesNavigator },
+  Messages: { label: "Messages", icon: "message-circle", component: TeacherMessagesScreen },
   Agenda: { label: "Agenda", icon: "calendar", component: AgendaScreen },
   Presence: { label: "Presences", icon: "check-square", component: PresenceNavigator },
   Academic: { label: "Etudes", icon: "book-open", component: AcademicsScreen },

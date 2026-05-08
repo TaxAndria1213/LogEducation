@@ -10,6 +10,59 @@ export type BulletinLineWithRelations = BulletinLigne & {
   matiere?: MatiereWithRelations | null;
 };
 
+export type BulletinDisplayColumn = {
+  key: string;
+  label: string;
+};
+
+export type BulletinDisplayLine = {
+  row_id: string;
+  matiere_id: string;
+  matiere_nom: string;
+  pedagogical_item_id?: string | null;
+  item_type?: string | null;
+  depth?: number;
+  is_summary_line?: boolean;
+  moyenne: number | null;
+  coefficient: number | null;
+  points: number | null;
+  rang: number | null;
+  appreciation: string | null;
+  display_cells: Record<string, string>;
+};
+
+export type BulletinDisplaySnapshot = {
+  template: {
+    template_type: "STANDARD" | "DETAILED" | "ASSESSMENT_TYPE_SUMMARY" | "FINAL_EXAM_ONLY" | "CUSTOM";
+    show_absences: boolean;
+    show_late_count: boolean;
+    show_general_average: boolean;
+    show_total_coefficients: boolean;
+    show_total_points: boolean;
+    show_general_rank: boolean;
+    show_mention: boolean;
+    show_decision: boolean;
+    show_general_appreciation: boolean;
+    show_logo: boolean;
+    show_signature: boolean;
+  };
+  columns: BulletinDisplayColumn[];
+  lines: BulletinDisplayLine[];
+  summary: {
+    general_average: number | null;
+    total_coefficients: number;
+    total_points: number;
+    rank: number | null;
+    mention: string | null;
+    decision: string | null;
+    general_appreciation: string | null;
+    absence_count: number | null;
+    late_count: number | null;
+  };
+  warnings: string[];
+  generated_at: string;
+};
+
 export type BulletinWithRelations = Bulletin & {
   eleve?: EleveWithRelations | null;
   periode?: Pick<Periode, "id" | "nom" | "date_debut" | "date_fin" | "ordre"> | null;
@@ -24,6 +77,7 @@ export type BulletinWithRelations = Bulletin & {
     } | null;
   }) | null;
   lignes?: BulletinLineWithRelations[];
+  affichage_bulletin?: BulletinDisplaySnapshot | null;
 };
 
 function parseObjectParam(value: unknown): Record<string, unknown> | undefined {
@@ -54,6 +108,17 @@ export function getBulletinAverage(lines?: BulletinLineWithRelations[] | null) {
   return Math.round((valid.reduce((sum, line) => sum + (line.moyenne ?? 0), 0) / valid.length) * 100) / 100;
 }
 
+export function getBulletinGeneralAverage(
+  bulletin?: Partial<BulletinWithRelations> | null,
+) {
+  const snapshotAverage = bulletin?.affichage_bulletin?.summary?.general_average;
+  if (typeof snapshotAverage === "number") {
+    return snapshotAverage;
+  }
+
+  return getBulletinAverage(bulletin?.lignes);
+}
+
 export function getBulletinDisplayLabel(bulletin?: Partial<BulletinWithRelations> | null) {
   if (!bulletin) return "Bulletin non renseigne";
 
@@ -67,10 +132,21 @@ export function getBulletinSecondaryLabel(bulletin?: Partial<BulletinWithRelatio
   if (!bulletin) return "";
 
   const classe = bulletin.classe?.nom?.trim() ?? "";
-  const moyenne = getBulletinAverage(bulletin.lignes);
+  const lineCount =
+    bulletin.affichage_bulletin?.lines?.length ??
+    bulletin.lignes?.filter((line) => typeof line.moyenne === "number").length ??
+    0;
   const statut = bulletin.statut?.trim() ?? "";
+  const templateLabel = bulletin.affichage_bulletin?.template?.template_type
+    ?.replaceAll("_", " ")
+    .toLowerCase() ?? "";
 
-  return [classe, moyenne !== null ? `Moy. ${moyenne.toFixed(2)}` : "", statut]
+  return [
+    classe,
+    lineCount > 0 ? `${lineCount} ligne(s)` : "",
+    templateLabel ? `mode ${templateLabel}` : "",
+    statut,
+  ]
     .filter(Boolean)
     .join(" • ");
 }

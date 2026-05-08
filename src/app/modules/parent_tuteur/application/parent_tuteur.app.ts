@@ -52,7 +52,7 @@ function normalizeMethode(value: unknown) {
     case "virement":
       return "virement";
     case "cheque":
-    case "chÃ¨que":
+    case "chèque":
       return "cheque";
     case "bank":
     case "banque":
@@ -568,7 +568,8 @@ class ParentTuteurApp {
       const result = await this.parentTuteur.create(data);
       Response.success(res, "Stablisment creation success.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la creation de l'etablissement", 400, error as Error);    }
+      Response.error(res, "Erreur lors de la creation de l'etablissement", 400, error as Error);
+    }
   }
 
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
@@ -576,7 +577,8 @@ class ParentTuteurApp {
       const result = await getAllPaginated(req.query, this.parentTuteur);
       Response.success(res, "Stablisment list.", result);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des etablissements", 400, error as Error);    }
+      Response.error(res, "Erreur lors de la recuperation des etablissements", 400, error as Error);
+    }
   }
 
   private async getFamilyFinanceList(req: RequestWithAuth, res: R, next: NextFunction): Promise<void> {
@@ -635,7 +637,8 @@ class ParentTuteurApp {
 
       Response.success(res, "Synthese famille finance.", summaries);
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation des syntheses famille.", 400, error as Error);    }
+      Response.error(res, "Erreur lors de la recuperation des syntheses famille.", 400, error as Error);
+    }
   }
 
   private async getFamilyFinanceOne(req: RequestWithAuth, res: R, next: NextFunction): Promise<void> {
@@ -649,7 +652,8 @@ class ParentTuteurApp {
 
       Response.success(res, "Synthese finance parent.", this.buildFamilySummary(parent, annee, echeances));
     } catch (error) {
-      Response.error(res, "Erreur lors de la recuperation de la synthese finance parent.", 400, error as Error);    }
+      Response.error(res, "Erreur lors de la recuperation de la synthese finance parent.", 400, error as Error);
+    }
   }
 
   private async createFamilyPayment(req: RequestWithAuth, res: R, next: NextFunction): Promise<void> {
@@ -774,7 +778,8 @@ class ParentTuteurApp {
         paiements: created,
       });
     } catch (error) {
-      Response.error(res, "Erreur lors de l'enregistrement du paiement famille.", 400, error as Error);    }
+      Response.error(res, "Erreur lors de l'enregistrement du paiement famille.", 400, error as Error);
+    }
   }
 
   private async sendFamilyRelance(req: RequestWithAuth, res: R, next: NextFunction): Promise<void> {
@@ -811,7 +816,8 @@ class ParentTuteurApp {
         nombre_enfants: summary.nombre_enfants,
       });
     } catch (error) {
-      Response.error(res, "Erreur lors de l'envoi de la relance famille.", 400, error as Error);    }
+      Response.error(res, "Erreur lors de l'envoi de la relance famille.", 400, error as Error);
+    }
   }
 
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
