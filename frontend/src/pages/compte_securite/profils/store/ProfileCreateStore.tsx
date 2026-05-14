@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
-import type { Profil, Utilisateur } from "../../../../generated/zod";
+import type { Profil, Utilisateur } from "../../../../types/models";
 import ProfileService from "../../../../services/profile.service";
 import UtilisateurService from "../../../../services/utilisateur.service";
 

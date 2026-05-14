@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useState } from "react";
 import { FiEdit2, FiPlus, FiRefreshCcw } from "react-icons/fi";
 import ERPPage from "../../../components/page/ERPPage";
@@ -421,17 +422,17 @@ export default function DocumentTypesInscriptionPage() {
                   { description: { contains: text } },
                 ],
               })}
-              mapResponse={(raw) => {
-                const payload = raw?.data?.data ?? raw?.data ?? raw;
-                const rows = (payload?.data ?? []) as DocumentTypeInscription[];
-                return {
-                  data: rows,
-                  meta: payload?.meta ?? {
-                    take: 20,
-                    hasNextPage: false,
-                  },
-                };
-              }}
+              // mapResponse={(raw) => {
+              //   const payload = raw?.data?.data ?? raw?.data ?? raw;
+              //   const rows = (payload?.data ?? []) as DocumentTypeInscription[];
+              //   return {
+              //     data: rows,
+              //     meta: payload?.meta ?? {
+              //       take: 20,
+              //       hasNextPage: false,
+              //     },
+              //   };
+              // }}
             />
           </section>
 

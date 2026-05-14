@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -184,6 +185,20 @@ enum PedagogicalCalculationMode {
   MANUAL
 }
 
+enum StatutProgramme {
+  DRAFT
+  ACTIVE
+  IN_REVISION
+  LOCKED
+  ARCHIVED
+}
+
+enum StatutProgrammeMatiere {
+  ACTIVE
+  INACTIVE
+  DISABLED
+}
+
 enum GradingType {
   POINTS
   LETTER
@@ -209,6 +224,32 @@ enum AssessmentResultStatus {
   EXEMPTED
   NOT_SUBMITTED
   NOT_EVALUATED
+}
+
+enum ReportAverageCalculationMode {
+  SIMPLE
+  HIERARCHICAL
+  WEIGHTED
+  COEFFICIENT_BASED
+}
+
+enum BulletinGradingMode {
+  NUMERIC
+  CODE
+  LEVEL
+  DESCRIPTIVE
+  MIXED
+  NONE
+}
+
+enum ReportCardTemplateSectionType {
+  ACADEMIC_NUMERIC
+  ACADEMIC_CODE
+  BEHAVIOR
+  GENERAL_APPRECIATION
+  DECISION
+  CODE_LEGEND
+  CUSTOM
 }
 
 /**
@@ -258,6 +299,7 @@ model Etablissement {
   reportCardTemplates      ReportCardTemplate[]
   pedagogicalItems         PedagogicalItem[]
   gradingScales            GradingScale[]
+  pedagogicalItemAverages  PedagogicalItemAverage[]
   EvenementCalendrier      EvenementCalendrier[]
   Annonce                  Annonce[]
   Message                  Message[]
@@ -315,6 +357,7 @@ model AnneeScolaire {
   reportCardTemplates  ReportCardTemplate[]
   pedagogicalItems     PedagogicalItem[]
   gradingScales        GradingScale[]
+  pedagogicalItemAverages PedagogicalItemAverage[]
 
   @@index([etablissement_id])
   @@map("annees_scolaires")
@@ -334,6 +377,7 @@ model Periode {
   annee       AnneeScolaire @relation(fields: [annee_scolaire_id], references: [id])
   evaluations Evaluation[]
   bulletins   Bulletin[]
+  pedagogicalItemAverages PedagogicalItemAverage[]
 
   @@index([annee_scolaire_id])
   @@map("periodes")
@@ -415,6 +459,9 @@ model Utilisateur {
   restrictionsAdministrativesLevees RestrictionAdministrative[] @relation("restriction_admin_leveur")
   dossiersRecouvrementCrees DossierRecouvrement[] @relation("dossier_recouvrement_createur")
   dossiersRecouvrementValides DossierRecouvrement[] @relation("dossier_recouvrement_validateur")
+  programmesCrees     Programme[]        @relation("programme_createur")
+  programmesMaj       Programme[]        @relation("programme_modificateur")
+  programmeChangeLogs ProgrammeChangeLog[] @relation("programme_change_log_actor")
   Eleve               Eleve[]
   ParentTuteur        ParentTuteur[]
   Personnel           Personnel[]
@@ -544,6 +591,7 @@ model Eleve {
   dossiersRecouvrement DossierRecouvrement[]
   emprunts             Emprunt[]
   profilMedical        EleveMedicalProfile?
+  pedagogicalItemAverages PedagogicalItemAverage[]
 
   @@unique([etablissement_id, code_eleve])
   @@index([etablissement_id])
@@ -657,6 +705,7 @@ model Classe {
   cours         Cours[]
   sessionsAppel SessionAppel[]
   bulletins     Bulletin[]
+  pedagogicalItemAverages PedagogicalItemAverage[]
   emploiDuTemps EmploiDuTemps[]
 
   @@unique([annee_scolaire_id, nom, site_id])
@@ -833,42 +882,49 @@ model Matiere {
 }
 
 model PedagogicalItem {
-  id                   String                     @id @default(uuid())
-  etablissement_id     String
-  annee_scolaire_id    String
-  niveau_scolaire_id   String
-  parent_id            String?
-  matiere_id           String?
-  item_type            PedagogicalItemType
-  code                 String?
-  nom                  String
-  description          String?
-  display_order        Int                        @default(0)
-  coefficient          Float?
-  weight               Float?
-  is_evaluable         Boolean                    @default(false)
-  is_visible_on_report Boolean                    @default(true)
-  is_required          Boolean                    @default(false)
-  calculation_mode     PedagogicalCalculationMode @default(WEIGHTED_AVERAGE)
-  is_active            Boolean                    @default(true)
+  id                         String                     @id @default(uuid())
+  etablissement_id           String
+  annee_scolaire_id          String
+  niveau_scolaire_id         String
+  parent_id                  String?
+  matiere_id                 String?
+  grading_scale_id           String?
+  item_type                  PedagogicalItemType
+  code                       String?
+  nom                        String
+  description                String?
+  display_order              Int                        @default(0)
+  coefficient                Float?
+  weight                     Float?
+  is_evaluable               Boolean                    @default(false)
+  is_visible_on_report       Boolean                    @default(true)
+  is_required                Boolean                    @default(false)
+  include_in_general_average Boolean                    @default(true)
+  grading_mode_override      BulletinGradingMode?
+  calculation_mode           PedagogicalCalculationMode @default(WEIGHTED_AVERAGE)
+  is_active                  Boolean                    @default(true)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  etablissement Etablissement     @relation(fields: [etablissement_id], references: [id])
-  annee         AnneeScolaire     @relation(fields: [annee_scolaire_id], references: [id])
-  niveau        NiveauScolaire    @relation(fields: [niveau_scolaire_id], references: [id])
-  matiere       Matiere?          @relation(fields: [matiere_id], references: [id])
-  parent        PedagogicalItem?  @relation("pedagogical_item_tree", fields: [parent_id], references: [id])
-  enfants       PedagogicalItem[] @relation("pedagogical_item_tree")
-  evaluations   Evaluation[]
-  reportCardTemplateItems ReportCardTemplatePedagogicalItem[]
+  etablissement            Etablissement                    @relation(fields: [etablissement_id], references: [id])
+  annee                    AnneeScolaire                    @relation(fields: [annee_scolaire_id], references: [id])
+  niveau                   NiveauScolaire                   @relation(fields: [niveau_scolaire_id], references: [id])
+  matiere                  Matiere?                         @relation(fields: [matiere_id], references: [id])
+  gradingScale             GradingScale?                    @relation(fields: [grading_scale_id], references: [id])
+  parent                   PedagogicalItem?                 @relation("pedagogical_item_tree", fields: [parent_id], references: [id])
+  enfants                  PedagogicalItem[]                @relation("pedagogical_item_tree")
+  evaluations              Evaluation[]
+  reportCardTemplateItems  ReportCardTemplatePedagogicalItem[]
+  calculatedAverages       PedagogicalItemAverage[]
+  bulletinLignes           BulletinLigne[]
 
   @@unique([annee_scolaire_id, niveau_scolaire_id, parent_id, nom])
   @@index([etablissement_id])
   @@index([annee_scolaire_id, niveau_scolaire_id, item_type])
   @@index([parent_id, display_order])
   @@index([matiere_id])
+  @@index([grading_scale_id], map: "pedagogical_items_grading_scale_id_idx")
   @@map("pedagogical_items")
 }
 
@@ -891,6 +947,9 @@ model GradingScale {
   annee         AnneeScolaire       @relation(fields: [annee_scolaire_id], references: [id])
   levels        GradingScaleLevel[]
   evaluations   Evaluation[]
+  pedagogicalItems PedagogicalItem[]
+  programmeDefaults Programme[] @relation("programme_default_grading_scale")
+  programmeMatieres ProgrammeMatiere[] @relation("programme_matiere_grading_scale")
 
   @@unique([annee_scolaire_id, nom])
   @@index([etablissement_id])
@@ -923,40 +982,96 @@ model GradingScaleLevel {
 }
 
 model Programme {
-  id                 String @id @default(uuid())
-  etablissement_id   String
-  annee_scolaire_id  String
-  niveau_scolaire_id String
-  nom                String
+  id                       String          @id @default(uuid())
+  etablissement_id         String
+  annee_scolaire_id        String
+  niveau_scolaire_id       String
+  code                     String?
+  nom                      String
+  description              String?         @db.Text
+  statut                   StatutProgramme @default(DRAFT)
+  date_debut               DateTime?
+  date_fin                 DateTime?
+  est_actif                Boolean         @default(false)
+  ordre_affichage          Int             @default(0)
+  default_grading_scale_id String?
+  verrouille_le            DateTime?
+  archive_le               DateTime?
+  created_by_utilisateur_id String?
+  updated_by_utilisateur_id String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  etablissement Etablissement  @relation(fields: [etablissement_id], references: [id])
-  annee         AnneeScolaire  @relation(fields: [annee_scolaire_id], references: [id])
-  niveau        NiveauScolaire @relation(fields: [niveau_scolaire_id], references: [id])
-
-  matieres ProgrammeMatiere[]
+  etablissement        Etablissement  @relation(fields: [etablissement_id], references: [id])
+  annee                AnneeScolaire  @relation(fields: [annee_scolaire_id], references: [id])
+  niveau               NiveauScolaire @relation(fields: [niveau_scolaire_id], references: [id])
+  defaultGradingScale  GradingScale?  @relation("programme_default_grading_scale", fields: [default_grading_scale_id], references: [id], onDelete: SetNull)
+  createdBy            Utilisateur?   @relation("programme_createur", fields: [created_by_utilisateur_id], references: [id], onDelete: SetNull)
+  updatedBy            Utilisateur?   @relation("programme_modificateur", fields: [updated_by_utilisateur_id], references: [id], onDelete: SetNull)
+  matieres             ProgrammeMatiere[]
+  changeLogs           ProgrammeChangeLog[]
 
   @@index([annee_scolaire_id])
+  @@index([niveau_scolaire_id], map: "programmes_niveau_scolaire_id_idx")
+  @@index([etablissement_id, statut], map: "programmes_etablissement_id_statut_idx")
+  @@unique([etablissement_id, annee_scolaire_id, niveau_scolaire_id, nom], map: "pro_etab_id_an_sco_id_niv_sco_id_nom_key")
+  @@unique([etablissement_id, annee_scolaire_id, code], map: "programmes_etablissement_id_annee_scolaire_id_code_key")
   @@map("programmes")
 }
 
 model ProgrammeMatiere {
-  id             String @id @default(uuid())
-  programme_id   String
-  matiere_id     String
-  heures_semaine Int?
-  coefficient    Float?
+  id                         String                 @id @default(uuid())
+  programme_id               String
+  matiere_id                 String
+  heures_semaine             Int?
+  heures_annuelles           Int?
+  seances_par_semaine        Int?
+  duree_seance_par_defaut    Int?
+  coefficient                Float?
+  est_obligatoire            Boolean                @default(true)
+  est_visible_bulletin       Boolean                @default(true)
+  inclure_moyenne_generale   Boolean                @default(true)
+  appreciation_obligatoire   Boolean                @default(false)
+  libelle_bulletin           String?
+  ordre_affichage_bulletin   Int?
+  grading_scale_id           String?
+  mode_calcul                PedagogicalCalculationMode @default(WEIGHTED_AVERAGE)
+  statut                     StatutProgrammeMatiere @default(ACTIVE)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  programme Programme @relation(fields: [programme_id], references: [id])
-  matiere   Matiere   @relation(fields: [matiere_id], references: [id])
+  programme    Programme     @relation(fields: [programme_id], references: [id])
+  matiere      Matiere       @relation(fields: [matiere_id], references: [id])
+  gradingScale GradingScale? @relation("programme_matiere_grading_scale", fields: [grading_scale_id], references: [id], onDelete: SetNull)
 
   @@index([programme_id])
+  @@index([matiere_id], map: "programmes_matieres_matiere_id_idx")
+  @@unique([programme_id, matiere_id], map: "programmes_matieres_programme_id_matiere_id_key")
   @@map("programmes_matieres")
+}
+
+model ProgrammeChangeLog {
+  id                       String   @id @default(uuid())
+  programme_id             String
+  entity_type              String
+  entity_id                String?
+  action                   String
+  field_name               String?
+  old_value_json           Json?
+  new_value_json           Json?
+  reason                   String?
+  impact_summary_json      Json?
+  changed_by_utilisateur_id String?
+  changed_at               DateTime @default(now())
+
+  programme Programme   @relation(fields: [programme_id], references: [id], onDelete: Cascade)
+  changedBy Utilisateur? @relation("programme_change_log_actor", fields: [changed_by_utilisateur_id], references: [id], onDelete: SetNull)
+
+  @@index([programme_id, changed_at], map: "programmes_change_logs_programme_id_changed_at_idx")
+  @@index([changed_by_utilisateur_id], map: "programmes_change_logs_changed_by_utilisateur_id_idx")
+  @@map("programmes_change_logs")
 }
 
 model Cours {
@@ -1122,6 +1237,39 @@ model AssessmentResultHistory {
   @@map("assessment_result_history")
 }
 
+model PedagogicalItemAverage {
+  id                  String                       @id @default(uuid())
+  etablissement_id    String
+  annee_scolaire_id   String
+  periode_id          String
+  classe_id           String
+  eleve_id            String
+  pedagogical_item_id String
+  student_average     Float?
+  class_average       Float?
+  display_value       String?
+  calculation_mode    ReportAverageCalculationMode @default(HIERARCHICAL)
+  rounding_precision  Int                          @default(2)
+  status              String?
+  calculated_at       DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement   Etablissement   @relation(fields: [etablissement_id], references: [id])
+  annee           AnneeScolaire   @relation(fields: [annee_scolaire_id], references: [id])
+  periode         Periode         @relation(fields: [periode_id], references: [id])
+  classe          Classe          @relation(fields: [classe_id], references: [id])
+  eleve           Eleve           @relation(fields: [eleve_id], references: [id], onDelete: Cascade)
+  pedagogicalItem PedagogicalItem @relation(fields: [pedagogical_item_id], references: [id], onDelete: Cascade)
+
+  @@unique([periode_id, classe_id, eleve_id, pedagogical_item_id], map: "p_i_a_periode_id_classe_id_eleve_id_pedagogical_item_id_key")
+  @@index([etablissement_id], map: "pedagogical_item_averages_etablissement_id_idx")
+  @@index([annee_scolaire_id, periode_id], map: "pedagogical_item_averages_annee_scolaire_id_periode_id_idx")
+  @@index([classe_id, pedagogical_item_id], map: "pedagogical_item_averages_classe_id_pedagogical_item_id_idx")
+  @@map("pedagogical_item_averages")
+}
+
 model RegleNote {
   id               String  @id @default(uuid())
   etablissement_id String
@@ -1138,60 +1286,76 @@ model RegleNote {
 }
 
 model ReportCardTemplate {
-  id                           String                 @id @default(uuid())
-  etablissement_id             String
-  annee_scolaire_id            String
-  niveau_scolaire_id           String?
-  nom                          String
-  description                  String?
-  template_type                ReportCardTemplateType @default(STANDARD)
-  pedagogical_display_mode     PedagogicalDisplayMode @default(SUBJECTS_ONLY)
-  show_assessment_details      Boolean                @default(false)
-  show_assessment_type_summary Boolean                @default(false)
-  show_only_final_exam         Boolean                @default(false)
-  show_subjects                Boolean                @default(true)
-  show_groups                  Boolean                @default(false)
-  show_domains                 Boolean                @default(false)
-  show_subdomains              Boolean                @default(false)
-  show_competencies            Boolean                @default(false)
-  show_objectives              Boolean                @default(false)
-  show_only_evaluated_items    Boolean                @default(false)
-  show_non_evaluated_items     Boolean                @default(true)
-  non_evaluated_label          String                 @default("Non evalue")
-  group_items_by_parent        Boolean                @default(true)
-  show_hierarchical_indent     Boolean                @default(true)
-  max_hierarchy_depth          Int                    @default(4)
-  show_subject_summary         Boolean                @default(true)
-  show_domain_summary          Boolean                @default(false)
-  show_subdomain_summary       Boolean                @default(false)
-  show_competency_results      Boolean                @default(true)
-  show_subject_average         Boolean                @default(true)
-  show_subject_coefficient     Boolean                @default(true)
-  show_subject_points          Boolean                @default(false)
-  show_subject_rank            Boolean                @default(true)
-  show_teacher_appreciation    Boolean                @default(true)
-  show_general_average         Boolean                @default(true)
-  show_total_coefficients      Boolean                @default(true)
-  show_total_points            Boolean                @default(false)
-  show_general_rank            Boolean                @default(true)
-  show_mention                 Boolean                @default(true)
-  show_decision                Boolean                @default(true)
-  show_general_appreciation    Boolean                @default(true)
-  show_absences                Boolean                @default(false)
-  show_late_count              Boolean                @default(false)
-  show_logo                    Boolean                @default(true)
-  show_signature               Boolean                @default(true)
-  is_default                   Boolean                @default(false)
-  is_active                    Boolean                @default(true)
+  id                                     String                        @id @default(uuid())
+  etablissement_id                       String
+  annee_scolaire_id                      String
+  niveau_scolaire_id                     String?
+  nom                                    String
+  description                            String?
+  template_type                          ReportCardTemplateType        @default(STANDARD)
+  pedagogical_display_mode               PedagogicalDisplayMode        @default(SUBJECTS_ONLY)
+  calculation_mode                       ReportAverageCalculationMode  @default(HIERARCHICAL)
+  include_code_grades_in_general_average Boolean                       @default(false)
+  show_student_average                   Boolean                       @default(true)
+  show_class_average                     Boolean                       @default(true)
+  show_general_student_average           Boolean                       @default(true)
+  show_general_class_average             Boolean                       @default(false)
+  show_code_legend                       Boolean                       @default(false)
+  show_section_headers                   Boolean                       @default(true)
+  rounding_precision                     Int                           @default(2)
+  base_score                             Float?
+  exclude_non_evaluated_items            Boolean                       @default(true)
+  minimum_required_results               Int                           @default(1)
+  use_weights                            Boolean                       @default(true)
+  use_coefficients                       Boolean                       @default(true)
+  show_assessment_details                Boolean                       @default(false)
+  show_assessment_type_summary           Boolean                       @default(false)
+  show_only_final_exam                   Boolean                       @default(false)
+  show_subjects                          Boolean                       @default(true)
+  show_groups                            Boolean                       @default(false)
+  show_domains                           Boolean                       @default(false)
+  show_subdomains                        Boolean                       @default(false)
+  show_competencies                      Boolean                       @default(false)
+  show_objectives                        Boolean                       @default(false)
+  show_only_evaluated_items              Boolean                       @default(false)
+  show_non_evaluated_items               Boolean                       @default(true)
+  non_evaluated_label                    String                        @default("Non evalue")
+  group_items_by_parent                  Boolean                       @default(true)
+  show_hierarchical_indent               Boolean                       @default(true)
+  max_hierarchy_depth                    Int                           @default(4)
+  show_subject_summary                   Boolean                       @default(true)
+  show_domain_summary                    Boolean                       @default(false)
+  show_subdomain_summary                 Boolean                       @default(false)
+  show_competency_results                Boolean                       @default(true)
+  show_subject_average                   Boolean                       @default(true)
+  show_subject_coefficient               Boolean                       @default(true)
+  show_subject_points                    Boolean                       @default(false)
+  show_subject_rank                      Boolean                       @default(true)
+  show_teacher_appreciation              Boolean                       @default(true)
+  show_general_average                   Boolean                       @default(true)
+  show_total_coefficients                Boolean                       @default(true)
+  show_total_points                      Boolean                       @default(false)
+  show_general_rank                      Boolean                       @default(true)
+  show_mention                           Boolean                       @default(true)
+  show_decision                          Boolean                       @default(true)
+  show_general_appreciation              Boolean                       @default(true)
+  show_absences                          Boolean                       @default(false)
+  show_late_count                        Boolean                       @default(false)
+  show_logo                              Boolean                       @default(true)
+  show_signature                         Boolean                       @default(true)
+  is_default                             Boolean                       @default(false)
+  is_active                              Boolean                       @default(true)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  etablissement Etablissement  @relation(fields: [etablissement_id], references: [id])
-  annee         AnneeScolaire  @relation(fields: [annee_scolaire_id], references: [id])
-  niveau        NiveauScolaire? @relation(fields: [niveau_scolaire_id], references: [id])
-  bulletins     Bulletin[]
-  pedagogicalItems ReportCardTemplatePedagogicalItem[]
+  etablissement     Etablissement                     @relation(fields: [etablissement_id], references: [id])
+  annee             AnneeScolaire                     @relation(fields: [annee_scolaire_id], references: [id])
+  niveau            NiveauScolaire?                   @relation(fields: [niveau_scolaire_id], references: [id])
+  bulletins         Bulletin[]
+  sections          ReportCardTemplateSection[]
+  fields            ReportCardTemplateField[]
+  pedagogicalItems  ReportCardTemplatePedagogicalItem[]
 
   @@unique([annee_scolaire_id, nom])
   @@index([etablissement_id])
@@ -1201,53 +1365,112 @@ model ReportCardTemplate {
 }
 
 model ReportCardTemplatePedagogicalItem {
-  id                 String  @id @default(uuid())
-  template_id        String
-  pedagogical_item_id String
-  is_visible         Boolean @default(true)
-  custom_label       String?
-  display_order      Int     @default(0)
-  show_result        Boolean @default(true)
-  show_appreciation  Boolean @default(false)
-  show_children      Boolean @default(true)
+  id                                  String  @id @default(uuid())
+  template_id                         String
+  section_id                          String?
+  pedagogical_item_id                 String
+  is_visible                          Boolean @default(true)
+  custom_label                        String?
+  display_order                       Int     @default(0)
+  show_result                         Boolean @default(true)
+  show_appreciation                   Boolean @default(false)
+  show_children                       Boolean @default(true)
+  grading_scale_id_override           String?
+  include_in_general_average_override Boolean?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  template         ReportCardTemplate @relation(fields: [template_id], references: [id])
-  pedagogicalItem  PedagogicalItem    @relation(fields: [pedagogical_item_id], references: [id])
+  template         ReportCardTemplate         @relation(fields: [template_id], references: [id])
+  section          ReportCardTemplateSection? @relation(fields: [section_id], references: [id])
+  pedagogicalItem  PedagogicalItem            @relation(fields: [pedagogical_item_id], references: [id])
 
   @@unique([template_id, pedagogical_item_id])
   @@index([template_id, is_visible, display_order])
   @@index([pedagogical_item_id])
+  @@index([section_id], map: "modeles_bulletins_items_pedagogiques_section_id_idx")
   @@map("modeles_bulletins_items_pedagogiques")
 }
 
-model Bulletin {
-  id         String    @id @default(uuid())
-  eleve_id   String
-  periode_id String
-  classe_id  String
-  report_card_template_id String?
-  publie_le  DateTime?
-  statut     String?
-  general_average Decimal? @db.Decimal(5, 2)
-  total_coefficients Decimal? @db.Decimal(8, 2)
-  total_points Decimal? @db.Decimal(8, 2)
-  general_rank Int?
-  mention String?
-  decision String?
-  general_appreciation String?
-  display_snapshot_json Json?
+model ReportCardTemplateSection {
+  id                String                        @id @default(uuid())
+  template_id       String
+  parent_section_id String?
+  title             String
+  section_type      ReportCardTemplateSectionType @default(CUSTOM)
+  grading_mode      BulletinGradingMode?         @default(NONE)
+  display_order     Int                          @default(0)
+  show_header       Boolean                      @default(true)
+  is_active         Boolean                      @default(true)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  eleve   Eleve           @relation(fields: [eleve_id], references: [id])
-  periode Periode         @relation(fields: [periode_id], references: [id])
-  classe  Classe          @relation(fields: [classe_id], references: [id])
+  template              ReportCardTemplate                  @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  parentSection         ReportCardTemplateSection?          @relation("report_card_template_section_tree", fields: [parent_section_id], references: [id])
+  childSections         ReportCardTemplateSection[]         @relation("report_card_template_section_tree")
+  fields                ReportCardTemplateField[]
+  pedagogicalSelections ReportCardTemplatePedagogicalItem[]
+
+  @@unique([template_id, parent_section_id, title], map: "m_b_s_template_id_parent_section_id_title_key")
+  @@index([template_id, display_order], map: "modeles_bulletins_sections_template_id_display_order_idx")
+  @@index([parent_section_id, display_order], map: "modeles_bulletins_sections_parent_section_id_display_order_idx")
+  @@map("modeles_bulletins_sections")
+}
+
+model ReportCardTemplateField {
+  id            String  @id @default(uuid())
+  template_id   String
+  section_id    String
+  field_key     String
+  label         String
+  display_order Int     @default(0)
+  is_visible    Boolean @default(true)
+  width         Int?
+  alignment     String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  template ReportCardTemplate        @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  section  ReportCardTemplateSection @relation(fields: [section_id], references: [id], onDelete: Cascade)
+
+  @@unique([template_id, section_id, field_key], map: "m_b_f_template_id_section_id_field_key_key")
+  @@index([template_id, display_order], map: "modeles_bulletins_fields_template_id_display_order_idx")
+  @@index([section_id, display_order], map: "modeles_bulletins_fields_section_id_display_order_idx")
+  @@map("modeles_bulletins_fields")
+}
+
+model Bulletin {
+  id                      String    @id @default(uuid())
+  eleve_id                String
+  periode_id              String
+  classe_id               String
+  report_card_template_id String?
+  validated_at            DateTime?
+  validated_by            String?
+  publie_le               DateTime?
+  statut                  String?
+  general_average         Decimal?  @db.Decimal(5, 2)
+  general_class_average   Decimal?  @db.Decimal(5, 2)
+  total_coefficients      Decimal?  @db.Decimal(8, 2)
+  total_points            Decimal?  @db.Decimal(8, 2)
+  general_rank            Int?
+  mention                 String?
+  decision                String?
+  general_appreciation    String?
+  display_snapshot_json   Json?
+  display_legend_json     Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  eleve              Eleve               @relation(fields: [eleve_id], references: [id])
+  periode            Periode             @relation(fields: [periode_id], references: [id])
+  classe             Classe              @relation(fields: [classe_id], references: [id])
   reportCardTemplate ReportCardTemplate? @relation(fields: [report_card_template_id], references: [id])
-  lignes  BulletinLigne[]
+  lignes             BulletinLigne[]
+  codeLegends        BulletinCodeLegend[]
 
   @@index([eleve_id])
   @@index([periode_id])
@@ -1257,21 +1480,79 @@ model Bulletin {
 }
 
 model BulletinLigne {
-  id                     String  @id @default(uuid())
+  id                     String               @id @default(uuid())
   bulletin_id            String
   matiere_id             String
+  parent_ligne_id        String?
+  pedagogical_item_id    String?
+  item_type              PedagogicalItemType?
+  grading_mode           BulletinGradingMode? @default(NONE)
   moyenne                Float?
+  display_value          String?
+  numeric_value          Float?
+  student_average        Float?
+  class_average          Float?
+  scale_level_id         String?
+  observation            String?              @db.Text
   rang                   Int?
   commentaire_enseignant String?
+  display_order          Int                  @default(0)
+  is_visible             Boolean              @default(true)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  bulletin Bulletin @relation(fields: [bulletin_id], references: [id])
-  matiere  Matiere  @relation(fields: [matiere_id], references: [id])
+  bulletin        Bulletin        @relation(fields: [bulletin_id], references: [id])
+  matiere         Matiere         @relation(fields: [matiere_id], references: [id])
+  parentLigne     BulletinLigne?  @relation("bulletin_ligne_tree", fields: [parent_ligne_id], references: [id])
+  childLignes     BulletinLigne[] @relation("bulletin_ligne_tree")
+  pedagogicalItem PedagogicalItem? @relation(fields: [pedagogical_item_id], references: [id])
+  details         BulletinLigneDetail[]
 
   @@index([bulletin_id])
+  @@index([parent_ligne_id, display_order], map: "bulletins_lignes_parent_ligne_id_display_order_idx")
+  @@index([pedagogical_item_id], map: "bulletins_lignes_pedagogical_item_id_idx")
+  @@unique([bulletin_id, pedagogical_item_id], map: "bulletins_lignes_bulletin_id_pedagogical_item_id_key")
   @@map("bulletins_lignes")
+}
+
+model BulletinLigneDetail {
+  id                   String  @id @default(uuid())
+  bulletin_ligne_id    String
+  assessment_id        String?
+  assessment_result_id String?
+  label                String
+  display_value        String?
+  numeric_value        Float?
+  scale_level_id       String?
+  display_order        Int     @default(0)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  bulletinLigne BulletinLigne @relation(fields: [bulletin_ligne_id], references: [id], onDelete: Cascade)
+
+  @@index([bulletin_ligne_id, display_order], map: "b_l_details_bulletin_ligne_id_display_order_idx")
+  @@map("bulletins_lignes_details")
+}
+
+model BulletinCodeLegend {
+  id               String  @id @default(uuid())
+  bulletin_id      String
+  grading_scale_id String?
+  code             String
+  label            String
+  numeric_value    Float?
+  display_order    Int     @default(0)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  bulletin Bulletin @relation(fields: [bulletin_id], references: [id], onDelete: Cascade)
+
+  @@unique([bulletin_id, code], map: "bulletins_codes_legendes_bulletin_id_code_key")
+  @@index([bulletin_id, display_order], map: "bulletins_codes_legendes_bulletin_id_display_order_idx")
+  @@map("bulletins_codes_legendes")
 }
 
 /**

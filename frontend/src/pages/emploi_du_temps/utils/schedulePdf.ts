@@ -267,7 +267,7 @@ export function downloadSchedulePdf(input: SchedulePdfInput) {
 
       return row;
     }),
-    didParseCell: (data) => {
+    didParseCell: (data: import("jspdf-autotable").HookData) => {
       if (data.section === "body" && data.column.index > 0) {
         const raw = data.cell.raw as PdfBodyCell | undefined;
         if (raw?.meta?.isEmpty) {
@@ -277,7 +277,7 @@ export function downloadSchedulePdf(input: SchedulePdfInput) {
         data.cell.text = [];
       }
     },
-    didDrawCell: (data) => {
+    didDrawCell: (data: import("jspdf-autotable").HookData) => {
       if (data.section !== "body" || data.column.index === 0) return;
 
       const raw = data.cell.raw as PdfBodyCell | undefined;

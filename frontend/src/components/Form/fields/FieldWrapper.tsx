@@ -21,6 +21,7 @@ type Props = {
   id: string;
   label?: string;
   description?: string;
+  hint?: string;
   required?: boolean;
   error?: string;
   className?: string;
@@ -31,6 +32,7 @@ export function FieldWrapper({
   id,
   label,
   description,
+  hint,
   required,
   error,
   className,
@@ -39,6 +41,7 @@ export function FieldWrapper({
   const wrapperClassName = ["min-w-0 max-w-full space-y-2", className]
     .filter(Boolean)
     .join(" ");
+  const helperText = hint ?? description;
 
   return (
     <div className={wrapperClassName}>
@@ -58,9 +61,9 @@ export function FieldWrapper({
 
       {children}
 
-      {description ? (
+      {helperText ? (
         <div className="min-w-0 break-words text-xs leading-5 text-slate-500">
-          {description}
+          {helperText}
         </div>
       ) : null}
 

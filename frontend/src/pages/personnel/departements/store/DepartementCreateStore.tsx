@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
-import type { Departement } from "../../../../generated/zod";
+import type { Departement } from "../../../../types/models";
 import DepartementService from "../../../../services/departement.service";
 
 export type DepartementCreateInput = Omit<
@@ -39,7 +39,7 @@ export const useDepartementCreateStore = create<State>((set, get) => ({
         throw new Error();
       }
     } catch (error) {
-      console.log("🚀 ~ error:", error);
+      console.log("ðŸš€ ~ error:", error);
       return {
         status: {
           success: false,

@@ -16,8 +16,6 @@ import { useInfo } from "../../../../../hooks/useInfo";
 import { useAuth } from "../../../../../hooks/useAuth";
 import CoursService, {
   getTeacherDisplayLabel,
-  type ClasseWithRelations,
-  type EnseignantWithRelations,
 } from "../../../../../services/cours.service";
 import { getMatiereDisplayLabel } from "../../../../../services/matiere.service";
 import { useCoursCreateStore } from "../../store/CoursCreateStore";
@@ -49,6 +47,12 @@ const coursSchema = z.object({
       .nullable(),
   ),
 });
+
+type CoursFormData = z.output<typeof coursSchema>;
+
+function normalizeNumberInputValue(value: unknown) {
+  return typeof value === "number" ? value : "";
+}
 
 function getErrorMessage(error: unknown) {
   if (
@@ -106,7 +110,7 @@ function CoursForm() {
     [etablissement_id, initialData],
   );
 
-  const form = useForm<CoursFormValues>({
+  const form = useForm<z.input<typeof coursSchema>, undefined, CoursFormData>({
     resolver: zodResolver(coursSchema),
     defaultValues,
     mode: "onSubmit",
@@ -235,7 +239,7 @@ function CoursForm() {
     }
   }, [form, recommendedCoefficient, setValue]);
 
-  const onSubmit = async (data: CoursFormValues) => {
+  const onSubmit = async (data: CoursFormData) => {
     clearErrors("matiere_id");
 
     if (matchingProgrammes.length > 0 && !allowedMatiereIds.has(data.matiere_id)) {
@@ -479,7 +483,7 @@ function CoursForm() {
                         type="number"
                         min={0}
                         step="0.1"
-                        value={field.value ?? ""}
+                        value={normalizeNumberInputValue(field.value)}
                         onChange={(event) => field.onChange(event.target.value)}
                         onBlur={field.onBlur}
                         ref={field.ref}
@@ -566,7 +570,7 @@ function CoursForm() {
                       Enseignant: {selectedTeacher ? getTeacherDisplayLabel(selectedTeacher) : "Aucun enseignant choisi"}
                     </p>
                     <p className="mt-1 text-slate-600">
-                      Coefficient: {watch("coefficient_override") ?? "Non renseigne"}
+                      Coefficient: {normalizeNumberInputValue(watch("coefficient_override")) || "Non renseigne"}
                     </p>
                   </div>
 

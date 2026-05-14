@@ -5,6 +5,7 @@ import CoursModel from "../models/cours.model";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { parseJSON } from "../../../common/utils/query";
 import { prisma } from "../../../service/prisma";
+import { getRequiredActiveAcademicYear } from "../../pedagogie_shared/utils/academicScope";
 
 type CoursPayload = Pick<
   Cours,
@@ -66,16 +67,22 @@ class CoursApp {
     return tenantCandidates[0];
   }
 
-  private normalizePayload(raw: Partial<Cours>, tenantId: string): CoursPayload {
-    const annee_scolaire_id =
-      typeof raw.annee_scolaire_id === "string" ? raw.annee_scolaire_id.trim() : "";
+  private normalizePayload(
+    raw: Partial<Cours>,
+    tenantId: string,
+    activeYearId: string,
+  ): CoursPayload {
+    const requestedYearId =
+      typeof raw.annee_scolaire_id === "string" && raw.annee_scolaire_id.trim()
+        ? raw.annee_scolaire_id.trim()
+        : activeYearId;
     const classe_id = typeof raw.classe_id === "string" ? raw.classe_id.trim() : "";
     const matiere_id = typeof raw.matiere_id === "string" ? raw.matiere_id.trim() : "";
     const enseignant_id =
       typeof raw.enseignant_id === "string" ? raw.enseignant_id.trim() : "";
 
-    if (!annee_scolaire_id) {
-      throw new Error("L'annee scolaire du cours est requise.");
+    if (requestedYearId !== activeYearId) {
+      throw new Error("Le cours doit appartenir à l’année scolaire courante.");
     }
 
     if (!classe_id) {
@@ -104,7 +111,7 @@ class CoursApp {
 
     return {
       etablissement_id: tenantId,
-      annee_scolaire_id,
+      annee_scolaire_id: activeYearId,
       classe_id,
       matiere_id,
       enseignant_id,
@@ -115,13 +122,19 @@ class CoursApp {
   private buildScopedWhere(
     existingWhere: Record<string, unknown>,
     tenantId: string,
+    activeYearId: string,
   ): Record<string, unknown> {
+    const scope = {
+      etablissement_id: tenantId,
+      annee_scolaire_id: activeYearId,
+    };
+
     if (!existingWhere || Object.keys(existingWhere).length === 0) {
-      return { etablissement_id: tenantId };
+      return scope;
     }
 
     return {
-      AND: [existingWhere, { etablissement_id: tenantId }],
+      AND: [existingWhere, scope],
     };
   }
 
@@ -253,11 +266,16 @@ class CoursApp {
     }
   }
 
-  private async getScopedCours(id: string, tenantId: string) {
+  private async getScopedCours(
+    id: string,
+    tenantId: string,
+    activeYearId: string,
+  ) {
     return this.prisma.cours.findFirst({
       where: {
         id,
         etablissement_id: tenantId,
+        annee_scolaire_id: activeYearId,
       },
     });
   }
@@ -306,7 +324,8 @@ class CoursApp {
   private async create(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
       const tenantId = this.resolveTenantId(req);
-      const payload = this.normalizePayload(req.body, tenantId);
+      const activeYear = await getRequiredActiveAcademicYear(this.prisma, tenantId);
+      const payload = this.normalizePayload(req.body, tenantId, activeYear.id);
 
       await this.validateReferences(payload);
       await this.ensureUniqueCours(payload);
@@ -329,10 +348,11 @@ class CoursApp {
   private async getAll(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
       const tenantId = this.resolveTenantId(req);
+      const activeYear = await getRequiredActiveAcademicYear(this.prisma, tenantId);
       const where = parseJSON<Record<string, unknown>>(req.query.where, {});
       const scopedQuery = {
         ...req.query,
-        where: JSON.stringify(this.buildScopedWhere(where, tenantId)),
+        where: JSON.stringify(this.buildScopedWhere(where, tenantId, activeYear.id)),
         orderBy: req.query.orderBy ?? JSON.stringify([{ created_at: "desc" }]),
       };
 
@@ -350,12 +370,14 @@ class CoursApp {
   private async getOne(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
       const tenantId = this.resolveTenantId(req);
+      const activeYear = await getRequiredActiveAcademicYear(this.prisma, tenantId);
       const id = req.params.id;
 
       const result = await this.prisma.cours.findFirst({
         where: {
           id,
           etablissement_id: tenantId,
+          annee_scolaire_id: activeYear.id,
         },
         include: this.getDetailInclude(),
       });
@@ -377,12 +399,14 @@ class CoursApp {
   private async delete(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
       const tenantId = this.resolveTenantId(req);
+      const activeYear = await getRequiredActiveAcademicYear(this.prisma, tenantId);
       const id = req.params.id;
 
       const existing = await this.prisma.cours.findFirst({
         where: {
           id,
           etablissement_id: tenantId,
+          annee_scolaire_id: activeYear.id,
         },
         include: {
           _count: {
@@ -428,14 +452,15 @@ class CoursApp {
   private async update(req: Request, res: R, next: NextFunction): Promise<void> {
     try {
       const tenantId = this.resolveTenantId(req);
+      const activeYear = await getRequiredActiveAcademicYear(this.prisma, tenantId);
       const id = req.params.id;
-      const existing = await this.getScopedCours(id, tenantId);
+      const existing = await this.getScopedCours(id, tenantId, activeYear.id);
 
       if (!existing) {
         throw new Error("Cours introuvable pour cet etablissement.");
       }
 
-      const payload = this.normalizePayload(req.body, tenantId);
+      const payload = this.normalizePayload(req.body, tenantId, activeYear.id);
 
       await this.validateReferences(payload);
       await this.ensureUniqueCours(payload, id);

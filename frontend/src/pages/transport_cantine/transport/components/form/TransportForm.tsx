@@ -161,7 +161,7 @@ export default function TransportForm() {
   const [currentYear, setCurrentYear] = useState<AnneeScolaire | null>(null);
   const [loading, setLoading] = useState(false);
   const [submittingAction, setSubmittingAction] = useState<TransportAction | null>(null);
-  const lineForm = useForm<z.infer<typeof lineSchema>>({
+  const lineForm = useForm<z.input<typeof lineSchema>, undefined, z.output<typeof lineSchema>>({
     resolver: zodResolver(lineSchema),
     defaultValues: {
       nom: "",
@@ -176,11 +176,15 @@ export default function TransportForm() {
       validation_humaine_suspension_financiere: false,
     },
   });
-  const stopForm = useForm<z.infer<typeof stopSchema>>({
+  const stopForm = useForm<z.input<typeof stopSchema>, undefined, z.output<typeof stopSchema>>({
     resolver: zodResolver(stopSchema),
     defaultValues: { ligne_transport_id: "", nom: "", ordre: "" },
   });
-  const subscriptionForm = useForm<z.infer<typeof subscriptionSchema>>({
+  const subscriptionForm = useForm<
+    z.input<typeof subscriptionSchema>,
+    undefined,
+    z.output<typeof subscriptionSchema>
+  >({
     resolver: zodResolver(subscriptionSchema),
     defaultValues: {
       eleve_id: "",

@@ -13,7 +13,6 @@ import {
   type FactureWithRelations,
 } from "../../../services/facture.service";
 import {
-  getPaiementDisplayLabel,
   getPaiementMethodLabel,
   getPaiementReceiptStatusLabel,
   getPaiementSecondaryLabel,

@@ -18,10 +18,7 @@ import {
   getEvaluationSecondaryLabel,
 } from "../../../../../services/evaluation.service";
 import AssessmentResultService from "../../../../../services/assessmentResult.service";
-import NoteService, {
-  getEleveDisplayLabel,
-  getNotePercentage,
-} from "../../../../../services/note.service";
+import { getEleveDisplayLabel, getNotePercentage } from "../../../../../services/note.service";
 import { useNoteCreateStore } from "../../store/NoteCreateStore";
 
 type NoteFormValues = {
@@ -51,6 +48,8 @@ const noteSchema = z.object({
   commentaire: z.string().max(500, "Le commentaire est trop long.").optional().or(z.literal("")),
   note_le: z.string().min(1, "La date de notation est requise."),
 });
+
+type NoteFormData = z.output<typeof noteSchema>;
 
 const RESULT_STATUS_OPTIONS = [
   { value: "GRADED", label: "Note" },
@@ -85,6 +84,20 @@ function formatDateTimeLocal(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
     date.getHours(),
   )}:${pad(date.getMinutes())}`;
+}
+
+function normalizeNumberInputValue(value: unknown, fallback: string | number = "") {
+  if (value === null || value === undefined || value === "") return fallback;
+  if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
+  if (typeof value === "string") return value;
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
+}
+
+function normalizeTextPreview(value: unknown) {
+  if (typeof value === "string") return value;
+  if (value === null || value === undefined) return "";
+  return String(value);
 }
 
 function NoteForm() {
@@ -125,7 +138,7 @@ function NoteForm() {
     [initialData],
   );
 
-  const form = useForm<NoteFormValues>({
+  const form = useForm<z.input<typeof noteSchema>, undefined, z.output<typeof noteSchema>>({
     resolver: zodResolver(noteSchema),
     defaultValues,
     mode: "onSubmit",
@@ -178,7 +191,7 @@ function NoteForm() {
     if (!selectedEvaluation) return null;
     if ((selectedEvaluation.gradingScale?.grading_type ?? "POINTS") !== "POINTS") return null;
     return getNotePercentage({
-      score,
+      score: typeof score === "number" ? score : undefined,
       evaluation: selectedEvaluation,
     });
   }, [score, selectedEvaluation]);
@@ -216,7 +229,7 @@ function NoteForm() {
     form.setValue("text_value", "", { shouldDirty: true });
   }, [form, selectedEvaluationId]);
 
-  const onSubmit = async (data: NoteFormValues) => {
+  const onSubmit = async (data: NoteFormData) => {
     clearErrors("score");
     clearErrors("eleve_id");
     clearErrors("scale_level_id");
@@ -291,7 +304,7 @@ function NoteForm() {
           | "EXEMPTED"
           | "NOT_SUBMITTED"
           | "NOT_EVALUATED",
-        observation: data.commentaire.trim() || null,
+        observation: data.commentaire?.trim() || null,
         validated_at: new Date(data.note_le),
       });
       info("Resultat enregistre avec succes !", "success");
@@ -381,7 +394,7 @@ function NoteForm() {
                     >
                       <select
                         id="evaluation_id"
-                        value={field.value ?? ""}
+                        value={normalizeNumberInputValue(field.value)}
                         onChange={(event) => field.onChange(event.target.value)}
                         onBlur={field.onBlur}
                         ref={field.ref}
@@ -411,7 +424,7 @@ function NoteForm() {
                     >
                       <select
                         id="eleve_id"
-                        value={field.value ?? ""}
+                        value={normalizeNumberInputValue(field.value)}
                         onChange={(event) => field.onChange(event.target.value)}
                         onBlur={field.onBlur}
                         ref={field.ref}
@@ -495,7 +508,7 @@ function NoteForm() {
                         type="number"
                         min={0}
                         step="0.1"
-                        value={field.value ?? ""}
+                        value={normalizeNumberInputValue(field.value)}
                         onChange={(event) => field.onChange(event.target.value)}
                         onBlur={field.onBlur}
                         ref={field.ref}
@@ -682,9 +695,9 @@ function NoteForm() {
                 <div className="mt-5 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
                   <p>Type de notation: {gradingType}</p>
                   <p className="mt-2">Statut: {status}</p>
-                  <p className="mt-2">Score saisi: {score ?? "Non renseigne"}</p>
+                  <p className="mt-2">Score saisi: {typeof score === "number" ? score : "Non renseigne"}</p>
                   <p className="mt-2">Niveau choisi: {scaleLevelId ?? "Non renseigne"}</p>
-                  <p className="mt-2">Texte descriptif: {textValue.trim() || "Non renseigne"}</p>
+                  <p className="mt-2">Texte descriptif: {normalizeTextPreview(textValue).trim() || "Non renseigne"}</p>
                   <p className="mt-2">Note max: {selectedEvaluation?.note_max ?? "Non renseignee"}</p>
                   <p className="mt-2">Pourcentage: {scorePercent !== null ? `${scorePercent}%` : "Non calcule"}</p>
                   <p className="mt-2">Commentaire: {watch("commentaire")?.trim() ? "Oui" : "Non"}</p>

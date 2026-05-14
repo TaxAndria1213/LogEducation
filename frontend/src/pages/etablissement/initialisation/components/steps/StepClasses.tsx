@@ -185,7 +185,7 @@ export default function StepClasses({ draft, setDraft, levels }: Props) {
                 <div className="mt-5 space-y-3">
                   {group.class_names.map((className, index) => (
                     <div
-                      key={`${level.code}-${index}`}
+                      key={`${level.code}-${className || index}`}
                       className="flex items-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-3 py-3"
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm">

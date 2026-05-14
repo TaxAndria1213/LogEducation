@@ -9,6 +9,9 @@ import type { Eleve } from "../../../../../types/models";
 import EleveService from "../../../../../services/eleve.service";
 import { useAuth } from "../../../../../auth/AuthContext";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
+import EditDrawer from "../../../../../shared/forms/EditDrawer";
+import { eleveModelConfig } from "../../../../../shared/model-config/configs/eleve.config";
+import { getModelFieldLabels } from "../../../../../shared/model-config/runtime";
 // import { useInfo } from "../../../../../hooks/useInfo";
 
 export default function EleveList() {
@@ -17,6 +20,11 @@ export default function EleveList() {
   const navigate = useNavigate();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new EleveService(), []);
+  const [editingEleve, setEditingEleve] = React.useState<Eleve | null>(null);
+  const detailFieldLabels = React.useMemo(
+    () => getModelFieldLabels(eleveModelConfig),
+    [],
+  );
 
   const columns: ColumnDef<Eleve>[] = [
     {
@@ -87,31 +95,55 @@ export default function EleveList() {
   ];
 
   return (
-    <DataTable<Eleve>
-      ref={tableRef}
-      service={service}
-      columns={columns}
-      actions={actions}
-      getRowId={(r) => r.id}
-      initialQuery={{
-        page: 1,
-        take: 10,
-        // Exemple: includes relationnelles
-        includeSpec: {
-          utilisateur: {
-            include: { profil: true },
-          }
-        },
-        where: { etablissement_id },
-      }}
-      showSearch
-      onSearchBuildWhere={(text) => ({
-        OR: [
-          { code_eleve: { contains: text } },
-          { statut: { contains: text } },
-        ],
-        etablissement_id,
-      })}
-    />
+    <>
+      <DataTable<Eleve>
+        ref={tableRef}
+        service={service}
+        columns={columns}
+        actions={actions}
+        modelConfig={eleveModelConfig}
+        getRowId={(r) => r.id}
+        initialQuery={{
+          page: 1,
+          take: 10,
+          // Exemple: includes relationnelles
+          includeSpec: {
+            utilisateur: {
+              include: { profil: true },
+            },
+          },
+          where: { etablissement_id },
+        }}
+        detailView={{
+          mode: "replace",
+          editStrategy: "custom",
+          title: "Details de l'eleve",
+          getTitle: eleveModelConfig.detail.title,
+          hiddenKeys: eleveModelConfig.detail.hiddenKeys,
+          fieldLabels: detailFieldLabels,
+          onEdit: (row) => {
+            setEditingEleve(row);
+          },
+        }}
+        showSearch
+        onSearchBuildWhere={(text) => ({
+          OR: [
+            { code_eleve: { contains: text } },
+            { statut: { contains: text } },
+          ],
+          etablissement_id,
+        })}
+      />
+
+      <EditDrawer<Eleve>
+        open={Boolean(editingEleve)}
+        record={editingEleve}
+        modelConfig={eleveModelConfig}
+        onClose={() => setEditingEleve(null)}
+        onSuccess={() => {
+          tableRef.current?.refresh();
+        }}
+      />
+    </>
   );
 }

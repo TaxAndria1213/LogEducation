@@ -47,7 +47,8 @@ export function getCoveredVirtualCreneauIds(
   const rowEnd = toMinutes(row.heure_fin ?? row.creneau?.heure_fin);
 
   if (rowStart == null || rowEnd == null) {
-    return virtualCreneaux.some((item) => item.id === row.creneau_horaire_id)
+    return row.creneau_horaire_id &&
+      virtualCreneaux.some((item) => item.id === row.creneau_horaire_id)
       ? [row.creneau_horaire_id]
       : [];
   }

@@ -137,11 +137,9 @@ export function getPaiementMethodLabel(method?: string | null) {
   }
 }
 
-function readOperationDetails(
-  value?: Record<string, unknown> | null,
-): Record<string, unknown> | null {
-  if (!value || typeof value !== "object") return null;
-  return value;
+function readOperationDetails(value?: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
 }
 
 function toAmount(value: unknown) {

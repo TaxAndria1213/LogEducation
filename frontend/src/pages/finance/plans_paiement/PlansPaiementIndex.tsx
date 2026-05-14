@@ -87,38 +87,38 @@ export default function PlansPaiementIndex() {
       id: "dashboard",
       label: "Vue d'ensemble",
       onClick: () => {
-        setRenderState("dashboard");
+        setRenderState(0);
         setRenderedComponent("dashboard");
       },
-      active: renderState === "dashboard",
+      active: renderState === 0,
     },
     {
       id: "list",
       label: "Liste",
       onClick: () => {
         setSelectedPlanPaiement(null);
-        setRenderState("list");
+        setRenderState(1);
         setRenderedComponent("list");
       },
-      active: renderState === "list",
+      active: renderState === 1,
     },
     {
       id: "parametre",
       label: "Parametres",
       onClick: () => {
-        setRenderState("parametre");
+        setRenderState(2);
         setRenderedComponent("parametre");
       },
-      active: renderState === "parametre",
+      active: renderState === 2,
     },
     {
       id: "add",
       label: "Nouveau plan",
       onClick: () => {
-        setRenderState("add");
+        setRenderState(3);
         setRenderedComponent("add");
       },
-      active: renderState === "add",
+      active: renderState === 3,
       tone: "primary" as const,
     },
   ];

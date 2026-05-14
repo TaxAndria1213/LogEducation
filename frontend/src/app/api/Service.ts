@@ -26,6 +26,9 @@ class Service {
   async update(id: number | string, params: any) {
     return await Http.put(["/api", this.url, id].join("/"), params);
   }
+  async patch(id: number | string, params: any) {
+    return await Http.patch(["/api", this.url, id].join("/"), params);
+  }
   async delete(id: string | number) {
     return await Http.delete(["/api", this.url, id].join("/"));
   }

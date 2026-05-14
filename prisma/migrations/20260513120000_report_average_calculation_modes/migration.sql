@@ -1,0 +1,10 @@
+ALTER TABLE `pedagogical_item_averages`
+  MODIFY `calculation_mode` ENUM('SIMPLE', 'HIERARCHICAL', 'WEIGHTED', 'COEFFICIENT_BASED') NOT NULL DEFAULT 'HIERARCHICAL';
+
+ALTER TABLE `modeles_bulletins`
+  MODIFY `calculation_mode` ENUM('SIMPLE', 'HIERARCHICAL', 'WEIGHTED', 'COEFFICIENT_BASED') NOT NULL DEFAULT 'HIERARCHICAL',
+  ADD COLUMN `base_score` DOUBLE NULL,
+  ADD COLUMN `exclude_non_evaluated_items` BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN `minimum_required_results` INTEGER NOT NULL DEFAULT 1,
+  ADD COLUMN `use_weights` BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN `use_coefficients` BOOLEAN NOT NULL DEFAULT true;

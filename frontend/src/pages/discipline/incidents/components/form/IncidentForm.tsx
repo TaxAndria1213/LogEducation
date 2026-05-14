@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +10,7 @@ import { getInputClassName } from "../../../../../components/Form/fields/inputSt
 import EleveService from "../../../../../services/eleve.service";
 import IncidentDisciplinaireService from "../../../../../services/incidentDisciplinaire.service";
 import UtilisateurService from "../../../../../services/utilisateur.service";
-import ReferencielService, { buildReferentialOptions } from "../../../../../services/referenciel.service";
+import { buildReferentialOptions } from "../../../../../services/referenciel.service";
 import { useReferentialCatalog } from "../../../../etablissement/referentiels/hooks/useReferentialCatalog";
 
 const schema = z.object({

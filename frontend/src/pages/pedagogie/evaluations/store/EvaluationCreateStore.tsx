@@ -96,8 +96,7 @@ export const useEvaluationCreateStore = create<State>((set) => ({
             show_in_report_card: false,
             is_final_exam: false,
           },
-          errorMessage:
-            "Aucune annee scolaire active n'a ete trouvee pour preparer une evaluation.",
+          errorMessage: "Aucune année scolaire courante n’est définie.",
         });
         return;
       }

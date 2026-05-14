@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { FiGrid, FiHome, FiLayers, FiMapPin, FiSettings } from "react-icons/fi";
+import { FiGrid, FiLayers, FiMapPin, FiSettings } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import salleService from "../../../../../services/salle.service";
 import type { Salle } from "../../../../../types/models";
@@ -31,8 +31,8 @@ function SallesOverview({ mode = "overview" }: Props) {
         const result = await salleService.getAll({
           page: 1,
           take: 200,
-          includes: ["site"],
-          where: { site: { etablissement_id } },
+          includeSpec: JSON.stringify({ site: true }),
+          where: JSON.stringify({ site: { etablissement_id } }),
         });
 
         if (!active) return;

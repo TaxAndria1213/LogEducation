@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
-import type { Etablissement, Eleve } from "../../../../generated/zod";
+import type { Etablissement, Eleve } from "../../../../types/models";
 import EleveService from "../../../../services/eleve.service";
 import EtablissementService from "../../../../services/etablissement.service";
 
@@ -56,7 +56,7 @@ export const useEleveCreateStore = create<State>((set, get) => ({
         throw new Error();
       }
     } catch (error) {
-      console.log("🚀 ~ error:", error);
+      console.log("ðŸš€ ~ error:", error);
       //   throw error;
       return {
         status: {

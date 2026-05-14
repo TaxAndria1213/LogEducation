@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { FiArchive, FiBookOpen, FiLayers, FiSettings } from "react-icons/fi";
+import { FiArchive, FiBookOpen, FiLayers } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import RessourceBibliothequeService, {
   getActiveLoansCount,

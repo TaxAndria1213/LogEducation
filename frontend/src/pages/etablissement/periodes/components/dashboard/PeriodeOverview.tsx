@@ -45,15 +45,15 @@ function PeriodeOverview({ mode = "overview" }: Props) {
           PeriodeService.getAll({
             page: 1,
             take: 200,
-            includes: ["annee"],
-            where: { annee: { etablissement_id } },
-            orderBy: [{ ordre: "asc" }, { date_debut: "asc" }],
+            includeSpec: JSON.stringify({ annee: true }),
+            where: JSON.stringify({ annee: { etablissement_id } }),
+            orderBy: JSON.stringify([{ ordre: "asc" }, { date_debut: "asc" }]),
           }),
           AnneeScolaireService.getAll({
             page: 1,
             take: 100,
-            where: { etablissement_id },
-            orderBy: [{ date_debut: "desc" }],
+            where: JSON.stringify({ etablissement_id }),
+            orderBy: JSON.stringify([{ date_debut: "desc" }]),
           }),
         ]);
 

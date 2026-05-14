@@ -12,6 +12,18 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function isTeacherAssignmentsRecord(
+  value: unknown,
+): value is Record<string, Record<string, string>> {
+  if (!isPlainObject(value)) return false;
+
+  return Object.values(value).every(
+    (assignment) =>
+      isPlainObject(assignment) &&
+      Object.values(assignment).every((teacherId) => typeof teacherId === "string"),
+  );
+}
+
 export function readPersistedNoteRules(
   configRecord?: PedagogieInitialisationConfigRecord | null,
 ): NoteRulesDraft {
@@ -45,7 +57,7 @@ export function buildNoteRulesSavePayload(args: {
       typeof regleJson.default_teacher_id === "string"
         ? regleJson.default_teacher_id
         : null,
-    teacher_assignments: isPlainObject(regleJson.teacher_assignments)
+    teacher_assignments: isTeacherAssignmentsRecord(regleJson.teacher_assignments)
       ? regleJson.teacher_assignments
       : {},
     evaluation_types: Array.isArray(regleJson.evaluation_types)

@@ -36,6 +36,12 @@ type State = {
     montant?: number;
     methode?: string;
     reference?: string;
+    payeur_type?: string;
+    payeur_nom?: string;
+    payeur_reference?: string;
+    justificatif_reference?: string;
+    justificatif_url?: string;
+    justificatif_note?: string;
     recu_par?: string;
   } | null;
   setInitialData: (value: State["initialData"]) => void;
@@ -149,6 +155,12 @@ export const usePaiementCreateStore = create<State>((set, get) => ({
                 : preferredOption?.suggestedAmount ?? preferredOption?.remaining ?? 0,
             methode: existingInitialData?.methode ?? "cash",
             reference: existingInitialData?.reference ?? "",
+            payeur_type: existingInitialData?.payeur_type ?? "",
+            payeur_nom: existingInitialData?.payeur_nom ?? "",
+            payeur_reference: existingInitialData?.payeur_reference ?? "",
+            justificatif_reference: existingInitialData?.justificatif_reference ?? "",
+            justificatif_url: existingInitialData?.justificatif_url ?? "",
+            justificatif_note: existingInitialData?.justificatif_note ?? "",
             recu_par: existingInitialData?.recu_par ?? "",
           },
         });

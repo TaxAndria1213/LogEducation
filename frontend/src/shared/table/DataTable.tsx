@@ -19,6 +19,13 @@ import type {
   DetailRenderMode,
   DetailViewRecord,
 } from "../detail/types";
+import {
+  getModelFieldLabels,
+  resolveModelPermission,
+  resolveModelConfigFromService,
+} from "../model-config/runtime";
+import type { ModelConfig } from "../model-config/types";
+import EditDrawer from "../forms/EditDrawer";
 import { tableQueryToParams } from "./query";
 import { useTable } from "./useTable";
 import { type ColumnDef, type RowAction, type TableQuery } from "./types";
@@ -30,7 +37,7 @@ export type DataTableHandle = {
 
 const EMPTY_DETAIL_VIEW: DataTableDetailViewConfig<any> = {};
 
-export type DataTableProps<T> = {
+export type DataTableProps<T extends object> = {
   title?: string;
   service: Service;
   columns: ColumnDef<T>[];
@@ -42,11 +49,13 @@ export type DataTableProps<T> = {
   onSearchBuildWhere?: (text: string) => Record<string, any>;
   onRowClick?: (row: T) => void;
   detailView?: DataTableDetailViewConfig<T> | false;
+  modelConfig?: ModelConfig<T>;
 };
 
-export type DataTableDetailViewConfig<T> = {
+export type DataTableDetailViewConfig<T extends object> = {
   mode?: "replace" | "below";
   renderMode?: DetailRenderMode;
+  editStrategy?: "auto" | "custom" | "hybrid";
   title?: string;
   getTitle?: (row: T) => string;
   onEdit?: (row: T) => void;
@@ -74,7 +83,7 @@ function isPlainObject(value: unknown): value is DetailViewRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function resolveBaseDetailRecord<T>(
+function resolveBaseDetailRecord<T extends object>(
   row: T,
   detailView?: DataTableDetailViewConfig<T> | null,
 ) {
@@ -300,13 +309,13 @@ function normalizeActionLabel(label: string) {
   return label.trim().toLowerCase();
 }
 
-function getViewActionLabel<T>(
+function getViewActionLabel<T extends object>(
   detailView?: DataTableDetailViewConfig<T> | null,
 ) {
   return detailView?.viewActionLabel ?? "Voir";
 }
 
-function isDetailViewAction<T>(
+function isDetailViewAction<T extends object>(
   action: RowAction<T>,
   detailView?: DataTableDetailViewConfig<T> | null,
 ) {
@@ -316,7 +325,23 @@ function isDetailViewAction<T>(
   return normalizeActionLabel(action.label) === normalizeActionLabel(getViewActionLabel(detailView));
 }
 
-function ActionButton<T>({
+function isEditAction<T extends object>(action: RowAction<T>) {
+  if (action.kind === "edit") return true;
+  return normalizeActionLabel(action.label) === "modifier";
+}
+
+function resolveEditAction<T extends object>(
+  actions: RowAction<T>[],
+  row: T,
+) {
+  return actions.find((action) => {
+    if (!isEditAction(action)) return false;
+    if (action.show && !action.show(row)) return false;
+    return true;
+  });
+}
+
+function ActionButton<T extends object>({
   action,
   row,
   onExecute,
@@ -347,7 +372,7 @@ function ActionButton<T>({
   );
 }
 
-function DataTableInner<T>(
+function DataTableInner<T extends object>(
   props: DataTableProps<T>,
   ref: React.ForwardedRef<DataTableHandle>,
 ) {
@@ -363,12 +388,17 @@ function DataTableInner<T>(
     onSearchBuildWhere,
     onRowClick,
     detailView: detailViewProp,
+    modelConfig,
   } = props;
 
   const detailView = React.useMemo<DataTableDetailViewConfig<T> | null>(() => {
     if (detailViewProp === false) return null;
     return detailViewProp ?? (EMPTY_DETAIL_VIEW as DataTableDetailViewConfig<T>);
   }, [detailViewProp]);
+  const resolvedModelConfig = React.useMemo(
+    () => modelConfig ?? resolveModelConfigFromService<T>(service),
+    [modelConfig, service],
+  );
   const hasDetailView = detailView !== null;
   const isDetailSelectionControlled = React.useMemo(() => {
     if (!detailView) return false;
@@ -383,6 +413,7 @@ function DataTableInner<T>(
 
   const [search, setSearch] = React.useState("");
   const [selectedRow, setSelectedRow] = React.useState<T | null>(null);
+  const [editingRow, setEditingRow] = React.useState<T | null>(null);
   const [detailRecord, setDetailRecord] = React.useState<DetailViewRecord | null>(null);
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [detailError, setDetailError] = React.useState<string | null>(null);
@@ -396,6 +427,8 @@ function DataTableInner<T>(
   const pageCount = total ? Math.ceil(total / take) : 1;
   const detailMode = detailView?.mode ?? "replace";
   const detailRenderMode = detailView?.renderMode ?? "exhaustive";
+  const detailEditStrategy = detailView?.editStrategy ?? "hybrid";
+  const shouldUseAutoEdit = detailEditStrategy !== "custom";
   const rootAutoIncludeDepth =
     detailView?.autoIncludeDepth ?? (detailRenderMode === "exhaustive" ? 3 : 2);
   const nestedAutoIncludeDepth =
@@ -617,31 +650,51 @@ function DataTableInner<T>(
   );
 
   const resolvedActions = React.useMemo<RowAction<T>[]>(() => {
-    const baseActions = [...(actions ?? [])];
+    let nextActions = [...(actions ?? [])];
 
-    if (!hasDetailView) {
-      return baseActions;
+    if (hasDetailView && detailView.autoViewAction !== false) {
+      const hasViewAction = nextActions.some((action) =>
+        isDetailViewAction(action, detailView),
+      );
+
+      if (!hasViewAction) {
+        nextActions = [
+          {
+            label: getViewActionLabel(detailView),
+            kind: "view",
+            variant: detailView.viewActionVariant ?? "secondary",
+            onClick: async () => {},
+          },
+          ...nextActions,
+        ];
+      }
     }
 
-    if (detailView.autoViewAction === false) {
-      return baseActions;
+    if (
+      shouldUseAutoEdit &&
+      detailView?.onEdit &&
+      resolvedModelConfig
+    ) {
+      const hasEditAction = nextActions.some((action) => isEditAction(action));
+      if (!hasEditAction) {
+        nextActions = [
+          ...nextActions,
+          {
+            label: "Modifier",
+            kind: "edit",
+            variant: "primary",
+            show: (row) =>
+              resolveModelPermission(resolvedModelConfig.permissions?.canEdit, { row }),
+            onClick: async (row) => {
+              detailView.onEdit?.(row);
+            },
+          },
+        ];
+      }
     }
 
-    const hasViewAction = baseActions.some((action) => isDetailViewAction(action, detailView));
-    if (hasViewAction) {
-      return baseActions;
-    }
-
-    return [
-      {
-        label: getViewActionLabel(detailView),
-        kind: "view",
-        variant: detailView.viewActionVariant ?? "secondary",
-        onClick: async () => {},
-      },
-      ...baseActions,
-    ];
-  }, [actions, detailView, hasDetailView]);
+    return nextActions;
+  }, [actions, detailView, hasDetailView, resolvedModelConfig, shouldUseAutoEdit]);
 
   const openDetail = React.useCallback((row: T) => {
     setSelectedRow(row);
@@ -842,12 +895,87 @@ function DataTableInner<T>(
   const handleDetailEdit = React.useMemo<
     ((row: DetailViewRecord) => void) | undefined
   >(() => {
-    if (!hasDetailView || !detailView?.onEdit || !selectedRow) return undefined;
+    if (!hasDetailView || !selectedRow) return undefined;
+
+    const configuredEditHandler = detailView?.onEdit;
+    const fallbackEditAction = shouldUseAutoEdit
+      ? resolveEditAction(resolvedActions, selectedRow)
+      : undefined;
+    const canUseInternalEdit =
+      shouldUseAutoEdit &&
+      Boolean(resolvedModelConfig) &&
+      resolveModelPermission(resolvedModelConfig?.permissions?.canEdit, {
+        row: selectedRow,
+      });
+
+    if (detailEditStrategy === "custom") {
+      if (!configuredEditHandler) {
+        return undefined;
+      }
+
+      return () => {
+        configuredEditHandler(selectedRow);
+      };
+    }
+
+    if (!configuredEditHandler && !fallbackEditAction && !canUseInternalEdit) {
+      return undefined;
+    }
+
+    if (configuredEditHandler && resolvedModelConfig) {
+      if (
+        !resolveModelPermission(resolvedModelConfig.permissions?.canEdit, {
+          row: selectedRow,
+        })
+      ) {
+        return undefined;
+      }
+    }
 
     return () => {
-      detailView.onEdit?.(selectedRow);
+      if (configuredEditHandler) {
+        configuredEditHandler(selectedRow);
+        return;
+      }
+
+      if (fallbackEditAction) {
+        void fallbackEditAction.onClick(selectedRow);
+        return;
+      }
+
+      setEditingRow(selectedRow);
     };
-  }, [detailView, hasDetailView, selectedRow]);
+  }, [
+    detailEditStrategy,
+    detailView,
+    hasDetailView,
+    resolvedActions,
+    resolvedModelConfig,
+    selectedRow,
+    shouldUseAutoEdit,
+  ]);
+
+  const mergedDetailFieldLabels = React.useMemo(() => {
+    if (!resolvedModelConfig) {
+      return detailView?.fieldLabels;
+    }
+
+    return {
+      ...getModelFieldLabels(resolvedModelConfig),
+      ...(detailView?.fieldLabels ?? {}),
+    };
+  }, [detailView?.fieldLabels, resolvedModelConfig]);
+
+  const mergedDetailHiddenKeys = React.useMemo(() => {
+    if (!resolvedModelConfig?.detail.hiddenKeys?.length) {
+      return detailView?.hiddenKeys;
+    }
+
+    return uniqueStrings([
+      ...(resolvedModelConfig.detail.hiddenKeys ?? []),
+      ...(detailView?.hiddenKeys ?? []),
+    ]);
+  }, [detailView?.hiddenKeys, resolvedModelConfig]);
 
   const renderDetailContent = React.useCallback(() => {
     if (!hasDetailView || !detailView) return null;
@@ -861,8 +989,8 @@ function DataTableInner<T>(
         editLabel={detailView.editLabel}
         emptyTitle={detailView.emptyTitle}
         emptyDescription={detailView.emptyDescription}
-        hiddenKeys={detailView.hiddenKeys}
-        fieldLabels={detailView.fieldLabels}
+        hiddenKeys={mergedDetailHiddenKeys}
+        fieldLabels={mergedDetailFieldLabels}
         fieldGroups={detailView.fieldGroups}
         fieldFormatters={detailView.fieldFormatters}
         renderMode={detailRenderMode}
@@ -891,6 +1019,8 @@ function DataTableInner<T>(
     handleDetailEdit,
     hasDetailView,
     loadAutoDetailRecord,
+    mergedDetailFieldLabels,
+    mergedDetailHiddenKeys,
     nestedAutoIncludeDepth,
     rootAutoIncludeDepth,
     service,
@@ -1118,10 +1248,33 @@ function DataTableInner<T>(
       {hasDetailView && selectedRow && detailMode === "below" ? (
         <div style={{ marginTop: 24 }}>{renderDetailContent()}</div>
       ) : null}
+
+      {resolvedModelConfig && shouldUseAutoEdit ? (
+        <EditDrawer<T>
+          open={Boolean(editingRow)}
+          record={editingRow}
+          modelConfig={resolvedModelConfig}
+          onClose={() => setEditingRow(null)}
+          onSuccess={(updated) => {
+            setEditingRow(null);
+            setSelectedRow(updated);
+            setDetailRecord(
+              enrichGeneratedDetailModelHints(
+                resolveBaseDetailRecord(updated, detailView),
+                {
+                  endpoint: resolveServiceEndpoint(service),
+                  maxDepth: 1,
+                },
+              ),
+            );
+            void table.refresh();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
-export const DataTable = React.forwardRef(DataTableInner) as <T>(
+export const DataTable = React.forwardRef(DataTableInner) as <T extends object>(
   props: DataTableProps<T> & { ref?: React.Ref<DataTableHandle> },
 ) => React.ReactElement;

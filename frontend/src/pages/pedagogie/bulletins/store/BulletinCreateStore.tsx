@@ -1,7 +1,6 @@
 ﻿import { create } from "zustand";
 import type { Bulletin, Inscription, Periode } from "../../../../types/models";
 import anneeScolaireService from "../../../../services/anneeScolaire.service";
-import BulletinService from "../../../../services/bulletin.service";
 import InscriptionService from "../../../../services/inscription.service";
 import PeriodeService from "../../../../services/periode.service";
 import { getEleveDisplayLabel, type EleveWithRelations } from "../../../../services/note.service";
@@ -82,8 +81,7 @@ export const useBulletinCreateStore = create<State>((set) => ({
           periodeOptions: [],
           inscriptions: [],
           periodes: [],
-          errorMessage:
-            "Aucune annee scolaire active n'a ete trouvee pour preparer un bulletin.",
+          errorMessage: "Aucune année scolaire courante n’est définie.",
         });
         return;
       }
@@ -162,4 +160,3 @@ export const useBulletinCreateStore = create<State>((set) => ({
     }
   },
 }));
-

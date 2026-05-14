@@ -24,7 +24,7 @@ const renderList: MenuItemToComponentType[] = [
   },
   {
     id: "parametre",
-    component: <ReferentielOverview mode="settings" />,
+    component: <ReferentielOverview />,
     renderState: 2,
   },
   {

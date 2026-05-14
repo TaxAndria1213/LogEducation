@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   FiCopy,
-  FiFileText,
   FiKey,
   FiLayers,
 } from "react-icons/fi";

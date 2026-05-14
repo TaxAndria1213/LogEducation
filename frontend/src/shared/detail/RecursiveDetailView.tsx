@@ -1748,9 +1748,6 @@ function RelationValuePreview({
       );
     }
 
-    const objectRows = value.filter(isPlainObject);
-    const scalarRows = value.filter((item) => !isPlainObject(item));
-
     return (
       <div className="space-y-5">
         <PopupContentSection
@@ -2492,6 +2489,7 @@ export default function RecursiveDetailView<T extends DetailViewRecord>({
   const selectedReloadRelation = selectedReloadRelationKey
     ? resolveRelationSectionDescriptor(resolvedCurrentRow, selectedReloadRelationKey, fieldLabels)
     : null;
+  const selectedReloadRelationResolvedKey = selectedReloadRelation?.key ?? null;
   const selectedReloadRelationValue = selectedReloadRelation
     ? resolvedCurrentRow[selectedReloadRelation.key]
     : undefined;
@@ -2501,9 +2499,12 @@ export default function RecursiveDetailView<T extends DetailViewRecord>({
       : null;
   const selectedReloadRelationIsLoading =
     Boolean(selectedReloadRelation) &&
-    pendingRelationLoadKey === selectedReloadRelation.key &&
+    pendingRelationLoadKey === selectedReloadRelationResolvedKey &&
     Boolean(
-      currentNode?.loading || currentNode?.forceIncludeKeys?.includes(selectedReloadRelation.key),
+      currentNode?.loading ||
+        (selectedReloadRelationResolvedKey
+          ? currentNode?.forceIncludeKeys?.includes(selectedReloadRelationResolvedKey)
+          : false),
     );
   const { groups: groupedEntries, remainingEntries } = resolveFieldGroups(
     resolvedCurrentRow,

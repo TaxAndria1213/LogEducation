@@ -1,6 +1,6 @@
-import { createContext, useContext } from "react";
+﻿import { createContext, useContext } from "react";
 import type { Role, Utilisateur, UtilisateurRole } from "../types/models";
-import type { Profil } from "../generated/zod";
+import type { Profil } from "../types/models";
 
 export type AuthContextType = {
   user: null | Utilisateur;
@@ -19,6 +19,6 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth doit être utilisé dans <AuthProvider>");
+  if (!ctx) throw new Error("useAuth doit Ãªtre utilisÃ© dans <AuthProvider>");
   return ctx;
 }

@@ -26,7 +26,7 @@ const schema = z.object({
   regles_json: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.output<typeof schema>;
 
 function getErrorMessage(error: unknown) {
   if (typeof error === "object" && error !== null && "response" in error && typeof error.response === "object" && error.response !== null && "data" in error.response && typeof error.response.data === "object" && error.response.data !== null && "message" in error.response.data && typeof error.response.data.message === "string") return error.response.data.message;
@@ -38,7 +38,7 @@ export default function RemiseForm() {
   const { info } = useInfo();
   const service = useMemo(() => new RemiseService(), []);
 
-  const form = useForm<FormValues>({
+  const form = useForm<z.input<typeof schema>, undefined, FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       nom: "",
@@ -109,7 +109,7 @@ export default function RemiseForm() {
         <Controller control={form.control} name="nom" render={({ field, fieldState }) => <FieldWrapper id="nom" label="Nom" required error={fieldState.error?.message}><input {...field} className={getInputClassName(Boolean(fieldState.error))} placeholder="Ex: Remise fratrie" /></FieldWrapper>} />
         <Controller control={form.control} name="type" render={({ field, fieldState }) => <FieldWrapper id="type" label="Type" required error={fieldState.error?.message}><select {...field} className={getInputClassName(Boolean(fieldState.error))}><option value="PERCENT">Pourcentage</option><option value="FIXED">Montant fixe</option></select></FieldWrapper>} />
         <Controller control={form.control} name="categorie" render={({ field, fieldState }) => <FieldWrapper id="categorie" label="Categorie metier" required error={fieldState.error?.message}><select {...field} className={getInputClassName(Boolean(fieldState.error))}><option value="REMISE_EXCEPTIONNELLE">Remise exceptionnelle</option><option value="EXONERATION_PARTIELLE">Exoneration partielle</option><option value="EXONERATION_TOTALE">Exoneration totale</option><option value="BOURSE">Bourse</option><option value="PRISE_EN_CHARGE">Prise en charge</option></select></FieldWrapper>} />
-        <Controller control={form.control} name="valeur" render={({ field, fieldState }) => <FieldWrapper id="valeur" label="Valeur" required error={fieldState.error?.message}><input type="number" min={0} step="0.01" {...field} className={getInputClassName(Boolean(fieldState.error))} /></FieldWrapper>} />
+        <Controller control={form.control} name="valeur" render={({ field, fieldState }) => <FieldWrapper id="valeur" label="Valeur" required error={fieldState.error?.message}><input type="number" min={0} step="0.01" {...field} value={typeof field.value === "number" ? field.value : 0} className={getInputClassName(Boolean(fieldState.error))} /></FieldWrapper>} />
         <Controller control={form.control} name="tiers_label" render={({ field, fieldState }) => <FieldWrapper id="tiers_label" label="Tiers payeur / organisme" error={fieldState.error?.message}><input {...field} className={getInputClassName(Boolean(fieldState.error))} placeholder="Ex: Bourse ministerielle" /></FieldWrapper>} />
         <Controller control={form.control} name="justificatif_obligatoire" render={({ field }) => <div className="md:col-span-2"><label className="inline-flex items-center gap-3 text-sm font-medium text-slate-700"><input type="checkbox" checked={field.value} onChange={(event) => field.onChange(event.target.checked)} />Justificatif obligatoire pour cette remise</label></div>} />
         <Controller control={form.control} name="justificatif_reference" render={({ field, fieldState }) => <FieldWrapper id="justificatif_reference" label="Reference justificatif" error={fieldState.error?.message}><input {...field} className={getInputClassName(Boolean(fieldState.error))} placeholder="Ex: DECISION-2026-014" /></FieldWrapper>} />

@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
-import type { Etablissement, Site } from "../../../../generated/zod";
+import type { Etablissement, Site } from "../../../../types/models";
 import EtablissementService from "../../../../services/etablissement.service";
 import SiteService from "../../../../services/site.service";
 

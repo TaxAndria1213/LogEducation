@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+﻿import { useEffect, useState, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import { AuthContext } from "./AuthContext";
 import type { Role, Utilisateur, UtilisateurRole } from "../types/models";
-import type { Profil } from "../generated/zod";
+import type { Profil } from "../types/models";
 import {
   clearStoredContextParams,
   CONTEXT_PARAMS_UPDATED_EVENT,
@@ -132,3 +132,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+

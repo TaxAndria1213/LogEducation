@@ -24,7 +24,6 @@ import CoursService, {
 } from "../../../services/cours.service";
 import EnseignantService from "../../../services/enseignant.service";
 import MatiereService, {
-  getMatiereDisplayLabel,
   type MatiereWithRelations,
 } from "../../../services/matiere.service";
 import NiveauScolaireService from "../../../services/niveau.service";
@@ -866,7 +865,7 @@ export default function PedagogieInitialisationIndex() {
   };
 
   const validateCurrentStep = () => {
-    if (step === 0 && !activeYear?.id) return "Aucune annee scolaire active n'est configuree.";
+    if (step === 0 && !activeYear?.id) return "Aucune année scolaire courante n’est définie.";
     if (step === 2 && periodes.length === 0 && periodDrafts.length === 0) return "Aucune periode pedagogique n'est disponible pour l'annee active.";
     if (step === 3 && selectedSubjects.length === 0) return "Selectionne au moins une matiere.";
     if (step === 4 && selectedLevels.length === 0) return "Selectionne au moins un niveau.";
@@ -1022,7 +1021,7 @@ export default function PedagogieInitialisationIndex() {
       return;
     }
     if (!activeYear?.id) {
-      info("Aucune annee scolaire active n'est disponible.", "error");
+      info("Aucune année scolaire courante n’est définie.", "error");
       return;
     }
     if (selectedSubjects.length === 0 || selectedLevels.length === 0) {
@@ -1248,7 +1247,7 @@ export default function PedagogieInitialisationIndex() {
             <InfoCard title="Classes" value={String(activeYearClasses.length)} helper="Classes de l'annee courante" />
             {!activeYear ? (
               <div className="md:col-span-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
-                Aucune annee scolaire active n'est configuree. Active une annee dans les parametres globaux avant de continuer.
+                Aucune année scolaire courante n’est définie.
               </div>
             ) : null}
           </div>

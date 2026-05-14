@@ -1,4 +1,4 @@
-import express, { Application, NextFunction, Request, Response } from "express";
+import express, { Application, Request, Response } from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
@@ -55,9 +55,10 @@ class Server {
 
     // CORS configuration - restrict to specific origins
     const corsOptions = {
-      origin: process.env.FRONTEND_URL || "http://localhost:5173", // Default to Vite dev server
+      origin: process.env.FRONTEND_URL || "http://localhost:5173", // Default to Vite dev server | to build :  || "http://localhost:4173"
       credentials: true,
     };
+
     this.app.use(cors(corsOptions));
 
     this.app.use(express.json({ limit: "15mb" }));
@@ -81,7 +82,7 @@ class Server {
     );
 
     // Global error handler
-    this.app.use((err: Error & { statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
+    this.app.use((err: Error & { statusCode?: number }, _req: Request, res: Response) => {
       if (res.headersSent || res.locals.errorHandled) {
         return;
       }
@@ -151,5 +152,3 @@ const server = Server.getInstance(process.env.PORT ? parseInt(process.env.PORT, 
   server.start();
 })();
 export default Server;
-
-

@@ -1,4 +1,4 @@
-﻿import type { Etablissement, Profil, Utilisateur } from "../generated/zod";
+﻿import type { Profil, Utilisateur } from "../types/models";
 
 export type menu = {
   key: string;
@@ -254,6 +254,7 @@ export type componentId =
   | 'DI.INCIDENTS.MENUACTION.PARAMETRE'
   | 'DI.INCIDENTS.MENUACTION.ADD'
   | 'DI.INCIDENTS.MENUACTION.DASHBOARD'
+  | 'DI.INCIDENTS.MENUACTION.FLAG'
   | 'DI.SANCTIONS.MENUACTION'
   | 'DI.SANCTIONS.MENUACTION.LIST'
   | 'DI.SANCTIONS.MENUACTION.PARAMETRE'
@@ -264,6 +265,7 @@ export type componentId =
   | 'DI.RECOMPENSES.MENUACTION.PARAMETRE'
   | 'DI.RECOMPENSES.MENUACTION.ADD'
   | 'DI.RECOMPENSES.MENUACTION.DASHBOARD'
+  | 'DI.RECOMPENSES.MENUACTION.AWARD'
   // ========= SECTION FINANCE =========
   | 'FIN.CATALOGUEFRAIS.MENUACTION'
   | 'FIN.CATALOGUEFRAIS.MENUACTION.LIST'
@@ -331,6 +333,8 @@ export type WizardDataUserPersonnel = {
   role_id?: string | null;
   etablissement_id?: string | null;
 };
+
+
 
 
 

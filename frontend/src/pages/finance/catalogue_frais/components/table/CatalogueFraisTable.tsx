@@ -16,7 +16,6 @@ export default function CatalogueFraisTable() {
   const buildSearchWhere = React.useCallback(
     (text: string) => {
       const normalized = text.trim();
-      const maybeNumber = Number(normalized);
       const orConditions: Array<Record<string, unknown>> = [
         { nom: { contains: normalized } },
         { description: { contains: normalized } },

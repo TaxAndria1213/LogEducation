@@ -8,6 +8,11 @@ import type {
 import type { BulletinDisplaySnapshot } from "./bulletin.service";
 
 type QueryParams = Record<string, unknown>;
+export type ReportAverageCalculationModeValue =
+  | "SIMPLE"
+  | "HIERARCHICAL"
+  | "WEIGHTED"
+  | "COEFFICIENT_BASED";
 
 export type ReportCardTemplateWithRelations = ReportCardTemplate & {
   annee?: {
@@ -22,6 +27,7 @@ export type ReportCardTemplateWithRelations = ReportCardTemplate & {
   bulletins?: Array<{ id: string }>;
   pedagogicalItems?: Array<{
     id: string;
+    section_id?: string | null;
     pedagogical_item_id: string;
     is_visible: boolean;
     custom_label?: string | null;
@@ -29,6 +35,8 @@ export type ReportCardTemplateWithRelations = ReportCardTemplate & {
     show_result: boolean;
     show_appreciation: boolean;
     show_children: boolean;
+    grading_scale_id_override?: string | null;
+    include_in_general_average_override?: boolean | null;
     pedagogicalItem?: {
       id: string;
       nom: string;
@@ -46,9 +54,20 @@ export type ReportCardTemplateWithRelations = ReportCardTemplate & {
       } | null;
     } | null;
   }>;
+  sections?: Array<{
+    id: string;
+    parent_section_id?: string | null;
+    title: string;
+    section_type?: string | null;
+    grading_mode?: string | null;
+    display_order: number;
+    show_header: boolean;
+    is_active: boolean;
+  }>;
 };
 
 export type ReportCardTemplatePedagogicalItemInput = {
+  section_id?: string | null;
   pedagogical_item_id: string;
   is_visible: boolean;
   custom_label?: string | null;
@@ -56,9 +75,23 @@ export type ReportCardTemplatePedagogicalItemInput = {
   show_result: boolean;
   show_appreciation: boolean;
   show_children: boolean;
+  grading_scale_id_override?: string | null;
+  include_in_general_average_override?: boolean | null;
+};
+
+export type ReportCardTemplateSectionInput = {
+  id: string;
+  parent_section_id?: string | null;
+  title: string;
+  section_type?: string | null;
+  grading_mode?: string | null;
+  display_order: number;
+  show_header: boolean;
+  is_active: boolean;
 };
 
 export type ReportCardTemplatePreviewPayload = {
+  id?: string;
   bulletin_id: string;
   etablissement_id: string;
   annee_scolaire_id: string;
@@ -67,6 +100,14 @@ export type ReportCardTemplatePreviewPayload = {
   description?: string | null;
   template_type: ReportCardTemplateType;
   pedagogical_display_mode: PedagogicalDisplayMode;
+  calculation_mode?: ReportAverageCalculationModeValue;
+  include_code_grades_in_general_average?: boolean;
+  rounding_precision?: number;
+  base_score?: number | null;
+  exclude_non_evaluated_items?: boolean;
+  minimum_required_results?: number;
+  use_weights?: boolean;
+  use_coefficients?: boolean;
   show_assessment_details: boolean;
   show_assessment_type_summary: boolean;
   show_only_final_exam: boolean;
@@ -86,12 +127,18 @@ export type ReportCardTemplatePreviewPayload = {
   show_domain_summary: boolean;
   show_subdomain_summary: boolean;
   show_competency_results: boolean;
+  show_student_average?: boolean;
   show_subject_average: boolean;
+  show_class_average?: boolean;
   show_subject_coefficient: boolean;
   show_subject_points: boolean;
   show_subject_rank: boolean;
   show_teacher_appreciation: boolean;
+  show_general_student_average?: boolean;
   show_general_average: boolean;
+  show_general_class_average?: boolean;
+  show_code_legend?: boolean;
+  show_section_headers?: boolean;
   show_total_coefficients: boolean;
   show_total_points: boolean;
   show_general_rank: boolean;
@@ -105,6 +152,7 @@ export type ReportCardTemplatePreviewPayload = {
   is_default: boolean;
   is_active: boolean;
   pedagogical_items?: ReportCardTemplatePedagogicalItemInput[];
+  template_sections?: ReportCardTemplateSectionInput[];
 };
 
 function parseObjectParam(value: unknown): Record<string, unknown> | undefined {

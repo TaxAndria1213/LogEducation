@@ -2,22 +2,17 @@ import ERPPage from "../../../components/page/ERPPage";
 import { getComponentById } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
-import { useEffect, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
 import { useProgrammeStore } from "./store/ProgrammeIndexStore";
+import { useProgrammeCreateStore } from "./store/ProgrammeCreateStore";
 
 function ProgrammesIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
   const menuListIsVisible = useProgrammeStore((s) => s.menuListIsVisible);
   const setMenuListIsVisible = useProgrammeStore((s) => s.setMenuListIsVisible);
   const renderState = useProgrammeStore((s) => s.renderState);
   const renderedElement = useProgrammeStore((s) => s.renderedComponent);
   const setRenderState = useProgrammeStore((s) => s.setRenderState);
   const setRenderedComponent = useProgrammeStore((s) => s.setRenderedComponent);
-
-  useEffect(() => {
-    if (renderedElement) setRender(renderedElement);
-  }, [renderedElement]);
+  const clearInitialData = useProgrammeCreateStore((s) => s.clearInitialData);
 
   const OptionButton = getComponentById("PD.PROGRAMMES.MENUACTION");
   const ListButtonComponent = getComponentById("PD.PROGRAMMES.MENUACTION.LIST");
@@ -41,7 +36,7 @@ function ProgrammesIndex() {
       ]}
     >
       <div className="flex">
-        <div className="flex-1">{render}</div>
+        <div className="flex-1">{renderedElement}</div>
         <PageSidebarPopup open={menuListIsVisible} onClose={() => setMenuListIsVisible(false)}>
             <ListContainer
               onItemClick={() => setMenuListIsVisible(false)}
@@ -51,7 +46,12 @@ function ProgrammesIndex() {
                 <DashboardButton onClick={() => setRenderedComponent("dashboard")} />,
                 <ListButtonComponent onClick={() => setRenderedComponent("list")} />,
                 <ParametreButtonComponent onClick={() => setRenderedComponent("parametre")} />,
-                <AddButtonComponent onClick={() => setRenderedComponent("add")} />,
+                <AddButtonComponent
+                  onClick={() => {
+                    clearInitialData();
+                    setRenderedComponent("add");
+                  }}
+                />,
               ]}
             />
           </PageSidebarPopup>
@@ -61,5 +61,3 @@ function ProgrammesIndex() {
 }
 
 export default ProgrammesIndex;
-
-

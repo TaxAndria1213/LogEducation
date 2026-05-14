@@ -2,11 +2,7 @@
 import Spin from "../../../../../components/anim/Spin";
 import { useReferentialCatalog } from "../../hooks/useReferentialCatalog";
 
-type Props = {
-  mode?: "overview" | "settings";
-};
-
-export default function ReferentielOverview({ mode = "overview" }: Props) {
+export default function ReferentielOverview() {
   const { rows, loading, errorMessage } = useReferentialCatalog();
 
   const customValuesCount = useMemo(

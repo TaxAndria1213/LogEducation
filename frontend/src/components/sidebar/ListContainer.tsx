@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, type ReactElement } from "react";
 import { styles } from "../../styles/styles";
 
@@ -16,7 +17,9 @@ function ListContainer({ components, selected, setSelected, onItemClick }: Props
     setSelected?.(index);
 
     const componentOnClick =
-      typeof component.props?.onClick === "function" ? component.props.onClick : undefined;
+      typeof (component.props as any)?.onClick === "function"
+        ? (component.props as { onClick?: () => void }).onClick
+        : undefined;
 
     componentOnClick?.();
     onItemClick?.();

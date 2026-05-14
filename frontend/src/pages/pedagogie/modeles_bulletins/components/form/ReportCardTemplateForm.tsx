@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,6 +22,7 @@ import BulletinService, {
 import ReportCardTemplateService, {
   getPedagogicalDisplayModeLabel,
   getReportCardTemplateTypeLabel,
+  type ReportAverageCalculationModeValue,
   type ReportCardTemplatePedagogicalItemInput,
   type ReportCardTemplatePreviewPayload,
 } from "../../../../../services/reportCardTemplate.service";
@@ -44,7 +45,15 @@ type ReportCardTemplateFormValues = {
   description: string;
   template_type: ReportCardTemplateType;
   pedagogical_display_mode: PedagogicalDisplayMode;
+  calculation_mode: ReportAverageCalculationModeValue;
   niveau_scolaire_id: string;
+  include_code_grades_in_general_average: boolean;
+  rounding_precision: number;
+  base_score: number | null;
+  exclude_non_evaluated_items: boolean;
+  minimum_required_results: number;
+  use_weights: boolean;
+  use_coefficients: boolean;
   show_assessment_details: boolean;
   show_assessment_type_summary: boolean;
   show_only_final_exam: boolean;
@@ -65,11 +74,15 @@ type ReportCardTemplateFormValues = {
   show_subdomain_summary: boolean;
   show_competency_results: boolean;
   show_subject_average: boolean;
+  show_class_average: boolean;
   show_subject_coefficient: boolean;
   show_subject_points: boolean;
   show_subject_rank: boolean;
   show_teacher_appreciation: boolean;
   show_general_average: boolean;
+  show_general_class_average: boolean;
+  show_code_legend: boolean;
+  show_section_headers: boolean;
   show_total_coefficients: boolean;
   show_total_points: boolean;
   show_general_rank: boolean;
@@ -106,7 +119,21 @@ const templateSchema = z.object({
     "COMPETENCIES_ONLY",
     "CUSTOM",
   ]),
+  calculation_mode: z.enum(["SIMPLE", "HIERARCHICAL", "WEIGHTED", "COEFFICIENT_BASED"]),
   niveau_scolaire_id: z.string().optional().default(""),
+  include_code_grades_in_general_average: z.boolean(),
+  rounding_precision: z.coerce.number().int().min(0).max(4),
+  base_score: z.preprocess(
+    (value) => {
+      if (value === "" || value === undefined || value === null) return null;
+      return Number(value);
+    },
+    z.number().positive("Le score de base doit etre positif.").nullable(),
+  ),
+  exclude_non_evaluated_items: z.boolean(),
+  minimum_required_results: z.coerce.number().int().min(1).max(50),
+  use_weights: z.boolean(),
+  use_coefficients: z.boolean(),
   show_assessment_details: z.boolean(),
   show_assessment_type_summary: z.boolean(),
   show_only_final_exam: z.boolean(),
@@ -127,11 +154,15 @@ const templateSchema = z.object({
   show_subdomain_summary: z.boolean(),
   show_competency_results: z.boolean(),
   show_subject_average: z.boolean(),
+  show_class_average: z.boolean(),
   show_subject_coefficient: z.boolean(),
   show_subject_points: z.boolean(),
   show_subject_rank: z.boolean(),
   show_teacher_appreciation: z.boolean(),
   show_general_average: z.boolean(),
+  show_general_class_average: z.boolean(),
+  show_code_legend: z.boolean(),
+  show_section_headers: z.boolean(),
   show_total_coefficients: z.boolean(),
   show_total_points: z.boolean(),
   show_general_rank: z.boolean(),
@@ -146,11 +177,25 @@ const templateSchema = z.object({
   is_active: z.boolean(),
 });
 
+type ReportCardTemplateFormData = z.output<typeof templateSchema>;
+
+function normalizeNumberInputValue(value: unknown, fallback: string | number = "") {
+  return typeof value === "number" ? value : fallback;
+}
+
 function getTemplateDefaults(
   type: ReportCardTemplateType,
 ): Partial<ReportCardTemplateFormValues> {
   const standardDefaults: Partial<ReportCardTemplateFormValues> = {
     pedagogical_display_mode: "SUBJECTS_ONLY",
+    calculation_mode: "HIERARCHICAL",
+    include_code_grades_in_general_average: false,
+    rounding_precision: 2,
+    base_score: null,
+    exclude_non_evaluated_items: true,
+    minimum_required_results: 1,
+    use_weights: true,
+    use_coefficients: true,
     show_assessment_details: false,
     show_assessment_type_summary: false,
     show_only_final_exam: false,
@@ -171,11 +216,15 @@ function getTemplateDefaults(
     show_subdomain_summary: false,
     show_competency_results: true,
     show_subject_average: true,
+    show_class_average: true,
     show_subject_coefficient: true,
     show_subject_points: false,
     show_subject_rank: true,
     show_teacher_appreciation: true,
     show_general_average: true,
+    show_general_class_average: false,
+    show_code_legend: false,
+    show_section_headers: true,
     show_total_coefficients: true,
     show_total_points: false,
     show_general_rank: true,
@@ -196,6 +245,8 @@ function getTemplateDefaults(
     return {
       ...standardDefaults,
       pedagogical_display_mode: "SUBJECTS_AND_DOMAINS",
+      show_groups: true,
+      show_domains: true,
       show_assessment_details: true,
     };
   }
@@ -204,6 +255,8 @@ function getTemplateDefaults(
     return {
       ...standardDefaults,
       pedagogical_display_mode: "SUBJECTS_AND_DOMAINS",
+      show_groups: true,
+      show_domains: true,
       show_assessment_type_summary: true,
     };
   }
@@ -212,6 +265,8 @@ function getTemplateDefaults(
     return {
       ...standardDefaults,
       pedagogical_display_mode: "SUBJECTS_AND_DOMAINS",
+      show_groups: true,
+      show_domains: true,
       show_assessment_details: true,
       show_only_final_exam: true,
     };
@@ -239,9 +294,12 @@ function getErrorMessage(error: unknown) {
   return "Le modele de bulletin n'a pas pu etre enregistre.";
 }
 
-function formatSummaryValue(value: number | string | null | undefined) {
+function formatSummaryValue(
+  value: number | string | null | undefined,
+  precision = 2,
+) {
   if (typeof value === "number") {
-    return Number.isInteger(value) ? `${value}` : value.toFixed(2);
+    return value.toFixed(Math.max(0, precision));
   }
 
   if (typeof value === "string" && value.trim()) {
@@ -282,6 +340,8 @@ function ReportCardTemplateForm() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewSnapshot, setPreviewSnapshot] =
     useState<BulletinDisplaySnapshot | null>(null);
+  const hydratedTemplateTypeRef = useRef<ReportCardTemplateType | null>(null);
+  const hydratedDisplayModeRef = useRef<PedagogicalDisplayMode | null>(null);
 
   const defaultValues = useMemo<ReportCardTemplateFormValues>(
     () => ({
@@ -290,7 +350,17 @@ function ReportCardTemplateForm() {
       template_type: editingItem?.template_type ?? "STANDARD",
       pedagogical_display_mode:
         editingItem?.pedagogical_display_mode ?? "SUBJECTS_ONLY",
+      calculation_mode: editingItem?.calculation_mode ?? "HIERARCHICAL",
       niveau_scolaire_id: editingItem?.niveau_scolaire_id ?? "",
+      include_code_grades_in_general_average:
+        editingItem?.include_code_grades_in_general_average ?? false,
+      rounding_precision: editingItem?.rounding_precision ?? 2,
+      base_score: editingItem?.base_score ?? null,
+      exclude_non_evaluated_items:
+        editingItem?.exclude_non_evaluated_items ?? true,
+      minimum_required_results: editingItem?.minimum_required_results ?? 1,
+      use_weights: editingItem?.use_weights ?? true,
+      use_coefficients: editingItem?.use_coefficients ?? true,
       show_assessment_details: editingItem?.show_assessment_details ?? false,
       show_assessment_type_summary: editingItem?.show_assessment_type_summary ?? false,
       show_only_final_exam: editingItem?.show_only_final_exam ?? false,
@@ -310,12 +380,21 @@ function ReportCardTemplateForm() {
       show_domain_summary: editingItem?.show_domain_summary ?? false,
       show_subdomain_summary: editingItem?.show_subdomain_summary ?? false,
       show_competency_results: editingItem?.show_competency_results ?? true,
-      show_subject_average: editingItem?.show_subject_average ?? true,
+      show_subject_average:
+        editingItem?.show_subject_average ?? editingItem?.show_student_average ?? true,
+      show_class_average: editingItem?.show_class_average ?? true,
       show_subject_coefficient: editingItem?.show_subject_coefficient ?? true,
       show_subject_points: editingItem?.show_subject_points ?? false,
       show_subject_rank: editingItem?.show_subject_rank ?? true,
       show_teacher_appreciation: editingItem?.show_teacher_appreciation ?? true,
-      show_general_average: editingItem?.show_general_average ?? true,
+      show_general_average:
+        editingItem?.show_general_average ??
+        editingItem?.show_general_student_average ??
+        true,
+      show_general_class_average:
+        editingItem?.show_general_class_average ?? false,
+      show_code_legend: editingItem?.show_code_legend ?? false,
+      show_section_headers: editingItem?.show_section_headers ?? true,
       show_total_coefficients: editingItem?.show_total_coefficients ?? true,
       show_total_points: editingItem?.show_total_points ?? false,
       show_general_rank: editingItem?.show_general_rank ?? true,
@@ -332,19 +411,26 @@ function ReportCardTemplateForm() {
     [editingItem],
   );
 
-  const form = useForm<ReportCardTemplateFormValues>({
+  const form = useForm<
+    z.input<typeof templateSchema>,
+    undefined,
+    ReportCardTemplateFormData
+  >({
     resolver: zodResolver(templateSchema),
     defaultValues,
     mode: "onSubmit",
   });
 
   useEffect(() => {
+    hydratedTemplateTypeRef.current = defaultValues.template_type;
+    hydratedDisplayModeRef.current = defaultValues.pedagogical_display_mode;
     form.reset(defaultValues);
   }, [defaultValues, form]);
 
   useEffect(() => {
     setPedagogicalSelections(
       (editingItem?.pedagogicalItems ?? []).map((item, index) => ({
+        section_id: item.section_id ?? null,
         pedagogical_item_id: item.pedagogical_item_id,
         is_visible: item.is_visible,
         custom_label: item.custom_label ?? null,
@@ -353,6 +439,9 @@ function ReportCardTemplateForm() {
         show_result: item.show_result,
         show_appreciation: item.show_appreciation,
         show_children: item.show_children,
+        grading_scale_id_override: item.grading_scale_id_override ?? null,
+        include_in_general_average_override:
+          item.include_in_general_average_override ?? null,
       })),
     );
   }, [editingItem]);
@@ -374,7 +463,7 @@ function ReportCardTemplateForm() {
         const bulletinService = new BulletinService();
         const year = await anneeScolaireService.getCurrent(etablissement_id);
         const currentYearValue = (year as AnneeScolaire | null) ?? null;
-        const [niveauxResponse, bulletinsResponse] = await Promise.all([
+        const [niveauxResult, bulletinsResult] = await Promise.allSettled([
           niveauService.getAll({
             where: JSON.stringify({ etablissement_id }),
             orderBy: JSON.stringify([{ ordre: "asc" }, { nom: "asc" }]),
@@ -401,17 +490,25 @@ function ReportCardTemplateForm() {
 
         if (!active) return;
         setCurrentYear(currentYearValue);
+        const niveauxResponse =
+          niveauxResult.status === "fulfilled" ? niveauxResult.value : null;
         setNiveaux(
           niveauxResponse?.status.success
             ? ((niveauxResponse.data.data as NiveauScolaire[]) ?? [])
             : [],
         );
+        const bulletinsResponse =
+          bulletinsResult.status === "fulfilled" ? bulletinsResult.value : null;
         const loadedBulletins =
           bulletinsResponse?.status.success
             ? ((bulletinsResponse.data.data as BulletinWithRelations[]) ?? [])
             : [];
         setBulletins(loadedBulletins);
-        setPreviewBulletinId((current) => current || loadedBulletins[0]?.id || "");
+        setPreviewBulletinId((current) =>
+          loadedBulletins.some((bulletin) => bulletin.id === current)
+            ? current
+            : loadedBulletins[0]?.id || "",
+        );
       } catch {
         if (!active) return;
         setCurrentYear(null);
@@ -434,13 +531,26 @@ function ReportCardTemplateForm() {
   const { control, handleSubmit, formState, reset, watch, setValue } = form;
   const selectedTemplateType = watch("template_type");
   const selectedPedagogicalDisplayMode = watch("pedagogical_display_mode");
+  const selectedCalculationMode = watch("calculation_mode");
   const selectedNiveauId = watch("niveau_scolaire_id");
+  const activeAcademicYearId =
+    currentYear?.id ?? editingItem?.annee_scolaire_id ?? null;
+  const activeAcademicYearLabel =
+    currentYear?.nom ?? editingItem?.annee?.nom ?? "Aucune annee active";
   const previewDependencies = watch([
     "nom",
     "description",
     "template_type",
     "pedagogical_display_mode",
+    "calculation_mode",
     "niveau_scolaire_id",
+    "include_code_grades_in_general_average",
+    "rounding_precision",
+    "base_score",
+    "exclude_non_evaluated_items",
+    "minimum_required_results",
+    "use_weights",
+    "use_coefficients",
     "show_assessment_details",
     "show_assessment_type_summary",
     "show_only_final_exam",
@@ -461,11 +571,15 @@ function ReportCardTemplateForm() {
     "show_subdomain_summary",
     "show_competency_results",
     "show_subject_average",
+    "show_class_average",
     "show_subject_coefficient",
     "show_subject_points",
     "show_subject_rank",
     "show_teacher_appreciation",
     "show_general_average",
+    "show_general_class_average",
+    "show_code_legend",
+    "show_section_headers",
     "show_total_coefficients",
     "show_total_points",
     "show_general_rank",
@@ -481,6 +595,11 @@ function ReportCardTemplateForm() {
   ]);
 
   useEffect(() => {
+    if (hydratedTemplateTypeRef.current === selectedTemplateType) {
+      hydratedTemplateTypeRef.current = null;
+      return;
+    }
+
     if (selectedTemplateType === "CUSTOM") return;
     const defaults = getTemplateDefaults(selectedTemplateType);
     Object.entries(defaults).forEach(([key, value]) => {
@@ -490,6 +609,20 @@ function ReportCardTemplateForm() {
       });
     });
   }, [selectedTemplateType, setValue]);
+
+  useEffect(() => {
+    if (selectedCalculationMode === "WEIGHTED") {
+      setValue("use_weights", true, { shouldDirty: true, shouldValidate: false });
+      return;
+    }
+
+    if (selectedCalculationMode === "COEFFICIENT_BASED") {
+      setValue("use_coefficients", true, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+    }
+  }, [selectedCalculationMode, setValue]);
 
   useEffect(() => {
     let active = true;
@@ -527,6 +660,11 @@ function ReportCardTemplateForm() {
   }, [etablissement_id, selectedNiveauId]);
 
   useEffect(() => {
+    if (hydratedDisplayModeRef.current === selectedPedagogicalDisplayMode) {
+      hydratedDisplayModeRef.current = null;
+      return;
+    }
+
     if (selectedPedagogicalDisplayMode === "CUSTOM") return;
 
     if (selectedPedagogicalDisplayMode === "SUBJECTS_ONLY") {
@@ -542,6 +680,7 @@ function ReportCardTemplateForm() {
 
     if (selectedPedagogicalDisplayMode === "SUBJECTS_AND_DOMAINS") {
       setValue("show_subjects", true, { shouldDirty: true, shouldValidate: false });
+      setValue("show_groups", true, { shouldDirty: true, shouldValidate: false });
       setValue("show_domains", true, { shouldDirty: true, shouldValidate: false });
       setValue("show_subdomains", false, { shouldDirty: true, shouldValidate: false });
       setValue("show_competencies", false, { shouldDirty: true, shouldValidate: false });
@@ -552,12 +691,13 @@ function ReportCardTemplateForm() {
 
     if (selectedPedagogicalDisplayMode === "FULL_HIERARCHY") {
       setValue("show_subjects", true, { shouldDirty: true, shouldValidate: false });
+      setValue("show_groups", true, { shouldDirty: true, shouldValidate: false });
       setValue("show_domains", true, { shouldDirty: true, shouldValidate: false });
       setValue("show_subdomains", true, { shouldDirty: true, shouldValidate: false });
       setValue("show_competencies", true, { shouldDirty: true, shouldValidate: false });
       setValue("show_objectives", true, { shouldDirty: true, shouldValidate: false });
-      if (form.getValues("max_hierarchy_depth") < 4) {
-        setValue("max_hierarchy_depth", 4, { shouldDirty: true, shouldValidate: false });
+      if (Number(form.getValues("max_hierarchy_depth") ?? 0) < 5) {
+        setValue("max_hierarchy_depth", 5, { shouldDirty: true, shouldValidate: false });
       }
       return;
     }
@@ -569,8 +709,8 @@ function ReportCardTemplateForm() {
       setValue("show_subdomains", false, { shouldDirty: true, shouldValidate: false });
       setValue("show_competencies", true, { shouldDirty: true, shouldValidate: false });
       setValue("show_objectives", true, { shouldDirty: true, shouldValidate: false });
-      if (form.getValues("max_hierarchy_depth") < 4) {
-        setValue("max_hierarchy_depth", 4, { shouldDirty: true, shouldValidate: false });
+      if (Number(form.getValues("max_hierarchy_depth") ?? 0) < 5) {
+        setValue("max_hierarchy_depth", 5, { shouldDirty: true, shouldValidate: false });
       }
     }
   }, [form, selectedPedagogicalDisplayMode, setValue]);
@@ -578,19 +718,21 @@ function ReportCardTemplateForm() {
   const buildPreviewPayload = (
     data: ReportCardTemplateFormValues,
   ): ReportCardTemplatePreviewPayload | null => {
-    if (!etablissement_id || !currentYear?.id || !previewBulletinId) {
+    if (!etablissement_id || !activeAcademicYearId || !previewBulletinId) {
       return null;
     }
 
     return {
       ...data,
+      id: editingItem?.id,
       bulletin_id: previewBulletinId,
       etablissement_id,
-      annee_scolaire_id: currentYear.id,
+      annee_scolaire_id: activeAcademicYearId,
       niveau_scolaire_id: data.niveau_scolaire_id || null,
       description: data.description?.trim() || null,
       non_evaluated_label: data.non_evaluated_label.trim() || "Non evalue",
       pedagogical_items: pedagogicalSelections,
+      template_sections: editingItem?.sections ?? [],
     };
   };
 
@@ -621,7 +763,7 @@ function ReportCardTemplateForm() {
   };
 
   const handlePreview = async () => {
-    const payload = buildPreviewPayload(form.getValues());
+    const payload = buildPreviewPayload(form.getValues() as ReportCardTemplateFormData);
 
     if (!payload) {
       info("Choisis un bulletin de reference pour generer l'apercu.", "error");
@@ -632,12 +774,12 @@ function ReportCardTemplateForm() {
   };
 
   useEffect(() => {
-    if (!previewBulletinId || !etablissement_id || !currentYear?.id) {
+    if (!previewBulletinId || !etablissement_id || !activeAcademicYearId) {
       setPreviewSnapshot(null);
       return;
     }
 
-    const payload = buildPreviewPayload(form.getValues());
+    const payload = buildPreviewPayload(form.getValues() as ReportCardTemplateFormData);
     const timer = window.setTimeout(() => {
       void runPreview(payload, false);
     }, 350);
@@ -648,7 +790,7 @@ function ReportCardTemplateForm() {
   }, [
     previewBulletinId,
     etablissement_id,
-    currentYear?.id,
+    activeAcademicYearId,
     pedagogicalSelections,
     form,
     ...previewDependencies,
@@ -656,27 +798,50 @@ function ReportCardTemplateForm() {
 
   const previewSummaryCards = useMemo(() => {
     if (!previewSnapshot) return [];
+    const configuredPrecision = Math.max(
+      0,
+      Math.min(4, previewSnapshot.template.rounding_precision ?? 2),
+    );
 
     return [
       previewSnapshot.template.show_general_average
         ? {
             key: "general_average",
             label: "Moyenne generale",
-            value: formatSummaryValue(previewSnapshot.summary.general_average),
+            value: formatSummaryValue(
+              previewSnapshot.summary.general_average,
+              configuredPrecision,
+            ),
+          }
+        : null,
+      previewSnapshot.template.show_general_class_average
+        ? {
+            key: "general_class_average",
+            label: "Moyenne generale classe",
+            value: formatSummaryValue(
+              previewSnapshot.summary.general_class_average,
+              configuredPrecision,
+            ),
           }
         : null,
       previewSnapshot.template.show_total_coefficients
         ? {
             key: "total_coefficients",
             label: "Total coefficients",
-            value: formatSummaryValue(previewSnapshot.summary.total_coefficients),
+            value: formatSummaryValue(
+              previewSnapshot.summary.total_coefficients,
+              configuredPrecision,
+            ),
           }
         : null,
       previewSnapshot.template.show_total_points
         ? {
             key: "total_points",
             label: "Total points",
-            value: formatSummaryValue(previewSnapshot.summary.total_points),
+            value: formatSummaryValue(
+              previewSnapshot.summary.total_points,
+              configuredPrecision,
+            ),
           }
         : null,
       previewSnapshot.template.show_general_rank
@@ -756,6 +921,7 @@ function ReportCardTemplateForm() {
         (item) => item.pedagogical_item_id === node.id,
       );
       const nextItem: TemplatePedagogicalSelection = {
+        section_id: existing?.section_id ?? null,
         pedagogical_item_id: node.id,
         is_visible: existing?.is_visible ?? true,
         custom_label: existing?.custom_label ?? null,
@@ -768,6 +934,9 @@ function ReportCardTemplateForm() {
         show_result: existing?.show_result ?? true,
         show_appreciation: existing?.show_appreciation ?? false,
         show_children: existing?.show_children ?? true,
+        grading_scale_id_override: existing?.grading_scale_id_override ?? null,
+        include_in_general_average_override:
+          existing?.include_in_general_average_override ?? null,
         ...patch,
       };
 
@@ -781,14 +950,14 @@ function ReportCardTemplateForm() {
     });
   };
 
-  const onSubmit = async (data: ReportCardTemplateFormValues) => {
+  const onSubmit = async (data: ReportCardTemplateFormData) => {
     if (!etablissement_id) {
       info("Aucun etablissement actif n'est defini.", "error");
       return;
     }
 
-    if (!currentYear?.id) {
-      info("Aucune annee scolaire courante n'est definie.", "error");
+    if (!activeAcademicYearId) {
+      info("Aucune année scolaire courante n’est définie.", "error");
       return;
     }
 
@@ -799,8 +968,9 @@ function ReportCardTemplateForm() {
         non_evaluated_label: data.non_evaluated_label.trim() || "Non evalue",
         niveau_scolaire_id: data.niveau_scolaire_id || null,
         etablissement_id,
-        annee_scolaire_id: currentYear.id,
+        annee_scolaire_id: activeAcademicYearId,
         pedagogical_items: pedagogicalSelections,
+        template_sections: editingItem?.sections ?? [],
       };
 
       if (editingItem) {
@@ -813,12 +983,12 @@ function ReportCardTemplateForm() {
 
       clearEditingItem();
       reset({
+        ...(getTemplateDefaults("STANDARD") as Partial<ReportCardTemplateFormValues>),
         nom: "",
         description: "",
         template_type: "STANDARD",
         pedagogical_display_mode: "SUBJECTS_ONLY",
         niveau_scolaire_id: "",
-        ...(getTemplateDefaults("STANDARD") as ReportCardTemplateFormValues),
         is_default: false,
         is_active: true,
       });
@@ -851,6 +1021,11 @@ function ReportCardTemplateForm() {
       "La moyenne de chaque matiere est visible.",
     ],
     [
+      "show_class_average",
+      "Afficher la moyenne de classe",
+      "La moyenne de la classe apparait sur les lignes concernees.",
+    ],
+    [
       "show_subject_coefficient",
       "Afficher le coefficient",
       "Le coefficient de la matiere est visible.",
@@ -876,6 +1051,21 @@ function ReportCardTemplateForm() {
       "Le resume du bulletin affiche la moyenne generale.",
     ],
     [
+      "show_general_class_average",
+      "Afficher la moyenne generale classe",
+      "Le resume compare l'eleve avec la moyenne globale de la classe.",
+    ],
+    [
+      "show_code_legend",
+      "Afficher la legende des codes",
+      "Les codes de niveau ou de mention affichent aussi leur legende dans le PDF.",
+    ],
+    [
+      "show_section_headers",
+      "Afficher les entetes de section",
+      "Le tableau du bulletin separe les blocs pedagogiques par section.",
+    ],
+    [
       "show_total_coefficients",
       "Afficher le total des coefficients",
       "Le total des coefficients est visible.",
@@ -899,6 +1089,11 @@ function ReportCardTemplateForm() {
     ],
     ["show_absences", "Afficher les absences", "Le bulletin peut afficher le recapitulatif des absences."],
     ["show_late_count", "Afficher les retards", "Le bulletin peut afficher le nombre de retards."],
+    [
+      "include_code_grades_in_general_average",
+      "Inclure les codes dans les moyennes",
+      "Les codes convertibles peuvent etre utilises dans le calcul des moyennes globales.",
+    ],
     ["show_logo", "Afficher le logo", "Le logo d'etablissement apparait sur le PDF."],
     ["show_signature", "Afficher la signature", "La zone de signature est visible sur le bulletin."],
     ["is_default", "Definir comme modele par defaut", "Ce modele devient la reference de l'annee courante."],
@@ -971,7 +1166,7 @@ function ReportCardTemplateForm() {
               <input
                 id="annee"
                 type="text"
-                value={currentYear?.nom ?? "Aucune annee active"}
+                value={activeAcademicYearLabel}
                 disabled
                 className={getInputClassName(false)}
               />
@@ -995,7 +1190,7 @@ function ReportCardTemplateForm() {
                     ref={field.ref}
                     className={getInputClassName(Boolean(fieldState.error))}
                   >
-                    <option value="">Toute l'annee</option>
+                    <option value="">Tous les niveaux</option>
                     {niveaux.map((niveau) => (
                       <option key={niveau.id} value={niveau.id}>
                         {niveau.nom}
@@ -1151,19 +1346,46 @@ function ReportCardTemplateForm() {
                   id="max_hierarchy_depth"
                   label="Profondeur maximale"
                   error={fieldState.error?.message}
-                  description="1 = matieres, 2 = domaines, 3 = sous-domaines, 4 = competences."
+                  description="1 = matieres, 2 = groupes/domaines, 3 = sous-domaines, 4 = competences, 5 = objectifs."
                 >
                   <input
                     id="max_hierarchy_depth"
                     type="number"
                     min={1}
                     max={6}
-                    value={field.value}
+                    value={normalizeNumberInputValue(field.value, 1)}
                     onChange={(event) => field.onChange(event.target.value)}
                     onBlur={field.onBlur}
                     ref={field.ref}
                     className={getInputClassName(Boolean(fieldState.error))}
                   />
+                </FieldWrapper>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="calculation_mode"
+              render={({ field, fieldState }) => (
+                <FieldWrapper
+                  id="calculation_mode"
+                  label="Mode de calcul"
+                  error={fieldState.error?.message}
+                  description="Choisit comment les resultats remontent dans la hierarchie et la moyenne generale."
+                >
+                  <select
+                    id="calculation_mode"
+                    value={field.value}
+                    onChange={(event) => field.onChange(event.target.value)}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    className={getInputClassName(Boolean(fieldState.error))}
+                  >
+                    <option value="HIERARCHICAL">Hierarchique</option>
+                    <option value="SIMPLE">Simple</option>
+                    <option value="WEIGHTED">Pondere par poids</option>
+                    <option value="COEFFICIENT_BASED">Base coefficients</option>
+                  </select>
                 </FieldWrapper>
               )}
             />
@@ -1190,6 +1412,82 @@ function ReportCardTemplateForm() {
                 </FieldWrapper>
               )}
             />
+
+            <Controller
+              control={control}
+              name="rounding_precision"
+              render={({ field, fieldState }) => (
+                <FieldWrapper
+                  id="rounding_precision"
+                  label="Precision d'arrondi"
+                  error={fieldState.error?.message}
+                  description="Nombre de decimales applique au tableau, au resume et a la legende des codes."
+                >
+                  <input
+                    id="rounding_precision"
+                    type="number"
+                    min={0}
+                    max={4}
+                    value={normalizeNumberInputValue(field.value, 2)}
+                    onChange={(event) => field.onChange(event.target.value)}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    className={getInputClassName(Boolean(fieldState.error))}
+                  />
+                </FieldWrapper>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="base_score"
+              render={({ field, fieldState }) => (
+                <FieldWrapper
+                  id="base_score"
+                  label="Base de note"
+                  error={fieldState.error?.message}
+                  description="Optionnel. Convertit les notes sur cette base si aucune echelle ne fixe deja une base."
+                >
+                  <input
+                    id="base_score"
+                    type="number"
+                    min={1}
+                    step="0.5"
+                    value={normalizeNumberInputValue(field.value)}
+                    onChange={(event) => field.onChange(event.target.value)}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    className={getInputClassName(Boolean(fieldState.error))}
+                    placeholder="Ex: 10 ou 20"
+                  />
+                </FieldWrapper>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="minimum_required_results"
+              render={({ field, fieldState }) => (
+                <FieldWrapper
+                  id="minimum_required_results"
+                  label="Minimum de resultats"
+                  error={fieldState.error?.message}
+                  description="Nombre minimum de notes calculables requis pour afficher une moyenne."
+                >
+                  <input
+                    id="minimum_required_results"
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={normalizeNumberInputValue(field.value, 1)}
+                    onChange={(event) => field.onChange(event.target.value)}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    className={getInputClassName(Boolean(fieldState.error))}
+                  />
+                </FieldWrapper>
+              )}
+            />
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -1203,6 +1501,9 @@ function ReportCardTemplateForm() {
                 ["show_objectives", "Afficher les objectifs"],
                 ["show_only_evaluated_items", "Afficher uniquement les elements evalues"],
                 ["show_non_evaluated_items", "Afficher les elements non evalues"],
+                ["exclude_non_evaluated_items", "Ignorer les non evalues dans les calculs"],
+                ["use_weights", "Utiliser les poids des evaluations et elements"],
+                ["use_coefficients", "Utiliser les coefficients des matieres"],
                 ["group_items_by_parent", "Regrouper les elements sous leur parent"],
                 ["show_hierarchical_indent", "Afficher l'indentation hierarchique"],
                 ["show_subject_summary", "Afficher le resultat global de chaque matiere"],
@@ -1353,7 +1654,7 @@ function ReportCardTemplateForm() {
             <div>
               <h3 className="text-lg font-semibold text-slate-900">Options d'affichage</h3>
               <p className="text-sm text-slate-500">
-                Le backend harmonise aussi certaines options selon le type de modele choisi.
+                Les options sauvegardees ici pilotent directement l'apercu et le rendu du bulletin.
               </p>
             </div>
           </div>
@@ -1461,10 +1762,26 @@ function ReportCardTemplateForm() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {previewSnapshot.lines.map((line) => (
-                        <tr key={line.row_id}>
+                        <tr
+                          key={line.row_id}
+                          className={
+                            line.row_type === "section_header"
+                              ? "bg-slate-100 font-semibold text-slate-900"
+                              : undefined
+                          }
+                        >
                           {previewSnapshot.columns.map((column) => (
-                            <td key={`${line.row_id}-${column.key}`} className="px-4 py-3 align-top text-slate-700">
-                              {line.display_cells[column.key] ?? "-"}
+                            <td
+                              key={`${line.row_id}-${column.key}`}
+                              className={`px-4 py-3 align-top ${
+                                line.row_type === "section_header"
+                                  ? "text-slate-900"
+                                  : "text-slate-700"
+                              }`}
+                            >
+                              {line.row_type === "section_header" && column.key !== previewSnapshot.columns[0]?.key
+                                ? ""
+                                : line.display_cells[column.key] ?? "-"}
                             </td>
                           ))}
                         </tr>
@@ -1497,6 +1814,11 @@ function ReportCardTemplateForm() {
               )}
 
               <div className="flex flex-wrap gap-3">
+                {previewSnapshot.template.show_section_headers ? (
+                  <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
+                    Entetes de section actifs
+                  </div>
+                ) : null}
                 {previewSnapshot.template.show_logo ? (
                   <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
                     Logo actif
@@ -1508,6 +1830,34 @@ function ReportCardTemplateForm() {
                   </div>
                 ) : null}
               </div>
+
+              {previewSnapshot.template.show_code_legend &&
+              previewSnapshot.code_legend?.length ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Legende des codes
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {previewSnapshot.code_legend.map((legend) => (
+                      <div
+                        key={`${legend.grading_scale_id ?? "default"}-${legend.code}`}
+                        className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+                      >
+                        <span className="font-semibold text-slate-900">
+                          {legend.code}
+                        </span>{" "}
+                        = {legend.label}
+                        {typeof legend.numeric_value === "number"
+                          ? ` (${formatSummaryValue(
+                              legend.numeric_value,
+                              previewSnapshot.template.rounding_precision ?? 2,
+                            )})`
+                          : ""}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </section>

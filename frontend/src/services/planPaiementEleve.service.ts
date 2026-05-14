@@ -53,6 +53,15 @@ export type PlanPaiementEleveWithRelations = PlanPaiementEleve & {
   }> | null;
 };
 
+export type PlanPaiementRescheduleWorkflow = {
+  statut?: string | null;
+  motif?: string | null;
+  requested_at?: string | null;
+  approved_at?: string | null;
+  rejected_at?: string | null;
+  [key: string]: unknown;
+};
+
 export function getPlanPaiementEcheances(record?: Partial<PlanPaiementEleveWithRelations> | null): PlanEcheance[] {
   const relational = Array.isArray(record?.echeances) ? record.echeances : null;
   if (relational && relational.length > 0) {
@@ -163,9 +172,13 @@ export function getPlanPaiementSecondaryLabel(record?: Partial<PlanPaiementEleve
     .join(" - ");
 }
 
-export function getPlanPaiementRescheduleWorkflow(record?: Partial<PlanPaiementEleveWithRelations> | null) {
+export function getPlanPaiementRescheduleWorkflow(
+  record?: Partial<PlanPaiementEleveWithRelations> | null,
+): PlanPaiementRescheduleWorkflow | null {
   const workflow = record?.plan_json?.workflow_reechelonnement;
-  return workflow && typeof workflow === "object" ? workflow : null;
+  return workflow && typeof workflow === "object" && !Array.isArray(workflow)
+    ? (workflow as PlanPaiementRescheduleWorkflow)
+    : null;
 }
 
 class PlanPaiementEleveService extends Service {

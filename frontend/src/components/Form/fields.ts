@@ -20,6 +20,7 @@ import {
   PasswordField,
   RelationMultiSelectField,
   RelationSelectField,
+  SelectField,
   StringArrayField,
   TextAreaField,
   TextField,
@@ -44,7 +45,13 @@ type UnwrapInfo = {
 };
 
 type FieldMeta = {
-  widget?: "password" | "textarea" | "text" | "json" | "bytes";
+  widget?:
+    | "password"
+    | "textarea"
+    | "text"
+    | "json"
+    | "bytes"
+    | "select";
   relation?: {
     multiple?: boolean;
     options?: Array<{ value: string | number; label: string; disabled?: boolean }>;
@@ -222,6 +229,9 @@ export function resolveFieldComponent(
   }
   if (meta?.widget === "bytes") {
     return { Component: BytesField, required, nullable, props: extraProps };
+  }
+  if (meta?.widget === "select") {
+    return { Component: SelectField, required, nullable, props: extraProps };
   }
 
   if (meta?.relation) {

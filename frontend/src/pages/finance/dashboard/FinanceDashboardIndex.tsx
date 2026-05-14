@@ -225,6 +225,10 @@ function toNumber(value: unknown) {
   return 0;
 }
 
+function getProrataRatio(value: unknown) {
+  return toNumber(value);
+}
+
 function isActivePaiementStatus(value?: string | null) {
   return (value ?? "ENREGISTRE").toUpperCase() === "ENREGISTRE";
 }
@@ -2211,13 +2215,15 @@ export default function FinanceDashboardIndex() {
                                     <FiFileText />
                                     {processingTransportBillingId === item.id
                                       ? "Facturation..."
-                                      : item.prorata_ratio != null && item.prorata_ratio > 0 && item.prorata_ratio < 1
+                                      : getProrataRatio(item.prorata_ratio) > 0 &&
+                                        getProrataRatio(item.prorata_ratio) < 1
                                         ? "Generer la facture proratiee"
                                         : "Generer la facturation"}
                                   </button>
-                                  {item.prorata_ratio != null && item.prorata_ratio > 0 && item.prorata_ratio < 1 ? (
+                                  {getProrataRatio(item.prorata_ratio) > 0 &&
+                                  getProrataRatio(item.prorata_ratio) < 1 ? (
                                     <p className="text-xs text-amber-900">
-                                      Prorata detecte: {(item.prorata_ratio * 100).toFixed(0)}% sur la periode d'usage.
+                                      Prorata detecte: {(getProrataRatio(item.prorata_ratio) * 100).toFixed(0)}% sur la periode d'usage.
                                     </p>
                                   ) : null}
                                   <select
@@ -2375,13 +2381,15 @@ export default function FinanceDashboardIndex() {
                                   <FiFileText />
                                   {processingTransportBillingId === item.id
                                     ? "Facturation..."
-                                    : item.prorata_ratio != null && item.prorata_ratio > 0 && item.prorata_ratio < 1
+                                    : getProrataRatio(item.prorata_ratio) > 0 &&
+                                      getProrataRatio(item.prorata_ratio) < 1
                                       ? "Generer la facture proratisée"
                                       : "Generer la facturation"}
                                 </button>
-                                {item.prorata_ratio != null && item.prorata_ratio > 0 && item.prorata_ratio < 1 ? (
+                                {getProrataRatio(item.prorata_ratio) > 0 &&
+                                getProrataRatio(item.prorata_ratio) < 1 ? (
                                   <p className="text-xs text-amber-900">
-                                    Prorata detecte: {(item.prorata_ratio * 100).toFixed(0)}% sur la periode d&apos;usage.
+                                    Prorata detecte: {(getProrataRatio(item.prorata_ratio) * 100).toFixed(0)}% sur la periode d&apos;usage.
                                   </p>
                                 ) : null}
                                 <select

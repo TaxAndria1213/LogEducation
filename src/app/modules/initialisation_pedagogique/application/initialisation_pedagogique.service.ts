@@ -273,9 +273,7 @@ class InitialisationPedagogiqueService {
     );
 
     if (!year) {
-      throw new Error(
-        "Aucune annee scolaire active n'est definie pour cet etablissement.",
-      );
+      throw new Error("Aucune année scolaire courante n’est définie.");
     }
 
     const existingRecords = await prisma.regleNote.findMany({

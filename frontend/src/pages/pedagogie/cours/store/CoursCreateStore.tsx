@@ -93,8 +93,7 @@ export const useCoursCreateStore = create<State>((set) => ({
           matieres: [],
           enseignants: [],
           programmes: [],
-          errorMessage:
-            "Aucune annee scolaire active n'a ete trouvee pour preparer la creation d'un cours.",
+          errorMessage: "Aucune année scolaire courante n’est définie.",
         });
         return;
       }

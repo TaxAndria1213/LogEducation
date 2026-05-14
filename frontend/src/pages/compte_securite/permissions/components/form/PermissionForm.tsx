@@ -8,6 +8,7 @@ import { useAuth } from "../../../../../auth/AuthContext";
 import type { Permission } from "../../../../../types/models";
 import { componentPermissionCatalog } from "../../../../../components/components.build";
 import { normalizePermissionCode } from "../../../../../utils/permissionScope";
+import type { componentId } from "../../../../../types/types";
 
 export default function PermissionForm() {
   const { etablissement_id } = useAuth();
@@ -44,7 +45,7 @@ export default function PermissionForm() {
           return;
         }
 
-        if (systemCodes.has(normalizedCode)) {
+        if (systemCodes.has(normalizedCode as componentId)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["code"],

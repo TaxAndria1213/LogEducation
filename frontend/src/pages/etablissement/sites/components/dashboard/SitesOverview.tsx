@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { FiGlobe, FiMapPin, FiPhone, FiSettings, FiLayers } from "react-icons/fi";
+import { FiMapPin, FiPhone, FiSettings, FiLayers } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import SiteService from "../../../../../services/site.service";
 import type { Site } from "../../../../../types/models";
@@ -32,7 +32,7 @@ function SitesOverview({ mode = "overview" }: Props) {
         const result = await service.getAll({
           page: 1,
           take: 100,
-          where: { etablissement_id },
+          where: JSON.stringify({ etablissement_id }),
         });
 
         if (!active) return;

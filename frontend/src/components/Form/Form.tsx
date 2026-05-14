@@ -23,6 +23,8 @@ export function Form({
   submitAlign = "start",
   onValuesChange,
   syncValues,
+  cancelLabel = "Annuler",
+  onCancel,
 }: {
   schema: any;
   fields: any[];
@@ -34,10 +36,12 @@ export function Form({
   submitAlign?: "start" | "end";
   onValuesChange?: (data: Partial<FormValues>) => void;
   syncValues?: Partial<FormValues>;
+  cancelLabel?: string;
+  onCancel?: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const { info } = useInfo();
-
+  console.log(labelMessage);
   const defaultValues = useMemo(() => {
     const autoDefaults = Object.fromEntries(
       fields.map((f: any) => [f.name, f.nullable ? null : undefined]),
@@ -68,7 +72,7 @@ export function Form({
     if (!syncValues) return;
 
     Object.entries(syncValues).forEach(([key, value]) => {
-      form.setValue(key as keyof FormValues, value as FormValues[keyof FormValues], {
+      form.setValue((key as keyof FormValues) as string, value as FormValues[keyof FormValues], {
         shouldDirty: false,
         shouldTouch: false,
         shouldValidate: false,
@@ -129,7 +133,20 @@ export function Form({
         })}
       </div>
 
-      <div className={`flex ${submitAlign === "end" ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`flex flex-wrap gap-3 ${
+          submitAlign === "end" ? "justify-end" : "justify-start"
+        }`}
+      >
+        {onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            <span>{cancelLabel}</span>
+          </button>
+        ) : null}
         <button
           type="submit"
           disabled={loading}

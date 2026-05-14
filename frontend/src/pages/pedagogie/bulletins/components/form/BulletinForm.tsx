@@ -21,7 +21,7 @@ type BulletinFormValues = {
   eleve_id: string;
   periode_id: string;
   statut: "EN_COURS";
-  publie_le: string;
+  publie_le?: string;
 };
 
 const bulletinSchema = z.object({
@@ -30,6 +30,8 @@ const bulletinSchema = z.object({
   statut: z.enum(["EN_COURS"]),
   publie_le: z.string().optional(),
 });
+
+type BulletinFormData = z.output<typeof bulletinSchema>;
 
 function getErrorMessage(error: unknown) {
   if (
@@ -91,7 +93,7 @@ function BulletinForm() {
     [initialData],
   );
 
-  const form = useForm<BulletinFormValues>({
+  const form = useForm<z.input<typeof bulletinSchema>, undefined, BulletinFormData>({
     resolver: zodResolver(bulletinSchema),
     defaultValues,
     mode: "onSubmit",
@@ -113,7 +115,7 @@ function BulletinForm() {
     [periodes, selectedPeriodeId],
   );
 
-  const onSubmit = async (data: BulletinFormValues) => {
+  const onSubmit = async (data: BulletinFormData) => {
     try {
       await service.create({
         eleve_id: data.eleve_id,

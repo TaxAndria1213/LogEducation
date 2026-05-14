@@ -11,11 +11,60 @@ import ProgrammeService, {
 } from "../../../../../services/programme.service";
 import { useAuth } from "../../../../../auth/AuthContext";
 import { formatDateWithLocalTimezone } from "../../../../../app/utils/functions";
+import { useProgrammeStore } from "../../store/ProgrammeIndexStore";
+import { useProgrammeCreateStore } from "../../store/ProgrammeCreateStore";
+
+function getStatusBadgeClass(status?: string | null) {
+  switch (status) {
+    case "ACTIVE":
+      return "bg-emerald-100 text-emerald-700";
+    case "IN_REVISION":
+      return "bg-amber-100 text-amber-700";
+    case "LOCKED":
+      return "bg-rose-100 text-rose-700";
+    case "ARCHIVED":
+      return "bg-slate-200 text-slate-700";
+    default:
+      return "bg-sky-100 text-sky-700";
+  }
+}
 
 export default function ProgrammeTable() {
   const { etablissement_id } = useAuth();
   const tableRef = React.useRef<DataTableHandle>(null);
   const service = React.useMemo(() => new ProgrammeService(), []);
+  const setRenderState = useProgrammeStore((state) => state.setRenderState);
+  const setRenderedComponent = useProgrammeStore((state) => state.setRenderedComponent);
+  const setInitialData = useProgrammeCreateStore((state) => state.setInitialData);
+
+  const openProgrammeEditor = React.useCallback(
+    (row: ProgrammeWithRelations) => {
+      setInitialData({
+        ...row,
+        matieres: (row.matieres ?? []).map((line) => ({
+          id: line.id,
+          matiere_id: line.matiere_id,
+          heures_semaine: line.heures_semaine ?? null,
+          heures_annuelles: line.heures_annuelles ?? null,
+          seances_par_semaine: line.seances_par_semaine ?? null,
+          duree_seance_par_defaut: line.duree_seance_par_defaut ?? null,
+          coefficient: line.coefficient ?? null,
+          est_obligatoire: line.est_obligatoire ?? true,
+          est_visible_bulletin: line.est_visible_bulletin ?? true,
+          inclure_moyenne_generale: line.inclure_moyenne_generale ?? true,
+          appreciation_obligatoire: line.appreciation_obligatoire ?? false,
+          libelle_bulletin: line.libelle_bulletin ?? null,
+          ordre_affichage_bulletin: line.ordre_affichage_bulletin ?? null,
+          grading_scale_id: line.grading_scale_id ?? null,
+          mode_calcul: line.mode_calcul ?? "WEIGHTED_AVERAGE",
+          statut: line.statut ?? "ACTIVE",
+        })),
+      });
+      setRenderState(3);
+      setRenderedComponent("add");
+    },
+    [setInitialData, setRenderedComponent, setRenderState],
+  );
 
   const columns: ColumnDef<ProgrammeWithRelations>[] = [
     {
@@ -40,6 +89,19 @@ export default function ProgrammeTable() {
       sortKey: "niveau.nom",
     },
     {
+      key: "statut",
+      header: "Statut",
+      render: (row) => (
+        <span
+          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(row.statut)}`}
+        >
+          {row.statut ?? "DRAFT"}
+        </span>
+      ),
+      sortable: true,
+      sortKey: "statut",
+    },
+    {
       key: "matieres_count",
       header: "Matieres",
       render: (row) => String(row.matieres?.length ?? 0),
@@ -61,9 +123,10 @@ export default function ProgrammeTable() {
 
   const actions: RowAction<ProgrammeWithRelations>[] = [
     {
-      label: "Voir",
-      variant: "secondary",
-      onClick: (row) => console.log("voir", row.id),
+      label: "Modifier",
+      kind: "edit",
+      variant: "primary",
+      onClick: openProgrammeEditor,
     },
     {
       label: "Supprimer",
@@ -86,12 +149,20 @@ export default function ProgrammeTable() {
       columns={columns}
       actions={actions}
       getRowId={(r) => r.id}
+      detailView={{
+        mode: "replace",
+        editStrategy: "custom",
+        title: "Details du programme",
+        getTitle: (row) => getProgrammeDisplayLabel(row),
+        onEdit: openProgrammeEditor,
+      }}
       initialQuery={{
         page: 1,
         take: 10,
         includeSpec: {
           annee: true,
           niveau: true,
+          defaultGradingScale: true,
           matieres: {
             include: {
               matiere: {
@@ -99,6 +170,7 @@ export default function ProgrammeTable() {
                   departement: true,
                 },
               },
+              gradingScale: true,
             },
           },
         },

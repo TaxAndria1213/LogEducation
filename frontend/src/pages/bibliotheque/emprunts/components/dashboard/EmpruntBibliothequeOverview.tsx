@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { FiClock, FiRefreshCcw, FiSettings, FiUsers } from "react-icons/fi";
+import { FiClock, FiRefreshCcw, FiUsers } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import EmpruntBibliothequeService, {
   getBorrowerLabel,

@@ -80,7 +80,7 @@ export const useNoteCreateStore = create<State>((set) => ({
       if (!currentYear) {
         set({
           loading: false,
-          errorMessage: "Aucune annee scolaire active n'a ete trouvee pour preparer une note.",
+          errorMessage: "Aucune année scolaire courante n’est définie.",
           evaluationOptions: [],
           eleveOptions: [],
           evaluations: [],

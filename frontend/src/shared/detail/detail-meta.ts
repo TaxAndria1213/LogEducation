@@ -230,7 +230,7 @@ export function inferGeneratedDetailModelMeta(
 }
 
 export function getGeneratedDetailFieldMeta(
-  record: DetailViewRecord,
+  _record: DetailViewRecord,
   key: string,
   modelMeta?: GeneratedDetailModelMeta | null,
 ): (GeneratedDetailFieldMeta & { models?: string[] }) | null {

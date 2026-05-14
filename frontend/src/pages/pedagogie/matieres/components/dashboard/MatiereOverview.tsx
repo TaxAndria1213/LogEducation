@@ -2,7 +2,6 @@
 import {
   FiBookOpen,
   FiLayers,
-  FiSettings,
   FiTag,
   FiTrendingUp,
   FiUsers,

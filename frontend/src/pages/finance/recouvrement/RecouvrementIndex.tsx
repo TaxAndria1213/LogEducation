@@ -39,24 +39,36 @@ function fmtMoney(value?: number | null) {
   return `${Number(value ?? 0).toLocaleString("fr-FR")} MGA`;
 }
 
-function describeEnrollmentPolicy(policy?: Pick<EnrollmentFinancePolicySettings, "mode" | "value" | "due_soon_days"> | null) {
+function describeEnrollmentPolicy(
+  policy?:
+    | Pick<EnrollmentFinancePolicySettings, "mode" | "value" | "due_soon_days">
+    | {
+        mode?: string;
+        value?: string | number;
+        due_soon_days?: string | number;
+      }
+    | null,
+) {
   if (!policy || policy.mode === "NONE") {
     return "Aucun paiement minimum n'est exige avant validation administrative.";
   }
 
+  const normalizedValue = Number(policy.value ?? 0);
+  const normalizedDueSoonDays = Number(policy.due_soon_days ?? 0);
+
   if (policy.mode === "PERCENT") {
-    return `La validation exige au moins ${Number(policy.value ?? 0).toLocaleString("fr-FR")}% du total facture, avec alerte echeance proche a ${policy.due_soon_days} jour(s).`;
+    return `La validation exige au moins ${normalizedValue.toLocaleString("fr-FR")}% du total facture, avec alerte echeance proche a ${normalizedDueSoonDays} jour(s).`;
   }
 
   if (policy.mode === "AMOUNT") {
-    return `La validation exige au moins ${fmtMoney(policy.value)} avant validation, avec alerte echeance proche a ${policy.due_soon_days} jour(s).`;
+    return `La validation exige au moins ${fmtMoney(normalizedValue)} avant validation, avec alerte echeance proche a ${normalizedDueSoonDays} jour(s).`;
   }
 
   if (policy.mode === "INSCRIPTION_FEE") {
-    return `La validation exige le paiement complet du droit d'inscription, avec alerte echeance proche a ${policy.due_soon_days} jour(s).`;
+    return `La validation exige le paiement complet du droit d'inscription, avec alerte echeance proche a ${normalizedDueSoonDays} jour(s).`;
   }
 
-  return `La validation exige le droit d'inscription et la premiere tranche de scolarite, avec alerte echeance proche a ${policy.due_soon_days} jour(s).`;
+  return `La validation exige le droit d'inscription et la premiere tranche de scolarite, avec alerte echeance proche a ${normalizedDueSoonDays} jour(s).`;
 }
 
 export default function RecouvrementIndex() {

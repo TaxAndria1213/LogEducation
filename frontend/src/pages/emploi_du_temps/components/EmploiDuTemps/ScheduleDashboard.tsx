@@ -696,8 +696,6 @@ export default function ScheduleDashboard() {
       ),
     [creneaux, visibleDays],
   );
-  const isGridRendered =
-    Boolean(selectedClasseId) && (loadingPlanning || creneaux.length > 0);
 
   const courseUsageMinutesById = useMemo(() => {
     return Object.entries(planner).reduce<Record<string, number>>((acc, [key, cell]) => {

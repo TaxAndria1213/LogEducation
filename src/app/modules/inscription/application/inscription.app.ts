@@ -3727,7 +3727,7 @@ class InscriptionApp {
                     res,
                     requestedAnneeScolaireId
                         ? "L'annee scolaire selectionnee n'appartient pas a cet etablissement."
-                        : "Aucune annee scolaire courante n'est definie.",
+                        : "Aucune année scolaire courante n’est définie.",
                     400,
                     new Error(),
                 );

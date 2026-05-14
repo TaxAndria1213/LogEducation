@@ -9,7 +9,6 @@ import PaiementService, {
   getPaiementReconciliationStatusLabel,
   getPaiementReceiptStatusLabel,
   getPaiementSecondaryLabel,
-  getPaiementStatusLabel,
   type PaiementWithRelations,
 } from "../../../../../services/paiement.service";
 import { usePaiementStore } from "../../store/PaiementIndexStore";

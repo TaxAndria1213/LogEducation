@@ -332,7 +332,7 @@ function PedagogicalStructureIndex() {
     }
 
     if (!currentYear?.id) {
-      info("Aucune annee scolaire courante n'est definie.", "error");
+      info("Aucune année scolaire courante n’est définie.", "error");
       return;
     }
 
@@ -397,7 +397,7 @@ function PedagogicalStructureIndex() {
     }
   };
 
-  const renderTreeNode = (node: PedagogicalTreeNode, depth = 0): JSX.Element => {
+  const renderTreeNode = (node: PedagogicalTreeNode, depth = 0) => {
     const isSelected = node.id === selectedItemId;
 
     return (

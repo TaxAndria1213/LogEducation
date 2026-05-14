@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
-import type { AnneeScolaire, Etablissement } from "../../../../generated/zod";
+import type { AnneeScolaire, Etablissement } from "../../../../types/models";
 import AnneeScolaireService from "../../../../services/anneeScolaire.service";
 import EtablissementService from "../../../../services/etablissement.service";
 

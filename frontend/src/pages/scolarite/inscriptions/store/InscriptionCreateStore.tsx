@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
-import type { Inscription } from "../../../../generated/zod";
+import type { Inscription } from "../../../../types/models";
 import { formatDateWithLocalTimezone } from "../../../../app/utils/functions";
 import type {
   AnneeScolaire,

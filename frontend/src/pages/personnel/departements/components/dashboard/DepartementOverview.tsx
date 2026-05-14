@@ -2,7 +2,6 @@
 import {
   FiBookOpen,
   FiLayers,
-  FiSettings,
   FiUsers,
   FiUserCheck,
 } from "react-icons/fi";

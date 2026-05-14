@@ -1,4 +1,4 @@
-# Backlog Notes & Bulletins - Version Competences
+﻿# Backlog Notes & Bulletins - Version Competences
 
 ## Objectif
 
@@ -20,45 +20,78 @@ Ce backlog part de l'etat reel du code dans :
 
 ## Lecture rapide
 
-- Le socle actuel couvre bien les evaluations, les notes numeriques et les bulletins par matiere.
-- La cible du prompt demande un changement de noyau metier.
-- Le plus gros manque aujourd'hui est l'absence de :
+- Le socle ne se limite plus a `Cours -> Evaluation -> Note numerique -> Bulletin matiere`.
+- Une partie importante de la cible est maintenant implemente :
   - structure pedagogique hierarchique
   - echelles de notation multi-format
-  - resultats mixtes distincts des notes numeriques simples
-  - calculs hierarchiques competence -> domaine -> matiere
-  - bulletin dynamique base sur l'arbre pedagogique
+  - resultats multi-notation distincts de `Note`
+  - ciblage des evaluations sur `PedagogicalItem`
+  - configuration avancee d'affichage du bulletin
+- Le plus gros manque aujourd'hui est surtout :
+  - le moteur persistant de calculs hierarchiques `PedagogicalItemAverage`
+  - la persistance relationnelle riche du bulletin hierarchique
+  - les sections/champs dynamiques complets du modele de bulletin
+  - les permissions fines et workflows metier les plus avances
 
-## Matrice cible -> actuel -> ecart -> ticket
+## Matrice cible -> etat reel -> statut -> prochain ticket
 
-| Domaine cible | Etat actuel | Ecart principal | Ticket |
-| --- | --- | --- | --- |
-| Structure pedagogique hierarchique | Pas de `PedagogicalItem`; le systeme repose surtout sur `Matiere`, `Cours`, `Programme` | Impossible de modeliser `SUBJECT/GROUP/DOMAIN/SUBDOMAIN/COMPETENCY/OBJECTIVE` dans un arbre unique | `NBC-001 - Creer PedagogicalItem et son arbre hierarchique` |
-| Structure pedagogique par annee et niveau | `Programme` et `Matiere` aident au cadrage, mais sans arbre pedagogique configurable | Pas de variation propre par `annee_scolaire_id + niveau_scolaire_id + parent_id` | `NBC-002 - Ajouter scoping annee/niveau sur la structure pedagogique` |
-| Ordonnancement et regroupement | Les affichages actuels sont surtout lineaires par matiere | Pas de `display_order`, `is_visible_on_report`, `is_evaluable`, `is_required` sur les elements pedagogiques | `NBC-003 - Ajouter les metadonnees d'affichage et d'evaluation des items` |
-| Systeme de notation multi-echelle | `TypeEvaluationRef` aide sur `poids`, `note max`, visibilite bulletin | Pas de `GradingScale` ni `GradingScaleLevel` | `NBC-004 - Creer GradingScale et GradingScaleLevel` |
-| Notation mixte numerique / lettre / niveau / descriptif | `Note.score` est purement numerique dans `schema.prisma` | Impossible de saisir et conserver proprement `A`, `MS`, `commentaire libre`, `validation` | `NBC-005 - Remplacer le coeur de saisie par AssessmentResult multi-format` |
-| Separation `valeur saisie / valeur affichee / valeur calculee` | Aujourd'hui, `Note.score` sert a tout | Pas de `raw_score`, `display_value`, `normalized_score`, `text_value`, `scale_level_id` | `NBC-006 - Introduire le triplet saisie/affichage/calcul` |
-| Evaluation ciblee sur un element pedagogique | `Evaluation` cible un `cours` et un `type` | Pas de `pedagogical_item_id` ni `grading_scale_id` sur l'evaluation | `NBC-007 - Etendre Assessment pour cibler un item pedagogique et une echelle` |
-| Resultats avec statuts metier riches | `Note` n'a pas encore le modele complet attendu | Pas de support propre `GRADED/JUSTIFIED_ABSENCE/EXEMPTED/NOT_EVALUATED/...` sur le futur resultat | `NBC-008 - Ajouter les statuts complets sur AssessmentResult` |
-| Historique des resultats | Pas de modele type `AssessmentResultHistory` | Pas de trace des modifications apres validation | `NBC-009 - Creer AssessmentResultHistory` |
-| Calculs hierarchiques | Le moteur actuel calcule surtout des moyennes par matiere pour le bulletin | Pas de remontee `competence -> sous-domaine -> domaine -> matiere -> general` | `NBC-010 - Creer PedagogicalItemAverage et moteur de remontee hierarchique` |
-| Ponderation par poids internes | Les poids actuels sont surtout au niveau des evaluations | Pas de `weight` exploitable sur domaine / sous-domaine | `NBC-011 - Gerer la ponderation des items pedagogiques` |
-| Coefficients matiere dans une hierarchie | Le systeme sait maintenant mieux gerer les coefficients matiere pour les bulletins classiques | Pas de moteur qui combine `weight` interne et `coefficient` matiere dans la meme chaine | `NBC-012 - Fusionner calculs internes et coefficients matiere` |
-| Bulletin dynamique par arborescence | `Bulletin` + `BulletinLigne` + snapshot d'affichage couvrent surtout la matiere | Pas de lignes hierarchiques parent/enfant ni d'affichage competence-based | `NBC-013 - Transformer Bulletin en ReportCard hierarchique` |
-| Details d'evaluation figes dans le bulletin | Le snapshot JSON aide, mais sans entite detaillee persistante | Pas de `ReportCardLineDetail` par evaluation dans le modele relationnel | `NBC-014 - Ajouter ReportCardLineDetail` |
-| Modeles de bulletin tres flexibles | `ReportCardTemplate` existe deja avec de bons switches de synthese | Pas de `grading_display_mode`, `show_domains`, `show_competencies`, `show_objectives`, ni sections/champs dynamiques | `NBC-015 - Etendre ReportCardTemplate vers un builder dynamique` |
-| Sections du bulletin | Pas de `ReportCardTemplateSection` | Impossible de construire proprement `ACADEMIC_RESULTS`, `COMPETENCIES`, `ATTENDANCE`, etc. | `NBC-016 - Ajouter ReportCardTemplateSection` |
-| Champs dynamiques du bulletin | Pas de `ReportCardTemplateField` | Impossible de choisir finement les colonnes / blocs a afficher | `NBC-017 - Ajouter ReportCardTemplateField` |
-| Modes d'affichage de notation | Le rendu bulletin sait gerer detaille / resume par type d'evaluation | Pas de `NUMERIC_ONLY`, `LETTER_ONLY`, `LEVEL_ONLY`, `MIXED`, `DESCRIPTIVE_ONLY`, `NUMERIC_AND_LEVEL` | `NBC-018 - Ajouter grading_display_mode au moteur bulletin` |
-| Bulletin base competences | Pas de rendu natif competence/domaine/sous-domaine | Impossible de produire le bulletin exemple du prompt sans contournement | `NBC-019 - Generer un bulletin competence-base` |
-| Ecrans de structure pedagogique | Aucun builder d'arbre pedagogique aujourd'hui | Pas de `PedagogicalStructureBuilderPage`, `TreeBuilder`, `TreeNodeEditor` | `NBC-020 - Construire l'UI de structure pedagogique` |
-| Ecrans d'echelles de notation | Aucun CRUD `GradingScale` aujourd'hui | Pas de `GradingScaleListPage`, `GradingScaleFormPage`, `ScaleLevelTable` | `NBC-021 - Construire l'UI de systemes de notation` |
-| Saisie adaptee au type de notation | Les formulaires de notes sont encore centres sur le score numerique | Pas de `ResultInputRenderer`, `MixedGradeInput`, select lettre/niveau, descriptif | `NBC-022 - Construire l'UI de saisie multi-notation` |
-| Builder de modele de bulletin | Le CRUD de modele existe, avec preview utile | Pas encore de vrai constructeur de sections/champs hierarchiques | `NBC-023 - Construire le builder avance des modeles de bulletin` |
-| Workflow bulletin complet | Le bulletin est mieux separe entre generation et affichage, mais reste encore oriente socle | Pas encore de workflow complet `DRAFT/CALCULATING/INCOMPLETE/READY_FOR_VALIDATION/VALIDATED/PUBLISHED/ARCHIVED` sur une vraie entite `ReportCard` | `NBC-024 - Finaliser le workflow metier complet des bulletins` |
-| API cible du prompt | Routes actuelles : `/evaluation`, `/note`, `/bulletin`, `/report-card-template`, `/type-evaluation-ref`, `/regle-note` | Il manque presque toutes les routes `pedagogical-items`, `grading-scales`, `assessment-results`, `pedagogical-averages`, `report-cards/*` | `NBC-025 - Creer la facade API competences et bulletins dynamiques` |
-| Permissions fines | Bon debut sur mobile enseignant et administration web | Pas encore de gestion metier fine par type de notation, item pedagogique, validation de resultats et publication competence-based | `NBC-026 - Etendre le modele de permissions` |
+| Domaine cible | Etat reel actuel | Statut | Ecart principal | Ticket / prochaine suite |
+| --- | --- | --- | --- | --- |
+| Structure pedagogique hierarchique | `PedagogicalItem` existe avec arbre, types, parent/enfant, ordre, poids, coefficient, visibilite, caractere evaluable | `Fait` | Manque surtout le calcul hierarchique persistant branche sur cet arbre | `NBC-001` cloturable |
+| Structure pedagogique par annee et niveau | Scoping `annee_scolaire_id + niveau_scolaire_id` deja present | `Fait` | Pas encore de duplication / copie avancee entre niveaux | `NBC-002` optimisation |
+| Ordonnancement et regroupement | `display_order`, `is_visible_on_report`, `is_evaluable`, `is_required`, `calculation_mode` existent | `Fait` | UX de reordonnancement encore basique | `NBC-003` cloturable |
+| Systeme de notation multi-echelle | `GradingScale` et `GradingScaleLevel` existent avec CRUD backend | `Fait` | UI dediee encore a enrichir | `NBC-004` cloturable |
+| Notation mixte numerique / lettre / niveau / descriptif | `AssessmentResult` gere points, lettre, niveau, validation, descriptif | `Fait` | Quelques raffinements UX restent possibles | `NBC-005` cloturable |
+| Separation `valeur saisie / valeur affichee / valeur calculee` | `raw_score`, `display_value`, `normalized_score`, `text_value`, `scale_level_id` existent | `Fait` | Aucun ecart majeur de schema | `NBC-006` cloturable |
+| Evaluation ciblee sur un element pedagogique | `Evaluation` porte `pedagogical_item_id`, `grading_scale_id`, `status` | `Fait` | Reste a exploiter plus profondement dans les calculs hierarchiques | `NBC-007` cloturable |
+| Resultats avec statuts metier riches | `AssessmentResultStatus` couvre `GRADED`, absences, `EXEMPTED`, `NOT_SUBMITTED`, `NOT_EVALUATED` | `Fait` | Permissions speciales apres validation a affiner | `NBC-008` cloturable |
+| Historique des resultats | `AssessmentResultHistory` existe et est alimente sur les modifications | `Fait` | UI historique peut encore etre enrichie | `NBC-009` cloturable |
+| Calculs hierarchiques | Pas de `PedagogicalItemAverage` ni moteur complet de remontee persistante | `Absent` | C'est le plus gros manque fonctionnel | `NBC-010` priorite 1 |
+| Ponderation par poids internes | Les `weight` existent sur les items, mais pas de moteur complet de ponderation persistante | `Partiel` | Remontee domaine / sous-domaine encore absente | `NBC-011` apres `NBC-010` |
+| Coefficients matiere dans une hierarchie | Coefficients matiere et poids existent, mais pas la chaine complete combinee | `Partiel` | Fusion `weight` interne + `coefficient` matiere a construire | `NBC-012` apres `NBC-010` |
+| Bulletin dynamique par arborescence | Le snapshot bulletin sait deja afficher hierarchies, details et selections pedagogiques | `Partiel` | Persistance relationnelle riche encore incomplete | `NBC-013` priorite 2 |
+| Details d'evaluation figes dans le bulletin | Le rendu detaille existe surtout dans le snapshot JSON | `Absent` | Pas de vrai `ReportCardLineDetail` comme modele relationnel central | `NBC-014` priorite 3 |
+| Modeles de bulletin tres flexibles | `ReportCardTemplate` gere deja beaucoup de switches, `grading_display_mode` et affichage pedagogique | `Partiel` | Manque le vrai builder structurel complet sections/champs | `NBC-015` en cours implicite |
+| Sections du bulletin | Pas de `ReportCardTemplateSection` dans le schema | `Absent` | Impossible de composer un bulletin en blocs configurables riches | `NBC-016` priorite 4 |
+| Champs dynamiques du bulletin | Pas de `ReportCardTemplateField` dans le schema | `Absent` | Colonnes et blocs encore principalement pilotes par le snapshot/service | `NBC-017` priorite 5 |
+| Modes d'affichage de notation | Plusieurs modes sont deja geres par le moteur bulletin et la preview | `Partiel` | Tous les modes du prompt ne sont pas encore formalises de bout en bout | `NBC-018` consolidation |
+| Bulletin base competences | Le moteur sait afficher domaines/sous-domaines/competences selon le modele | `Partiel` | Le calcul competence-first persistant manque encore | `NBC-019` depend de `NBC-010` |
+| Ecrans de structure pedagogique | Ecran dedie disponible avec creation/edition et arbre | `Partiel` | Drag and drop / reordonnancement avance manquent | `NBC-020` UX |
+| Ecrans d'echelles de notation | Backend et services existent, mais l'UI dediee reste inegale | `Partiel` | Liste/formulaire/edition de niveaux a industrialiser | `NBC-021` UX |
+| Saisie adaptee au type de notation | Web et mobile savent deja saisir les differents types via `AssessmentResult` | `Partiel` | Composants UX plus specialises restent a factoriser | `NBC-022` UX |
+| Builder de modele de bulletin | Formulaire riche, arbre pedagogique, switches, preview temps reel existent | `Partiel` | Pas encore de builder complet de sections/champs | `NBC-023` apres `NBC-016/017` |
+| Workflow bulletin complet | Validation/publication existent en partie, snapshots figes aussi | `Partiel` | Workflow cible complet `ReportCard` encore incomplet | `NBC-024` priorite 6 |
+| API cible du prompt | Routes `pedagogical-item`, `grading-scale`, `assessment-result`, `evaluation`, `report-card-template`, `bulletin` existent deja | `Partiel` | Manquent surtout `pedagogical-averages` et facade `report-cards/*` plus complete | `NBC-025` priorite 7 |
+| Permissions fines | Bon debut cote admin et enseignant | `Partiel` | Role matrix fine et permissions speciales encore incompletes | `NBC-026` priorite 8 |
+
+## Synthese fait / partiel / absent
+
+### Fait
+
+- `NBC-001` a `NBC-009`
+
+### Partiel
+
+- `NBC-011`
+- `NBC-012`
+- `NBC-013`
+- `NBC-015`
+- `NBC-018`
+- `NBC-019`
+- `NBC-020`
+- `NBC-021`
+- `NBC-022`
+- `NBC-023`
+- `NBC-024`
+- `NBC-025`
+- `NBC-026`
+
+### Absent
+
+- `NBC-010`
+- `NBC-014`
+- `NBC-016`
+- `NBC-017`
 
 ## Detail des tickets prioritaire
 
@@ -254,42 +287,37 @@ Ce backlog part de l'etat reel du code dans :
 
 ## MVP recommande
 
-Le MVP le plus rentable pour approcher cette cible sans tout casser d'un coup :
+Le MVP initial defini dans ce document est maintenant largement atteint sur le schema, la saisie multi-notation et l'affichage configurable.
 
-1. `NBC-001 - PedagogicalItem`
-2. `NBC-004 - GradingScale`
-3. `NBC-005 - AssessmentResult`
-4. `NBC-006 - Triplet saisie/affichage/calcul`
-5. `NBC-007 - Assessment cible sur item pedagogique`
-6. `NBC-010 - PedagogicalItemAverage`
-7. `NBC-013 - ReportCard hierarchique minimal`
-8. `NBC-018 - grading_display_mode minimal`
+Le vrai MVP restant pour rendre le systeme complet sur le plan metier est maintenant :
 
-Ce MVP permet deja :
+1. `NBC-010 - PedagogicalItemAverage`
+2. `NBC-011 - ponderation interne`
+3. `NBC-012 - fusion poids internes + coefficients`
+4. `NBC-013 - persistance plus riche du bulletin hierarchique`
+5. `NBC-014 - ReportCardLineDetail`
 
-- une structure `matiere -> domaine -> sous-domaine`
-- une notation `points / lettre / niveau / descriptif`
-- un calcul hierarchique de base
-- un bulletin competence-base simple
+Une fois ces 5 points poses, le systeme couvrira enfin :
+
+- le calcul persistant `competence -> sous-domaine -> domaine -> matiere`
+- la ponderation complete
+- le bulletin hierarchique fige de facon plus robuste
+- une vraie base pour les regenerations et recalculs
 
 ## Version avancee recommandee
 
 La version avancee cible ensuite :
 
-1. `NBC-009 - Historique complet des resultats`
-2. `NBC-011 - Ponderation fine des items pedagogiques`
-3. `NBC-012 - Fusion poids internes + coefficients`
-4. `NBC-014 - ReportCardLineDetail`
-5. `NBC-015 - Template dynamique complet`
-6. `NBC-016 - Sections`
-7. `NBC-017 - Fields`
-8. `NBC-020 - UI structure pedagogique`
-9. `NBC-021 - UI echelles de notation`
-10. `NBC-022 - UI saisie multi-notation`
-11. `NBC-023 - UI builder bulletin`
-12. `NBC-024 - Workflow bulletin complet`
-13. `NBC-025 - API cible complete`
-14. `NBC-026 - Permissions fines`
+1. `NBC-015 - Template dynamique complet`
+2. `NBC-016 - Sections`
+3. `NBC-017 - Fields`
+4. `NBC-023 - UI builder bulletin`
+5. `NBC-024 - Workflow bulletin complet`
+6. `NBC-025 - API cible complete`
+7. `NBC-026 - Permissions fines`
+8. `NBC-020 - UX structure pedagogique`
+9. `NBC-021 - UX echelles de notation`
+10. `NBC-022 - UX saisie multi-notation`
 
 ## Plan d'implementation recommande
 
@@ -373,6 +401,7 @@ La version avancee cible ensuite :
 
 Si on veut passer de l'analyse a l'implementation, la meilleure suite est :
 
-1. schema Prisma complet de `NBC-001` a `NBC-010`
-2. strategie de migration progressive `Note -> AssessmentResult`
-3. MVP backend avant les ecrans
+1. implementer `NBC-010 - PedagogicalItemAverage`
+2. enchainer avec `NBC-011` et `NBC-012`
+3. puis renforcer la persistance bulletin avec `NBC-013` et `NBC-014`
+

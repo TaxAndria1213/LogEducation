@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
-import type { Periode } from "../../../../generated/zod";
+import type { Periode } from "../../../../types/models";
 import AnneeScolaireService from "../../../../services/anneeScolaire.service";
 import PeriodeService from "../../../../services/periode.service";
 import type { AnneeScolaire } from "../../../../types/models";
@@ -39,8 +39,8 @@ export const usePeriodeCreateStore = create<State>((set) => ({
       const [yearsResult, currentYear] = await Promise.all([
         AnneeScolaireService.getAll({
           take: 100,
-          where: { etablissement_id: etablissementId },
-          orderBy: [{ date_debut: "desc" }],
+          where: JSON.stringify({ etablissement_id: etablissementId }),
+          orderBy: JSON.stringify([{ date_debut: "desc" }]),
         }),
         AnneeScolaireService.getCurrent(etablissementId),
       ]);

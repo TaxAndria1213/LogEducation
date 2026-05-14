@@ -53,7 +53,7 @@ function ReportCardTemplateOverview({ mode = "overview" }: Props) {
 
       try {
         const service = new ReportCardTemplateService();
-        const [result, activeYear] = await Promise.all([
+        const [templatesResult, activeYearResult] = await Promise.allSettled([
           service.getForEtablissement(etablissement_id, {
             page: 1,
             take: 100,
@@ -67,12 +67,19 @@ function ReportCardTemplateOverview({ mode = "overview" }: Props) {
         ]);
 
         if (!active) return;
+        const result =
+          templatesResult.status === "fulfilled" ? templatesResult.value : null;
+        const activeYear =
+          activeYearResult.status === "fulfilled" ? activeYearResult.value : null;
         setItems(
           result?.status.success
             ? ((result.data.data as ReportCardTemplateWithRelations[]) ?? [])
             : [],
         );
         setCurrentYear((activeYear as AnneeScolaire | null) ?? null);
+        if (templatesResult.status === "rejected") {
+          setErrorMessage(getErrorMessage(templatesResult.reason));
+        }
       } catch (error) {
         if (!active) return;
         setErrorMessage(getErrorMessage(error));
@@ -149,7 +156,7 @@ function ReportCardTemplateOverview({ mode = "overview" }: Props) {
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-900">Annee courante</h3>
         <p className="mt-2 text-sm text-slate-600">
-          {currentYear?.nom ?? "Aucune annee scolaire courante definie."}
+          {currentYear?.nom ?? "Aucune année scolaire courante n’est définie."}
         </p>
       </section>
 

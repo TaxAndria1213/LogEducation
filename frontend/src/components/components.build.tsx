@@ -1,6 +1,8 @@
 ﻿import React, { useMemo } from "react";
 import { useAuth } from "../auth/AuthContext";
-import type { Utilisateur, UtilisateurRole } from "../types/models";
+import type { 
+  Utilisateur, 
+  UtilisateurRole } from "../types/models";
 import type { componentId } from "../types/types";
 import { profileEtablissementComponents } from "../pages/etablissement/profileEtablissement/components/CI.profileEtablissement";
 import { adminComponents } from "../pages/admin/components/CI.admin";
@@ -210,7 +212,10 @@ export function getComponentById(id: componentId) {
 
     const access = useMemo(() => {
       if (!user || !roles || !id) return false;
-      return verifyAccess(user, roles, id);
+      return verifyAccess( 
+        user,
+        roles,
+         id);
     }, [user, roles]);
 
     const item = componentsById[id];
@@ -232,6 +237,7 @@ function verifyAccess(
   roles: UtilisateurRole[],
   id: componentId,
 ): boolean {
+  console.log(user);
   const isAdmin = roles.some((role) =>
     resolveAssignmentRoleNames(role).some((roleName) => SYSTEM_ADMIN_ROLE_NAMES.has(roleName)),
   );

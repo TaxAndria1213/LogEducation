@@ -132,7 +132,7 @@ export default function CantineForm() {
   const [currentYear, setCurrentYear] = useState<AnneeScolaire | null>(null);
   const [loading, setLoading] = useState(false);
   const [submittingAction, setSubmittingAction] = useState<CantineAction | null>(null);
-  const formuleForm = useForm<z.infer<typeof formuleSchema>>({
+  const formuleForm = useForm<z.input<typeof formuleSchema>, undefined, z.output<typeof formuleSchema>>({
     resolver: zodResolver(formuleSchema),
     defaultValues: {
       nom: "",
@@ -144,7 +144,7 @@ export default function CantineForm() {
       mode_regularisation_absence: "AVOIR",
     },
   });
-  const abonnementForm = useForm<z.infer<typeof abonnementSchema>>({
+  const abonnementForm = useForm<z.input<typeof abonnementSchema>, undefined, z.output<typeof abonnementSchema>>({
     resolver: zodResolver(abonnementSchema),
     defaultValues: {
       eleve_id: "",
@@ -359,25 +359,32 @@ export default function CantineForm() {
           <Controller
             control={formuleForm.control}
             name="max_repas_par_jour"
-            render={({ field, fieldState }) => (
-              <FieldWrapper
-                id="cantine_formule_max_repas_par_jour"
-                label="Plafond journalier"
-                required
-                error={fieldState.error?.message}
-                hint="Nombre maximal de repas que cette formule autorise sur une meme journee."
-              >
-                <input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={field.value ?? 1}
-                  onChange={(event) => field.onChange(event.target.value)}
-                  disabled={loading || submittingAction === "formule"}
-                  className={getInputClassName(Boolean(fieldState.error))}
-                />
-              </FieldWrapper>
-            )}
+            render={({ field, fieldState }) => {
+              const numericValue =
+                typeof field.value === "number"
+                  ? field.value
+                  : Number(field.value ?? 1);
+
+              return (
+                <FieldWrapper
+                  id="cantine_formule_max_repas_par_jour"
+                  label="Plafond journalier"
+                  required
+                  error={fieldState.error?.message}
+                  hint="Nombre maximal de repas que cette formule autorise sur une meme journee."
+                >
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={Number.isFinite(numericValue) ? numericValue : 1}
+                    onChange={(event) => field.onChange(event.target.value)}
+                    disabled={loading || submittingAction === "formule"}
+                    className={getInputClassName(Boolean(fieldState.error))}
+                  />
+                </FieldWrapper>
+              );
+            }}
           />
 
           <Controller

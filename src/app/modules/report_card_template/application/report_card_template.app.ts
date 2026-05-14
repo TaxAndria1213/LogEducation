@@ -20,6 +20,12 @@ type PedagogicalDisplayModeValue =
   | "COMPETENCIES_ONLY"
   | "CUSTOM";
 
+type ReportAverageCalculationModeValue =
+  | "SIMPLE"
+  | "HIERARCHICAL"
+  | "WEIGHTED"
+  | "COEFFICIENT_BASED";
+
 type ReportCardTemplatePayload = {
   etablissement_id: string;
   annee_scolaire_id: string;
@@ -28,6 +34,14 @@ type ReportCardTemplatePayload = {
   description: string | null;
   template_type: ReportCardTemplateType;
   pedagogical_display_mode: PedagogicalDisplayModeValue;
+  calculation_mode: ReportAverageCalculationModeValue;
+  include_code_grades_in_general_average: boolean;
+  rounding_precision: number;
+  base_score: number | null;
+  exclude_non_evaluated_items: boolean;
+  minimum_required_results: number;
+  use_weights: boolean;
+  use_coefficients: boolean;
   show_assessment_details: boolean;
   show_assessment_type_summary: boolean;
   show_only_final_exam: boolean;
@@ -47,12 +61,18 @@ type ReportCardTemplatePayload = {
   show_domain_summary: boolean;
   show_subdomain_summary: boolean;
   show_competency_results: boolean;
+  show_student_average: boolean;
   show_subject_average: boolean;
+  show_class_average: boolean;
   show_subject_coefficient: boolean;
   show_subject_points: boolean;
   show_subject_rank: boolean;
   show_teacher_appreciation: boolean;
+  show_general_student_average: boolean;
   show_general_average: boolean;
+  show_general_class_average: boolean;
+  show_code_legend: boolean;
+  show_section_headers: boolean;
   show_total_coefficients: boolean;
   show_total_points: boolean;
   show_general_rank: boolean;
@@ -68,6 +88,7 @@ type ReportCardTemplatePayload = {
 };
 
 type ReportCardTemplatePedagogicalItemPayload = {
+  section_id?: string | null;
   pedagogical_item_id: string;
   is_visible: boolean;
   custom_label: string | null;
@@ -75,6 +96,19 @@ type ReportCardTemplatePedagogicalItemPayload = {
   show_result: boolean;
   show_appreciation: boolean;
   show_children: boolean;
+  grading_scale_id_override?: string | null;
+  include_in_general_average_override?: boolean | null;
+};
+
+type ReportCardTemplateSectionPayload = {
+  id: string;
+  parent_section_id?: string | null;
+  title: string;
+  section_type?: string | null;
+  grading_mode?: string | null;
+  display_order: number;
+  show_header: boolean;
+  is_active: boolean;
 };
 
 const TEMPLATE_TYPES: ReportCardTemplateType[] = [
@@ -91,6 +125,13 @@ const PEDAGOGICAL_DISPLAY_MODES: PedagogicalDisplayModeValue[] = [
   "FULL_HIERARCHY",
   "COMPETENCIES_ONLY",
   "CUSTOM",
+];
+
+const REPORT_AVERAGE_CALCULATION_MODES: ReportAverageCalculationModeValue[] = [
+  "SIMPLE",
+  "HIERARCHICAL",
+  "WEIGHTED",
+  "COEFFICIENT_BASED",
 ];
 
 class ReportCardTemplateApp {
@@ -167,6 +208,17 @@ class ReportCardTemplateApp {
     return parsed;
   }
 
+  private normalizePositiveNumber(value: unknown, fallback: number | null) {
+    const parsed =
+      typeof value === "number"
+        ? value
+        : typeof value === "string" && value.trim()
+          ? Number(value)
+          : Number.NaN;
+
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  }
+
   private harmonizeTemplateType(
     payload: Omit<
       ReportCardTemplatePayload,
@@ -176,63 +228,7 @@ class ReportCardTemplateApp {
     ReportCardTemplatePayload,
     "etablissement_id" | "annee_scolaire_id" | "niveau_scolaire_id" | "nom" | "description"
   > {
-    if (payload.template_type === "CUSTOM") {
-      return payload;
-    }
-
-    if (payload.template_type === "STANDARD") {
-      return {
-        ...payload,
-        pedagogical_display_mode: "SUBJECTS_ONLY",
-        show_assessment_details: false,
-        show_assessment_type_summary: false,
-        show_only_final_exam: false,
-        show_subjects: true,
-        show_groups: false,
-        show_domains: false,
-        show_subdomains: false,
-        show_competencies: false,
-        show_objectives: false,
-      };
-    }
-
-    if (payload.template_type === "DETAILED") {
-      return {
-        ...payload,
-        pedagogical_display_mode:
-          payload.pedagogical_display_mode === "SUBJECTS_ONLY"
-            ? "SUBJECTS_AND_DOMAINS"
-            : payload.pedagogical_display_mode,
-        show_assessment_details: true,
-        show_assessment_type_summary: false,
-        show_only_final_exam: false,
-      };
-    }
-
-    if (payload.template_type === "ASSESSMENT_TYPE_SUMMARY") {
-      return {
-        ...payload,
-        pedagogical_display_mode:
-          payload.pedagogical_display_mode === "SUBJECTS_ONLY"
-            ? "SUBJECTS_AND_DOMAINS"
-            : payload.pedagogical_display_mode,
-        show_assessment_details: false,
-        show_assessment_type_summary: true,
-        show_only_final_exam: false,
-      };
-    }
-
-    return {
-      ...payload,
-      pedagogical_display_mode:
-        payload.template_type === "FINAL_EXAM_ONLY" &&
-        payload.pedagogical_display_mode === "SUBJECTS_ONLY"
-          ? "SUBJECTS_AND_DOMAINS"
-          : payload.pedagogical_display_mode,
-      show_assessment_details: true,
-      show_assessment_type_summary: false,
-      show_only_final_exam: true,
-    };
+    return payload;
   }
 
   private normalizePedagogicalItems(
@@ -257,6 +253,10 @@ class ReportCardTemplateApp {
         }
 
         return {
+          section_id:
+            typeof source.section_id === "string" && source.section_id.trim()
+              ? source.section_id.trim()
+              : null,
           pedagogical_item_id,
           is_visible: this.normalizeBoolean(source.is_visible, true),
           custom_label:
@@ -267,15 +267,75 @@ class ReportCardTemplateApp {
           show_result: this.normalizeBoolean(source.show_result, true),
           show_appreciation: this.normalizeBoolean(source.show_appreciation, false),
           show_children: this.normalizeBoolean(source.show_children, true),
+          grading_scale_id_override:
+            typeof source.grading_scale_id_override === "string" &&
+            source.grading_scale_id_override.trim()
+              ? source.grading_scale_id_override.trim()
+              : null,
+          include_in_general_average_override:
+            typeof source.include_in_general_average_override === "boolean"
+              ? source.include_in_general_average_override
+              : null,
         } satisfies ReportCardTemplatePedagogicalItemPayload;
       })
-      .filter(
-        (item): item is ReportCardTemplatePedagogicalItemPayload => Boolean(item),
-      );
+      .filter(Boolean) as ReportCardTemplatePedagogicalItemPayload[];
 
     const uniqueById = new Map<string, ReportCardTemplatePedagogicalItemPayload>();
     items.forEach((item) => {
       uniqueById.set(item.pedagogical_item_id, item);
+    });
+
+    return [...uniqueById.values()].sort(
+      (left, right) => left.display_order - right.display_order,
+    );
+  }
+
+  private normalizeTemplateSections(raw: unknown): ReportCardTemplateSectionPayload[] {
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+
+    const sections = raw
+      .map((item) => {
+        if (typeof item !== "object" || item === null) return null;
+        const source = item as Record<string, unknown>;
+        const id =
+          typeof source.id === "string" && source.id.trim() ? source.id.trim() : "";
+        const title =
+          typeof source.title === "string" && source.title.trim()
+            ? source.title.trim()
+            : "";
+
+        if (!id || !title) {
+          return null;
+        }
+
+        return {
+          id,
+          parent_section_id:
+            typeof source.parent_section_id === "string" &&
+            source.parent_section_id.trim()
+              ? source.parent_section_id.trim()
+              : null,
+          title,
+          section_type:
+            typeof source.section_type === "string" && source.section_type.trim()
+              ? source.section_type.trim()
+              : null,
+          grading_mode:
+            typeof source.grading_mode === "string" && source.grading_mode.trim()
+              ? source.grading_mode.trim()
+              : null,
+          display_order: this.normalizeDisplayOrder(source.display_order, 0),
+          show_header: this.normalizeBoolean(source.show_header, true),
+          is_active: this.normalizeBoolean(source.is_active, true),
+        } satisfies ReportCardTemplateSectionPayload;
+      })
+      .filter(Boolean) as ReportCardTemplateSectionPayload[];
+
+    const uniqueById = new Map<string, ReportCardTemplateSectionPayload>();
+    sections.forEach((section) => {
+      uniqueById.set(section.id, section);
     });
 
     return [...uniqueById.values()].sort(
@@ -319,6 +379,16 @@ class ReportCardTemplateApp {
       throw new Error("Le mode d'affichage pedagogique du bulletin est invalide.");
     }
 
+    const rawCalculationMode =
+      typeof raw.calculation_mode === "string"
+        ? raw.calculation_mode.trim().toUpperCase()
+        : "HIERARCHICAL";
+    const calculationMode = REPORT_AVERAGE_CALCULATION_MODES.includes(
+      rawCalculationMode as ReportAverageCalculationModeValue,
+    )
+      ? (rawCalculationMode as ReportAverageCalculationModeValue)
+      : "HIERARCHICAL";
+
     const requestedYearId =
       typeof raw.annee_scolaire_id === "string" && raw.annee_scolaire_id.trim()
         ? raw.annee_scolaire_id.trim()
@@ -342,6 +412,32 @@ class ReportCardTemplateApp {
       template_type: rawTemplateType as ReportCardTemplateType,
       pedagogical_display_mode:
         rawPedagogicalDisplayMode as PedagogicalDisplayModeValue,
+      calculation_mode: calculationMode,
+      include_code_grades_in_general_average: this.normalizeBoolean(
+        raw.include_code_grades_in_general_average,
+        false,
+      ),
+      rounding_precision: Math.max(
+        0,
+        this.normalizeDisplayOrder(raw.rounding_precision, 2),
+      ),
+      base_score: this.normalizePositiveNumber(raw.base_score, null),
+      exclude_non_evaluated_items: this.normalizeBoolean(
+        raw.exclude_non_evaluated_items,
+        true,
+      ),
+      minimum_required_results: Math.max(
+        1,
+        this.normalizeDisplayOrder(raw.minimum_required_results, 1),
+      ),
+      use_weights: this.normalizeBoolean(
+        raw.use_weights,
+        calculationMode === "WEIGHTED" || calculationMode === "HIERARCHICAL",
+      ),
+      use_coefficients: this.normalizeBoolean(
+        raw.use_coefficients,
+        calculationMode === "COEFFICIENT_BASED",
+      ),
       show_assessment_details: this.normalizeBoolean(raw.show_assessment_details, false),
       show_assessment_type_summary: this.normalizeBoolean(
         raw.show_assessment_type_summary,
@@ -385,7 +481,15 @@ class ReportCardTemplateApp {
         raw.show_competency_results,
         true,
       ),
-      show_subject_average: this.normalizeBoolean(raw.show_subject_average, true),
+      show_student_average: this.normalizeBoolean(
+        raw.show_student_average ?? raw.show_subject_average,
+        true,
+      ),
+      show_subject_average: this.normalizeBoolean(
+        raw.show_subject_average ?? raw.show_student_average,
+        true,
+      ),
+      show_class_average: this.normalizeBoolean(raw.show_class_average, true),
       show_subject_coefficient: this.normalizeBoolean(raw.show_subject_coefficient, true),
       show_subject_points: this.normalizeBoolean(raw.show_subject_points, false),
       show_subject_rank: this.normalizeBoolean(raw.show_subject_rank, true),
@@ -393,7 +497,20 @@ class ReportCardTemplateApp {
         raw.show_teacher_appreciation,
         true,
       ),
-      show_general_average: this.normalizeBoolean(raw.show_general_average, true),
+      show_general_student_average: this.normalizeBoolean(
+        raw.show_general_student_average ?? raw.show_general_average,
+        true,
+      ),
+      show_general_average: this.normalizeBoolean(
+        raw.show_general_average ?? raw.show_general_student_average,
+        true,
+      ),
+      show_general_class_average: this.normalizeBoolean(
+        raw.show_general_class_average,
+        false,
+      ),
+      show_code_legend: this.normalizeBoolean(raw.show_code_legend, false),
+      show_section_headers: this.normalizeBoolean(raw.show_section_headers, true),
       show_total_coefficients: this.normalizeBoolean(raw.show_total_coefficients, true),
       show_total_points: this.normalizeBoolean(raw.show_total_points, false),
       show_general_rank: this.normalizeBoolean(raw.show_general_rank, true),
@@ -481,6 +598,40 @@ class ReportCardTemplateApp {
     return rows;
   }
 
+  private validateTemplateSections(
+    sections: ReportCardTemplateSectionPayload[],
+    items: ReportCardTemplatePedagogicalItemPayload[],
+  ) {
+    if (sections.length === 0) {
+      const itemWithSection = items.find((item) => item.section_id);
+      if (itemWithSection) {
+        throw new Error(
+          "Les sections du modele sont manquantes alors que certains elements pedagogiques y sont rattaches.",
+        );
+      }
+      return;
+    }
+
+    const sectionIds = new Set(sections.map((section) => section.id));
+
+    sections.forEach((section) => {
+      if (section.parent_section_id && !sectionIds.has(section.parent_section_id)) {
+        throw new Error(
+          `La section parente ${section.parent_section_id} est introuvable dans ce modele.`,
+        );
+      }
+    });
+
+    const invalidItem = items.find(
+      (item) => item.section_id && !sectionIds.has(item.section_id),
+    );
+    if (invalidItem?.section_id) {
+      throw new Error(
+        `La section ${invalidItem.section_id} referencee par un element pedagogique est introuvable.`,
+      );
+    }
+  }
+
   private async ensureUniqueTemplate(
     data: ReportCardTemplatePayload,
     excludeId?: string,
@@ -542,6 +693,9 @@ class ReportCardTemplateApp {
     return {
       annee: true,
       niveau: true,
+      sections: {
+        orderBy: [{ display_order: "asc" as const }, { created_at: "asc" as const }],
+      },
       pedagogicalItems: {
         include: {
           pedagogicalItem: {
@@ -599,6 +753,7 @@ class ReportCardTemplateApp {
     activeYearId: string;
     templateOverride?: ReportCardTemplate | null;
     templatePedagogicalItems?: ReportCardTemplatePedagogicalItemPayload[];
+    templateSections?: ReportCardTemplateSectionPayload[];
   }) {
     const bulletin = await this.getScopedBulletinForPreview(
       args.bulletinId,
@@ -619,6 +774,7 @@ class ReportCardTemplateApp {
       storedLines: bulletin.lignes,
       templateOverride: args.templateOverride,
       templatePedagogicalItems: args.templatePedagogicalItems ?? [],
+      templateSections: args.templateSections ?? [],
       generalRank:
         typeof bulletin.general_rank === "number" ? bulletin.general_rank : null,
       mention:
@@ -632,22 +788,17 @@ class ReportCardTemplateApp {
     });
   }
 
-  private async syncTemplatePedagogicalItems(
+  private async createTemplatePedagogicalItems(
     tx: PrismaClient | Prisma.TransactionClient,
     templateId: string,
     items: ReportCardTemplatePedagogicalItemPayload[],
   ) {
-    await (tx as any).reportCardTemplatePedagogicalItem.deleteMany({
-      where: {
-        template_id: templateId,
-      },
-    });
-
     if (items.length === 0) return;
 
     await (tx as any).reportCardTemplatePedagogicalItem.createMany({
       data: items.map((item) => ({
         template_id: templateId,
+        section_id: item.section_id ?? null,
         pedagogical_item_id: item.pedagogical_item_id,
         is_visible: item.is_visible,
         custom_label: item.custom_label,
@@ -655,6 +806,37 @@ class ReportCardTemplateApp {
         show_result: item.show_result,
         show_appreciation: item.show_appreciation,
         show_children: item.show_children,
+        grading_scale_id_override: item.grading_scale_id_override ?? null,
+        include_in_general_average_override:
+          item.include_in_general_average_override ?? null,
+      })),
+    });
+  }
+
+  private async syncTemplateSections(
+    tx: PrismaClient | Prisma.TransactionClient,
+    templateId: string,
+    sections: ReportCardTemplateSectionPayload[],
+  ) {
+    await (tx as any).reportCardTemplateSection.deleteMany({
+      where: {
+        template_id: templateId,
+      },
+    });
+
+    if (sections.length === 0) return;
+
+    await (tx as any).reportCardTemplateSection.createMany({
+      data: sections.map((section) => ({
+        id: section.id,
+        template_id: templateId,
+        parent_section_id: section.parent_section_id ?? null,
+        title: section.title,
+        section_type: section.section_type ?? null,
+        grading_mode: section.grading_mode ?? null,
+        display_order: section.display_order,
+        show_header: section.show_header,
+        is_active: section.is_active,
       })),
     });
   }
@@ -667,6 +849,9 @@ class ReportCardTemplateApp {
       const pedagogicalItems = this.normalizePedagogicalItems(
         (req.body as { pedagogical_items?: unknown }).pedagogical_items,
       );
+      const templateSections = this.normalizeTemplateSections(
+        (req.body as { template_sections?: unknown }).template_sections,
+      );
 
       await this.validateNiveau(data.niveau_scolaire_id, tenantId);
       await this.validatePedagogicalItems(
@@ -675,11 +860,13 @@ class ReportCardTemplateApp {
         activeYear.id,
         data.niveau_scolaire_id,
       );
+      this.validateTemplateSections(templateSections, pedagogicalItems);
       await this.ensureUniqueTemplate(data);
 
       const result = await this.prisma.$transaction(async (tx) => {
         const created = await tx.reportCardTemplate.create({ data });
-        await this.syncTemplatePedagogicalItems(tx, created.id, pedagogicalItems);
+        await this.syncTemplateSections(tx, created.id, templateSections);
+        await this.createTemplatePedagogicalItems(tx, created.id, pedagogicalItems);
 
         if (data.is_default) {
           await tx.reportCardTemplate.updateMany({
@@ -838,6 +1025,9 @@ class ReportCardTemplateApp {
       const pedagogicalItems = this.normalizePedagogicalItems(
         (req.body as { pedagogical_items?: unknown }).pedagogical_items,
       );
+      const templateSections = this.normalizeTemplateSections(
+        (req.body as { template_sections?: unknown }).template_sections,
+      );
       await this.validateNiveau(data.niveau_scolaire_id, tenantId);
       await this.validatePedagogicalItems(
         pedagogicalItems,
@@ -845,6 +1035,7 @@ class ReportCardTemplateApp {
         activeYear.id,
         data.niveau_scolaire_id,
       );
+      this.validateTemplateSections(templateSections, pedagogicalItems);
       await this.ensureUniqueTemplate(data, id);
 
       const result = await this.prisma.$transaction(async (tx) => {
@@ -852,7 +1043,13 @@ class ReportCardTemplateApp {
           where: { id },
           data,
         });
-        await this.syncTemplatePedagogicalItems(tx, id, pedagogicalItems);
+        await (tx as any).reportCardTemplatePedagogicalItem.deleteMany({
+          where: {
+            template_id: id,
+          },
+        });
+        await this.syncTemplateSections(tx, id, templateSections);
+        await this.createTemplatePedagogicalItems(tx, id, pedagogicalItems);
 
         if (data.is_default) {
           await tx.reportCardTemplate.updateMany({
@@ -951,6 +1148,9 @@ class ReportCardTemplateApp {
           annee_scolaire_id: activeYear.id,
         },
         include: {
+          sections: {
+            orderBy: [{ display_order: "asc" }, { created_at: "asc" }],
+          },
           pedagogicalItems: {
             orderBy: [{ display_order: "asc" }, { created_at: "asc" }],
           },
@@ -967,6 +1167,7 @@ class ReportCardTemplateApp {
         activeYearId: activeYear.id,
         templatePedagogicalItems:
         ((template as any).pedagogicalItems as Array<Record<string, any>> | undefined)?.map((item) => ({
+            section_id: item.section_id ?? null,
             pedagogical_item_id: item.pedagogical_item_id,
             is_visible: item.is_visible,
             custom_label: item.custom_label,
@@ -974,6 +1175,26 @@ class ReportCardTemplateApp {
             show_result: item.show_result,
             show_appreciation: item.show_appreciation,
             show_children: item.show_children,
+            grading_scale_id_override: item.grading_scale_id_override ?? null,
+            include_in_general_average_override:
+              item.include_in_general_average_override ?? null,
+          })) ?? [],
+        templateSections:
+          ((template as any).sections as Array<Record<string, any>> | undefined)?.map((section) => ({
+            id: String(section.id ?? ""),
+            parent_section_id:
+              typeof section.parent_section_id === "string"
+                ? section.parent_section_id
+                : null,
+            title: String(section.title ?? ""),
+            section_type:
+              typeof section.section_type === "string" ? section.section_type : null,
+            grading_mode:
+              typeof section.grading_mode === "string" ? section.grading_mode : null,
+            display_order:
+              typeof section.display_order === "number" ? section.display_order : 0,
+            show_header: section.show_header !== false,
+            is_active: section.is_active !== false,
           })) ?? [],
         templateOverride: template,
       });
@@ -1003,6 +1224,9 @@ class ReportCardTemplateApp {
       const pedagogicalItems = this.normalizePedagogicalItems(
         (req.body as { pedagogical_items?: unknown }).pedagogical_items,
       );
+      const templateSections = this.normalizeTemplateSections(
+        (req.body as { template_sections?: unknown }).template_sections,
+      );
       await this.validateNiveau(templatePayload.niveau_scolaire_id, tenantId);
       await this.validatePedagogicalItems(
         pedagogicalItems,
@@ -1010,14 +1234,19 @@ class ReportCardTemplateApp {
         activeYear.id,
         templatePayload.niveau_scolaire_id,
       );
+      this.validateTemplateSections(templateSections, pedagogicalItems);
 
       const result = await this.buildPreviewSnapshot({
         bulletinId,
         tenantId,
         activeYearId: activeYear.id,
         templatePedagogicalItems: pedagogicalItems,
+        templateSections,
         templateOverride: {
-          id: "preview-inline",
+          id:
+            typeof req.body?.id === "string" && req.body.id.trim()
+              ? req.body.id.trim()
+              : "preview-inline",
           created_at: new Date(),
           updated_at: new Date(),
           ...templatePayload,

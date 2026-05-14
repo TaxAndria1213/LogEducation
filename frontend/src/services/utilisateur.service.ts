@@ -1,6 +1,6 @@
-import { Http } from "../app/api/Http";
+﻿import { Http } from "../app/api/Http";
 import Service from "../app/api/Service";
-import type { Profil, Utilisateur } from "../generated/zod";
+import type { Profil, Utilisateur } from "../types/models";
 import type { WizardDataUserPersonnel } from "../types/types";
 
 export type CreateAccountFromLinkPayload = {

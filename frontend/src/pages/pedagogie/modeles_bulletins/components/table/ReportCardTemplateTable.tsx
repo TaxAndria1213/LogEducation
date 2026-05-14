@@ -40,7 +40,7 @@ export default function ReportCardTemplateTable() {
           <p className="font-medium text-slate-900">{getReportCardTemplateDisplayLabel(row)}</p>
           <p className="text-xs text-slate-500">
             {getReportCardTemplateTypeLabel(row.template_type)}
-            {row.niveau?.nom ? ` • ${row.niveau.nom}` : " • Toute l'annee"}
+            {row.niveau?.nom ? ` • ${row.niveau.nom}` : " • Tous les niveaux"}
           </p>
         </div>
       ),
@@ -102,8 +102,16 @@ export default function ReportCardTemplateTable() {
       label: "Modifier",
       variant: "secondary",
       onClick: async (row) => {
-        setEditingItem(row);
-        setRenderedComponent("add");
+        try {
+          const response = await service.get(row.id);
+          const detail =
+            ((response as { data?: unknown })?.data as ReportCardTemplateWithRelations | undefined) ??
+            row;
+          setEditingItem(detail);
+          setRenderedComponent("add");
+        } catch (error) {
+          info(error, "error");
+        }
       },
     },
     {

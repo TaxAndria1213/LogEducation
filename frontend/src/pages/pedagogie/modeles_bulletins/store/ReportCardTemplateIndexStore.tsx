@@ -4,7 +4,7 @@ import NotFound from "../../../NotFound";
 import ReportCardTemplateTable from "../components/table/ReportCardTemplateTable";
 import ReportCardTemplateForm from "../components/form/ReportCardTemplateForm";
 import ReportCardTemplateOverview from "../components/dashboard/ReportCardTemplateOverview";
-import type { ReportCardTemplate } from "../../../../types/models";
+import type { ReportCardTemplateWithRelations } from "../../../../services/reportCardTemplate.service";
 
 type MenuItemToComponent = {
   id: string;
@@ -27,11 +27,11 @@ type State = {
   menuListIsVisible: boolean;
   renderedComponent: JSX.Element;
   renderState: number;
-  editingItem: ReportCardTemplate | null;
+  editingItem: ReportCardTemplateWithRelations | null;
   setRenderState: (value: number) => void;
   setMenuListIsVisible: (value: boolean) => void;
   setRenderedComponent: (value: string) => void;
-  setEditingItem: (value: ReportCardTemplate | null) => void;
+  setEditingItem: (value: ReportCardTemplateWithRelations | null) => void;
   clearEditingItem: () => void;
 };
 

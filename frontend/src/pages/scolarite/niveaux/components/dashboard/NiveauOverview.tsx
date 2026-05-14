@@ -3,7 +3,6 @@ import {
   FiBookOpen,
   FiLayers,
   FiList,
-  FiSettings,
   FiTrendingUp,
 } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";

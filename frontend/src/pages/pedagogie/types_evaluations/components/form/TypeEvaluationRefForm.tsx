@@ -57,6 +57,8 @@ const schema = z.object({
   is_active: z.boolean(),
 });
 
+type TypeEvaluationRefFormData = z.output<typeof schema>;
+
 function getErrorMessage(error: unknown) {
   if (
     typeof error === "object" &&
@@ -74,6 +76,14 @@ function getErrorMessage(error: unknown) {
   }
 
   return "Le type d'evaluation n'a pas pu etre enregistre.";
+}
+
+function normalizeNumberInputValue(value: unknown, fallback: string | number = "") {
+  if (value === null || value === undefined || value === "") return fallback;
+  if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
+  if (typeof value === "string") return value;
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
 }
 
 function TypeEvaluationRefForm() {
@@ -98,7 +108,7 @@ function TypeEvaluationRefForm() {
     [editingItem],
   );
 
-  const form = useForm<TypeEvaluationRefFormValues>({
+  const form = useForm<z.input<typeof schema>, undefined, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues,
     mode: "onSubmit",
@@ -110,7 +120,7 @@ function TypeEvaluationRefForm() {
 
   const { control, handleSubmit, formState, reset } = form;
 
-  const onSubmit = async (data: TypeEvaluationRefFormValues) => {
+  const onSubmit = async (data: TypeEvaluationRefFormData) => {
     if (!etablissement_id) {
       info("Aucun etablissement actif n'est defini.", "error");
       return;
@@ -250,7 +260,7 @@ function TypeEvaluationRefForm() {
                   <input
                     id="nom"
                     type="text"
-                    value={field.value ?? ""}
+                    value={normalizeNumberInputValue(field.value)}
                     onChange={(event) => field.onChange(event.target.value)}
                     onBlur={field.onBlur}
                     ref={field.ref}
@@ -275,7 +285,7 @@ function TypeEvaluationRefForm() {
                     type="number"
                     min={0.1}
                     step="0.1"
-                    value={field.value ?? ""}
+                    value={normalizeNumberInputValue(field.value)}
                     onChange={(event) => field.onChange(event.target.value)}
                     onBlur={field.onBlur}
                     ref={field.ref}
@@ -300,7 +310,7 @@ function TypeEvaluationRefForm() {
                     type="number"
                     min={0.1}
                     step="0.5"
-                    value={field.value ?? ""}
+                    value={normalizeNumberInputValue(field.value)}
                     onChange={(event) => field.onChange(event.target.value)}
                     onBlur={field.onBlur}
                     ref={field.ref}

@@ -91,6 +91,8 @@ const factureSchema = z.object({
   lignes: z.array(lineSchema).min(1, "Ajoute au moins une ligne de facture."),
 });
 
+type FactureFormData = z.output<typeof factureSchema>;
+
 type Props = {
   mode?: "create" | "edit";
 };
@@ -106,6 +108,14 @@ function normalizeEditableStatus(status?: string | null): FactureFormValues["sta
   const normalized = (status ?? "").toUpperCase();
   if (normalized === "BROUILLON") return "BROUILLON";
   return "EMISE";
+}
+
+function normalizeNumberInputValue(value: unknown, fallback: string | number = "") {
+  if (value === null || value === undefined || value === "") return fallback;
+  if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
+  if (typeof value === "string") return value;
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
 }
 
 export default function FactureForm({ mode = "create" }: Props) {
@@ -160,7 +170,7 @@ export default function FactureForm({ mode = "create" }: Props) {
     [etablissement_id, initialData, mode, selectedFacture],
   );
 
-  const form = useForm<FactureFormValues>({
+  const form = useForm<z.input<typeof factureSchema>, undefined, z.output<typeof factureSchema>>({
     resolver: zodResolver(factureSchema),
     defaultValues,
     mode: "onSubmit",
@@ -216,7 +226,7 @@ export default function FactureForm({ mode = "create" }: Props) {
     [lines],
   );
 
-  const onSubmit = async (data: FactureFormValues) => {
+  const onSubmit = async (data: FactureFormData) => {
     try {
       const payload = {
         ...data,
@@ -667,7 +677,7 @@ export default function FactureForm({ mode = "create" }: Props) {
                                 type="number"
                                 min={1}
                                 step={1}
-                                value={field.value ?? 1}
+                                value={normalizeNumberInputValue(field.value, 1)}
                                 onChange={(event) => {
                                   const quantity = Number(event.target.value || 1);
                                   field.onChange(quantity);
@@ -698,7 +708,7 @@ export default function FactureForm({ mode = "create" }: Props) {
                                 id={`lignes.${index}.prix_unitaire`}
                                 type="number"
                                 step="0.01"
-                                value={field.value ?? 0}
+                                value={normalizeNumberInputValue(field.value, 0)}
                                 onChange={(event) => {
                                   const unitPrice = Number(event.target.value || 0);
                                   field.onChange(unitPrice);
@@ -730,7 +740,7 @@ export default function FactureForm({ mode = "create" }: Props) {
                                 id={`lignes.${index}.montant`}
                                 type="number"
                                 step="0.01"
-                                value={field.value ?? 0}
+                                value={normalizeNumberInputValue(field.value, 0)}
                                 onChange={(event) => field.onChange(Number(event.target.value || 0))}
                                 onBlur={field.onBlur}
                                 ref={field.ref}

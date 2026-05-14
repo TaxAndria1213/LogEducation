@@ -115,38 +115,38 @@ export default function PaiementsIndex() {
       id: "dashboard",
       label: "Vue d'ensemble",
       onClick: () => {
-        setRenderState("dashboard");
+        setRenderState(0);
         setRenderedComponent("dashboard");
       },
-      active: renderState === "dashboard",
+      active: renderState === 0,
     },
     {
       id: "list",
       label: "Historique",
       onClick: () => {
         setSelectedPaiement(null);
-        setRenderState("list");
+        setRenderState(1);
         setRenderedComponent("list");
       },
-      active: renderState === "list",
+      active: renderState === 1,
     },
     {
       id: "parametre",
       label: "Parametres",
       onClick: () => {
-        setRenderState("parametre");
+        setRenderState(2);
         setRenderedComponent("parametre");
       },
-      active: renderState === "parametre",
+      active: renderState === 2,
     },
     {
       id: "add",
       label: "Nouvel encaissement",
       onClick: () => {
-        setRenderState("add");
+        setRenderState(3);
         setRenderedComponent("add");
       },
-      active: renderState === "add",
+      active: renderState === 3,
       tone: "primary" as const,
     },
   ];

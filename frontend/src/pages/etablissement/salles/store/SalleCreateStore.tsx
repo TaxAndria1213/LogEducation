@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
-import type { Salle } from "../../../../generated/zod";
+import type { Salle } from "../../../../types/models";
 import salleService from "../../../../services/salle.service";
 import SiteService from "../../../../services/site.service";
 import type { Site } from "../../../../types/models";
@@ -34,9 +34,9 @@ export const useSalleCreateStore = create<State>((set) => ({
       const siteService = new SiteService();
       const params = etablissementId
         ? {
-            where: { etablissement_id: etablissementId },
+            where: JSON.stringify({ etablissement_id: etablissementId }),
           }
-        : {};
+        : undefined;
 
       const result = await siteService.getAll(params);
 

@@ -212,7 +212,7 @@ export default function RolePermissionManager() {
                 ),
               }
             : role,
-        ),
+        ) as Role[],
       );
     } catch (error) {
       console.log("RolePermissionManager save error:", error);

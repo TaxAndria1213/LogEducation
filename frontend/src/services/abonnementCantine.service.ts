@@ -47,6 +47,7 @@ export type AbonnementCantineWithRelations = AbonnementCantine & {
   access_reason?: string | null;
   validity_start?: string | Date | null;
   validity_end?: string | Date | null;
+  derniere_reactivation_financiere?: string | Date | null;
 };
 
 export type CantineOperationalRow = AbonnementCantineWithRelations & {

@@ -4,7 +4,6 @@ import {
   FiCalendar,
   FiCheckCircle,
   FiLayers,
-  FiSettings,
 } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import BulletinService, {

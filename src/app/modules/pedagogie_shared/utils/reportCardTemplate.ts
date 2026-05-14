@@ -116,6 +116,14 @@ export type PedagogieBulletinConfig = {
   template_type: ReportCardTemplateType;
   pedagogical_display_mode: PedagogicalDisplayMode;
   description: string | null;
+  calculation_mode?: "SIMPLE" | "HIERARCHICAL" | "WEIGHTED" | "COEFFICIENT_BASED";
+  include_code_grades_in_general_average?: boolean;
+  rounding_precision?: number;
+  base_score?: number | null;
+  exclude_non_evaluated_items?: boolean;
+  minimum_required_results?: number;
+  use_weights?: boolean;
+  use_coefficients?: boolean;
   show_assessment_details: boolean;
   show_assessment_type_summary: boolean;
   show_only_final_exam: boolean;
@@ -136,11 +144,15 @@ export type PedagogieBulletinConfig = {
   show_subdomain_summary: boolean;
   show_competency_results: boolean;
   show_subject_average: boolean;
+  show_class_average: boolean;
   show_subject_coefficient: boolean;
   show_subject_points: boolean;
   show_subject_rank: boolean;
   show_teacher_appreciation: boolean;
   show_general_average: boolean;
+  show_general_class_average: boolean;
+  show_code_legend: boolean;
+  show_section_headers?: boolean;
   show_total_coefficients: boolean;
   show_total_points: boolean;
   show_general_rank: boolean;
@@ -197,6 +209,14 @@ export const DEFAULT_BULLETIN_CONFIG: PedagogieBulletinConfig = {
   template_type: "STANDARD",
   pedagogical_display_mode: "SUBJECTS_ONLY",
   description: null,
+  calculation_mode: "HIERARCHICAL",
+  include_code_grades_in_general_average: false,
+  rounding_precision: 2,
+  base_score: null,
+  exclude_non_evaluated_items: true,
+  minimum_required_results: 1,
+  use_weights: true,
+  use_coefficients: true,
   show_assessment_details: false,
   show_assessment_type_summary: false,
   show_only_final_exam: false,
@@ -217,11 +237,15 @@ export const DEFAULT_BULLETIN_CONFIG: PedagogieBulletinConfig = {
   show_subdomain_summary: false,
   show_competency_results: true,
   show_subject_average: true,
+  show_class_average: true,
   show_subject_coefficient: true,
   show_subject_points: false,
   show_subject_rank: true,
   show_teacher_appreciation: true,
   show_general_average: true,
+  show_general_class_average: false,
+  show_code_legend: false,
+  show_section_headers: true,
   show_total_coefficients: true,
   show_total_points: false,
   show_general_rank: true,
@@ -312,6 +336,12 @@ export function normalizeBulletinConfig(
 ): PedagogieBulletinConfig {
   const source = isPlainObject(raw) ? raw : {};
   const templateType = normalizeReportCardTemplateType(source.template_type);
+  const calculationMode =
+    source.calculation_mode === "SIMPLE" ||
+    source.calculation_mode === "WEIGHTED" ||
+    source.calculation_mode === "COEFFICIENT_BASED"
+      ? source.calculation_mode
+      : "HIERARCHICAL";
 
   const config: PedagogieBulletinConfig = {
     template_type: templateType,
@@ -319,6 +349,40 @@ export function normalizeBulletinConfig(
       source.pedagogical_display_mode,
     ),
     description: readString(source.description) || null,
+    calculation_mode: calculationMode,
+    include_code_grades_in_general_average: readBoolean(
+      source.include_code_grades_in_general_average,
+      DEFAULT_BULLETIN_CONFIG.include_code_grades_in_general_average ?? false,
+    ),
+    rounding_precision: readNumber(
+      source.rounding_precision,
+      DEFAULT_BULLETIN_CONFIG.rounding_precision ?? 2,
+      0,
+    ),
+    base_score:
+      source.base_score === null
+        ? null
+        : readNumber(source.base_score, DEFAULT_BULLETIN_CONFIG.base_score ?? 0, 0) ||
+          null,
+    exclude_non_evaluated_items: readBoolean(
+      source.exclude_non_evaluated_items,
+      DEFAULT_BULLETIN_CONFIG.exclude_non_evaluated_items ?? true,
+    ),
+    minimum_required_results: Math.trunc(
+      readNumber(
+        source.minimum_required_results,
+        DEFAULT_BULLETIN_CONFIG.minimum_required_results ?? 1,
+        1,
+      ),
+    ),
+    use_weights: readBoolean(
+      source.use_weights,
+      DEFAULT_BULLETIN_CONFIG.use_weights ?? true,
+    ),
+    use_coefficients: readBoolean(
+      source.use_coefficients,
+      DEFAULT_BULLETIN_CONFIG.use_coefficients ?? true,
+    ),
     show_assessment_details: readBoolean(
       source.show_assessment_details,
       DEFAULT_BULLETIN_CONFIG.show_assessment_details,
@@ -400,6 +464,10 @@ export function normalizeBulletinConfig(
       source.show_subject_average,
       DEFAULT_BULLETIN_CONFIG.show_subject_average,
     ),
+    show_class_average: readBoolean(
+      source.show_class_average,
+      DEFAULT_BULLETIN_CONFIG.show_class_average,
+    ),
     show_subject_coefficient: readBoolean(
       source.show_subject_coefficient,
       DEFAULT_BULLETIN_CONFIG.show_subject_coefficient,
@@ -419,6 +487,18 @@ export function normalizeBulletinConfig(
     show_general_average: readBoolean(
       source.show_general_average,
       DEFAULT_BULLETIN_CONFIG.show_general_average,
+    ),
+    show_general_class_average: readBoolean(
+      source.show_general_class_average,
+      DEFAULT_BULLETIN_CONFIG.show_general_class_average,
+    ),
+    show_code_legend: readBoolean(
+      source.show_code_legend,
+      DEFAULT_BULLETIN_CONFIG.show_code_legend,
+    ),
+    show_section_headers: readBoolean(
+      source.show_section_headers,
+      DEFAULT_BULLETIN_CONFIG.show_section_headers ?? true,
     ),
     show_total_coefficients: readBoolean(
       source.show_total_coefficients,
@@ -463,50 +543,21 @@ export function normalizeBulletinConfig(
     ),
   };
 
-  if (templateType === "STANDARD") {
-    config.show_assessment_details = false;
-    config.show_assessment_type_summary = false;
-    config.show_only_final_exam = false;
-    config.pedagogical_display_mode = "SUBJECTS_ONLY";
-    config.show_subjects = true;
-    config.show_groups = false;
-    config.show_domains = false;
-    config.show_subdomains = false;
-    config.show_competencies = false;
-    config.show_objectives = false;
-  }
-
-  if (templateType === "DETAILED") {
-    config.show_assessment_details = true;
-    config.show_assessment_type_summary = false;
-    config.show_only_final_exam = false;
-    if (config.pedagogical_display_mode === "SUBJECTS_ONLY") {
-      config.pedagogical_display_mode = "SUBJECTS_AND_DOMAINS";
-    }
-  }
-
-  if (templateType === "ASSESSMENT_TYPE_SUMMARY") {
-    config.show_assessment_details = false;
-    config.show_assessment_type_summary = true;
-    config.show_only_final_exam = false;
-  }
-
-  if (templateType === "FINAL_EXAM_ONLY") {
-    config.show_assessment_details = true;
-    config.show_assessment_type_summary = false;
-    config.show_only_final_exam = true;
-  }
-
   if (config.pedagogical_display_mode === "SUBJECTS_AND_DOMAINS") {
     config.show_subjects = true;
+    config.show_groups = true;
     config.show_domains = true;
     config.max_hierarchy_depth = Math.min(config.max_hierarchy_depth, 2);
   }
 
   if (config.pedagogical_display_mode === "FULL_HIERARCHY") {
     config.show_subjects = true;
+    config.show_groups = true;
     config.show_domains = true;
     config.show_subdomains = true;
+    config.show_competencies = true;
+    config.show_objectives = true;
+    config.max_hierarchy_depth = Math.max(config.max_hierarchy_depth, 5);
   }
 
   if (config.pedagogical_display_mode === "COMPETENCIES_ONLY") {
@@ -516,6 +567,7 @@ export function normalizeBulletinConfig(
     config.show_subdomains = false;
     config.show_competencies = true;
     config.show_objectives = true;
+    config.max_hierarchy_depth = Math.max(config.max_hierarchy_depth, 5);
   }
 
   if (config.show_only_final_exam) {
@@ -609,6 +661,15 @@ export function normalizeBulletinConfigFromTemplateRecord(raw: unknown) {
     template_type: raw.template_type,
     pedagogical_display_mode: raw.pedagogical_display_mode,
     description: raw.description,
+    calculation_mode: raw.calculation_mode,
+    include_code_grades_in_general_average:
+      raw.include_code_grades_in_general_average,
+    rounding_precision: raw.rounding_precision,
+    base_score: raw.base_score,
+    exclude_non_evaluated_items: raw.exclude_non_evaluated_items,
+    minimum_required_results: raw.minimum_required_results,
+    use_weights: raw.use_weights,
+    use_coefficients: raw.use_coefficients,
     show_assessment_details: raw.show_assessment_details,
     show_assessment_type_summary: raw.show_assessment_type_summary,
     show_only_final_exam: raw.show_only_final_exam,
@@ -628,12 +689,18 @@ export function normalizeBulletinConfigFromTemplateRecord(raw: unknown) {
     show_domain_summary: raw.show_domain_summary,
     show_subdomain_summary: raw.show_subdomain_summary,
     show_competency_results: raw.show_competency_results,
-    show_subject_average: raw.show_subject_average,
+    show_subject_average:
+      raw.show_subject_average ?? raw.show_student_average,
+    show_class_average: raw.show_class_average,
     show_subject_coefficient: raw.show_subject_coefficient,
     show_subject_points: raw.show_subject_points,
     show_subject_rank: raw.show_subject_rank,
     show_teacher_appreciation: raw.show_teacher_appreciation,
-    show_general_average: raw.show_general_average,
+    show_general_average:
+      raw.show_general_average ?? raw.show_general_student_average,
+    show_general_class_average: raw.show_general_class_average,
+    show_code_legend: raw.show_code_legend,
+    show_section_headers: raw.show_section_headers,
     show_total_coefficients: raw.show_total_coefficients,
     show_total_points: raw.show_total_points,
     show_general_rank: raw.show_general_rank,

@@ -2,7 +2,6 @@
 import {
   FiBookOpen,
   FiLayers,
-  FiSettings,
   FiTrendingUp,
   FiUsers,
 } from "react-icons/fi";

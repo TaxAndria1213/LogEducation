@@ -146,11 +146,6 @@ function getOperationalStatusTone(value: EligibilityOperationalStatus) {
   }
 }
 
-function isFinanciallyAuthorized(financeStatus?: string | null) {
-  const normalized = (financeStatus ?? "").toUpperCase();
-  return ["REGLE", "ACTIF", "REGULARISE"].includes(normalized);
-}
-
 function toCsvValue(value: unknown) {
   const text = String(value ?? "");
   return `"${text.replace(/"/g, "\"\"")}"`;
@@ -228,19 +223,6 @@ function getAccessStatusLabel(value?: string | null) {
       return "Expire";
     default:
       return value || "En attente";
-  }
-}
-
-function getAccessStatusTone(value?: string | null) {
-  switch ((value ?? "").toUpperCase()) {
-    case "AUTORISE":
-      return "border-emerald-200 bg-emerald-50 text-emerald-800";
-    case "SUSPENDU":
-      return "border-rose-200 bg-rose-50 text-rose-800";
-    case "EXPIRE":
-      return "border-slate-300 bg-slate-100 text-slate-700";
-    default:
-      return "border-amber-200 bg-amber-50 text-amber-800";
   }
 }
 
@@ -476,15 +458,11 @@ export default function TransportTable() {
   useEffect(() => {
     if (mode !== "eligibility" || !etablissement_id) return;
 
-    let cancelled = false;
     const run = async () => {
       await refreshOperationalList();
     };
 
     void run();
-    return () => {
-      cancelled = true;
-    };
   }, [
     eligibilityDate,
     eligibilityLineFilter,
@@ -545,14 +523,14 @@ export default function TransportTable() {
       date_debut_service:
         item.date_debut_service instanceof Date
           ? item.date_debut_service.toISOString().slice(0, 10)
-          : typeof item.date_debut_service === "string"
-            ? item.date_debut_service.slice(0, 10)
+          : item.date_debut_service
+            ? String(item.date_debut_service).slice(0, 10)
             : "",
       date_fin_service:
         item.date_fin_service instanceof Date
           ? item.date_fin_service.toISOString().slice(0, 10)
-          : typeof item.date_fin_service === "string"
-            ? item.date_fin_service.slice(0, 10)
+          : item.date_fin_service
+            ? String(item.date_fin_service).slice(0, 10)
             : "",
     });
   };
@@ -563,7 +541,7 @@ export default function TransportTable() {
       nom: item.nom,
       zones_transport: formatZonesTransportValue(item),
       inscriptions_ouvertes: settings.inscriptions_ouvertes,
-      prorata_mode: settings.prorataMode,
+      prorata_mode: settings.prorataMode === "SCHOOL_YEAR" ? "SCHOOL_YEAR" : "MONTH",
       bloquer_si_a_facturer: settings.accessRules.bloquer_si_a_facturer,
       bloquer_si_en_attente_reglement: settings.accessRules.bloquer_si_en_attente_reglement,
       bloquer_si_suspension_financiere: settings.accessRules.bloquer_si_suspension_financiere,
@@ -607,190 +585,6 @@ export default function TransportTable() {
       return haystack.includes(query);
     });
   }, [abonnements, searchTerm]);
-  const getEligibilityAccessForDate = (
-    item: AbonnementTransportWithRelations,
-    referenceDate: Date,
-  ) => {
-    const settings = getLigneTransportSettings(item.ligne);
-    const rules = settings.accessRules;
-    const serviceStatus = (item.statut ?? "").toUpperCase();
-    const financeStatus = (item.finance_status ?? "").toUpperCase();
-    const startDate = getDateOnly(item.date_debut_service);
-    const endDate = getDateOnly(item.date_fin_service);
-
-    if (endDate && endDate < referenceDate) return "EXPIRE";
-    if (["RESILIE", "ANNULE", "INACTIF"].includes(serviceStatus) || financeStatus === "RESILIE") {
-      return "EXPIRE";
-    }
-    if (
-      serviceStatus === "SUSPENDU" ||
-      serviceStatus === "SUSPENDU_FINANCE" ||
-      (financeStatus === "SUSPENDU" && rules.bloquer_si_suspension_financiere)
-    ) {
-      return "SUSPENDU";
-    }
-    if (startDate && startDate > referenceDate && !rules.autoriser_avant_date_debut) {
-      return "EN_ATTENTE";
-    }
-    if (financeStatus === "A_FACTURER" && rules.bloquer_si_a_facturer) {
-      return "EN_ATTENTE";
-    }
-    if (
-      ["EN_ATTENTE_REGLEMENT", "PARTIELLEMENT_REGLE", "IMPAYE"].includes(financeStatus) &&
-      rules.bloquer_si_en_attente_reglement
-    ) {
-      return "EN_ATTENTE";
-    }
-    if (
-      [
-        "EN_ATTENTE_VALIDATION_INTERNE",
-        "EN_ATTENTE_VALIDATION_FINANCIERE",
-        "EN_ATTENTE_REGLEMENT",
-        "EN_ATTENTE_SUSPENSION_FINANCIERE",
-      ].includes(serviceStatus) ||
-      ["PARTIELLEMENT_REGLE", "IMPAYE", "VALIDATION_INTERNE", "SUSPENSION_SIGNALEE"].includes(financeStatus)
-    ) {
-      return "EN_ATTENTE";
-    }
-    return "AUTORISE";
-  };
-
-  const getOperationalStatusForDate = (
-    item: AbonnementTransportWithRelations,
-    referenceDate: Date,
-  ): EligibilityOperationalStatus => {
-    const serviceStatus = (item.statut ?? "").toUpperCase();
-    if (["RESILIE", "ANNULE", "INACTIF"].includes(serviceStatus)) {
-      return "RADIE";
-    }
-    const accessStatus = getEligibilityAccessForDate(item, referenceDate);
-    if (accessStatus === "AUTORISE") return "ACTIF";
-    if (accessStatus === "SUSPENDU") return "SUSPENDU";
-    if (accessStatus === "EN_ATTENTE") return "EN_ATTENTE";
-    return "RADIE";
-  };
-
-  const doesSubscriptionMatchOperationalWindow = (
-    item: AbonnementTransportWithRelations,
-    referenceDate: Date,
-  ) => {
-    const startDate = getDateOnly(item.date_debut_service);
-    const endDate = getDateOnly(item.date_fin_service);
-    const periodStart = getDateOnly(eligibilityPeriodStart);
-    const periodEnd = getDateOnly(eligibilityPeriodEnd);
-
-    if (periodStart || periodEnd) {
-      const rawStart = periodStart ?? periodEnd ?? referenceDate;
-      const rawEnd = periodEnd ?? periodStart ?? referenceDate;
-      const windowStart = rawStart <= rawEnd ? rawStart : rawEnd;
-      const windowEnd = rawEnd >= rawStart ? rawEnd : rawStart;
-      const effectiveStart = startDate ?? windowStart;
-      const effectiveEnd = endDate ?? windowEnd;
-      return effectiveStart <= windowEnd && effectiveEnd >= windowStart;
-    }
-
-    const effectiveStart = startDate ?? referenceDate;
-    const effectiveEnd = endDate ?? referenceDate;
-    return effectiveStart <= referenceDate && effectiveEnd >= referenceDate;
-  };
-
-  const getOperationalEvaluationDate = (
-    item: AbonnementTransportWithRelations,
-    referenceDate: Date,
-  ) => {
-    const startDate = getDateOnly(item.date_debut_service);
-    const endDate = getDateOnly(item.date_fin_service);
-    const periodStart = getDateOnly(eligibilityPeriodStart);
-    const periodEnd = getDateOnly(eligibilityPeriodEnd);
-
-    if (periodStart || periodEnd) {
-      const rawWindowStart = periodStart ?? periodEnd ?? referenceDate;
-      const rawWindowEnd = periodEnd ?? periodStart ?? referenceDate;
-      const windowStart = rawWindowStart <= rawWindowEnd ? rawWindowStart : rawWindowEnd;
-      const windowEnd = rawWindowEnd >= rawWindowStart ? rawWindowEnd : rawWindowStart;
-      const overlapStart = startDate && startDate > windowStart ? startDate : windowStart;
-      const overlapEnd = endDate && endDate < windowEnd ? endDate : windowEnd;
-      if (overlapStart > overlapEnd) {
-        return null;
-      }
-      if (referenceDate < overlapStart) return overlapStart;
-      if (referenceDate > overlapEnd) return overlapEnd;
-      return referenceDate;
-    }
-
-    return referenceDate;
-  };
-
-  const eligibilityAbonnements = useMemo(() => {
-    return filteredAbonnements
-      .filter((item) => {
-        if (eligibilityLineFilter !== "ALL" && item.ligne_transport_id !== eligibilityLineFilter) {
-          return false;
-        }
-        if (!doesSubscriptionMatchOperationalWindow(item, eligibilityReferenceDate)) {
-          return false;
-        }
-        const evaluationDate = getOperationalEvaluationDate(item, eligibilityReferenceDate);
-        if (!evaluationDate) return false;
-        const operationalStatus = getOperationalStatusForDate(item, evaluationDate);
-        if (eligibilityStatusFilter !== "ALL" && operationalStatus !== eligibilityStatusFilter) {
-          return false;
-        }
-        return true;
-      })
-      .map((item) => ({
-        item,
-        evaluationDate: getOperationalEvaluationDate(item, eligibilityReferenceDate),
-        operationalStatus: getOperationalStatusForDate(
-          item,
-          getOperationalEvaluationDate(item, eligibilityReferenceDate) ?? eligibilityReferenceDate,
-        ),
-        accessForDate: getEligibilityAccessForDate(
-          item,
-          getOperationalEvaluationDate(item, eligibilityReferenceDate) ?? eligibilityReferenceDate,
-        ),
-        financeAuthorized: isFinanciallyAuthorized(item.finance_status),
-      }));
-  }, [
-    filteredAbonnements,
-    eligibilityLineFilter,
-    eligibilityPeriodStart,
-    eligibilityPeriodEnd,
-    eligibilityReferenceDate,
-    eligibilityStatusFilter,
-  ]);
-
-  const sortedEligibilityAbonnements = useMemo(() => {
-    const priority = new Map<EligibilityOperationalStatus, number>([
-      ["SUSPENDU", 0],
-      ["EN_ATTENTE", 1],
-      ["RADIE", 2],
-      ["ACTIF", 3],
-    ]);
-
-    return [...eligibilityAbonnements].sort((left, right) => {
-      const leftPriority = priority.get(left.operationalStatus) ?? 9;
-      const rightPriority = priority.get(right.operationalStatus) ?? 9;
-      if (leftPriority !== rightPriority) return leftPriority - rightPriority;
-
-      const leftName = [
-        left.item.eleve?.utilisateur?.profil?.prenom,
-        left.item.eleve?.utilisateur?.profil?.nom,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      const rightName = [
-        right.item.eleve?.utilisateur?.profil?.prenom,
-        right.item.eleve?.utilisateur?.profil?.nom,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return leftName.localeCompare(rightName);
-    });
-  }, [eligibilityAbonnements]);
-
   const exportEligibilityList = () => {
     const lines = [
         [

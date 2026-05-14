@@ -1,5 +1,4 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { FiFileText, FiSettings } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";
 import JustificatifAbsenceService, { getJustificatifDisplayLabel, getJustificatifSecondaryLabel, getJustificatifStatusMeta, type JustificatifAbsenceWithRelations } from "../../../../../services/justificatifAbsence.service";
 import MotifAbsenceManager from "../settings/MotifAbsenceManager";

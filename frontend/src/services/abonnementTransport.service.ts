@@ -26,12 +26,20 @@ export type AbonnementTransportWithRelations = AbonnementTransport & {
   } | null;
   ligne?: LigneTransport | null;
   arret?: ArretTransport | null;
+  date_debut_service?: string | Date | null;
+  date_fin_service?: string | Date | null;
   facture?: {
     id: string;
     numero_facture?: string | null;
     statut?: string | null;
   } | null;
   historiquesAffectation?: HistoriqueAffectationTransport[];
+  finance_status?: string | null;
+  access_status?: string | null;
+  access_reason?: string | null;
+  validity_start?: string | Date | null;
+  validity_end?: string | Date | null;
+  derniere_reactivation_financiere?: string | Date | null;
 };
 
 export type OperationalTransportRow = AbonnementTransportWithRelations & {

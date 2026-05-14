@@ -30,7 +30,7 @@ export async function getRequiredActiveAcademicYear(
   });
 
   if (!activeYear) {
-    throw new Error("Aucune annee scolaire courante n'est definie.");
+    throw new Error("Aucune année scolaire courante n’est définie.");
   }
 
   return activeYear;

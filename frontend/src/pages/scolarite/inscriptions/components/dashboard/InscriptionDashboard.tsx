@@ -4,7 +4,6 @@ import {
   FiClock,
   FiLogIn,
   FiRefreshCw,
-  FiSettings,
   FiTrendingUp,
   FiUsers,
 } from "react-icons/fi";

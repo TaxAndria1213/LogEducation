@@ -64,6 +64,7 @@ import ReportCardTemplateApp from "../modules/report_card_template/application/r
 import PedagogicalItemApp from "../modules/pedagogical_item/application/pedagogical_item.app";
 import GradingScaleApp from "../modules/grading_scale/application/grading_scale.app";
 import AssessmentResultApp from "../modules/assessment_result/application/assessment_result.app";
+import PedagogicalItemAverageApp from "../modules/pedagogical_item_average/application/pedagogical_item_average.app";
 
 export class ApiRoutes {
   public app: Application;
@@ -137,6 +138,7 @@ export class ApiRoutes {
   private pedagogicalItem: PedagogicalItemApp;
   private gradingScale: GradingScaleApp;
   private assessmentResult: AssessmentResultApp;
+  private pedagogicalItemAverage: PedagogicalItemAverageApp;
 
   constructor(app: Application) {
     this.app = app;
@@ -205,6 +207,7 @@ export class ApiRoutes {
     this.pedagogicalItem = new PedagogicalItemApp(app);
     this.gradingScale = new GradingScaleApp(app);
     this.assessmentResult = new AssessmentResultApp(app);
+    this.pedagogicalItemAverage = new PedagogicalItemAverageApp(app);
     this.routes();
   }
 
@@ -238,6 +241,7 @@ export class ApiRoutes {
     this.router.use("/pedagogical-item", this.pedagogicalItem.routes());
     this.router.use("/grading-scale", this.gradingScale.routes());
     this.router.use("/assessment-result", this.assessmentResult.routes());
+    this.router.use("/pedagogical-item-average", this.pedagogicalItemAverage.routes());
 
     this.router.use("/inscription", this.inscription.routes());
     this.router.use("/classe", this.classe.routes());

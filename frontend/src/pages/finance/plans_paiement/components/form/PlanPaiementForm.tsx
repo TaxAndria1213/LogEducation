@@ -41,6 +41,12 @@ type PlanPaiementFormProps = {
   mode?: "create" | "edit";
 };
 
+type PlanPaiementFormData = z.output<typeof planSchema>;
+
+function normalizeNumberInputValue(value: unknown, fallback: string | number = "") {
+  return typeof value === "number" ? value : fallback;
+}
+
 const emptyEcheance: EcheanceForm = {
   date: "",
   montant: 0,
@@ -205,7 +211,7 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
     [initialData, selectedPlan, selectedPlanEcheances],
   );
 
-  const form = useForm<PlanPaiementFormValues>({
+  const form = useForm<z.input<typeof planSchema>, undefined, PlanPaiementFormData>({
     resolver: zodResolver(planSchema),
     defaultValues,
     mode: "onSubmit",
@@ -221,7 +227,7 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
     name: "echeances",
   });
 
-  const onSubmit = async (data: PlanPaiementFormValues) => {
+  const onSubmit = async (data: PlanPaiementFormData) => {
     try {
       const payload = {
         eleve_id: data.eleve_id,
@@ -443,7 +449,7 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
                         type="number"
                         min={1}
                         max={28}
-                        value={field.value ?? 5}
+                        value={normalizeNumberInputValue(field.value, 5)}
                         onChange={(event) =>
                           field.onChange(
                             event.target.value === "" ? null : Number(event.target.value || 5),
@@ -600,7 +606,7 @@ export default function PlanPaiementForm({ mode = "create" }: PlanPaiementFormPr
                               type="number"
                               min={0}
                               step="0.01"
-                              value={field.value ?? 0}
+                              value={normalizeNumberInputValue(field.value, 0)}
                               onChange={(event) => field.onChange(Number(event.target.value || 0))}
                               onBlur={field.onBlur}
                               ref={field.ref}

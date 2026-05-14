@@ -226,7 +226,7 @@ export default function StepAcademique({ draft, setDraft, levels }: Props) {
                 <div className="mt-4 space-y-3">
                   {group.subjects.map((subject, index) => (
                     <div
-                      key={`${level.code}-subject-${index}`}
+                      key={`${level.code}-subject-${typeof subject === "string" ? subject : index}`}
                       className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4"
                     >
                       <div className="mb-4 flex items-center justify-between gap-3">

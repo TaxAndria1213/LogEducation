@@ -32,8 +32,9 @@
     "sysdev": "nodemon --exec ts-node --experimental-specifier-resolution=node src/systemIndex.ts",
     "reload-server": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "prisma:concat": "node ./prisma/concat-schemas.js && npx prisma format",
-    "prisma:generate": "yarn prisma:concat && npx prisma generate && node ./scripts/generate-detail-meta.js",
-    "prisma:generate:no-engine": "yarn prisma:concat && npx prisma generate --no-engine && node ./scripts/generate-detail-meta.js",
+    "zod:frontend:generate": "node ./scripts/generate-frontend-zod.js",
+    "prisma:generate": "yarn prisma:concat && npx prisma generate && node ./scripts/generate-frontend-zod.js && node ./scripts/generate-detail-meta.js",
+    "prisma:generate:no-engine": "yarn prisma:concat && npx prisma generate --no-engine && node ./scripts/generate-frontend-zod.js && node ./scripts/generate-detail-meta.js",
     "detail-meta:generate": "node ./scripts/generate-detail-meta.js",
     "watch": "ts-node src/index.ts",
     "test": "jest"

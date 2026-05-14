@@ -244,7 +244,8 @@ function getCoveredVirtualCreneauIds(
   const rowEnd = toMinutes(row.heure_fin ?? row.creneau?.heure_fin);
 
   if (rowStart == null || rowEnd == null) {
-    return virtualCreneaux.some((item) => item.id === row.creneau_horaire_id)
+    return row.creneau_horaire_id &&
+      virtualCreneaux.some((item) => item.id === row.creneau_horaire_id)
       ? [row.creneau_horaire_id]
       : [];
   }
@@ -847,7 +848,7 @@ export const useEmploiDuTempsDashboardStore = create<State>((set, get) => ({
           }
         }
       }
-      const programmeWeeklyMinutes = Array.from(weeklyHoursBySubjectId.values()).reduce(
+      const programmeWeeklyMinutes = Array.from(weeklyHoursBySubjectId.values()).reduce<number>(
         (total, weeklyHours) =>
           total + (typeof weeklyHours === "number" && weeklyHours > 0 ? weeklyHours * 60 : 0),
         0,

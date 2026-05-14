@@ -1,4 +1,4 @@
-import ERPPage from "../../../components/page/ERPPage";
+﻿import ERPPage from "../../../components/page/ERPPage";
 import {
   getComponentById,
   hasAccess,
@@ -8,7 +8,7 @@ import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import { useUtilisateurStore } from "./store/UtilisateurIndexStore";
 import { useEffect, useState, type JSX } from "react";
 import { useAuth } from "../../../auth/AuthContext";
-import type { Utilisateur, UtilisateurRole } from "../../../generated/zod";
+import type { Utilisateur, UtilisateurRole } from "../../../types/models";
 
 function UtilisateursIndex() {
   const { user, roles } = useAuth();
@@ -91,7 +91,7 @@ function UtilisateursIndex() {
   return (
     <ERPPage
       title="Utilisateur"
-      description="Gérer les utilisateurs de l'établissement"
+      description="GÃ©rer les utilisateurs de l'Ã©tablissement"
       headerActions={[
         <OptionButton
           onClick={() => setMenuListIsVisible(!menuListIsVisible)}

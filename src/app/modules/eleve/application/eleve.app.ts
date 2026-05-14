@@ -5,6 +5,9 @@ import { Eleve } from "@prisma/client";
 import { getAllPaginated } from "../../../common/utils/functions";
 import { prisma } from "../../../service/prisma";
 import { extractRoleNamesFromPayload, hasSystemAdminRoleNames } from "../../../service/sessionPolicy";
+import { updateWithConfig } from "../../../common/model-config/update-handler";
+import { BackendModelConfigError } from "../../../common/model-config/types";
+import { eleveUpdateConfig } from "./eleve.update-config";
 
 class EleveApp {
     public app: Application;
@@ -25,6 +28,7 @@ class EleveApp {
         this.router.get('/:id', this.getOne.bind(this));
         this.router.delete('/:id', this.delete.bind(this));
         this.router.put('/:id', this.update.bind(this));
+        this.router.patch('/:id', this.patch.bind(this));
 
         return this.router;
     }
@@ -338,12 +342,45 @@ class EleveApp {
     }
 
     private async update(req: Request, res: R, next: NextFunction): Promise<void> {
+        await this.handleUpdate(req, res, next);
+    }
+
+    private async patch(req: Request, res: R, next: NextFunction): Promise<void> {
+        await this.handleUpdate(req, res, next);
+    }
+
+    private async handleUpdate(req: Request, res: R, next: NextFunction): Promise<void> {
         try {
+            const tenantId = this.resolveTenantId(req);
             const id: string = req.params.id;
-            const data: Eleve = req.body;
-            const result = await this.eleve.update(id, data);
-            Response.success(res, "Stablisment updated.", result);
+            const data = req.body as Record<string, unknown>;
+            const result = await updateWithConfig({
+                config: eleveUpdateConfig,
+                id,
+                payload: data,
+                user: (req as Request & { user?: unknown }).user,
+                loadExisting: async (recordId) => {
+                    return (await prisma.eleve.findFirst({
+                        where: {
+                            id: recordId,
+                            etablissement_id: tenantId,
+                        },
+                    })) as unknown as Record<string, unknown> | null;
+                },
+                persistUpdate: async (recordId, payload) => {
+                    return (await this.eleve.update(recordId, payload as Partial<Eleve>)) as unknown as Record<string, unknown>;
+                },
+            });
+            Response.success(res, "L'element a ete modifie avec succes.", result);
         } catch (error) {
+            if (error instanceof BackendModelConfigError) {
+                return Response.error(
+                    res,
+                    error.message,
+                    error.statusCode,
+                    error,
+                );
+            }
             next(error);
         }
     }

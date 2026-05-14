@@ -4,7 +4,6 @@ import {
   FiCheckCircle,
   FiMail,
   FiPhone,
-  FiSettings,
   FiUsers,
   FiUserCheck,
   FiTruck,

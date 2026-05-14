@@ -479,6 +479,50 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "RegleNote"
       },
+      "reportCardTemplates": {
+        "key": "reportCardTemplates",
+        "typeText": "ReportCardTemplate[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplate"
+      },
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "PedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
+      "gradingScales": {
+        "key": "gradingScales",
+        "typeText": "GradingScale[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScale"
+      },
+      "pedagogicalItemAverages": {
+        "key": "pedagogicalItemAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
+      },
       "EvenementCalendrier": {
         "key": "EvenementCalendrier",
         "typeText": "EvenementCalendrier[]",
@@ -974,6 +1018,50 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "DossierRecouvrement"
+      },
+      "reportCardTemplates": {
+        "key": "reportCardTemplates",
+        "typeText": "ReportCardTemplate[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplate"
+      },
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "PedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
+      "gradingScales": {
+        "key": "gradingScales",
+        "typeText": "GradingScale[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScale"
+      },
+      "pedagogicalItemAverages": {
+        "key": "pedagogicalItemAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
       }
     }
   },
@@ -1132,6 +1220,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Bulletin"
+      },
+      "pedagogicalItemAverages": {
+        "key": "pedagogicalItemAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
       }
     }
   },
@@ -1841,6 +1940,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "MessageDestinataire"
+      },
+      "programmesCrees": {
+        "key": "programmesCrees",
+        "typeText": "Programme[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Programme"
+      },
+      "programmesMaj": {
+        "key": "programmesMaj",
+        "typeText": "Programme[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Programme"
+      },
+      "programmeChangeLogs": {
+        "key": "programmeChangeLogs",
+        "typeText": "ProgrammeChangeLog[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ProgrammeChangeLog"
       }
     }
   },
@@ -1865,6 +1997,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "fields": [
           "prenom",
           "nom",
+          "lieu_naissance",
+          "nationalite",
           "genre"
         ]
       },
@@ -1889,7 +2023,9 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Contacts et coordination",
         "description": "Coordonnees et informations de communication.",
         "fields": [
-          "adresse"
+          "adresse",
+          "telephone_personnel",
+          "email_personnel"
         ]
       },
       {
@@ -1957,6 +2093,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "lieu_naissance": {
+        "key": "lieu_naissance",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "nationalite": {
+        "key": "nationalite",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "genre": {
         "key": "genre",
         "typeText": "string | null",
@@ -1983,6 +2141,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "key": "adresse",
         "typeText": "string | null",
         "kind": "text",
+        "group": "contact",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "telephone_personnel": {
+        "key": "telephone_personnel",
+        "typeText": "string | null",
+        "kind": "phone",
+        "group": "contact",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "email_personnel": {
+        "key": "email_personnel",
+        "typeText": "string | null",
+        "kind": "email",
         "group": "contact",
         "isOptional": false,
         "isArray": false,
@@ -2606,6 +2786,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Note"
       },
+      "assessmentResults": {
+        "key": "assessmentResults",
+        "typeText": "AssessmentResult[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AssessmentResult"
+      },
       "presences": {
         "key": "presences",
         "typeText": "PresenceEleve[]",
@@ -2660,6 +2851,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Bulletin"
+      },
+      "pedagogicalItemAverages": {
+        "key": "pedagogicalItemAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
       },
       "factures": {
         "key": "factures",
@@ -2770,6 +2972,224 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Emprunt"
+      },
+      "profilMedical": {
+        "key": "profilMedical",
+        "typeText": "EleveMedicalProfile | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "EleveMedicalProfile"
+      }
+    }
+  },
+  "EleveMedicalProfile": {
+    "name": "EleveMedicalProfile",
+    "titleFields": [],
+    "summaryFields": [],
+    "spotlightFields": [],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "groupe_sanguin",
+          "allergies",
+          "maladies_particulieres",
+          "traitement_medical",
+          "medecin_traitant",
+          "autorisation_prise_en_charge_medicale"
+        ]
+      },
+      {
+        "key": "contact",
+        "title": "Contacts et coordination",
+        "description": "Coordonnees et informations de communication.",
+        "fields": [
+          "telephone_medecin",
+          "personne_a_contacter_urgence",
+          "telephone_urgence"
+        ]
+      },
+      {
+        "key": "structured",
+        "title": "Donnees structurees",
+        "description": "Blocs JSON et configurations structurees.",
+        "fields": [
+          "notes_json"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "eleve_id": {
+        "key": "eleve_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "groupe_sanguin": {
+        "key": "groupe_sanguin",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "allergies": {
+        "key": "allergies",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "maladies_particulieres": {
+        "key": "maladies_particulieres",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "traitement_medical": {
+        "key": "traitement_medical",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "medecin_traitant": {
+        "key": "medecin_traitant",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "telephone_medecin": {
+        "key": "telephone_medecin",
+        "typeText": "string | null",
+        "kind": "phone",
+        "group": "contact",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "autorisation_prise_en_charge_medicale": {
+        "key": "autorisation_prise_en_charge_medicale",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "personne_a_contacter_urgence": {
+        "key": "personne_a_contacter_urgence",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "contact",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "telephone_urgence": {
+        "key": "telephone_urgence",
+        "typeText": "string | null",
+        "kind": "phone",
+        "group": "contact",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "notes_json": {
+        "key": "notes_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "eleve": {
+        "key": "eleve",
+        "typeText": "Eleve",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Eleve"
       }
     }
   },
@@ -2788,7 +3208,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
           "nom_complet",
-          "profession"
+          "profession",
+          "lieu_travail"
         ]
       },
       {
@@ -2894,6 +3315,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "profession": {
         "key": "profession",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "lieu_travail": {
+        "key": "lieu_travail",
         "typeText": "string | null",
         "kind": "text",
         "group": "general",
@@ -3241,6 +3673,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "CatalogueFrais"
+      },
+      "reportCardTemplates": {
+        "key": "reportCardTemplates",
+        "typeText": "ReportCardTemplate[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplate"
+      },
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "PedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
       }
     }
   },
@@ -3258,7 +3712,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Informations principales",
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
-          "nom"
+          "nom",
+          "capacite"
         ]
       }
     ],
@@ -3322,6 +3777,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "key": "nom",
         "typeText": "string",
         "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "capacite": {
+        "key": "capacite",
+        "typeText": "number | null",
+        "kind": "number",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -3461,6 +3927,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Bulletin"
       },
+      "pedagogicalItemAverages": {
+        "key": "pedagogicalItemAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
+      },
       "emploiDuTemps": {
         "key": "emploiDuTemps",
         "typeText": "EmploiDuTemps[]",
@@ -3533,6 +4010,16 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Montants, soldes, tarifs et valeurs chiffrees.",
         "fields": [
           "completion_rate"
+        ]
+      },
+      {
+        "key": "structured",
+        "title": "Donnees structurees",
+        "description": "Blocs JSON et configurations structurees.",
+        "fields": [
+          "acces_systeme_json",
+          "consentements_json",
+          "observations_json"
         ]
       },
       {
@@ -3688,6 +4175,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "acces_systeme_json": {
+        "key": "acces_systeme_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "consentements_json": {
+        "key": "consentements_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "observations_json": {
+        "key": "observations_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "date_sortie": {
         "key": "date_sortie",
         "typeText": "Date | null",
@@ -3786,6 +4306,216 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "InscriptionDocument"
+      },
+      "historiqueScolaire": {
+        "key": "historiqueScolaire",
+        "typeText": "InscriptionSchoolHistory | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "InscriptionSchoolHistory"
+      }
+    }
+  },
+  "InscriptionSchoolHistory": {
+    "name": "InscriptionSchoolHistory",
+    "titleFields": [],
+    "summaryFields": [
+      "derniere_moyenne"
+    ],
+    "spotlightFields": [
+      "derniere_moyenne"
+    ],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "ancien_etablissement",
+          "ancienne_classe",
+          "annee_precedente",
+          "decision_precedente",
+          "mention_precedente",
+          "observations",
+          "reprise_auto"
+        ]
+      },
+      {
+        "key": "financial",
+        "title": "Montants et droits",
+        "description": "Montants, soldes, tarifs et valeurs chiffrees.",
+        "fields": [
+          "derniere_moyenne"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "motif_transfert"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "inscription_id": {
+        "key": "inscription_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "ancien_etablissement": {
+        "key": "ancien_etablissement",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "ancienne_classe": {
+        "key": "ancienne_classe",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "annee_precedente": {
+        "key": "annee_precedente",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "derniere_moyenne": {
+        "key": "derniere_moyenne",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "decision_precedente": {
+        "key": "decision_precedente",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "mention_precedente": {
+        "key": "mention_precedente",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "motif_transfert": {
+        "key": "motif_transfert",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "observations": {
+        "key": "observations",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "reprise_auto": {
+        "key": "reprise_auto",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "inscription": {
+        "key": "inscription",
+        "typeText": "Inscription",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Inscription"
       }
     }
   },
@@ -4537,6 +5267,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "BulletinLigne"
       },
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "PedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
       "EmploiDuTemps": {
         "key": "EmploiDuTemps",
         "typeText": "EmploiDuTemps[]",
@@ -4550,21 +5291,51 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       }
     }
   },
-  "Programme": {
-    "name": "Programme",
+  "PedagogicalItem": {
+    "name": "PedagogicalItem",
     "titleFields": [
-      "nom"
+      "nom",
+      "code"
     ],
     "summaryFields": [],
-    "spotlightFields": [],
+    "spotlightFields": [
+      "code"
+    ],
     "statusFields": [],
     "groups": [
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "item_type",
+          "grading_mode_override",
+          "calculation_mode"
+        ]
+      },
       {
         "key": "general",
         "title": "Informations principales",
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
-          "nom"
+          "code",
+          "nom",
+          "display_order",
+          "coefficient",
+          "weight",
+          "is_evaluable",
+          "is_visible_on_report",
+          "is_required",
+          "include_in_general_average",
+          "is_active"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "description"
         ]
       }
     ],
@@ -4613,10 +5384,186 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "parent_id": {
+        "key": "parent_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "matiere_id": {
+        "key": "matiere_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "grading_scale_id": {
+        "key": "grading_scale_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "item_type": {
+        "key": "item_type",
+        "typeText": "PedagogicalItemType",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "code": {
+        "key": "code",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "nom": {
         "key": "nom",
         "typeText": "string",
         "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "description": {
+        "key": "description",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_order": {
+        "key": "display_order",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "coefficient": {
+        "key": "coefficient",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "weight": {
+        "key": "weight",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_evaluable": {
+        "key": "is_evaluable",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_visible_on_report": {
+        "key": "is_visible_on_report",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_required": {
+        "key": "is_required",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "include_in_general_average": {
+        "key": "include_in_general_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "grading_mode_override": {
+        "key": "grading_mode_override",
+        "typeText": "BulletinGradingMode | null",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "calculation_mode": {
+        "key": "calculation_mode",
+        "typeText": "PedagogicalCalculationMode",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_active": {
+        "key": "is_active",
+        "typeText": "boolean",
+        "kind": "boolean",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -4679,6 +5626,874 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "NiveauScolaire"
       },
+      "matiere": {
+        "key": "matiere",
+        "typeText": "Matiere | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Matiere"
+      },
+      "gradingScale": {
+        "key": "gradingScale",
+        "typeText": "GradingScale | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScale"
+      },
+      "parent": {
+        "key": "parent",
+        "typeText": "PedagogicalItem | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
+      "enfants": {
+        "key": "enfants",
+        "typeText": "PedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
+      "evaluations": {
+        "key": "evaluations",
+        "typeText": "Evaluation[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Evaluation"
+      },
+      "reportCardTemplateItems": {
+        "key": "reportCardTemplateItems",
+        "typeText": "ReportCardTemplatePedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplatePedagogicalItem"
+      },
+      "calculatedAverages": {
+        "key": "calculatedAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
+      },
+      "bulletinLignes": {
+        "key": "bulletinLignes",
+        "typeText": "BulletinLigne[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinLigne"
+      }
+    }
+  },
+  "GradingScale": {
+    "name": "GradingScale",
+    "titleFields": [
+      "nom"
+    ],
+    "summaryFields": [],
+    "spotlightFields": [],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "nom",
+          "base_score",
+          "use_for_calculation",
+          "allow_decimal",
+          "is_default",
+          "is_active"
+        ]
+      },
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "grading_type"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "annee_scolaire_id": {
+        "key": "annee_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "nom": {
+        "key": "nom",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "grading_type": {
+        "key": "grading_type",
+        "typeText": "GradingType",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "base_score": {
+        "key": "base_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "use_for_calculation": {
+        "key": "use_for_calculation",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "allow_decimal": {
+        "key": "allow_decimal",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_default": {
+        "key": "is_default",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_active": {
+        "key": "is_active",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "annee": {
+        "key": "annee",
+        "typeText": "AnneeScolaire",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AnneeScolaire"
+      },
+      "levels": {
+        "key": "levels",
+        "typeText": "GradingScaleLevel[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScaleLevel"
+      },
+      "evaluations": {
+        "key": "evaluations",
+        "typeText": "Evaluation[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Evaluation"
+      },
+      "defaultProgrammes": {
+        "key": "defaultProgrammes",
+        "typeText": "Programme[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Programme"
+      },
+      "programmeMatieres": {
+        "key": "programmeMatieres",
+        "typeText": "ProgrammeMatiere[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ProgrammeMatiere"
+      },
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "PedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      }
+    }
+  },
+  "GradingScaleLevel": {
+    "name": "GradingScaleLevel",
+    "titleFields": [
+      "code"
+    ],
+    "summaryFields": [],
+    "spotlightFields": [
+      "code"
+    ],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "code",
+          "label",
+          "numeric_value",
+          "min_value",
+          "max_value",
+          "display_order",
+          "color",
+          "is_success_level",
+          "is_active"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "grading_scale_id": {
+        "key": "grading_scale_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "code": {
+        "key": "code",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "label": {
+        "key": "label",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "numeric_value": {
+        "key": "numeric_value",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "min_value": {
+        "key": "min_value",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "max_value": {
+        "key": "max_value",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_order": {
+        "key": "display_order",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "color": {
+        "key": "color",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_success_level": {
+        "key": "is_success_level",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_active": {
+        "key": "is_active",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "gradingScale": {
+        "key": "gradingScale",
+        "typeText": "GradingScale",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScale"
+      },
+      "assessmentResults": {
+        "key": "assessmentResults",
+        "typeText": "AssessmentResult[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AssessmentResult"
+      }
+    }
+  },
+  "Programme": {
+    "name": "Programme",
+    "titleFields": [
+      "nom",
+      "code"
+    ],
+    "summaryFields": [
+      "statut",
+      "date_debut",
+      "date_fin",
+      "verrouille_le"
+    ],
+    "spotlightFields": [
+      "code",
+      "date_debut",
+      "date_fin",
+      "statut",
+      "verrouille_le",
+      "archive_le"
+    ],
+    "statusFields": [
+      "statut"
+    ],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "code",
+          "nom",
+          "est_actif",
+          "ordre_affichage"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "description"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "statut"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "date_debut",
+          "date_fin",
+          "verrouille_le",
+          "archive_le"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "annee_scolaire_id": {
+        "key": "annee_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "niveau_scolaire_id": {
+        "key": "niveau_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "code": {
+        "key": "code",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "nom": {
+        "key": "nom",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "description": {
+        "key": "description",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "statut": {
+        "key": "statut",
+        "typeText": "StatutProgramme",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_debut": {
+        "key": "date_debut",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_fin": {
+        "key": "date_fin",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "est_actif": {
+        "key": "est_actif",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "ordre_affichage": {
+        "key": "ordre_affichage",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "default_grading_scale_id": {
+        "key": "default_grading_scale_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "verrouille_le": {
+        "key": "verrouille_le",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "archive_le": {
+        "key": "archive_le",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_by_utilisateur_id": {
+        "key": "created_by_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_by_utilisateur_id": {
+        "key": "updated_by_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "annee": {
+        "key": "annee",
+        "typeText": "AnneeScolaire",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AnneeScolaire"
+      },
+      "niveau": {
+        "key": "niveau",
+        "typeText": "NiveauScolaire",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "NiveauScolaire"
+      },
+      "defaultGradingScale": {
+        "key": "defaultGradingScale",
+        "typeText": "GradingScale | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScale"
+      },
+      "createur": {
+        "key": "createur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
+      },
+      "modificateur": {
+        "key": "modificateur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
+      },
       "matieres": {
         "key": "matieres",
         "typeText": "ProgrammeMatiere[]",
@@ -4689,15 +6504,32 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "ProgrammeMatiere"
+      },
+      "changeLogs": {
+        "key": "changeLogs",
+        "typeText": "ProgrammeChangeLog[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ProgrammeChangeLog"
       }
     }
   },
   "ProgrammeMatiere": {
     "name": "ProgrammeMatiere",
     "titleFields": [],
-    "summaryFields": [],
-    "spotlightFields": [],
-    "statusFields": [],
+    "summaryFields": [
+      "statut"
+    ],
+    "spotlightFields": [
+      "statut"
+    ],
+    "statusFields": [
+      "statut"
+    ],
     "groups": [
       {
         "key": "general",
@@ -4705,7 +6537,32 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
           "heures_semaine",
-          "coefficient"
+          "heures_annuelles",
+          "seances_par_semaine",
+          "duree_seance_par_defaut",
+          "coefficient",
+          "est_obligatoire",
+          "est_visible_bulletin",
+          "inclure_moyenne_generale",
+          "appreciation_obligatoire",
+          "libelle_bulletin",
+          "ordre_affichage_bulletin"
+        ]
+      },
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "mode_calcul"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "statut"
         ]
       }
     ],
@@ -4754,11 +6611,143 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "heures_annuelles": {
+        "key": "heures_annuelles",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "seances_par_semaine": {
+        "key": "seances_par_semaine",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "duree_seance_par_defaut": {
+        "key": "duree_seance_par_defaut",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "coefficient": {
         "key": "coefficient",
         "typeText": "number | null",
         "kind": "number",
         "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "est_obligatoire": {
+        "key": "est_obligatoire",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "est_visible_bulletin": {
+        "key": "est_visible_bulletin",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "inclure_moyenne_generale": {
+        "key": "inclure_moyenne_generale",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "appreciation_obligatoire": {
+        "key": "appreciation_obligatoire",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "libelle_bulletin": {
+        "key": "libelle_bulletin",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "ordre_affichage_bulletin": {
+        "key": "ordre_affichage_bulletin",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "grading_scale_id": {
+        "key": "grading_scale_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "mode_calcul": {
+        "key": "mode_calcul",
+        "typeText": "PedagogicalCalculationMode",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "statut": {
+        "key": "statut",
+        "typeText": "StatutProgrammeMatiere",
+        "kind": "status",
+        "group": "status",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -4808,6 +6797,222 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Matiere"
+      },
+      "gradingScale": {
+        "key": "gradingScale",
+        "typeText": "GradingScale | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScale"
+      }
+    }
+  },
+  "ProgrammeChangeLog": {
+    "name": "ProgrammeChangeLog",
+    "titleFields": [],
+    "summaryFields": [
+      "changed_at"
+    ],
+    "spotlightFields": [
+      "changed_at"
+    ],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "entity_type"
+        ]
+      },
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "action",
+          "field_name",
+          "reason"
+        ]
+      },
+      {
+        "key": "structured",
+        "title": "Donnees structurees",
+        "description": "Blocs JSON et configurations structurees.",
+        "fields": [
+          "old_value_json",
+          "new_value_json",
+          "impact_summary_json"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "changed_at"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "programme_id": {
+        "key": "programme_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "entity_type": {
+        "key": "entity_type",
+        "typeText": "string",
+        "kind": "text",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "entity_id": {
+        "key": "entity_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "action": {
+        "key": "action",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "field_name": {
+        "key": "field_name",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "old_value_json": {
+        "key": "old_value_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "new_value_json": {
+        "key": "new_value_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "reason": {
+        "key": "reason",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "impact_summary_json": {
+        "key": "impact_summary_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "changed_by_utilisateur_id": {
+        "key": "changed_by_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "changed_at": {
+        "key": "changed_at",
+        "typeText": "Date",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "programme": {
+        "key": "programme",
+        "typeText": "Programme",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Programme"
+      },
+      "changedBy": {
+        "key": "changedBy",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
       }
     }
   },
@@ -5009,10 +7214,13 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
   "TypeEvaluationRef": {
     "name": "TypeEvaluationRef",
     "titleFields": [
-      "nom"
+      "nom",
+      "code"
     ],
     "summaryFields": [],
-    "spotlightFields": [],
+    "spotlightFields": [
+      "code"
+    ],
     "statusFields": [],
     "groups": [
       {
@@ -5020,8 +7228,14 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Informations principales",
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
+          "code",
           "nom",
-          "poids_defaut"
+          "poids_defaut",
+          "default_max_score",
+          "include_in_average",
+          "show_in_report_card",
+          "is_final_exam",
+          "is_active"
         ]
       }
     ],
@@ -5048,6 +7262,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "code": {
+        "key": "code",
+        "typeText": "TypeEvaluation",
+        "kind": "enum",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "nom": {
         "key": "nom",
         "typeText": "string",
@@ -5063,6 +7288,61 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "key": "poids_defaut",
         "typeText": "number | null",
         "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "default_max_score": {
+        "key": "default_max_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "include_in_average": {
+        "key": "include_in_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_in_report_card": {
+        "key": "show_in_report_card",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_final_exam": {
+        "key": "is_final_exam",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_active": {
+        "key": "is_active",
+        "typeText": "boolean",
+        "kind": "boolean",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -5112,13 +7392,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       "type"
     ],
     "summaryFields": [
-      "date"
+      "date",
+      "status"
     ],
     "spotlightFields": [
       "type",
-      "date"
+      "date",
+      "status"
     ],
-    "statusFields": [],
+    "statusFields": [
+      "status"
+    ],
     "groups": [
       {
         "key": "classification",
@@ -5135,7 +7419,19 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "fields": [
           "titre",
           "poids",
-          "est_publiee"
+          "est_publiee",
+          "include_in_average",
+          "show_in_report_card",
+          "is_final_exam"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "description",
+          "note_max"
         ]
       },
       {
@@ -5147,11 +7443,11 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         ]
       },
       {
-        "key": "context",
-        "title": "Contexte et commentaires",
-        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
         "fields": [
-          "note_max"
+          "status"
         ]
       }
     ],
@@ -5189,6 +7485,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "pedagogical_item_id": {
+        "key": "pedagogical_item_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "grading_scale_id": {
+        "key": "grading_scale_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
       "type_evaluation_id": {
         "key": "type_evaluation_id",
         "typeText": "string | null",
@@ -5216,6 +7534,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "string",
         "kind": "text",
         "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "description": {
+        "key": "description",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -5260,6 +7589,50 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "boolean",
         "kind": "boolean",
         "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "include_in_average": {
+        "key": "include_in_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_in_report_card": {
+        "key": "show_in_report_card",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_final_exam": {
+        "key": "is_final_exam",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "status": {
+        "key": "status",
+        "typeText": "AssessmentWorkflowStatus",
+        "kind": "status",
+        "group": "status",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -5321,6 +7694,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Periode"
       },
+      "pedagogicalItem": {
+        "key": "pedagogicalItem",
+        "typeText": "PedagogicalItem | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
+      "gradingScale": {
+        "key": "gradingScale",
+        "typeText": "GradingScale | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScale"
+      },
       "typeRef": {
         "key": "typeRef",
         "typeText": "TypeEvaluationRef | null",
@@ -5353,6 +7748,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Note"
+      },
+      "assessmentResults": {
+        "key": "assessmentResults",
+        "typeText": "AssessmentResult[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AssessmentResult"
       }
     }
   },
@@ -5517,6 +7923,850 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       }
     }
   },
+  "AssessmentResult": {
+    "name": "AssessmentResult",
+    "titleFields": [],
+    "summaryFields": [
+      "status",
+      "validated_at"
+    ],
+    "spotlightFields": [
+      "status",
+      "validated_at"
+    ],
+    "statusFields": [
+      "status"
+    ],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "raw_score",
+          "max_score",
+          "normalized_score",
+          "text_value",
+          "display_value",
+          "observation",
+          "is_validated",
+          "validated_by"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "status"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "validated_at"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "assessment_id": {
+        "key": "assessment_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "student_id": {
+        "key": "student_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "raw_score": {
+        "key": "raw_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "max_score": {
+        "key": "max_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "normalized_score": {
+        "key": "normalized_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "scale_level_id": {
+        "key": "scale_level_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "text_value": {
+        "key": "text_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_value": {
+        "key": "display_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "status": {
+        "key": "status",
+        "typeText": "AssessmentResultStatus",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "observation": {
+        "key": "observation",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_validated": {
+        "key": "is_validated",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validated_at": {
+        "key": "validated_at",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validated_by": {
+        "key": "validated_by",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "assessment": {
+        "key": "assessment",
+        "typeText": "Evaluation",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Evaluation"
+      },
+      "student": {
+        "key": "student",
+        "typeText": "Eleve",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Eleve"
+      },
+      "scaleLevel": {
+        "key": "scaleLevel",
+        "typeText": "GradingScaleLevel | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScaleLevel"
+      },
+      "history": {
+        "key": "history",
+        "typeText": "AssessmentResultHistory[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AssessmentResultHistory"
+      }
+    }
+  },
+  "AssessmentResultHistory": {
+    "name": "AssessmentResultHistory",
+    "titleFields": [],
+    "summaryFields": [
+      "old_status",
+      "new_status",
+      "changed_at"
+    ],
+    "spotlightFields": [
+      "old_status",
+      "new_status",
+      "changed_at"
+    ],
+    "statusFields": [
+      "old_status",
+      "new_status"
+    ],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "old_raw_score",
+          "new_raw_score",
+          "old_max_score",
+          "new_max_score",
+          "old_normalized_score",
+          "new_normalized_score",
+          "old_text_value",
+          "new_text_value",
+          "old_display_value",
+          "new_display_value",
+          "reason",
+          "changed_by"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "old_status",
+          "new_status"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "changed_at"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "assessment_result_id": {
+        "key": "assessment_result_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "old_raw_score": {
+        "key": "old_raw_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "new_raw_score": {
+        "key": "new_raw_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "old_max_score": {
+        "key": "old_max_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "new_max_score": {
+        "key": "new_max_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "old_normalized_score": {
+        "key": "old_normalized_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "new_normalized_score": {
+        "key": "new_normalized_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "old_scale_level_id": {
+        "key": "old_scale_level_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "new_scale_level_id": {
+        "key": "new_scale_level_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "old_text_value": {
+        "key": "old_text_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "new_text_value": {
+        "key": "new_text_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "old_display_value": {
+        "key": "old_display_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "new_display_value": {
+        "key": "new_display_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "old_status": {
+        "key": "old_status",
+        "typeText": "AssessmentResultStatus | null",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "new_status": {
+        "key": "new_status",
+        "typeText": "AssessmentResultStatus | null",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "reason": {
+        "key": "reason",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "changed_by": {
+        "key": "changed_by",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "changed_at": {
+        "key": "changed_at",
+        "typeText": "Date",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "assessmentResult": {
+        "key": "assessmentResult",
+        "typeText": "AssessmentResult",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AssessmentResult"
+      }
+    }
+  },
+  "PedagogicalItemAverage": {
+    "name": "PedagogicalItemAverage",
+    "titleFields": [],
+    "summaryFields": [
+      "status",
+      "calculated_at"
+    ],
+    "spotlightFields": [
+      "status",
+      "calculated_at"
+    ],
+    "statusFields": [
+      "status"
+    ],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "student_average",
+          "class_average",
+          "display_value",
+          "rounding_precision"
+        ]
+      },
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "calculation_mode"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "status"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "calculated_at"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "annee_scolaire_id": {
+        "key": "annee_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "periode_id": {
+        "key": "periode_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "classe_id": {
+        "key": "classe_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "eleve_id": {
+        "key": "eleve_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "pedagogical_item_id": {
+        "key": "pedagogical_item_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "student_average": {
+        "key": "student_average",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "class_average": {
+        "key": "class_average",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_value": {
+        "key": "display_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "calculation_mode": {
+        "key": "calculation_mode",
+        "typeText": "ReportAverageCalculationMode",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "rounding_precision": {
+        "key": "rounding_precision",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "status": {
+        "key": "status",
+        "typeText": "string | null",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "calculated_at": {
+        "key": "calculated_at",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "annee": {
+        "key": "annee",
+        "typeText": "AnneeScolaire",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AnneeScolaire"
+      },
+      "periode": {
+        "key": "periode",
+        "typeText": "Periode",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Periode"
+      },
+      "classe": {
+        "key": "classe",
+        "typeText": "Classe",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Classe"
+      },
+      "eleve": {
+        "key": "eleve",
+        "typeText": "Eleve",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Eleve"
+      },
+      "pedagogicalItem": {
+        "key": "pedagogicalItem",
+        "typeText": "PedagogicalItem",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      }
+    }
+  },
   "RegleNote": {
     "name": "RegleNote",
     "titleFields": [],
@@ -5621,16 +8871,1386 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       }
     }
   },
+  "ReportCardTemplate": {
+    "name": "ReportCardTemplate",
+    "titleFields": [
+      "nom"
+    ],
+    "summaryFields": [],
+    "spotlightFields": [],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "nom",
+          "include_code_grades_in_general_average",
+          "show_student_average",
+          "show_class_average",
+          "show_general_student_average",
+          "show_general_class_average",
+          "show_code_legend",
+          "show_section_headers",
+          "rounding_precision",
+          "show_assessment_details",
+          "show_only_final_exam",
+          "show_subjects",
+          "show_groups",
+          "show_domains",
+          "show_subdomains",
+          "show_competencies",
+          "show_objectives",
+          "show_only_evaluated_items",
+          "show_non_evaluated_items",
+          "non_evaluated_label",
+          "group_items_by_parent",
+          "show_hierarchical_indent",
+          "max_hierarchy_depth",
+          "show_subject_summary",
+          "show_domain_summary",
+          "show_subdomain_summary",
+          "show_competency_results",
+          "show_subject_average",
+          "show_subject_coefficient",
+          "show_subject_points",
+          "show_subject_rank",
+          "show_teacher_appreciation",
+          "show_general_average",
+          "show_total_coefficients",
+          "show_total_points",
+          "show_general_rank",
+          "show_mention",
+          "show_decision",
+          "show_general_appreciation",
+          "show_absences",
+          "show_late_count",
+          "show_logo",
+          "show_signature",
+          "is_default",
+          "is_active"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "description"
+        ]
+      },
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "template_type",
+          "pedagogical_display_mode",
+          "calculation_mode",
+          "show_assessment_type_summary"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "annee_scolaire_id": {
+        "key": "annee_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "niveau_scolaire_id": {
+        "key": "niveau_scolaire_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "nom": {
+        "key": "nom",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "description": {
+        "key": "description",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "template_type": {
+        "key": "template_type",
+        "typeText": "ReportCardTemplateType",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "pedagogical_display_mode": {
+        "key": "pedagogical_display_mode",
+        "typeText": "PedagogicalDisplayMode",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "calculation_mode": {
+        "key": "calculation_mode",
+        "typeText": "ReportAverageCalculationMode",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "include_code_grades_in_general_average": {
+        "key": "include_code_grades_in_general_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_student_average": {
+        "key": "show_student_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_class_average": {
+        "key": "show_class_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_general_student_average": {
+        "key": "show_general_student_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_general_class_average": {
+        "key": "show_general_class_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_code_legend": {
+        "key": "show_code_legend",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_section_headers": {
+        "key": "show_section_headers",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "rounding_precision": {
+        "key": "rounding_precision",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_assessment_details": {
+        "key": "show_assessment_details",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_assessment_type_summary": {
+        "key": "show_assessment_type_summary",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_only_final_exam": {
+        "key": "show_only_final_exam",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subjects": {
+        "key": "show_subjects",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_groups": {
+        "key": "show_groups",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_domains": {
+        "key": "show_domains",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subdomains": {
+        "key": "show_subdomains",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_competencies": {
+        "key": "show_competencies",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_objectives": {
+        "key": "show_objectives",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_only_evaluated_items": {
+        "key": "show_only_evaluated_items",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_non_evaluated_items": {
+        "key": "show_non_evaluated_items",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "non_evaluated_label": {
+        "key": "non_evaluated_label",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "group_items_by_parent": {
+        "key": "group_items_by_parent",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_hierarchical_indent": {
+        "key": "show_hierarchical_indent",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "max_hierarchy_depth": {
+        "key": "max_hierarchy_depth",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subject_summary": {
+        "key": "show_subject_summary",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_domain_summary": {
+        "key": "show_domain_summary",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subdomain_summary": {
+        "key": "show_subdomain_summary",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_competency_results": {
+        "key": "show_competency_results",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subject_average": {
+        "key": "show_subject_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subject_coefficient": {
+        "key": "show_subject_coefficient",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subject_points": {
+        "key": "show_subject_points",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subject_rank": {
+        "key": "show_subject_rank",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_teacher_appreciation": {
+        "key": "show_teacher_appreciation",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_general_average": {
+        "key": "show_general_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_total_coefficients": {
+        "key": "show_total_coefficients",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_total_points": {
+        "key": "show_total_points",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_general_rank": {
+        "key": "show_general_rank",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_mention": {
+        "key": "show_mention",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_decision": {
+        "key": "show_decision",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_general_appreciation": {
+        "key": "show_general_appreciation",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_absences": {
+        "key": "show_absences",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_late_count": {
+        "key": "show_late_count",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_logo": {
+        "key": "show_logo",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_signature": {
+        "key": "show_signature",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_default": {
+        "key": "is_default",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_active": {
+        "key": "is_active",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "annee": {
+        "key": "annee",
+        "typeText": "AnneeScolaire",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AnneeScolaire"
+      },
+      "niveau": {
+        "key": "niveau",
+        "typeText": "NiveauScolaire | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "NiveauScolaire"
+      },
+      "bulletins": {
+        "key": "bulletins",
+        "typeText": "Bulletin[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Bulletin"
+      },
+      "sections": {
+        "key": "sections",
+        "typeText": "ReportCardTemplateSection[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplateSection"
+      },
+      "fields": {
+        "key": "fields",
+        "typeText": "ReportCardTemplateField[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplateField"
+      },
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "ReportCardTemplatePedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplatePedagogicalItem"
+      }
+    }
+  },
+  "ReportCardTemplatePedagogicalItem": {
+    "name": "ReportCardTemplatePedagogicalItem",
+    "titleFields": [],
+    "summaryFields": [],
+    "spotlightFields": [],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "is_visible",
+          "custom_label",
+          "display_order",
+          "show_result",
+          "show_appreciation",
+          "show_children",
+          "grading_scale_id_override",
+          "include_in_general_average_override"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "template_id": {
+        "key": "template_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "section_id": {
+        "key": "section_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "pedagogical_item_id": {
+        "key": "pedagogical_item_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "is_visible": {
+        "key": "is_visible",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "custom_label": {
+        "key": "custom_label",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_order": {
+        "key": "display_order",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_result": {
+        "key": "show_result",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_appreciation": {
+        "key": "show_appreciation",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_children": {
+        "key": "show_children",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "grading_scale_id_override": {
+        "key": "grading_scale_id_override",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "include_in_general_average_override": {
+        "key": "include_in_general_average_override",
+        "typeText": "boolean | null",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "template": {
+        "key": "template",
+        "typeText": "ReportCardTemplate",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplate"
+      },
+      "section": {
+        "key": "section",
+        "typeText": "ReportCardTemplateSection | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplateSection"
+      },
+      "pedagogicalItem": {
+        "key": "pedagogicalItem",
+        "typeText": "PedagogicalItem",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      }
+    }
+  },
+  "ReportCardTemplateSection": {
+    "name": "ReportCardTemplateSection",
+    "titleFields": [],
+    "summaryFields": [],
+    "spotlightFields": [],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "title",
+          "display_order",
+          "show_header",
+          "is_active"
+        ]
+      },
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "section_type",
+          "grading_mode"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "template_id": {
+        "key": "template_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "parent_section_id": {
+        "key": "parent_section_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "title": {
+        "key": "title",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "section_type": {
+        "key": "section_type",
+        "typeText": "ReportCardTemplateSectionType",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "grading_mode": {
+        "key": "grading_mode",
+        "typeText": "BulletinGradingMode | null",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_order": {
+        "key": "display_order",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_header": {
+        "key": "show_header",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_active": {
+        "key": "is_active",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "template": {
+        "key": "template",
+        "typeText": "ReportCardTemplate",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplate"
+      },
+      "parentSection": {
+        "key": "parentSection",
+        "typeText": "ReportCardTemplateSection | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplateSection"
+      },
+      "childSections": {
+        "key": "childSections",
+        "typeText": "ReportCardTemplateSection[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplateSection"
+      },
+      "fields": {
+        "key": "fields",
+        "typeText": "ReportCardTemplateField[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplateField"
+      },
+      "pedagogicalSelections": {
+        "key": "pedagogicalSelections",
+        "typeText": "ReportCardTemplatePedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplatePedagogicalItem"
+      }
+    }
+  },
+  "ReportCardTemplateField": {
+    "name": "ReportCardTemplateField",
+    "titleFields": [],
+    "summaryFields": [],
+    "spotlightFields": [],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "field_key",
+          "label",
+          "display_order",
+          "is_visible",
+          "width",
+          "alignment"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "template_id": {
+        "key": "template_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "section_id": {
+        "key": "section_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "field_key": {
+        "key": "field_key",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "label": {
+        "key": "label",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_order": {
+        "key": "display_order",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_visible": {
+        "key": "is_visible",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "width": {
+        "key": "width",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "alignment": {
+        "key": "alignment",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "template": {
+        "key": "template",
+        "typeText": "ReportCardTemplate",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplate"
+      },
+      "section": {
+        "key": "section",
+        "typeText": "ReportCardTemplateSection",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplateSection"
+      }
+    }
+  },
   "Bulletin": {
     "name": "Bulletin",
     "titleFields": [],
     "summaryFields": [
       "statut",
-      "publie_le"
+      "validated_at",
+      "publie_le",
+      "general_average"
     ],
     "spotlightFields": [
+      "validated_at",
       "publie_le",
-      "statut"
+      "statut",
+      "general_average",
+      "general_class_average",
+      "total_coefficients"
     ],
     "statusFields": [
       "statut"
@@ -5641,7 +10261,20 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Dates et validite",
         "description": "Repere temporel du dossier et de sa validite.",
         "fields": [
+          "validated_at",
           "publie_le"
+        ]
+      },
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "validated_by",
+          "general_rank",
+          "mention",
+          "decision",
+          "general_appreciation"
         ]
       },
       {
@@ -5650,6 +10283,26 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Etat courant, decisions et synchronisation metier.",
         "fields": [
           "statut"
+        ]
+      },
+      {
+        "key": "financial",
+        "title": "Montants et droits",
+        "description": "Montants, soldes, tarifs et valeurs chiffrees.",
+        "fields": [
+          "general_average",
+          "general_class_average",
+          "total_coefficients",
+          "total_points"
+        ]
+      },
+      {
+        "key": "structured",
+        "title": "Donnees structurees",
+        "description": "Blocs JSON et configurations structurees.",
+        "fields": [
+          "display_snapshot_json",
+          "display_legend_json"
         ]
       }
     ],
@@ -5698,6 +10351,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "report_card_template_id": {
+        "key": "report_card_template_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "validated_at": {
+        "key": "validated_at",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validated_by": {
+        "key": "validated_by",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "publie_le": {
         "key": "publie_le",
         "typeText": "Date | null",
@@ -5714,6 +10400,116 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "string | null",
         "kind": "status",
         "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "general_average": {
+        "key": "general_average",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "general_class_average": {
+        "key": "general_class_average",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "total_coefficients": {
+        "key": "total_coefficients",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "total_points": {
+        "key": "total_points",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "general_rank": {
+        "key": "general_rank",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "mention": {
+        "key": "mention",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "decision": {
+        "key": "decision",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "general_appreciation": {
+        "key": "general_appreciation",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_snapshot_json": {
+        "key": "display_snapshot_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_legend_json": {
+        "key": "display_legend_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -5775,6 +10571,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Classe"
       },
+      "reportCardTemplate": {
+        "key": "reportCardTemplate",
+        "typeText": "ReportCardTemplate | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplate"
+      },
       "lignes": {
         "key": "lignes",
         "typeText": "BulletinLigne[]",
@@ -5785,6 +10592,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "BulletinLigne"
+      },
+      "codeLegends": {
+        "key": "codeLegends",
+        "typeText": "BulletinCodeLegend[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinCodeLegend"
       }
     }
   },
@@ -5796,13 +10614,29 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
     "statusFields": [],
     "groups": [
       {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "item_type",
+          "grading_mode"
+        ]
+      },
+      {
         "key": "general",
         "title": "Informations principales",
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
           "moyenne",
+          "display_value",
+          "numeric_value",
+          "student_average",
+          "class_average",
+          "observation",
           "rang",
-          "commentaire_enseignant"
+          "commentaire_enseignant",
+          "display_order",
+          "is_visible"
         ]
       }
     ],
@@ -5840,10 +10674,120 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "parent_ligne_id": {
+        "key": "parent_ligne_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "pedagogical_item_id": {
+        "key": "pedagogical_item_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "item_type": {
+        "key": "item_type",
+        "typeText": "PedagogicalItemType | null",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "grading_mode": {
+        "key": "grading_mode",
+        "typeText": "BulletinGradingMode | null",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "moyenne": {
         "key": "moyenne",
         "typeText": "number | null",
         "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_value": {
+        "key": "display_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "numeric_value": {
+        "key": "numeric_value",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "student_average": {
+        "key": "student_average",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "class_average": {
+        "key": "class_average",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "scale_level_id": {
+        "key": "scale_level_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "observation": {
+        "key": "observation",
+        "typeText": "string | null",
+        "kind": "text",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -5866,6 +10810,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "key": "commentaire_enseignant",
         "typeText": "string | null",
         "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_order": {
+        "key": "display_order",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_visible": {
+        "key": "is_visible",
+        "typeText": "boolean",
+        "kind": "boolean",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -5916,6 +10882,340 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Matiere"
+      },
+      "parentLigne": {
+        "key": "parentLigne",
+        "typeText": "BulletinLigne | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinLigne"
+      },
+      "childLignes": {
+        "key": "childLignes",
+        "typeText": "BulletinLigne[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinLigne"
+      },
+      "pedagogicalItem": {
+        "key": "pedagogicalItem",
+        "typeText": "PedagogicalItem | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
+      "details": {
+        "key": "details",
+        "typeText": "BulletinLigneDetail[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinLigneDetail"
+      }
+    }
+  },
+  "BulletinLigneDetail": {
+    "name": "BulletinLigneDetail",
+    "titleFields": [],
+    "summaryFields": [],
+    "spotlightFields": [],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "label",
+          "display_value",
+          "numeric_value",
+          "display_order"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "bulletin_ligne_id": {
+        "key": "bulletin_ligne_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "assessment_id": {
+        "key": "assessment_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "assessment_result_id": {
+        "key": "assessment_result_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "label": {
+        "key": "label",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_value": {
+        "key": "display_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "numeric_value": {
+        "key": "numeric_value",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "scale_level_id": {
+        "key": "scale_level_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "display_order": {
+        "key": "display_order",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "bulletinLigne": {
+        "key": "bulletinLigne",
+        "typeText": "BulletinLigne",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinLigne"
+      }
+    }
+  },
+  "BulletinCodeLegend": {
+    "name": "BulletinCodeLegend",
+    "titleFields": [
+      "code"
+    ],
+    "summaryFields": [],
+    "spotlightFields": [
+      "code"
+    ],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "code",
+          "label",
+          "numeric_value",
+          "display_order"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "bulletin_id": {
+        "key": "bulletin_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "grading_scale_id": {
+        "key": "grading_scale_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "code": {
+        "key": "code",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "label": {
+        "key": "label",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "numeric_value": {
+        "key": "numeric_value",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_order": {
+        "key": "display_order",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "bulletin": {
+        "key": "bulletin",
+        "typeText": "Bulletin",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Bulletin"
       }
     }
   },
@@ -15705,7 +21005,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
           "date_effet",
           "dernier_rechargement_le",
           "validity_start",
-          "validity_end"
+          "validity_end",
+          "derniere_reactivation_financiere"
         ]
       },
       {
@@ -16005,6 +21306,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": false,
         "isTechnical": false,
         "relatedModel": null
+      },
+      "derniere_reactivation_financiere": {
+        "key": "derniere_reactivation_financiere",
+        "typeText": "string | Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
       }
     }
   },
@@ -16054,6 +21366,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
           "dernier_rechargement_le",
           "validity_start",
           "validity_end",
+          "derniere_reactivation_financiere",
           "evaluation_date"
         ]
       },
@@ -16346,6 +21659,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "validity_end": {
         "key": "validity_end",
+        "typeText": "string | Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "derniere_reactivation_financiere": {
+        "key": "derniere_reactivation_financiere",
         "typeText": "string | Date | null",
         "kind": "date",
         "group": "dates",
@@ -17227,6 +22551,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
     "titleFields": [],
     "summaryFields": [
       "statut",
+      "finance_status",
+      "access_status",
       "date_debut_service",
       "date_fin_service",
       "prorata_ratio"
@@ -17235,10 +22561,14 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       "statut",
       "date_debut_service",
       "date_fin_service",
-      "prorata_ratio"
+      "prorata_ratio",
+      "finance_status",
+      "access_status"
     ],
     "statusFields": [
-      "statut"
+      "statut",
+      "finance_status",
+      "access_status"
     ],
     "groups": [
       {
@@ -17250,7 +22580,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
           "a_facturer",
           "eleve",
           "annee",
-          "facture"
+          "facture",
+          "access_reason"
         ]
       },
       {
@@ -17258,7 +22589,9 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Statuts et decisions",
         "description": "Etat courant, decisions et synchronisation metier.",
         "fields": [
-          "statut"
+          "statut",
+          "finance_status",
+          "access_status"
         ]
       },
       {
@@ -17267,7 +22600,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Repere temporel du dossier et de sa validite.",
         "fields": [
           "date_debut_service",
-          "date_fin_service"
+          "date_fin_service",
+          "validity_start",
+          "validity_end",
+          "derniere_reactivation_financiere"
         ]
       },
       {
@@ -17381,10 +22717,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "date_debut_service": {
         "key": "date_debut_service",
-        "typeText": "Date | null",
+        "typeText": "string | Date | null",
         "kind": "date",
         "group": "dates",
-        "isOptional": false,
+        "isOptional": true,
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
@@ -17392,10 +22728,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "date_fin_service": {
         "key": "date_fin_service",
-        "typeText": "Date | null",
+        "typeText": "string | Date | null",
         "kind": "date",
         "group": "dates",
-        "isOptional": false,
+        "isOptional": true,
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
@@ -17499,6 +22835,72 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "HistoriqueAffectationTransport"
+      },
+      "finance_status": {
+        "key": "finance_status",
+        "typeText": "string | null",
+        "kind": "status",
+        "group": "status",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "access_status": {
+        "key": "access_status",
+        "typeText": "string | null",
+        "kind": "status",
+        "group": "status",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "access_reason": {
+        "key": "access_reason",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validity_start": {
+        "key": "validity_start",
+        "typeText": "string | Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validity_end": {
+        "key": "validity_end",
+        "typeText": "string | Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "derniere_reactivation_financiere": {
+        "key": "derniere_reactivation_financiere",
+        "typeText": "string | Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
       }
     }
   },
@@ -17507,6 +22909,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
     "titleFields": [],
     "summaryFields": [
       "statut",
+      "finance_status",
+      "access_status",
       "date_debut_service",
       "date_fin_service",
       "prorata_ratio"
@@ -17516,11 +22920,13 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       "date_debut_service",
       "date_fin_service",
       "prorata_ratio",
-      "operational_status",
-      "evaluation_date"
+      "finance_status",
+      "access_status"
     ],
     "statusFields": [
       "statut",
+      "finance_status",
+      "access_status",
       "operational_status"
     ],
     "groups": [
@@ -17534,6 +22940,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
           "eleve",
           "annee",
           "facture",
+          "access_reason",
           "access_for_date",
           "finance_authorized",
           "usage_count_in_window",
@@ -17546,6 +22953,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Etat courant, decisions et synchronisation metier.",
         "fields": [
           "statut",
+          "finance_status",
+          "access_status",
           "operational_status"
         ]
       },
@@ -17556,6 +22965,9 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "fields": [
           "date_debut_service",
           "date_fin_service",
+          "validity_start",
+          "validity_end",
+          "derniere_reactivation_financiere",
           "evaluation_date",
           "latest_usage_at"
         ]
@@ -17671,10 +23083,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "date_debut_service": {
         "key": "date_debut_service",
-        "typeText": "Date | null",
+        "typeText": "string | Date | null",
         "kind": "date",
         "group": "dates",
-        "isOptional": false,
+        "isOptional": true,
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
@@ -17682,10 +23094,10 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "date_fin_service": {
         "key": "date_fin_service",
-        "typeText": "Date | null",
+        "typeText": "string | Date | null",
         "kind": "date",
         "group": "dates",
-        "isOptional": false,
+        "isOptional": true,
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
@@ -17789,6 +23201,72 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "HistoriqueAffectationTransport"
+      },
+      "finance_status": {
+        "key": "finance_status",
+        "typeText": "string | null",
+        "kind": "status",
+        "group": "status",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "access_status": {
+        "key": "access_status",
+        "typeText": "string | null",
+        "kind": "status",
+        "group": "status",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "access_reason": {
+        "key": "access_reason",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validity_start": {
+        "key": "validity_start",
+        "typeText": "string | Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validity_end": {
+        "key": "validity_end",
+        "typeText": "string | Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "derniere_reactivation_financiere": {
+        "key": "derniere_reactivation_financiere",
+        "typeText": "string | Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
       },
       "operational_status": {
         "key": "operational_status",
@@ -18173,6 +23651,278 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       }
     }
   },
+  "AssessmentResultWithRelations": {
+    "name": "AssessmentResultWithRelations",
+    "titleFields": [],
+    "summaryFields": [
+      "status",
+      "validated_at"
+    ],
+    "spotlightFields": [
+      "status",
+      "validated_at"
+    ],
+    "statusFields": [
+      "status"
+    ],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "raw_score",
+          "max_score",
+          "normalized_score",
+          "text_value",
+          "display_value",
+          "observation",
+          "is_validated",
+          "validated_by",
+          "scaleLevel",
+          "history"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "status"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "validated_at"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "assessment_id": {
+        "key": "assessment_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "student_id": {
+        "key": "student_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "raw_score": {
+        "key": "raw_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "max_score": {
+        "key": "max_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "normalized_score": {
+        "key": "normalized_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "scale_level_id": {
+        "key": "scale_level_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "text_value": {
+        "key": "text_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_value": {
+        "key": "display_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "status": {
+        "key": "status",
+        "typeText": "AssessmentResultStatus",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "observation": {
+        "key": "observation",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_validated": {
+        "key": "is_validated",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validated_at": {
+        "key": "validated_at",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validated_by": {
+        "key": "validated_by",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date | string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date | string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "assessment": {
+        "key": "assessment",
+        "typeText": "EvaluationWithRelations | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "EvaluationWithRelations"
+      },
+      "student": {
+        "key": "student",
+        "typeText": "EleveWithRelations | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "EleveWithRelations"
+      },
+      "scaleLevel": {
+        "key": "scaleLevel",
+        "typeText": "{\n    id: string;\n    code: string;\n    label: string;\n    numeric_value?: number | null;\n    color?: string | null;\n  } | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "history": {
+        "key": "history",
+        "typeText": "Array<{\n    id: string;\n    changed_at: Date | string;\n    old_display_value?: string | null;\n    new_display_value?: string | null;\n    old_status?: string | null;\n    new_status?: string | null;\n    changed_by?: string | null;\n  }>",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      }
+    }
+  },
   "BulletinLineWithRelations": {
     "name": "BulletinLineWithRelations",
     "titleFields": [],
@@ -18181,13 +23931,29 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
     "statusFields": [],
     "groups": [
       {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "item_type",
+          "grading_mode"
+        ]
+      },
+      {
         "key": "general",
         "title": "Informations principales",
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
           "moyenne",
+          "display_value",
+          "numeric_value",
+          "student_average",
+          "class_average",
+          "observation",
           "rang",
-          "commentaire_enseignant"
+          "commentaire_enseignant",
+          "display_order",
+          "is_visible"
         ]
       }
     ],
@@ -18225,10 +23991,120 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "parent_ligne_id": {
+        "key": "parent_ligne_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "pedagogical_item_id": {
+        "key": "pedagogical_item_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "item_type": {
+        "key": "item_type",
+        "typeText": "PedagogicalItemType | null",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "grading_mode": {
+        "key": "grading_mode",
+        "typeText": "BulletinGradingMode | null",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "moyenne": {
         "key": "moyenne",
         "typeText": "number | null",
         "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_value": {
+        "key": "display_value",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "numeric_value": {
+        "key": "numeric_value",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "student_average": {
+        "key": "student_average",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "class_average": {
+        "key": "class_average",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "scale_level_id": {
+        "key": "scale_level_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "observation": {
+        "key": "observation",
+        "typeText": "string | null",
+        "kind": "text",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -18251,6 +24127,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "key": "commentaire_enseignant",
         "typeText": "string | null",
         "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_order": {
+        "key": "display_order",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_visible": {
+        "key": "is_visible",
+        "typeText": "boolean",
+        "kind": "boolean",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -18301,6 +24199,50 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "MatiereWithRelations"
+      },
+      "parentLigne": {
+        "key": "parentLigne",
+        "typeText": "BulletinLigne | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinLigne"
+      },
+      "childLignes": {
+        "key": "childLignes",
+        "typeText": "BulletinLigne[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinLigne"
+      },
+      "pedagogicalItem": {
+        "key": "pedagogicalItem",
+        "typeText": "PedagogicalItem | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
+      "details": {
+        "key": "details",
+        "typeText": "BulletinLigneDetail[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinLigneDetail"
       }
     }
   },
@@ -18309,11 +24251,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
     "titleFields": [],
     "summaryFields": [
       "statut",
-      "publie_le"
+      "validated_at",
+      "publie_le",
+      "general_average"
     ],
     "spotlightFields": [
+      "validated_at",
       "publie_le",
-      "statut"
+      "statut",
+      "general_average",
+      "general_class_average",
+      "total_coefficients"
     ],
     "statusFields": [
       "statut"
@@ -18324,7 +24272,22 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "title": "Dates et validite",
         "description": "Repere temporel du dossier et de sa validite.",
         "fields": [
+          "validated_at",
           "publie_le"
+        ]
+      },
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "validated_by",
+          "general_rank",
+          "mention",
+          "decision",
+          "general_appreciation",
+          "classe",
+          "affichage_bulletin"
         ]
       },
       {
@@ -18336,11 +24299,23 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         ]
       },
       {
-        "key": "general",
-        "title": "Informations principales",
-        "description": "Lecture rapide des donnees principales de l'entite.",
+        "key": "financial",
+        "title": "Montants et droits",
+        "description": "Montants, soldes, tarifs et valeurs chiffrees.",
         "fields": [
-          "classe"
+          "general_average",
+          "general_class_average",
+          "total_coefficients",
+          "total_points"
+        ]
+      },
+      {
+        "key": "structured",
+        "title": "Donnees structurees",
+        "description": "Blocs JSON et configurations structurees.",
+        "fields": [
+          "display_snapshot_json",
+          "display_legend_json"
         ]
       }
     ],
@@ -18389,6 +24364,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "report_card_template_id": {
+        "key": "report_card_template_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "validated_at": {
+        "key": "validated_at",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "validated_by": {
+        "key": "validated_by",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "publie_le": {
         "key": "publie_le",
         "typeText": "Date | null",
@@ -18405,6 +24413,116 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "string | null",
         "kind": "status",
         "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "general_average": {
+        "key": "general_average",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "general_class_average": {
+        "key": "general_class_average",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "total_coefficients": {
+        "key": "total_coefficients",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "total_points": {
+        "key": "total_points",
+        "typeText": "Decimal | null",
+        "kind": "money",
+        "group": "financial",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "general_rank": {
+        "key": "general_rank",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "mention": {
+        "key": "mention",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "decision": {
+        "key": "decision",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "general_appreciation": {
+        "key": "general_appreciation",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_snapshot_json": {
+        "key": "display_snapshot_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_legend_json": {
+        "key": "display_legend_json",
+        "typeText": "JsonValue | null",
+        "kind": "json",
+        "group": "structured",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -18466,6 +24584,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": null
       },
+      "reportCardTemplate": {
+        "key": "reportCardTemplate",
+        "typeText": "ReportCardTemplate | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplate"
+      },
       "lignes": {
         "key": "lignes",
         "typeText": "BulletinLineWithRelations[]",
@@ -18476,6 +24605,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "BulletinLineWithRelations"
+      },
+      "codeLegends": {
+        "key": "codeLegends",
+        "typeText": "BulletinCodeLegend[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinCodeLegend"
+      },
+      "affichage_bulletin": {
+        "key": "affichage_bulletin",
+        "typeText": "BulletinDisplaySnapshot | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
       }
     }
   },
@@ -18915,6 +25066,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
           "nom",
+          "capacite",
           "niveau",
           "site"
         ]
@@ -18980,6 +25132,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "key": "nom",
         "typeText": "string",
         "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "capacite": {
+        "key": "capacite",
+        "typeText": "number | null",
+        "kind": "number",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -19118,6 +25281,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Bulletin"
+      },
+      "pedagogicalItemAverages": {
+        "key": "pedagogicalItemAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
       },
       "emploiDuTemps": {
         "key": "emploiDuTemps",
@@ -19949,13 +26123,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       "type"
     ],
     "summaryFields": [
-      "date"
+      "date",
+      "status"
     ],
     "spotlightFields": [
       "type",
-      "date"
+      "date",
+      "status"
     ],
-    "statusFields": [],
+    "statusFields": [
+      "status"
+    ],
     "groups": [
       {
         "key": "classification",
@@ -19972,7 +26150,22 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "fields": [
           "titre",
           "poids",
-          "est_publiee"
+          "est_publiee",
+          "include_in_average",
+          "show_in_report_card",
+          "is_final_exam",
+          "gradingScale",
+          "assessmentResults"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "description",
+          "note_max",
+          "notes"
         ]
       },
       {
@@ -19984,12 +26177,11 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         ]
       },
       {
-        "key": "context",
-        "title": "Contexte et commentaires",
-        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
         "fields": [
-          "note_max",
-          "notes"
+          "status"
         ]
       }
     ],
@@ -20027,6 +26219,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "pedagogical_item_id": {
+        "key": "pedagogical_item_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "grading_scale_id": {
+        "key": "grading_scale_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
       "type_evaluation_id": {
         "key": "type_evaluation_id",
         "typeText": "string | null",
@@ -20054,6 +26268,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "string",
         "kind": "text",
         "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "description": {
+        "key": "description",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -20098,6 +26323,50 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "boolean",
         "kind": "boolean",
         "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "include_in_average": {
+        "key": "include_in_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_in_report_card": {
+        "key": "show_in_report_card",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_final_exam": {
+        "key": "is_final_exam",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "status": {
+        "key": "status",
+        "typeText": "AssessmentWorkflowStatus",
+        "kind": "status",
+        "group": "status",
         "isOptional": false,
         "isArray": false,
         "isRelation": false,
@@ -20159,6 +26428,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Periode"
       },
+      "pedagogicalItem": {
+        "key": "pedagogicalItem",
+        "typeText": "PedagogicalItem | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
+      "gradingScale": {
+        "key": "gradingScale",
+        "typeText": "{\n    id: string;\n    nom: string;\n    grading_type: string;\n    base_score?: number | null;\n    levels?: Array<{\n      id: string;\n      code: string;\n      label: string;\n      color?: string | null;\n      numeric_value?: number | null;\n    }>;\n  } | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "typeRef": {
         "key": "typeRef",
         "typeText": "Pick<TypeEvaluationRef, \"id\" | \"nom\" | \"poids_defaut\"> | null",
@@ -20186,6 +26477,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "typeText": "Array<{ id: string; score?: number | null }>",
         "kind": "unknown",
         "group": "context",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "assessmentResults": {
+        "key": "assessmentResults",
+        "typeText": "Array<{\n    id: string;\n    student_id?: string | null;\n    is_validated?: boolean;\n  }>",
+        "kind": "unknown",
+        "group": "general",
         "isOptional": true,
         "isArray": true,
         "isRelation": false,
@@ -20596,6 +26898,250 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "DossierRecouvrement"
+      }
+    }
+  },
+  "GradingScaleWithRelations": {
+    "name": "GradingScaleWithRelations",
+    "titleFields": [
+      "nom"
+    ],
+    "summaryFields": [],
+    "spotlightFields": [],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "nom",
+          "base_score",
+          "use_for_calculation",
+          "allow_decimal",
+          "is_default",
+          "is_active",
+          "levels"
+        ]
+      },
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "grading_type"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "annee_scolaire_id": {
+        "key": "annee_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "nom": {
+        "key": "nom",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "grading_type": {
+        "key": "grading_type",
+        "typeText": "GradingType",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "base_score": {
+        "key": "base_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "use_for_calculation": {
+        "key": "use_for_calculation",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "allow_decimal": {
+        "key": "allow_decimal",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_default": {
+        "key": "is_default",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_active": {
+        "key": "is_active",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "annee": {
+        "key": "annee",
+        "typeText": "AnneeScolaire",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AnneeScolaire"
+      },
+      "levels": {
+        "key": "levels",
+        "typeText": "Array<{\n    id: string;\n    code: string;\n    label: string;\n    numeric_value?: number | null;\n  }>",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "evaluations": {
+        "key": "evaluations",
+        "typeText": "Evaluation[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Evaluation"
+      },
+      "defaultProgrammes": {
+        "key": "defaultProgrammes",
+        "typeText": "Programme[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Programme"
+      },
+      "programmeMatieres": {
+        "key": "programmeMatieres",
+        "typeText": "ProgrammeMatiere[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ProgrammeMatiere"
+      },
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "PedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
       }
     }
   },
@@ -21138,6 +27684,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "BulletinLigne"
       },
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "PedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
       "EmploiDuTemps": {
         "key": "EmploiDuTemps",
         "typeText": "EmploiDuTemps[]",
@@ -21348,6 +27905,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Note"
       },
+      "assessmentResults": {
+        "key": "assessmentResults",
+        "typeText": "AssessmentResult[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AssessmentResult"
+      },
       "presences": {
         "key": "presences",
         "typeText": "PresenceEleve[]",
@@ -21402,6 +27970,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Bulletin"
+      },
+      "pedagogicalItemAverages": {
+        "key": "pedagogicalItemAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
       },
       "factures": {
         "key": "factures",
@@ -21512,6 +28091,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "Emprunt"
+      },
+      "profilMedical": {
+        "key": "profilMedical",
+        "typeText": "EleveMedicalProfile | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "EleveMedicalProfile"
       }
     }
   },
@@ -22165,6 +28755,434 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": false,
         "isTechnical": false,
         "relatedModel": null
+      }
+    }
+  },
+  "PedagogicalItemWithRelations": {
+    "name": "PedagogicalItemWithRelations",
+    "titleFields": [
+      "nom",
+      "code"
+    ],
+    "summaryFields": [],
+    "spotlightFields": [
+      "code"
+    ],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "item_type",
+          "grading_mode_override",
+          "calculation_mode"
+        ]
+      },
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "code",
+          "nom",
+          "display_order",
+          "coefficient",
+          "weight",
+          "is_evaluable",
+          "is_visible_on_report",
+          "is_required",
+          "include_in_general_average",
+          "is_active",
+          "niveau",
+          "matiere",
+          "parent"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "description"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "annee_scolaire_id": {
+        "key": "annee_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "niveau_scolaire_id": {
+        "key": "niveau_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "parent_id": {
+        "key": "parent_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "matiere_id": {
+        "key": "matiere_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "grading_scale_id": {
+        "key": "grading_scale_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "item_type": {
+        "key": "item_type",
+        "typeText": "PedagogicalItemType",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "code": {
+        "key": "code",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "nom": {
+        "key": "nom",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "description": {
+        "key": "description",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "display_order": {
+        "key": "display_order",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "coefficient": {
+        "key": "coefficient",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "weight": {
+        "key": "weight",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_evaluable": {
+        "key": "is_evaluable",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_visible_on_report": {
+        "key": "is_visible_on_report",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_required": {
+        "key": "is_required",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "include_in_general_average": {
+        "key": "include_in_general_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "grading_mode_override": {
+        "key": "grading_mode_override",
+        "typeText": "BulletinGradingMode | null",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "calculation_mode": {
+        "key": "calculation_mode",
+        "typeText": "PedagogicalCalculationMode",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_active": {
+        "key": "is_active",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "annee": {
+        "key": "annee",
+        "typeText": "AnneeScolaire",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "AnneeScolaire"
+      },
+      "niveau": {
+        "key": "niveau",
+        "typeText": "{\n    id: string;\n    nom: string;\n  } | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "matiere": {
+        "key": "matiere",
+        "typeText": "{\n    id: string;\n    nom: string;\n  } | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "gradingScale": {
+        "key": "gradingScale",
+        "typeText": "GradingScale | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScale"
+      },
+      "parent": {
+        "key": "parent",
+        "typeText": "{\n    id: string;\n    nom: string;\n  } | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "enfants": {
+        "key": "enfants",
+        "typeText": "PedagogicalItemWithRelations[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemWithRelations"
+      },
+      "evaluations": {
+        "key": "evaluations",
+        "typeText": "Evaluation[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Evaluation"
+      },
+      "reportCardTemplateItems": {
+        "key": "reportCardTemplateItems",
+        "typeText": "ReportCardTemplatePedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplatePedagogicalItem"
+      },
+      "calculatedAverages": {
+        "key": "calculatedAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
+      },
+      "bulletinLignes": {
+        "key": "bulletinLignes",
+        "typeText": "BulletinLigne[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "BulletinLigne"
       }
     }
   },
@@ -22833,19 +29851,65 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
   "ProgrammeWithRelations": {
     "name": "ProgrammeWithRelations",
     "titleFields": [
-      "nom"
+      "nom",
+      "code"
     ],
-    "summaryFields": [],
-    "spotlightFields": [],
-    "statusFields": [],
+    "summaryFields": [
+      "statut",
+      "date_debut",
+      "date_fin",
+      "verrouille_le"
+    ],
+    "spotlightFields": [
+      "code",
+      "date_debut",
+      "date_fin",
+      "statut",
+      "verrouille_le",
+      "archive_le"
+    ],
+    "statusFields": [
+      "statut"
+    ],
     "groups": [
       {
         "key": "general",
         "title": "Informations principales",
         "description": "Lecture rapide des donnees principales de l'entite.",
         "fields": [
+          "code",
           "nom",
-          "matieres"
+          "est_actif",
+          "ordre_affichage",
+          "matieres",
+          "impact"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "description"
+        ]
+      },
+      {
+        "key": "status",
+        "title": "Statuts et decisions",
+        "description": "Etat courant, decisions et synchronisation metier.",
+        "fields": [
+          "statut"
+        ]
+      },
+      {
+        "key": "dates",
+        "title": "Dates et validite",
+        "description": "Repere temporel du dossier et de sa validite.",
+        "fields": [
+          "date_debut",
+          "date_fin",
+          "verrouille_le",
+          "archive_le"
         ]
       }
     ],
@@ -22894,6 +29958,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": true,
         "relatedModel": null
       },
+      "code": {
+        "key": "code",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
       "nom": {
         "key": "nom",
         "typeText": "string",
@@ -22903,6 +29978,127 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isArray": false,
         "isRelation": false,
         "isTechnical": false,
+        "relatedModel": null
+      },
+      "description": {
+        "key": "description",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "statut": {
+        "key": "statut",
+        "typeText": "StatutProgramme",
+        "kind": "status",
+        "group": "status",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_debut": {
+        "key": "date_debut",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "date_fin": {
+        "key": "date_fin",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "est_actif": {
+        "key": "est_actif",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "ordre_affichage": {
+        "key": "ordre_affichage",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "default_grading_scale_id": {
+        "key": "default_grading_scale_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "verrouille_le": {
+        "key": "verrouille_le",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "archive_le": {
+        "key": "archive_le",
+        "typeText": "Date | null",
+        "kind": "date",
+        "group": "dates",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_by_utilisateur_id": {
+        "key": "created_by_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_by_utilisateur_id": {
+        "key": "updated_by_utilisateur_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
         "relatedModel": null
       },
       "created_at": {
@@ -22960,6 +30156,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "NiveauScolaire"
       },
+      "defaultGradingScale": {
+        "key": "defaultGradingScale",
+        "typeText": "Pick<GradingScale, \"id\" | \"nom\" | \"grading_type\"> | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "GradingScale"
+      },
+      "createur": {
+        "key": "createur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
+      },
+      "modificateur": {
+        "key": "modificateur",
+        "typeText": "Utilisateur | null",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Utilisateur"
+      },
       "matieres": {
         "key": "matieres",
         "typeText": "ProgrammeLine[]",
@@ -22967,6 +30196,28 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "group": "general",
         "isOptional": true,
         "isArray": true,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "changeLogs": {
+        "key": "changeLogs",
+        "typeText": "ProgrammeChangeLog[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ProgrammeChangeLog"
+      },
+      "impact": {
+        "key": "impact",
+        "typeText": "ProgrammeImpactSummary | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
         "isRelation": false,
         "isTechnical": false,
         "relatedModel": null
@@ -23271,6 +30522,787 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "PlanPaiementEleve"
+      }
+    }
+  },
+  "ReportCardTemplateWithRelations": {
+    "name": "ReportCardTemplateWithRelations",
+    "titleFields": [
+      "nom"
+    ],
+    "summaryFields": [],
+    "spotlightFields": [],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "nom",
+          "include_code_grades_in_general_average",
+          "show_student_average",
+          "show_class_average",
+          "show_general_student_average",
+          "show_general_class_average",
+          "show_code_legend",
+          "show_section_headers",
+          "rounding_precision",
+          "show_assessment_details",
+          "show_only_final_exam",
+          "show_subjects",
+          "show_groups",
+          "show_domains",
+          "show_subdomains",
+          "show_competencies",
+          "show_objectives",
+          "show_only_evaluated_items",
+          "show_non_evaluated_items",
+          "non_evaluated_label",
+          "group_items_by_parent",
+          "show_hierarchical_indent",
+          "max_hierarchy_depth",
+          "show_subject_summary",
+          "show_domain_summary",
+          "show_subdomain_summary",
+          "show_competency_results",
+          "show_subject_average",
+          "show_subject_coefficient",
+          "show_subject_points",
+          "show_subject_rank",
+          "show_teacher_appreciation",
+          "show_general_average",
+          "show_total_coefficients",
+          "show_total_points",
+          "show_general_rank",
+          "show_mention",
+          "show_decision",
+          "show_general_appreciation",
+          "show_absences",
+          "show_late_count",
+          "show_logo",
+          "show_signature",
+          "is_default",
+          "is_active",
+          "annee",
+          "niveau",
+          "bulletins",
+          "pedagogicalItems"
+        ]
+      },
+      {
+        "key": "context",
+        "title": "Contexte et commentaires",
+        "description": "Notes, motifs, descriptions et contexte fonctionnel.",
+        "fields": [
+          "description"
+        ]
+      },
+      {
+        "key": "classification",
+        "title": "Types et categories",
+        "description": "Types, modes et dimensions de classement.",
+        "fields": [
+          "template_type",
+          "pedagogical_display_mode",
+          "calculation_mode",
+          "show_assessment_type_summary"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "annee_scolaire_id": {
+        "key": "annee_scolaire_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "niveau_scolaire_id": {
+        "key": "niveau_scolaire_id",
+        "typeText": "string | null",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "nom": {
+        "key": "nom",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "description": {
+        "key": "description",
+        "typeText": "string | null",
+        "kind": "text",
+        "group": "context",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "template_type": {
+        "key": "template_type",
+        "typeText": "ReportCardTemplateType",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "pedagogical_display_mode": {
+        "key": "pedagogical_display_mode",
+        "typeText": "PedagogicalDisplayMode",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "calculation_mode": {
+        "key": "calculation_mode",
+        "typeText": "ReportAverageCalculationMode",
+        "kind": "enum",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "include_code_grades_in_general_average": {
+        "key": "include_code_grades_in_general_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_student_average": {
+        "key": "show_student_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_class_average": {
+        "key": "show_class_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_general_student_average": {
+        "key": "show_general_student_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_general_class_average": {
+        "key": "show_general_class_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_code_legend": {
+        "key": "show_code_legend",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_section_headers": {
+        "key": "show_section_headers",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "rounding_precision": {
+        "key": "rounding_precision",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_assessment_details": {
+        "key": "show_assessment_details",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_assessment_type_summary": {
+        "key": "show_assessment_type_summary",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "classification",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_only_final_exam": {
+        "key": "show_only_final_exam",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subjects": {
+        "key": "show_subjects",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_groups": {
+        "key": "show_groups",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_domains": {
+        "key": "show_domains",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subdomains": {
+        "key": "show_subdomains",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_competencies": {
+        "key": "show_competencies",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_objectives": {
+        "key": "show_objectives",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_only_evaluated_items": {
+        "key": "show_only_evaluated_items",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_non_evaluated_items": {
+        "key": "show_non_evaluated_items",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "non_evaluated_label": {
+        "key": "non_evaluated_label",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "group_items_by_parent": {
+        "key": "group_items_by_parent",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_hierarchical_indent": {
+        "key": "show_hierarchical_indent",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "max_hierarchy_depth": {
+        "key": "max_hierarchy_depth",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subject_summary": {
+        "key": "show_subject_summary",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_domain_summary": {
+        "key": "show_domain_summary",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subdomain_summary": {
+        "key": "show_subdomain_summary",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_competency_results": {
+        "key": "show_competency_results",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subject_average": {
+        "key": "show_subject_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subject_coefficient": {
+        "key": "show_subject_coefficient",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subject_points": {
+        "key": "show_subject_points",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_subject_rank": {
+        "key": "show_subject_rank",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_teacher_appreciation": {
+        "key": "show_teacher_appreciation",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_general_average": {
+        "key": "show_general_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_total_coefficients": {
+        "key": "show_total_coefficients",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_total_points": {
+        "key": "show_total_points",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_general_rank": {
+        "key": "show_general_rank",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_mention": {
+        "key": "show_mention",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_decision": {
+        "key": "show_decision",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_general_appreciation": {
+        "key": "show_general_appreciation",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_absences": {
+        "key": "show_absences",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_late_count": {
+        "key": "show_late_count",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_logo": {
+        "key": "show_logo",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_signature": {
+        "key": "show_signature",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_default": {
+        "key": "is_default",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_active": {
+        "key": "is_active",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement": {
+        "key": "etablissement",
+        "typeText": "Etablissement",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Etablissement"
+      },
+      "annee": {
+        "key": "annee",
+        "typeText": "{\n    id: string;\n    nom: string;\n    est_active: boolean;\n  } | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "niveau": {
+        "key": "niveau",
+        "typeText": "{\n    id: string;\n    nom: string;\n  } | null",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "bulletins": {
+        "key": "bulletins",
+        "typeText": "Array<{ id: string }>",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "sections": {
+        "key": "sections",
+        "typeText": "ReportCardTemplateSection[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplateSection"
+      },
+      "fields": {
+        "key": "fields",
+        "typeText": "ReportCardTemplateField[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ReportCardTemplateField"
+      },
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "Array<{\n    id: string;\n    pedagogical_item_id: string;\n    is_visible: boolean;\n    custom_label?: string | null;\n    display_order: number;\n    show_result: boolean;\n    show_appreciation: boolean;\n    show_children: boolean;\n    pedagogicalItem?: {\n      id: string;\n      nom: string;\n      item_type: string;\n      parent_id?: string | null;\n      matiere_id?: string | null;\n      display_order?: number | null;\n      parent?: {\n        id: string;\n        nom: string;\n      } | null;\n      matiere?: {\n        id: string;\n        nom: string;\n      } | null;\n    } | null;\n  }>",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
       }
     }
   },
@@ -23792,6 +31824,181 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "relatedModel": "PresenceEleve"
       }
     }
+  },
+  "TypeEvaluationRefWithRelations": {
+    "name": "TypeEvaluationRefWithRelations",
+    "titleFields": [
+      "nom",
+      "code"
+    ],
+    "summaryFields": [],
+    "spotlightFields": [
+      "code"
+    ],
+    "statusFields": [],
+    "groups": [
+      {
+        "key": "general",
+        "title": "Informations principales",
+        "description": "Lecture rapide des donnees principales de l'entite.",
+        "fields": [
+          "code",
+          "nom",
+          "poids_defaut",
+          "default_max_score",
+          "include_in_average",
+          "show_in_report_card",
+          "is_final_exam",
+          "is_active",
+          "evaluations"
+        ]
+      }
+    ],
+    "fields": {
+      "id": {
+        "key": "id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "etablissement_id": {
+        "key": "etablissement_id",
+        "typeText": "string",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "code": {
+        "key": "code",
+        "typeText": "TypeEvaluation",
+        "kind": "enum",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "nom": {
+        "key": "nom",
+        "typeText": "string",
+        "kind": "text",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "poids_defaut": {
+        "key": "poids_defaut",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "default_max_score": {
+        "key": "default_max_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "include_in_average": {
+        "key": "include_in_average",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "show_in_report_card": {
+        "key": "show_in_report_card",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_final_exam": {
+        "key": "is_final_exam",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "is_active": {
+        "key": "is_active",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "created_at": {
+        "key": "created_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "updated_at": {
+        "key": "updated_at",
+        "typeText": "Date",
+        "kind": "technical",
+        "group": "technical",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": true,
+        "relatedModel": null
+      },
+      "evaluations": {
+        "key": "evaluations",
+        "typeText": "Array<{ id: string }>",
+        "kind": "unknown",
+        "group": "general",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      }
+    }
   }
 };
 
@@ -23822,24 +32029,39 @@ export const generatedDetailFieldMetaIndex: Record<
       "Role",
       "Permission",
       "Eleve",
+      "EleveMedicalProfile",
       "ParentTuteur",
       "NiveauScolaire",
       "Classe",
       "Inscription",
+      "InscriptionSchoolHistory",
       "IdentifiantEleve",
       "Personnel",
       "Enseignant",
       "Departement",
       "Matiere",
+      "PedagogicalItem",
+      "GradingScale",
+      "GradingScaleLevel",
       "Programme",
       "ProgrammeMatiere",
+      "ProgrammeChangeLog",
       "Cours",
       "TypeEvaluationRef",
       "Evaluation",
       "Note",
+      "AssessmentResult",
+      "AssessmentResultHistory",
+      "PedagogicalItemAverage",
       "RegleNote",
+      "ReportCardTemplate",
+      "ReportCardTemplatePedagogicalItem",
+      "ReportCardTemplateSection",
+      "ReportCardTemplateField",
       "Bulletin",
       "BulletinLigne",
+      "BulletinLigneDetail",
+      "BulletinCodeLegend",
       "CreneauHoraire",
       "EmploiDuTemps",
       "EvenementCalendrier",
@@ -23893,6 +32115,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "AbsenceCantineWithRelations",
       "AbonnementTransportWithRelations",
       "OperationalTransportRow",
+      "AssessmentResultWithRelations",
       "BulletinLineWithRelations",
       "BulletinWithRelations",
       "CatalogueFraisWithRelations",
@@ -23903,6 +32126,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "EmpruntBibliothequeWithRelations",
       "EvaluationWithRelations",
       "FactureWithRelations",
+      "GradingScaleWithRelations",
       "IncidentDisciplinaireWithRelations",
       "JustificatifAbsenceWithRelations",
       "MatiereWithRelations",
@@ -23910,6 +32134,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "NoteWithRelations",
       "OperationFinanciereWithRelations",
       "PaiementWithRelations",
+      "PedagogicalItemWithRelations",
       "PlanPaiementEleveWithRelations",
       "PresenceEleveWithRelations",
       "PersonnelWithRelations",
@@ -23917,9 +32142,11 @@ export const generatedDetailFieldMetaIndex: Record<
       "ProgrammeWithRelations",
       "RecompenseWithRelations",
       "RemiseWithRelations",
+      "ReportCardTemplateWithRelations",
       "RessourceBibliothequeWithRelations",
       "SanctionDisciplinaireWithRelations",
-      "SessionAppelWithRelations"
+      "SessionAppelWithRelations",
+      "TypeEvaluationRefWithRelations"
     ]
   },
   "nom": {
@@ -23944,8 +32171,11 @@ export const generatedDetailFieldMetaIndex: Record<
       "Classe",
       "Departement",
       "Matiere",
+      "PedagogicalItem",
+      "GradingScale",
       "Programme",
       "TypeEvaluationRef",
+      "ReportCardTemplate",
       "CreneauHoraire",
       "MotifAbsence",
       "CanalCommunication",
@@ -23958,14 +32188,18 @@ export const generatedDetailFieldMetaIndex: Record<
       "DocumentTypeInscription",
       "CatalogueFraisWithRelations",
       "ClasseWithRelations",
+      "GradingScaleWithRelations",
       "MatiereWithRelations",
+      "PedagogicalItemWithRelations",
       "ProgrammeWithRelations",
-      "RemiseWithRelations"
+      "RemiseWithRelations",
+      "ReportCardTemplateWithRelations",
+      "TypeEvaluationRefWithRelations"
     ]
   },
   "code": {
     "key": "code",
-    "typeText": "| \"REPAS_SANS_AUTORISATION_ACTIVE\"\n    | \"PAYE_SANS_CONSOMMATION\"\n    | \"CONSOMMATION_SUPERIEURE_AUX_DROITS\"",
+    "typeText": "TypeEvaluation",
     "kind": "enum",
     "group": "general",
     "isOptional": false,
@@ -23978,12 +32212,20 @@ export const generatedDetailFieldMetaIndex: Record<
       "Referenciel",
       "Permission",
       "Matiere",
+      "PedagogicalItem",
+      "GradingScaleLevel",
+      "Programme",
+      "TypeEvaluationRef",
+      "BulletinCodeLegend",
       "RessourceBibliotheque",
       "DocumentTypeInscription",
       "CantineControlAnomalyRow",
       "TransportControlAnomalyRow",
       "MatiereWithRelations",
-      "RessourceBibliothequeWithRelations"
+      "PedagogicalItemWithRelations",
+      "ProgrammeWithRelations",
+      "RessourceBibliothequeWithRelations",
+      "TypeEvaluationRefWithRelations"
     ]
   },
   "fuseau_horaire": {
@@ -24035,24 +32277,37 @@ export const generatedDetailFieldMetaIndex: Record<
       "Role",
       "Permission",
       "Eleve",
+      "EleveMedicalProfile",
       "ParentTuteur",
       "NiveauScolaire",
       "Classe",
       "Inscription",
+      "InscriptionSchoolHistory",
       "IdentifiantEleve",
       "Personnel",
       "Enseignant",
       "Departement",
       "Matiere",
+      "PedagogicalItem",
+      "GradingScale",
+      "GradingScaleLevel",
       "Programme",
       "ProgrammeMatiere",
       "Cours",
       "TypeEvaluationRef",
       "Evaluation",
       "Note",
+      "AssessmentResult",
+      "PedagogicalItemAverage",
       "RegleNote",
+      "ReportCardTemplate",
+      "ReportCardTemplatePedagogicalItem",
+      "ReportCardTemplateSection",
+      "ReportCardTemplateField",
       "Bulletin",
       "BulletinLigne",
+      "BulletinLigneDetail",
+      "BulletinCodeLegend",
       "CreneauHoraire",
       "EmploiDuTemps",
       "EvenementCalendrier",
@@ -24106,6 +32361,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "AbsenceCantineWithRelations",
       "AbonnementTransportWithRelations",
       "OperationalTransportRow",
+      "AssessmentResultWithRelations",
       "BulletinLineWithRelations",
       "BulletinWithRelations",
       "CatalogueFraisWithRelations",
@@ -24116,6 +32372,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "EmpruntBibliothequeWithRelations",
       "EvaluationWithRelations",
       "FactureWithRelations",
+      "GradingScaleWithRelations",
       "IncidentDisciplinaireWithRelations",
       "JustificatifAbsenceWithRelations",
       "MatiereWithRelations",
@@ -24123,6 +32380,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "NoteWithRelations",
       "OperationFinanciereWithRelations",
       "PaiementWithRelations",
+      "PedagogicalItemWithRelations",
       "PlanPaiementEleveWithRelations",
       "PresenceEleveWithRelations",
       "PersonnelWithRelations",
@@ -24130,9 +32388,11 @@ export const generatedDetailFieldMetaIndex: Record<
       "ProgrammeWithRelations",
       "RecompenseWithRelations",
       "RemiseWithRelations",
+      "ReportCardTemplateWithRelations",
       "RessourceBibliothequeWithRelations",
       "SanctionDisciplinaireWithRelations",
-      "SessionAppelWithRelations"
+      "SessionAppelWithRelations",
+      "TypeEvaluationRefWithRelations"
     ]
   },
   "updated_at": {
@@ -24156,24 +32416,37 @@ export const generatedDetailFieldMetaIndex: Record<
       "Role",
       "Permission",
       "Eleve",
+      "EleveMedicalProfile",
       "ParentTuteur",
       "NiveauScolaire",
       "Classe",
       "Inscription",
+      "InscriptionSchoolHistory",
       "IdentifiantEleve",
       "Personnel",
       "Enseignant",
       "Departement",
       "Matiere",
+      "PedagogicalItem",
+      "GradingScale",
+      "GradingScaleLevel",
       "Programme",
       "ProgrammeMatiere",
       "Cours",
       "TypeEvaluationRef",
       "Evaluation",
       "Note",
+      "AssessmentResult",
+      "PedagogicalItemAverage",
       "RegleNote",
+      "ReportCardTemplate",
+      "ReportCardTemplatePedagogicalItem",
+      "ReportCardTemplateSection",
+      "ReportCardTemplateField",
       "Bulletin",
       "BulletinLigne",
+      "BulletinLigneDetail",
+      "BulletinCodeLegend",
       "CreneauHoraire",
       "EmploiDuTemps",
       "EvenementCalendrier",
@@ -24227,6 +32500,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "AbsenceCantineWithRelations",
       "AbonnementTransportWithRelations",
       "OperationalTransportRow",
+      "AssessmentResultWithRelations",
       "BulletinLineWithRelations",
       "BulletinWithRelations",
       "CatalogueFraisWithRelations",
@@ -24237,6 +32511,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "EmpruntBibliothequeWithRelations",
       "EvaluationWithRelations",
       "FactureWithRelations",
+      "GradingScaleWithRelations",
       "IncidentDisciplinaireWithRelations",
       "JustificatifAbsenceWithRelations",
       "MatiereWithRelations",
@@ -24244,6 +32519,7 @@ export const generatedDetailFieldMetaIndex: Record<
       "NoteWithRelations",
       "OperationFinanciereWithRelations",
       "PaiementWithRelations",
+      "PedagogicalItemWithRelations",
       "PlanPaiementEleveWithRelations",
       "PresenceEleveWithRelations",
       "PersonnelWithRelations",
@@ -24251,9 +32527,11 @@ export const generatedDetailFieldMetaIndex: Record<
       "ProgrammeWithRelations",
       "RecompenseWithRelations",
       "RemiseWithRelations",
+      "ReportCardTemplateWithRelations",
       "RessourceBibliothequeWithRelations",
       "SanctionDisciplinaireWithRelations",
-      "SessionAppelWithRelations"
+      "SessionAppelWithRelations",
+      "TypeEvaluationRefWithRelations"
     ]
   },
   "sites": {
@@ -24708,6 +32986,79 @@ export const generatedDetailFieldMetaIndex: Record<
       "Etablissement"
     ]
   },
+  "reportCardTemplates": {
+    "key": "reportCardTemplates",
+    "typeText": "ReportCardTemplate[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ReportCardTemplate",
+    "models": [
+      "Etablissement",
+      "AnneeScolaire",
+      "NiveauScolaire"
+    ]
+  },
+  "pedagogicalItems": {
+    "key": "pedagogicalItems",
+    "typeText": "PedagogicalItem[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "PedagogicalItem",
+    "models": [
+      "Etablissement",
+      "AnneeScolaire",
+      "NiveauScolaire",
+      "Matiere",
+      "GradingScale",
+      "ReportCardTemplate",
+      "GradingScaleWithRelations",
+      "MatiereWithRelations",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "gradingScales": {
+    "key": "gradingScales",
+    "typeText": "GradingScale[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "GradingScale",
+    "models": [
+      "Etablissement",
+      "AnneeScolaire"
+    ]
+  },
+  "pedagogicalItemAverages": {
+    "key": "pedagogicalItemAverages",
+    "typeText": "PedagogicalItemAverage[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "PedagogicalItemAverage",
+    "models": [
+      "Etablissement",
+      "AnneeScolaire",
+      "Periode",
+      "Eleve",
+      "Classe",
+      "ClasseWithRelations",
+      "EleveWithRelations"
+    ]
+  },
   "EvenementCalendrier": {
     "key": "EvenementCalendrier",
     "typeText": "EvenementCalendrier[]",
@@ -24810,10 +33161,14 @@ export const generatedDetailFieldMetaIndex: Record<
       "Personnel",
       "Departement",
       "Matiere",
+      "PedagogicalItem",
+      "GradingScale",
       "Programme",
       "Cours",
       "TypeEvaluationRef",
+      "PedagogicalItemAverage",
       "RegleNote",
+      "ReportCardTemplate",
       "CreneauHoraire",
       "EvenementCalendrier",
       "MotifAbsence",
@@ -24841,13 +33196,17 @@ export const generatedDetailFieldMetaIndex: Record<
       "ClasseWithRelations",
       "CoursWithRelations",
       "FactureWithRelations",
+      "GradingScaleWithRelations",
       "MatiereWithRelations",
       "EleveWithRelations",
       "OperationFinanciereWithRelations",
+      "PedagogicalItemWithRelations",
       "PersonnelWithRelations",
       "ProgrammeWithRelations",
       "RemiseWithRelations",
-      "RessourceBibliothequeWithRelations"
+      "ReportCardTemplateWithRelations",
+      "RessourceBibliothequeWithRelations",
+      "TypeEvaluationRefWithRelations"
     ]
   },
   "adresse": {
@@ -24906,9 +33265,13 @@ export const generatedDetailFieldMetaIndex: Record<
       "Personnel",
       "Departement",
       "Matiere",
+      "PedagogicalItem",
+      "GradingScale",
       "Programme",
       "Cours",
+      "PedagogicalItemAverage",
       "RegleNote",
+      "ReportCardTemplate",
       "EvenementCalendrier",
       "CanalCommunication",
       "Annonce",
@@ -24931,11 +33294,14 @@ export const generatedDetailFieldMetaIndex: Record<
       "ClasseWithRelations",
       "CoursWithRelations",
       "FactureWithRelations",
+      "GradingScaleWithRelations",
       "MatiereWithRelations",
       "EleveWithRelations",
+      "PedagogicalItemWithRelations",
       "PersonnelWithRelations",
       "ProgrammeWithRelations",
-      "RemiseWithRelations"
+      "RemiseWithRelations",
+      "ReportCardTemplateWithRelations"
     ]
   },
   "salles": {
@@ -24995,8 +33361,10 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "AnneeScolaire",
       "Periode",
+      "Programme",
       "JustificatifAbsence",
-      "JustificatifAbsenceWithRelations"
+      "JustificatifAbsenceWithRelations",
+      "ProgrammeWithRelations"
     ]
   },
   "date_fin": {
@@ -25012,8 +33380,10 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "AnneeScolaire",
       "Periode",
+      "Programme",
       "JustificatifAbsence",
-      "JustificatifAbsenceWithRelations"
+      "JustificatifAbsenceWithRelations",
+      "ProgrammeWithRelations"
     ]
   },
   "est_active": {
@@ -25204,8 +33574,12 @@ export const generatedDetailFieldMetaIndex: Record<
       "Periode",
       "Classe",
       "Inscription",
+      "PedagogicalItem",
+      "GradingScale",
       "Programme",
       "Cours",
+      "PedagogicalItemAverage",
+      "ReportCardTemplate",
       "PlanPaiementEleve",
       "FacturationRecurrenteExecution",
       "Facture",
@@ -25224,8 +33598,11 @@ export const generatedDetailFieldMetaIndex: Record<
       "ClasseWithRelations",
       "CoursWithRelations",
       "FactureWithRelations",
+      "GradingScaleWithRelations",
+      "PedagogicalItemWithRelations",
       "PlanPaiementEleveWithRelations",
-      "ProgrammeWithRelations"
+      "ProgrammeWithRelations",
+      "ReportCardTemplateWithRelations"
     ]
   },
   "ordre": {
@@ -25261,8 +33638,12 @@ export const generatedDetailFieldMetaIndex: Record<
       "Periode",
       "Classe",
       "Inscription",
+      "PedagogicalItem",
+      "GradingScale",
       "Programme",
       "Cours",
+      "PedagogicalItemAverage",
+      "ReportCardTemplate",
       "PlanPaiementEleve",
       "FacturationRecurrenteExecution",
       "Facture",
@@ -25280,8 +33661,11 @@ export const generatedDetailFieldMetaIndex: Record<
       "ClasseWithRelations",
       "CoursWithRelations",
       "FactureWithRelations",
+      "GradingScaleWithRelations",
+      "PedagogicalItemWithRelations",
       "PlanPaiementEleveWithRelations",
       "ProgrammeWithRelations",
+      "ReportCardTemplateWithRelations",
       "RessourceBibliothequeWithRelations"
     ]
   },
@@ -25297,9 +33681,14 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": "Evaluation",
     "models": [
       "Periode",
+      "PedagogicalItem",
+      "GradingScale",
       "Cours",
       "TypeEvaluationRef",
-      "CoursWithRelations"
+      "CoursWithRelations",
+      "GradingScaleWithRelations",
+      "PedagogicalItemWithRelations",
+      "TypeEvaluationRefWithRelations"
     ]
   },
   "bulletins": {
@@ -25316,8 +33705,10 @@ export const generatedDetailFieldMetaIndex: Record<
       "Periode",
       "Eleve",
       "Classe",
+      "ReportCardTemplate",
       "ClasseWithRelations",
-      "EleveWithRelations"
+      "EleveWithRelations",
+      "ReportCardTemplateWithRelations"
     ]
   },
   "site_id": {
@@ -25348,7 +33739,9 @@ export const generatedDetailFieldMetaIndex: Record<
     "isTechnical": false,
     "relatedModel": null,
     "models": [
-      "Salle"
+      "Salle",
+      "Classe",
+      "ClasseWithRelations"
     ]
   },
   "type": {
@@ -25539,6 +33932,8 @@ export const generatedDetailFieldMetaIndex: Record<
       "Eleve",
       "Inscription",
       "Personnel",
+      "Programme",
+      "ProgrammeMatiere",
       "Bulletin",
       "PresenceEleve",
       "JustificatifAbsence",
@@ -25568,7 +33963,8 @@ export const generatedDetailFieldMetaIndex: Record<
       "PaiementWithRelations",
       "PresenceEleveWithRelations",
       "PersonnelWithRelations",
-      "PresencePersonnelWithRelations"
+      "PresencePersonnelWithRelations",
+      "ProgrammeWithRelations"
     ]
   },
   "dernier_login": {
@@ -25811,6 +34207,48 @@ export const generatedDetailFieldMetaIndex: Record<
       "Utilisateur"
     ]
   },
+  "programmesCrees": {
+    "key": "programmesCrees",
+    "typeText": "Programme[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Programme",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "programmesMaj": {
+    "key": "programmesMaj",
+    "typeText": "Programme[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Programme",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "programmeChangeLogs": {
+    "key": "programmeChangeLogs",
+    "typeText": "ProgrammeChangeLog[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ProgrammeChangeLog",
+    "models": [
+      "Utilisateur"
+    ]
+  },
   "utilisateur_id": {
     "key": "utilisateur_id",
     "typeText": "string",
@@ -25861,6 +34299,34 @@ export const generatedDetailFieldMetaIndex: Record<
       "Profil"
     ]
   },
+  "lieu_naissance": {
+    "key": "lieu_naissance",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Profil"
+    ]
+  },
+  "nationalite": {
+    "key": "nationalite",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Profil"
+    ]
+  },
   "genre": {
     "key": "genre",
     "typeText": "string | null",
@@ -25880,6 +34346,34 @@ export const generatedDetailFieldMetaIndex: Record<
     "typeText": "string | null",
     "kind": "image_url",
     "group": "media",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Profil"
+    ]
+  },
+  "telephone_personnel": {
+    "key": "telephone_personnel",
+    "typeText": "string | null",
+    "kind": "phone",
+    "group": "contact",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Profil"
+    ]
+  },
+  "email_personnel": {
+    "key": "email_personnel",
+    "typeText": "string | null",
+    "kind": "email",
+    "group": "contact",
     "isOptional": false,
     "isArray": false,
     "isRelation": false,
@@ -25927,7 +34421,7 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "description": {
     "key": "description",
-    "typeText": "string",
+    "typeText": "string | null",
     "kind": "text",
     "group": "context",
     "isOptional": false,
@@ -25937,12 +34431,20 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "Permission",
+      "PedagogicalItem",
+      "Programme",
+      "Evaluation",
+      "ReportCardTemplate",
       "EvenementCalendrier",
       "IncidentDisciplinaire",
       "CatalogueFrais",
       "DocumentTypeInscription",
       "CatalogueFraisWithRelations",
-      "IncidentDisciplinaireWithRelations"
+      "EvaluationWithRelations",
+      "IncidentDisciplinaireWithRelations",
+      "PedagogicalItemWithRelations",
+      "ProgrammeWithRelations",
+      "ReportCardTemplateWithRelations"
     ]
   },
   "role_id": {
@@ -26085,6 +34587,24 @@ export const generatedDetailFieldMetaIndex: Record<
       "SanctionDisciplinaireWithRelations"
     ]
   },
+  "assessmentResults": {
+    "key": "assessmentResults",
+    "typeText": "AssessmentResult[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "AssessmentResult",
+    "models": [
+      "Eleve",
+      "GradingScaleLevel",
+      "Evaluation",
+      "EvaluationWithRelations",
+      "EleveWithRelations"
+    ]
+  },
   "presences": {
     "key": "presences",
     "typeText": "PresenceEleve[]",
@@ -26167,6 +34687,257 @@ export const generatedDetailFieldMetaIndex: Record<
       "RessourceBibliothequeWithRelations"
     ]
   },
+  "profilMedical": {
+    "key": "profilMedical",
+    "typeText": "EleveMedicalProfile | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "EleveMedicalProfile",
+    "models": [
+      "Eleve",
+      "EleveWithRelations"
+    ]
+  },
+  "eleve_id": {
+    "key": "eleve_id",
+    "typeText": "string",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile",
+      "EleveParentTuteur",
+      "Inscription",
+      "IdentifiantEleve",
+      "Note",
+      "PedagogicalItemAverage",
+      "Bulletin",
+      "PresenceEleve",
+      "JustificatifAbsence",
+      "IncidentDisciplinaire",
+      "Recompense",
+      "PlanPaiementEleve",
+      "FacturationRecurrenteExecution",
+      "Facture",
+      "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
+      "Emprunt",
+      "AbonnementTransport",
+      "AbonnementCantine",
+      "AbonnementCantineWithRelations",
+      "CantineOperationalRow",
+      "CantineControlAnomalyRow",
+      "AbonnementTransportWithRelations",
+      "OperationalTransportRow",
+      "TransportControlAnomalyRow",
+      "BulletinWithRelations",
+      "EmpruntBibliothequeWithRelations",
+      "FactureWithRelations",
+      "IncidentDisciplinaireWithRelations",
+      "JustificatifAbsenceWithRelations",
+      "NoteWithRelations",
+      "PlanPaiementEleveWithRelations",
+      "PresenceEleveWithRelations",
+      "RecompenseWithRelations"
+    ]
+  },
+  "groupe_sanguin": {
+    "key": "groupe_sanguin",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile"
+    ]
+  },
+  "allergies": {
+    "key": "allergies",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile"
+    ]
+  },
+  "maladies_particulieres": {
+    "key": "maladies_particulieres",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile"
+    ]
+  },
+  "traitement_medical": {
+    "key": "traitement_medical",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile"
+    ]
+  },
+  "medecin_traitant": {
+    "key": "medecin_traitant",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile"
+    ]
+  },
+  "telephone_medecin": {
+    "key": "telephone_medecin",
+    "typeText": "string | null",
+    "kind": "phone",
+    "group": "contact",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile"
+    ]
+  },
+  "autorisation_prise_en_charge_medicale": {
+    "key": "autorisation_prise_en_charge_medicale",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile"
+    ]
+  },
+  "personne_a_contacter_urgence": {
+    "key": "personne_a_contacter_urgence",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "contact",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile"
+    ]
+  },
+  "telephone_urgence": {
+    "key": "telephone_urgence",
+    "typeText": "string | null",
+    "kind": "phone",
+    "group": "contact",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile"
+    ]
+  },
+  "notes_json": {
+    "key": "notes_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "EleveMedicalProfile"
+    ]
+  },
+  "eleve": {
+    "key": "eleve",
+    "typeText": "Eleve",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Eleve",
+    "models": [
+      "EleveMedicalProfile",
+      "EleveParentTuteur",
+      "Inscription",
+      "IdentifiantEleve",
+      "Note",
+      "PedagogicalItemAverage",
+      "Bulletin",
+      "PresenceEleve",
+      "JustificatifAbsence",
+      "IncidentDisciplinaire",
+      "Recompense",
+      "PlanPaiementEleve",
+      "FacturationRecurrenteExecution",
+      "Facture",
+      "EcheancePaiement",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
+      "Emprunt",
+      "AbonnementTransport",
+      "AbonnementCantine",
+      "AbonnementCantineWithRelations",
+      "CantineOperationalRow",
+      "AbonnementTransportWithRelations",
+      "OperationalTransportRow",
+      "BulletinWithRelations",
+      "EmpruntBibliothequeWithRelations",
+      "FactureWithRelations",
+      "IncidentDisciplinaireWithRelations",
+      "JustificatifAbsenceWithRelations",
+      "NoteWithRelations",
+      "PlanPaiementEleveWithRelations",
+      "PresenceEleveWithRelations",
+      "RecompenseWithRelations"
+    ]
+  },
   "nom_complet": {
     "key": "nom_complet",
     "typeText": "string",
@@ -26209,51 +34980,18 @@ export const generatedDetailFieldMetaIndex: Record<
       "ParentTuteur"
     ]
   },
-  "eleve_id": {
-    "key": "eleve_id",
-    "typeText": "string",
-    "kind": "technical",
-    "group": "technical",
+  "lieu_travail": {
+    "key": "lieu_travail",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
     "isOptional": false,
     "isArray": false,
     "isRelation": false,
-    "isTechnical": true,
+    "isTechnical": false,
     "relatedModel": null,
     "models": [
-      "EleveParentTuteur",
-      "Inscription",
-      "IdentifiantEleve",
-      "Note",
-      "Bulletin",
-      "PresenceEleve",
-      "JustificatifAbsence",
-      "IncidentDisciplinaire",
-      "Recompense",
-      "PlanPaiementEleve",
-      "FacturationRecurrenteExecution",
-      "Facture",
-      "EcheancePaiement",
-      "PromessePaiement",
-      "RestrictionAdministrative",
-      "DossierRecouvrement",
-      "Emprunt",
-      "AbonnementTransport",
-      "AbonnementCantine",
-      "AbonnementCantineWithRelations",
-      "CantineOperationalRow",
-      "CantineControlAnomalyRow",
-      "AbonnementTransportWithRelations",
-      "OperationalTransportRow",
-      "TransportControlAnomalyRow",
-      "BulletinWithRelations",
-      "EmpruntBibliothequeWithRelations",
-      "FactureWithRelations",
-      "IncidentDisciplinaireWithRelations",
-      "JustificatifAbsenceWithRelations",
-      "NoteWithRelations",
-      "PlanPaiementEleveWithRelations",
-      "PresenceEleveWithRelations",
-      "RecompenseWithRelations"
+      "ParentTuteur"
     ]
   },
   "parent_tuteur_id": {
@@ -26354,51 +35092,6 @@ export const generatedDetailFieldMetaIndex: Record<
       "EleveParentTuteur"
     ]
   },
-  "eleve": {
-    "key": "eleve",
-    "typeText": "Eleve",
-    "kind": "relation",
-    "group": "relations",
-    "isOptional": true,
-    "isArray": false,
-    "isRelation": true,
-    "isTechnical": false,
-    "relatedModel": "Eleve",
-    "models": [
-      "EleveParentTuteur",
-      "Inscription",
-      "IdentifiantEleve",
-      "Note",
-      "Bulletin",
-      "PresenceEleve",
-      "JustificatifAbsence",
-      "IncidentDisciplinaire",
-      "Recompense",
-      "PlanPaiementEleve",
-      "FacturationRecurrenteExecution",
-      "Facture",
-      "EcheancePaiement",
-      "PromessePaiement",
-      "RestrictionAdministrative",
-      "DossierRecouvrement",
-      "Emprunt",
-      "AbonnementTransport",
-      "AbonnementCantine",
-      "AbonnementCantineWithRelations",
-      "CantineOperationalRow",
-      "AbonnementTransportWithRelations",
-      "OperationalTransportRow",
-      "BulletinWithRelations",
-      "EmpruntBibliothequeWithRelations",
-      "FactureWithRelations",
-      "IncidentDisciplinaireWithRelations",
-      "JustificatifAbsenceWithRelations",
-      "NoteWithRelations",
-      "PlanPaiementEleveWithRelations",
-      "PresenceEleveWithRelations",
-      "RecompenseWithRelations"
-    ]
-  },
   "parent_tuteur": {
     "key": "parent_tuteur",
     "typeText": "ParentTuteur",
@@ -26426,11 +35119,15 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "Classe",
       "Inscription",
+      "PedagogicalItem",
       "Programme",
+      "ReportCardTemplate",
       "CatalogueFrais",
       "CatalogueFraisWithRelations",
       "ClasseWithRelations",
-      "ProgrammeWithRelations"
+      "PedagogicalItemWithRelations",
+      "ProgrammeWithRelations",
+      "ReportCardTemplateWithRelations"
     ]
   },
   "enseignant_principal_id": {
@@ -26461,11 +35158,15 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "Classe",
       "Inscription",
+      "PedagogicalItem",
       "Programme",
+      "ReportCardTemplate",
       "CatalogueFrais",
       "CatalogueFraisWithRelations",
       "ClasseWithRelations",
-      "ProgrammeWithRelations"
+      "PedagogicalItemWithRelations",
+      "ProgrammeWithRelations",
+      "ReportCardTemplateWithRelations"
     ]
   },
   "enseignant_principal": {
@@ -26516,6 +35217,7 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "Inscription",
       "Cours",
+      "PedagogicalItemAverage",
       "Bulletin",
       "EmploiDuTemps",
       "SessionAppel",
@@ -26623,6 +35325,48 @@ export const generatedDetailFieldMetaIndex: Record<
       "Inscription"
     ]
   },
+  "acces_systeme_json": {
+    "key": "acces_systeme_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Inscription"
+    ]
+  },
+  "consentements_json": {
+    "key": "consentements_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Inscription"
+    ]
+  },
+  "observations_json": {
+    "key": "observations_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Inscription"
+    ]
+  },
   "date_sortie": {
     "key": "date_sortie",
     "typeText": "Date | null",
@@ -26664,6 +35408,7 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "Inscription",
       "Cours",
+      "PedagogicalItemAverage",
       "Bulletin",
       "EmploiDuTemps",
       "SessionAppel",
@@ -26686,6 +35431,176 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "Inscription",
       "DocumentTypeInscription"
+    ]
+  },
+  "historiqueScolaire": {
+    "key": "historiqueScolaire",
+    "typeText": "InscriptionSchoolHistory | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "InscriptionSchoolHistory",
+    "models": [
+      "Inscription"
+    ]
+  },
+  "inscription_id": {
+    "key": "inscription_id",
+    "typeText": "string",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "InscriptionSchoolHistory",
+      "InscriptionDocument"
+    ]
+  },
+  "ancien_etablissement": {
+    "key": "ancien_etablissement",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionSchoolHistory"
+    ]
+  },
+  "ancienne_classe": {
+    "key": "ancienne_classe",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionSchoolHistory"
+    ]
+  },
+  "annee_precedente": {
+    "key": "annee_precedente",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionSchoolHistory"
+    ]
+  },
+  "derniere_moyenne": {
+    "key": "derniere_moyenne",
+    "typeText": "Decimal | null",
+    "kind": "money",
+    "group": "financial",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionSchoolHistory"
+    ]
+  },
+  "decision_precedente": {
+    "key": "decision_precedente",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionSchoolHistory"
+    ]
+  },
+  "mention_precedente": {
+    "key": "mention_precedente",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionSchoolHistory"
+    ]
+  },
+  "motif_transfert": {
+    "key": "motif_transfert",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "context",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionSchoolHistory"
+    ]
+  },
+  "observations": {
+    "key": "observations",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionSchoolHistory"
+    ]
+  },
+  "reprise_auto": {
+    "key": "reprise_auto",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "InscriptionSchoolHistory"
+    ]
+  },
+  "inscription": {
+    "key": "inscription",
+    "typeText": "Inscription",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Inscription",
+    "models": [
+      "InscriptionSchoolHistory",
+      "InscriptionDocument"
     ]
   },
   "delivre_le": {
@@ -26951,6 +35866,755 @@ export const generatedDetailFieldMetaIndex: Record<
       "MatiereWithRelations"
     ]
   },
+  "parent_id": {
+    "key": "parent_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "matiere_id": {
+    "key": "matiere_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "ProgrammeMatiere",
+      "Cours",
+      "BulletinLigne",
+      "EmploiDuTemps",
+      "BulletinLineWithRelations",
+      "CoursWithRelations",
+      "EmploiDuTempsWithRelations",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "grading_scale_id": {
+    "key": "grading_scale_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "GradingScaleLevel",
+      "ProgrammeMatiere",
+      "Evaluation",
+      "BulletinCodeLegend",
+      "EvaluationWithRelations",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "item_type": {
+    "key": "item_type",
+    "typeText": "PedagogicalItemType",
+    "kind": "enum",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "BulletinLigne",
+      "BulletinLineWithRelations",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "display_order": {
+    "key": "display_order",
+    "typeText": "number",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "GradingScaleLevel",
+      "ReportCardTemplatePedagogicalItem",
+      "ReportCardTemplateSection",
+      "ReportCardTemplateField",
+      "BulletinLigne",
+      "BulletinLigneDetail",
+      "BulletinCodeLegend",
+      "BulletinLineWithRelations",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "coefficient": {
+    "key": "coefficient",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "ProgrammeMatiere",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "weight": {
+    "key": "weight",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "is_evaluable": {
+    "key": "is_evaluable",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "is_visible_on_report": {
+    "key": "is_visible_on_report",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "is_required": {
+    "key": "is_required",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "include_in_general_average": {
+    "key": "include_in_general_average",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "grading_mode_override": {
+    "key": "grading_mode_override",
+    "typeText": "BulletinGradingMode | null",
+    "kind": "enum",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "calculation_mode": {
+    "key": "calculation_mode",
+    "typeText": "PedagogicalCalculationMode",
+    "kind": "enum",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemAverage",
+      "ReportCardTemplate",
+      "PedagogicalItemWithRelations",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "is_active": {
+    "key": "is_active",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItem",
+      "GradingScale",
+      "GradingScaleLevel",
+      "TypeEvaluationRef",
+      "ReportCardTemplate",
+      "ReportCardTemplateSection",
+      "GradingScaleWithRelations",
+      "PedagogicalItemWithRelations",
+      "ReportCardTemplateWithRelations",
+      "TypeEvaluationRefWithRelations"
+    ]
+  },
+  "matiere": {
+    "key": "matiere",
+    "typeText": "Matiere | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Matiere",
+    "models": [
+      "PedagogicalItem",
+      "ProgrammeMatiere",
+      "Cours",
+      "BulletinLigne",
+      "EmploiDuTemps",
+      "BulletinLineWithRelations",
+      "CoursWithRelations",
+      "EmploiDuTempsWithRelations",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "gradingScale": {
+    "key": "gradingScale",
+    "typeText": "GradingScale | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "GradingScale",
+    "models": [
+      "PedagogicalItem",
+      "GradingScaleLevel",
+      "ProgrammeMatiere",
+      "Evaluation",
+      "EvaluationWithRelations",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "parent": {
+    "key": "parent",
+    "typeText": "PedagogicalItem | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "PedagogicalItem",
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "enfants": {
+    "key": "enfants",
+    "typeText": "PedagogicalItem[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "PedagogicalItem",
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "reportCardTemplateItems": {
+    "key": "reportCardTemplateItems",
+    "typeText": "ReportCardTemplatePedagogicalItem[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ReportCardTemplatePedagogicalItem",
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "calculatedAverages": {
+    "key": "calculatedAverages",
+    "typeText": "PedagogicalItemAverage[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "PedagogicalItemAverage",
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "bulletinLignes": {
+    "key": "bulletinLignes",
+    "typeText": "BulletinLigne[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "BulletinLigne",
+    "models": [
+      "PedagogicalItem",
+      "PedagogicalItemWithRelations"
+    ]
+  },
+  "grading_type": {
+    "key": "grading_type",
+    "typeText": "GradingType",
+    "kind": "enum",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScale",
+      "GradingScaleWithRelations"
+    ]
+  },
+  "base_score": {
+    "key": "base_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScale",
+      "GradingScaleWithRelations"
+    ]
+  },
+  "use_for_calculation": {
+    "key": "use_for_calculation",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScale",
+      "GradingScaleWithRelations"
+    ]
+  },
+  "allow_decimal": {
+    "key": "allow_decimal",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScale",
+      "GradingScaleWithRelations"
+    ]
+  },
+  "is_default": {
+    "key": "is_default",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScale",
+      "ReportCardTemplate",
+      "GradingScaleWithRelations",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "levels": {
+    "key": "levels",
+    "typeText": "GradingScaleLevel[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "GradingScaleLevel",
+    "models": [
+      "GradingScale",
+      "GradingScaleWithRelations"
+    ]
+  },
+  "defaultProgrammes": {
+    "key": "defaultProgrammes",
+    "typeText": "Programme[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Programme",
+    "models": [
+      "GradingScale",
+      "GradingScaleWithRelations"
+    ]
+  },
+  "programmeMatieres": {
+    "key": "programmeMatieres",
+    "typeText": "ProgrammeMatiere[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ProgrammeMatiere",
+    "models": [
+      "GradingScale",
+      "GradingScaleWithRelations"
+    ]
+  },
+  "label": {
+    "key": "label",
+    "typeText": "string",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScaleLevel",
+      "ReportCardTemplateField",
+      "BulletinLigneDetail",
+      "BulletinCodeLegend"
+    ]
+  },
+  "numeric_value": {
+    "key": "numeric_value",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScaleLevel",
+      "BulletinLigne",
+      "BulletinLigneDetail",
+      "BulletinCodeLegend",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "min_value": {
+    "key": "min_value",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScaleLevel"
+    ]
+  },
+  "max_value": {
+    "key": "max_value",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScaleLevel"
+    ]
+  },
+  "color": {
+    "key": "color",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScaleLevel"
+    ]
+  },
+  "is_success_level": {
+    "key": "is_success_level",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "GradingScaleLevel"
+    ]
+  },
+  "est_actif": {
+    "key": "est_actif",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Programme",
+      "DocumentTypeInscription",
+      "Webhook",
+      "ProgrammeWithRelations"
+    ]
+  },
+  "ordre_affichage": {
+    "key": "ordre_affichage",
+    "typeText": "number",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Programme",
+      "ProgrammeWithRelations"
+    ]
+  },
+  "default_grading_scale_id": {
+    "key": "default_grading_scale_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "Programme",
+      "ProgrammeWithRelations"
+    ]
+  },
+  "verrouille_le": {
+    "key": "verrouille_le",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Programme",
+      "ProgrammeWithRelations"
+    ]
+  },
+  "archive_le": {
+    "key": "archive_le",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Programme",
+      "ProgrammeWithRelations"
+    ]
+  },
+  "created_by_utilisateur_id": {
+    "key": "created_by_utilisateur_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "Programme",
+      "FacturationRecurrenteExecution",
+      "ProgrammeWithRelations"
+    ]
+  },
+  "updated_by_utilisateur_id": {
+    "key": "updated_by_utilisateur_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "Programme",
+      "ProgrammeWithRelations"
+    ]
+  },
+  "defaultGradingScale": {
+    "key": "defaultGradingScale",
+    "typeText": "GradingScale | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "GradingScale",
+    "models": [
+      "Programme",
+      "ProgrammeWithRelations"
+    ]
+  },
+  "createur": {
+    "key": "createur",
+    "typeText": "Utilisateur | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Utilisateur",
+    "models": [
+      "Programme",
+      "Evaluation",
+      "FacturationRecurrenteExecution",
+      "OperationFinanciere",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
+      "EvaluationWithRelations",
+      "OperationFinanciereWithRelations",
+      "ProgrammeWithRelations"
+    ]
+  },
+  "modificateur": {
+    "key": "modificateur",
+    "typeText": "Utilisateur | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Utilisateur",
+    "models": [
+      "Programme",
+      "ProgrammeWithRelations"
+    ]
+  },
+  "changeLogs": {
+    "key": "changeLogs",
+    "typeText": "ProgrammeChangeLog[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ProgrammeChangeLog",
+    "models": [
+      "Programme",
+      "ProgrammeWithRelations"
+    ]
+  },
   "programme_id": {
     "key": "programme_id",
     "typeText": "string",
@@ -26962,27 +36626,8 @@ export const generatedDetailFieldMetaIndex: Record<
     "isTechnical": true,
     "relatedModel": null,
     "models": [
-      "ProgrammeMatiere"
-    ]
-  },
-  "matiere_id": {
-    "key": "matiere_id",
-    "typeText": "string",
-    "kind": "technical",
-    "group": "technical",
-    "isOptional": false,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": true,
-    "relatedModel": null,
-    "models": [
       "ProgrammeMatiere",
-      "Cours",
-      "BulletinLigne",
-      "EmploiDuTemps",
-      "BulletinLineWithRelations",
-      "CoursWithRelations",
-      "EmploiDuTempsWithRelations"
+      "ProgrammeChangeLog"
     ]
   },
   "heures_semaine": {
@@ -26999,11 +36644,137 @@ export const generatedDetailFieldMetaIndex: Record<
       "ProgrammeMatiere"
     ]
   },
-  "coefficient": {
-    "key": "coefficient",
+  "heures_annuelles": {
+    "key": "heures_annuelles",
     "typeText": "number | null",
     "kind": "number",
     "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeMatiere"
+    ]
+  },
+  "seances_par_semaine": {
+    "key": "seances_par_semaine",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeMatiere"
+    ]
+  },
+  "duree_seance_par_defaut": {
+    "key": "duree_seance_par_defaut",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeMatiere"
+    ]
+  },
+  "est_obligatoire": {
+    "key": "est_obligatoire",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeMatiere"
+    ]
+  },
+  "est_visible_bulletin": {
+    "key": "est_visible_bulletin",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeMatiere"
+    ]
+  },
+  "inclure_moyenne_generale": {
+    "key": "inclure_moyenne_generale",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeMatiere"
+    ]
+  },
+  "appreciation_obligatoire": {
+    "key": "appreciation_obligatoire",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeMatiere"
+    ]
+  },
+  "libelle_bulletin": {
+    "key": "libelle_bulletin",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeMatiere"
+    ]
+  },
+  "ordre_affichage_bulletin": {
+    "key": "ordre_affichage_bulletin",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeMatiere"
+    ]
+  },
+  "mode_calcul": {
+    "key": "mode_calcul",
+    "typeText": "PedagogicalCalculationMode",
+    "kind": "enum",
+    "group": "classification",
     "isOptional": false,
     "isArray": false,
     "isRelation": false,
@@ -27024,27 +36795,165 @@ export const generatedDetailFieldMetaIndex: Record<
     "isTechnical": false,
     "relatedModel": "Programme",
     "models": [
-      "ProgrammeMatiere"
+      "ProgrammeMatiere",
+      "ProgrammeChangeLog"
     ]
   },
-  "matiere": {
-    "key": "matiere",
-    "typeText": "Matiere",
+  "entity_type": {
+    "key": "entity_type",
+    "typeText": "string",
+    "kind": "text",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeChangeLog"
+    ]
+  },
+  "entity_id": {
+    "key": "entity_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeChangeLog"
+    ]
+  },
+  "action": {
+    "key": "action",
+    "typeText": "string",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeChangeLog",
+      "JournalAudit"
+    ]
+  },
+  "field_name": {
+    "key": "field_name",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeChangeLog"
+    ]
+  },
+  "old_value_json": {
+    "key": "old_value_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeChangeLog"
+    ]
+  },
+  "new_value_json": {
+    "key": "new_value_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeChangeLog"
+    ]
+  },
+  "reason": {
+    "key": "reason",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeChangeLog",
+      "AssessmentResultHistory"
+    ]
+  },
+  "impact_summary_json": {
+    "key": "impact_summary_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeChangeLog"
+    ]
+  },
+  "changed_by_utilisateur_id": {
+    "key": "changed_by_utilisateur_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeChangeLog"
+    ]
+  },
+  "changed_at": {
+    "key": "changed_at",
+    "typeText": "Date",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeChangeLog",
+      "AssessmentResultHistory"
+    ]
+  },
+  "changedBy": {
+    "key": "changedBy",
+    "typeText": "Utilisateur | null",
     "kind": "relation",
     "group": "relations",
     "isOptional": true,
     "isArray": false,
     "isRelation": true,
     "isTechnical": false,
-    "relatedModel": "Matiere",
+    "relatedModel": "Utilisateur",
     "models": [
-      "ProgrammeMatiere",
-      "Cours",
-      "BulletinLigne",
-      "EmploiDuTemps",
-      "BulletinLineWithRelations",
-      "CoursWithRelations",
-      "EmploiDuTempsWithRelations"
+      "ProgrammeChangeLog"
     ]
   },
   "enseignant_id": {
@@ -27090,7 +36999,74 @@ export const generatedDetailFieldMetaIndex: Record<
     "isTechnical": false,
     "relatedModel": null,
     "models": [
-      "TypeEvaluationRef"
+      "TypeEvaluationRef",
+      "TypeEvaluationRefWithRelations"
+    ]
+  },
+  "default_max_score": {
+    "key": "default_max_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "TypeEvaluationRef",
+      "TypeEvaluationRefWithRelations"
+    ]
+  },
+  "include_in_average": {
+    "key": "include_in_average",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "TypeEvaluationRef",
+      "Evaluation",
+      "EvaluationWithRelations",
+      "TypeEvaluationRefWithRelations"
+    ]
+  },
+  "show_in_report_card": {
+    "key": "show_in_report_card",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "TypeEvaluationRef",
+      "Evaluation",
+      "EvaluationWithRelations",
+      "TypeEvaluationRefWithRelations"
+    ]
+  },
+  "is_final_exam": {
+    "key": "is_final_exam",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "TypeEvaluationRef",
+      "Evaluation",
+      "EvaluationWithRelations",
+      "TypeEvaluationRefWithRelations"
     ]
   },
   "cours_id": {
@@ -27122,8 +37098,28 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "Evaluation",
+      "PedagogicalItemAverage",
       "Bulletin",
       "BulletinWithRelations",
+      "EvaluationWithRelations"
+    ]
+  },
+  "pedagogical_item_id": {
+    "key": "pedagogical_item_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "Evaluation",
+      "PedagogicalItemAverage",
+      "ReportCardTemplatePedagogicalItem",
+      "BulletinLigne",
+      "BulletinLineWithRelations",
       "EvaluationWithRelations"
     ]
   },
@@ -27210,6 +37206,24 @@ export const generatedDetailFieldMetaIndex: Record<
       "EvaluationWithRelations"
     ]
   },
+  "status": {
+    "key": "status",
+    "typeText": "AssessmentWorkflowStatus",
+    "kind": "status",
+    "group": "status",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Evaluation",
+      "AssessmentResult",
+      "PedagogicalItemAverage",
+      "AssessmentResultWithRelations",
+      "EvaluationWithRelations"
+    ]
+  },
   "cree_par_enseignant_id": {
     "key": "cree_par_enseignant_id",
     "typeText": "string | null",
@@ -27237,8 +37251,28 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": "Periode",
     "models": [
       "Evaluation",
+      "PedagogicalItemAverage",
       "Bulletin",
       "BulletinWithRelations",
+      "EvaluationWithRelations"
+    ]
+  },
+  "pedagogicalItem": {
+    "key": "pedagogicalItem",
+    "typeText": "PedagogicalItem | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "PedagogicalItem",
+    "models": [
+      "Evaluation",
+      "PedagogicalItemAverage",
+      "ReportCardTemplatePedagogicalItem",
+      "BulletinLigne",
+      "BulletinLineWithRelations",
       "EvaluationWithRelations"
     ]
   },
@@ -27255,27 +37289,6 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "Evaluation",
       "EvaluationWithRelations"
-    ]
-  },
-  "createur": {
-    "key": "createur",
-    "typeText": "Enseignant | null",
-    "kind": "relation",
-    "group": "relations",
-    "isOptional": true,
-    "isArray": false,
-    "isRelation": true,
-    "isTechnical": false,
-    "relatedModel": "Enseignant",
-    "models": [
-      "Evaluation",
-      "FacturationRecurrenteExecution",
-      "OperationFinanciere",
-      "PromessePaiement",
-      "RestrictionAdministrative",
-      "DossierRecouvrement",
-      "EvaluationWithRelations",
-      "OperationFinanciereWithRelations"
     ]
   },
   "evaluation_id": {
@@ -27368,6 +37381,561 @@ export const generatedDetailFieldMetaIndex: Record<
       "NoteWithRelations"
     ]
   },
+  "assessment_id": {
+    "key": "assessment_id",
+    "typeText": "string",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "BulletinLigneDetail",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "student_id": {
+    "key": "student_id",
+    "typeText": "string",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "raw_score": {
+    "key": "raw_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "max_score": {
+    "key": "max_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "normalized_score": {
+    "key": "normalized_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "scale_level_id": {
+    "key": "scale_level_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "BulletinLigne",
+      "BulletinLigneDetail",
+      "AssessmentResultWithRelations",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "text_value": {
+    "key": "text_value",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "display_value": {
+    "key": "display_value",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "PedagogicalItemAverage",
+      "BulletinLigne",
+      "BulletinLigneDetail",
+      "AssessmentResultWithRelations",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "observation": {
+    "key": "observation",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "BulletinLigne",
+      "AssessmentResultWithRelations",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "is_validated": {
+    "key": "is_validated",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "validated_at": {
+    "key": "validated_at",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "Bulletin",
+      "AssessmentResultWithRelations",
+      "BulletinWithRelations"
+    ]
+  },
+  "validated_by": {
+    "key": "validated_by",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResult",
+      "Bulletin",
+      "AssessmentResultWithRelations",
+      "BulletinWithRelations"
+    ]
+  },
+  "assessment": {
+    "key": "assessment",
+    "typeText": "Evaluation",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Evaluation",
+    "models": [
+      "AssessmentResult",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "student": {
+    "key": "student",
+    "typeText": "Eleve",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Eleve",
+    "models": [
+      "AssessmentResult",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "scaleLevel": {
+    "key": "scaleLevel",
+    "typeText": "GradingScaleLevel | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "GradingScaleLevel",
+    "models": [
+      "AssessmentResult",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "history": {
+    "key": "history",
+    "typeText": "AssessmentResultHistory[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "AssessmentResultHistory",
+    "models": [
+      "AssessmentResult",
+      "AssessmentResultWithRelations"
+    ]
+  },
+  "assessment_result_id": {
+    "key": "assessment_result_id",
+    "typeText": "string",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory",
+      "BulletinLigneDetail"
+    ]
+  },
+  "old_raw_score": {
+    "key": "old_raw_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "new_raw_score": {
+    "key": "new_raw_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "old_max_score": {
+    "key": "old_max_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "new_max_score": {
+    "key": "new_max_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "old_normalized_score": {
+    "key": "old_normalized_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "new_normalized_score": {
+    "key": "new_normalized_score",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "old_scale_level_id": {
+    "key": "old_scale_level_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "new_scale_level_id": {
+    "key": "new_scale_level_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "old_text_value": {
+    "key": "old_text_value",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "new_text_value": {
+    "key": "new_text_value",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "old_display_value": {
+    "key": "old_display_value",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "new_display_value": {
+    "key": "new_display_value",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "old_status": {
+    "key": "old_status",
+    "typeText": "AssessmentResultStatus | null",
+    "kind": "status",
+    "group": "status",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "new_status": {
+    "key": "new_status",
+    "typeText": "AssessmentResultStatus | null",
+    "kind": "status",
+    "group": "status",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "changed_by": {
+    "key": "changed_by",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "assessmentResult": {
+    "key": "assessmentResult",
+    "typeText": "AssessmentResult",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "AssessmentResult",
+    "models": [
+      "AssessmentResultHistory"
+    ]
+  },
+  "student_average": {
+    "key": "student_average",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItemAverage",
+      "BulletinLigne",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "class_average": {
+    "key": "class_average",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItemAverage",
+      "BulletinLigne",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "rounding_precision": {
+    "key": "rounding_precision",
+    "typeText": "number",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItemAverage",
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "calculated_at": {
+    "key": "calculated_at",
+    "typeText": "Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "PedagogicalItemAverage"
+    ]
+  },
   "scope": {
     "key": "scope",
     "typeText": "string | null",
@@ -27396,6 +37964,1031 @@ export const generatedDetailFieldMetaIndex: Record<
       "RegleNote"
     ]
   },
+  "template_type": {
+    "key": "template_type",
+    "typeText": "ReportCardTemplateType",
+    "kind": "enum",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "pedagogical_display_mode": {
+    "key": "pedagogical_display_mode",
+    "typeText": "PedagogicalDisplayMode",
+    "kind": "enum",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "include_code_grades_in_general_average": {
+    "key": "include_code_grades_in_general_average",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_student_average": {
+    "key": "show_student_average",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_class_average": {
+    "key": "show_class_average",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_general_student_average": {
+    "key": "show_general_student_average",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_general_class_average": {
+    "key": "show_general_class_average",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_code_legend": {
+    "key": "show_code_legend",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_section_headers": {
+    "key": "show_section_headers",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_assessment_details": {
+    "key": "show_assessment_details",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_assessment_type_summary": {
+    "key": "show_assessment_type_summary",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_only_final_exam": {
+    "key": "show_only_final_exam",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_subjects": {
+    "key": "show_subjects",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_groups": {
+    "key": "show_groups",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_domains": {
+    "key": "show_domains",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_subdomains": {
+    "key": "show_subdomains",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_competencies": {
+    "key": "show_competencies",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_objectives": {
+    "key": "show_objectives",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_only_evaluated_items": {
+    "key": "show_only_evaluated_items",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_non_evaluated_items": {
+    "key": "show_non_evaluated_items",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "non_evaluated_label": {
+    "key": "non_evaluated_label",
+    "typeText": "string",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "group_items_by_parent": {
+    "key": "group_items_by_parent",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_hierarchical_indent": {
+    "key": "show_hierarchical_indent",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "max_hierarchy_depth": {
+    "key": "max_hierarchy_depth",
+    "typeText": "number",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_subject_summary": {
+    "key": "show_subject_summary",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_domain_summary": {
+    "key": "show_domain_summary",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_subdomain_summary": {
+    "key": "show_subdomain_summary",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_competency_results": {
+    "key": "show_competency_results",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_subject_average": {
+    "key": "show_subject_average",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_subject_coefficient": {
+    "key": "show_subject_coefficient",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_subject_points": {
+    "key": "show_subject_points",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_subject_rank": {
+    "key": "show_subject_rank",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_teacher_appreciation": {
+    "key": "show_teacher_appreciation",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_general_average": {
+    "key": "show_general_average",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_total_coefficients": {
+    "key": "show_total_coefficients",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_total_points": {
+    "key": "show_total_points",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_general_rank": {
+    "key": "show_general_rank",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_mention": {
+    "key": "show_mention",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_decision": {
+    "key": "show_decision",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_general_appreciation": {
+    "key": "show_general_appreciation",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_absences": {
+    "key": "show_absences",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_late_count": {
+    "key": "show_late_count",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_logo": {
+    "key": "show_logo",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "show_signature": {
+    "key": "show_signature",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "sections": {
+    "key": "sections",
+    "typeText": "ReportCardTemplateSection[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ReportCardTemplateSection",
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "fields": {
+    "key": "fields",
+    "typeText": "ReportCardTemplateField[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ReportCardTemplateField",
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateSection",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "template_id": {
+    "key": "template_id",
+    "typeText": "string",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplatePedagogicalItem",
+      "ReportCardTemplateSection",
+      "ReportCardTemplateField"
+    ]
+  },
+  "section_id": {
+    "key": "section_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplatePedagogicalItem",
+      "ReportCardTemplateField"
+    ]
+  },
+  "is_visible": {
+    "key": "is_visible",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplatePedagogicalItem",
+      "ReportCardTemplateField",
+      "BulletinLigne",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "custom_label": {
+    "key": "custom_label",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplatePedagogicalItem"
+    ]
+  },
+  "show_result": {
+    "key": "show_result",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplatePedagogicalItem"
+    ]
+  },
+  "show_appreciation": {
+    "key": "show_appreciation",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplatePedagogicalItem"
+    ]
+  },
+  "show_children": {
+    "key": "show_children",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplatePedagogicalItem"
+    ]
+  },
+  "grading_scale_id_override": {
+    "key": "grading_scale_id_override",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplatePedagogicalItem"
+    ]
+  },
+  "include_in_general_average_override": {
+    "key": "include_in_general_average_override",
+    "typeText": "boolean | null",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplatePedagogicalItem"
+    ]
+  },
+  "template": {
+    "key": "template",
+    "typeText": "ReportCardTemplate",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ReportCardTemplate",
+    "models": [
+      "ReportCardTemplatePedagogicalItem",
+      "ReportCardTemplateSection",
+      "ReportCardTemplateField"
+    ]
+  },
+  "section": {
+    "key": "section",
+    "typeText": "ReportCardTemplateSection | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ReportCardTemplateSection",
+    "models": [
+      "ReportCardTemplatePedagogicalItem",
+      "ReportCardTemplateField"
+    ]
+  },
+  "parent_section_id": {
+    "key": "parent_section_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplateSection"
+    ]
+  },
+  "title": {
+    "key": "title",
+    "typeText": "string",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplateSection"
+    ]
+  },
+  "section_type": {
+    "key": "section_type",
+    "typeText": "ReportCardTemplateSectionType",
+    "kind": "enum",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplateSection"
+    ]
+  },
+  "grading_mode": {
+    "key": "grading_mode",
+    "typeText": "BulletinGradingMode | null",
+    "kind": "enum",
+    "group": "classification",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplateSection",
+      "BulletinLigne",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "show_header": {
+    "key": "show_header",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplateSection"
+    ]
+  },
+  "parentSection": {
+    "key": "parentSection",
+    "typeText": "ReportCardTemplateSection | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ReportCardTemplateSection",
+    "models": [
+      "ReportCardTemplateSection"
+    ]
+  },
+  "childSections": {
+    "key": "childSections",
+    "typeText": "ReportCardTemplateSection[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ReportCardTemplateSection",
+    "models": [
+      "ReportCardTemplateSection"
+    ]
+  },
+  "pedagogicalSelections": {
+    "key": "pedagogicalSelections",
+    "typeText": "ReportCardTemplatePedagogicalItem[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ReportCardTemplatePedagogicalItem",
+    "models": [
+      "ReportCardTemplateSection"
+    ]
+  },
+  "field_key": {
+    "key": "field_key",
+    "typeText": "string",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplateField"
+    ]
+  },
+  "width": {
+    "key": "width",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplateField"
+    ]
+  },
+  "alignment": {
+    "key": "alignment",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplateField"
+    ]
+  },
+  "report_card_template_id": {
+    "key": "report_card_template_id",
+    "typeText": "string | null",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
   "publie_le": {
     "key": "publie_le",
     "typeText": "Date | null",
@@ -27409,6 +39002,171 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "Bulletin",
       "Annonce",
+      "BulletinWithRelations"
+    ]
+  },
+  "general_average": {
+    "key": "general_average",
+    "typeText": "Decimal | null",
+    "kind": "money",
+    "group": "financial",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
+  "general_class_average": {
+    "key": "general_class_average",
+    "typeText": "Decimal | null",
+    "kind": "money",
+    "group": "financial",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
+  "total_coefficients": {
+    "key": "total_coefficients",
+    "typeText": "Decimal | null",
+    "kind": "money",
+    "group": "financial",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
+  "total_points": {
+    "key": "total_points",
+    "typeText": "Decimal | null",
+    "kind": "money",
+    "group": "financial",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
+  "general_rank": {
+    "key": "general_rank",
+    "typeText": "number | null",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
+  "mention": {
+    "key": "mention",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
+  "decision": {
+    "key": "decision",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
+  "general_appreciation": {
+    "key": "general_appreciation",
+    "typeText": "string | null",
+    "kind": "text",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
+  "display_snapshot_json": {
+    "key": "display_snapshot_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
+  "display_legend_json": {
+    "key": "display_legend_json",
+    "typeText": "JsonValue | null",
+    "kind": "json",
+    "group": "structured",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
+  "reportCardTemplate": {
+    "key": "reportCardTemplate",
+    "typeText": "ReportCardTemplate | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "ReportCardTemplate",
+    "models": [
+      "Bulletin",
       "BulletinWithRelations"
     ]
   },
@@ -27429,9 +39187,40 @@ export const generatedDetailFieldMetaIndex: Record<
       "FactureWithRelations"
     ]
   },
+  "codeLegends": {
+    "key": "codeLegends",
+    "typeText": "BulletinCodeLegend[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "BulletinCodeLegend",
+    "models": [
+      "Bulletin",
+      "BulletinWithRelations"
+    ]
+  },
   "bulletin_id": {
     "key": "bulletin_id",
     "typeText": "string",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "BulletinLigne",
+      "BulletinCodeLegend",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "parent_ligne_id": {
+    "key": "parent_ligne_id",
+    "typeText": "string | null",
     "kind": "technical",
     "group": "technical",
     "isOptional": false,
@@ -27501,7 +39290,81 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": "Bulletin",
     "models": [
       "BulletinLigne",
+      "BulletinCodeLegend",
       "BulletinLineWithRelations"
+    ]
+  },
+  "parentLigne": {
+    "key": "parentLigne",
+    "typeText": "BulletinLigne | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "BulletinLigne",
+    "models": [
+      "BulletinLigne",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "childLignes": {
+    "key": "childLignes",
+    "typeText": "BulletinLigne[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "BulletinLigne",
+    "models": [
+      "BulletinLigne",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "details": {
+    "key": "details",
+    "typeText": "BulletinLigneDetail[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "BulletinLigneDetail",
+    "models": [
+      "BulletinLigne",
+      "BulletinLineWithRelations"
+    ]
+  },
+  "bulletin_ligne_id": {
+    "key": "bulletin_ligne_id",
+    "typeText": "string",
+    "kind": "technical",
+    "group": "technical",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": true,
+    "relatedModel": null,
+    "models": [
+      "BulletinLigneDetail"
+    ]
+  },
+  "bulletinLigne": {
+    "key": "bulletinLigne",
+    "typeText": "BulletinLigne",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "BulletinLigne",
+    "models": [
+      "BulletinLigneDetail"
     ]
   },
   "heure_debut": {
@@ -28693,20 +40556,6 @@ export const generatedDetailFieldMetaIndex: Record<
       "TransportControlAnomalyRow",
       "OperationFinanciereWithRelations",
       "PaiementWithRelations"
-    ]
-  },
-  "created_by_utilisateur_id": {
-    "key": "created_by_utilisateur_id",
-    "typeText": "string | null",
-    "kind": "technical",
-    "group": "technical",
-    "isOptional": false,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": true,
-    "relatedModel": null,
-    "models": [
-      "FacturationRecurrenteExecution"
     ]
   },
   "cycle_key": {
@@ -30940,35 +42789,6 @@ export const generatedDetailFieldMetaIndex: Record<
       "DocumentTypeInscription"
     ]
   },
-  "est_actif": {
-    "key": "est_actif",
-    "typeText": "boolean",
-    "kind": "boolean",
-    "group": "general",
-    "isOptional": false,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": false,
-    "relatedModel": null,
-    "models": [
-      "DocumentTypeInscription",
-      "Webhook"
-    ]
-  },
-  "inscription_id": {
-    "key": "inscription_id",
-    "typeText": "string",
-    "kind": "technical",
-    "group": "technical",
-    "isOptional": false,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": true,
-    "relatedModel": null,
-    "models": [
-      "InscriptionDocument"
-    ]
-  },
   "document_type_id": {
     "key": "document_type_id",
     "typeText": "string",
@@ -31067,20 +42887,6 @@ export const generatedDetailFieldMetaIndex: Record<
       "InscriptionDocument"
     ]
   },
-  "inscription": {
-    "key": "inscription",
-    "typeText": "Inscription",
-    "kind": "relation",
-    "group": "relations",
-    "isOptional": true,
-    "isArray": false,
-    "isRelation": true,
-    "isTechnical": false,
-    "relatedModel": "Inscription",
-    "models": [
-      "InscriptionDocument"
-    ]
-  },
   "documentType": {
     "key": "documentType",
     "typeText": "DocumentTypeInscription",
@@ -31118,20 +42924,6 @@ export const generatedDetailFieldMetaIndex: Record<
     "isArray": false,
     "isRelation": false,
     "isTechnical": true,
-    "relatedModel": null,
-    "models": [
-      "JournalAudit"
-    ]
-  },
-  "action": {
-    "key": "action",
-    "typeText": "string",
-    "kind": "text",
-    "group": "general",
-    "isOptional": false,
-    "isArray": false,
-    "isRelation": false,
-    "isTechnical": false,
     "relatedModel": null,
     "models": [
       "JournalAudit"
@@ -31291,6 +43083,8 @@ export const generatedDetailFieldMetaIndex: Record<
       "AbonnementCantineWithRelations",
       "CantineOperationalRow",
       "CantineControlAnomalyRow",
+      "AbonnementTransportWithRelations",
+      "OperationalTransportRow",
       "TransportControlAnomalyRow"
     ]
   },
@@ -31307,7 +43101,9 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "AbonnementCantineWithRelations",
       "CantineOperationalRow",
-      "CantineControlAnomalyRow"
+      "CantineControlAnomalyRow",
+      "AbonnementTransportWithRelations",
+      "OperationalTransportRow"
     ]
   },
   "access_reason": {
@@ -31322,7 +43118,9 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "AbonnementCantineWithRelations",
-      "CantineOperationalRow"
+      "CantineOperationalRow",
+      "AbonnementTransportWithRelations",
+      "OperationalTransportRow"
     ]
   },
   "validity_start": {
@@ -31337,7 +43135,9 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "AbonnementCantineWithRelations",
-      "CantineOperationalRow"
+      "CantineOperationalRow",
+      "AbonnementTransportWithRelations",
+      "OperationalTransportRow"
     ]
   },
   "validity_end": {
@@ -31352,7 +43152,26 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "AbonnementCantineWithRelations",
-      "CantineOperationalRow"
+      "CantineOperationalRow",
+      "AbonnementTransportWithRelations",
+      "OperationalTransportRow"
+    ]
+  },
+  "derniere_reactivation_financiere": {
+    "key": "derniere_reactivation_financiere",
+    "typeText": "string | Date | null",
+    "kind": "date",
+    "group": "dates",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "AbonnementCantineWithRelations",
+      "CantineOperationalRow",
+      "AbonnementTransportWithRelations",
+      "OperationalTransportRow"
     ]
   },
   "operational_status": {
@@ -31673,6 +43492,20 @@ export const generatedDetailFieldMetaIndex: Record<
       "TransportControlAnomalyRow"
     ]
   },
+  "affichage_bulletin": {
+    "key": "affichage_bulletin",
+    "typeText": "BulletinDisplaySnapshot | null",
+    "kind": "unknown",
+    "group": "general",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "BulletinWithRelations"
+    ]
+  },
   "_count": {
     "key": "_count",
     "typeText": "{\n    lignesFacture?: number;\n  }",
@@ -31685,6 +43518,20 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "CatalogueFraisWithRelations"
+    ]
+  },
+  "impact": {
+    "key": "impact",
+    "typeText": "ProgrammeImpactSummary | null",
+    "kind": "unknown",
+    "group": "general",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ProgrammeWithRelations"
     ]
   }
 };
@@ -31709,11 +43556,17 @@ export const generatedDetailModelEndpointMap: Record<string, string> = {
   "Enseignant": "enseignant",
   "Departement": "departement",
   "Matiere": "matiere",
+  "PedagogicalItem": "pedagogical-item",
+  "GradingScale": "grading-scale",
   "Programme": "programme",
   "Cours": "cours",
+  "TypeEvaluationRef": "type-evaluation-ref",
   "Evaluation": "evaluation",
   "Note": "note",
+  "AssessmentResult": "assessment-result",
+  "PedagogicalItemAverage": "pedagogical-item-average",
   "RegleNote": "regle-note",
+  "ReportCardTemplate": "report-card-template",
   "Bulletin": "bulletin",
   "CreneauHoraire": "creneau-horaire",
   "EmploiDuTemps": "emploi-du-temps",
@@ -31739,8 +43592,10 @@ export const generatedDetailModelEndpointMap: Record<string, string> = {
   "AbonnementTransport": "abonnement-transport",
   "FormuleCantine": "formule-cantine",
   "AbonnementCantine": "abonnement-cantine",
+  "DocumentTypeInscription": "document-type-inscription",
   "AbonnementCantineWithRelations": "abonnement-cantine",
   "AbonnementTransportWithRelations": "abonnement-transport",
+  "AssessmentResultWithRelations": "assessment-result",
   "BulletinWithRelations": "bulletin",
   "CatalogueFraisWithRelations": "catalogue-frais",
   "ClasseWithRelations": "cours",
@@ -31749,6 +43604,7 @@ export const generatedDetailModelEndpointMap: Record<string, string> = {
   "EmploiDuTempsWithRelations": "emploi-du-temps",
   "EvaluationWithRelations": "evaluation",
   "FactureWithRelations": "facture",
+  "GradingScaleWithRelations": "grading-scale",
   "IncidentDisciplinaireWithRelations": "incident-disciplinaire",
   "JustificatifAbsenceWithRelations": "justificatif-absence",
   "MatiereWithRelations": "matiere",
@@ -31756,6 +43612,7 @@ export const generatedDetailModelEndpointMap: Record<string, string> = {
   "NoteWithRelations": "note",
   "OperationFinanciereWithRelations": "operation-financiere",
   "PaiementWithRelations": "paiement",
+  "PedagogicalItemWithRelations": "pedagogical-item",
   "PlanPaiementEleveWithRelations": "plan-paiement-eleve",
   "PresenceEleveWithRelations": "presence-eleve",
   "PersonnelWithRelations": "presence-personnel",
@@ -31763,9 +43620,11 @@ export const generatedDetailModelEndpointMap: Record<string, string> = {
   "ProgrammeWithRelations": "programme",
   "RecompenseWithRelations": "recompense",
   "RemiseWithRelations": "remise",
+  "ReportCardTemplateWithRelations": "report-card-template",
   "RessourceBibliothequeWithRelations": "ressource-bibliotheque",
   "SanctionDisciplinaireWithRelations": "sanction-disciplinaire",
   "SessionAppelWithRelations": "session-appel",
+  "TypeEvaluationRefWithRelations": "type-evaluation-ref",
   "Utilisateur": "user",
   "UtilisateurRole": "roles_user",
   "CantineOperationalRow": "abonnement-cantine",

@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import type { HookData } from "jspdf-autotable";
 
 type PdfMetadataItem = {
   label: string;
@@ -18,6 +19,7 @@ type PdfTableOptions = {
   body: Array<Array<string | number | boolean | null | undefined>>;
   startY: number;
   title?: string;
+  didParseCell?: (data: HookData) => void;
 };
 
 export function createPdfDocument(orientation: "portrait" | "landscape" = "portrait") {
@@ -79,6 +81,7 @@ export function addPdfTable(doc: jsPDF, options: PdfTableOptions) {
     headStyles: { fillColor: [37, 99, 235], textColor: 255 },
     alternateRowStyles: { fillColor: [245, 247, 250] },
     margin: { left: 14, right: 14 },
+    didParseCell: options.didParseCell,
   });
 
   return getPdfCursorY(doc);

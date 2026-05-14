@@ -4,7 +4,6 @@ import {
   FiClock,
   FiFileText,
   FiLayers,
-  FiSettings,
   FiUsers,
 } from "react-icons/fi";
 import { useAuth } from "../../../../../hooks/useAuth";

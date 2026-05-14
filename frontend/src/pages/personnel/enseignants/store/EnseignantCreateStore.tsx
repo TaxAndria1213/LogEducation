@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
-import type { Departement, Enseignant, Personnel } from "../../../../generated/zod";
+import type { Departement, Enseignant, Personnel } from "../../../../types/models";
 import EnseignantService from "../../../../services/enseignant.service";
 import PersonnelService from "../../../../services/personnel.service";
 import DepartementService from "../../../../services/departement.service";
@@ -41,11 +41,11 @@ export const useEnseignantCreateStore = create<State>((set, get) => ({
   getPersonnelOptions: async (etablissementId?: string) => {
     set({ loading: true });
     const service = new PersonnelService();
-    const result = await service.getAll({
-      where: etablissementId
-        ? { etablissement_id: etablissementId }
-        : undefined,
-    });
+    const personnelParams: Record<string, string | number | boolean | Date> | undefined =
+      etablissementId
+        ? { where: JSON.stringify({ etablissement_id: etablissementId }) }
+        : undefined;
+    const result = await service.getAll(personnelParams);
     if (result?.status.success) {
       set({
         personnelOptions: result.data.data.map((p: Personnel) => ({
@@ -60,11 +60,11 @@ export const useEnseignantCreateStore = create<State>((set, get) => ({
   getDepartementOptions: async (etablissementId?: string) => {
     set({ loading: true });
     const service = new DepartementService();
-    const result = await service.getAll({
-      where: etablissementId
-        ? { etablissement_id: etablissementId }
-        : undefined,
-    });
+    const departementParams: Record<string, string | number | boolean | Date> | undefined =
+      etablissementId
+        ? { where: JSON.stringify({ etablissement_id: etablissementId }) }
+        : undefined;
+    const result = await service.getAll(departementParams);
     if (result?.status.success) {
       set({
         departementOptions: result.data.data.map((d: Departement) => ({
@@ -85,7 +85,7 @@ export const useEnseignantCreateStore = create<State>((set, get) => ({
         throw new Error();
       }
     } catch (error) {
-      console.log("🚀 ~ error:", error);
+      console.log("ðŸš€ ~ error:", error);
       return {
         status: {
           success: false,

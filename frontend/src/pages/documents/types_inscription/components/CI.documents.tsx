@@ -4,11 +4,11 @@ export const documentsInscriptionComponents: ComponentIdentifierType[] = [
   {
     id: "DOC.INSCRIPTIONTYPES.PAGE",
     name: "Documents - types d'inscription - acces page",
-    component: () => null,
+    component: () => <></>,
   },
   {
     id: "DOC.INSCRIPTIONTYPES.MANAGE",
     name: "Documents - types d'inscription - gestion",
-    component: () => null,
+    component: () => <></>,
   },
 ];

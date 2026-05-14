@@ -67,6 +67,12 @@ const evaluationSchema = z.object({
   is_final_exam: z.boolean(),
 });
 
+type EvaluationFormData = z.output<typeof evaluationSchema>;
+
+function normalizeNumberInputValue(value: unknown, fallback: string | number = "") {
+  return typeof value === "number" ? value : fallback;
+}
+
 function getErrorMessage(error: unknown) {
   if (
     typeof error === "object" &&
@@ -138,7 +144,11 @@ function EvaluationForm() {
     [initialData],
   );
 
-  const form = useForm<EvaluationFormValues>({
+  const form = useForm<
+    z.input<typeof evaluationSchema>,
+    undefined,
+    EvaluationFormData
+  >({
     resolver: zodResolver(evaluationSchema),
     defaultValues,
     mode: "onSubmit",
@@ -219,7 +229,7 @@ function EvaluationForm() {
     return selectedDateObject < start || selectedDateObject > end;
   }, [selectedDateObject, selectedPeriode]);
 
-  const onSubmit = async (data: EvaluationFormValues) => {
+  const onSubmit = async (data: EvaluationFormData) => {
     clearErrors("date");
 
     if (selectedPeriode && selectedDateObject) {
@@ -545,7 +555,7 @@ function EvaluationForm() {
                         type="number"
                         min={1}
                         step="0.5"
-                        value={field.value ?? 20}
+                        value={normalizeNumberInputValue(field.value, 20)}
                         onChange={(event) => field.onChange(event.target.value)}
                         onBlur={field.onBlur}
                         ref={field.ref}
@@ -570,7 +580,7 @@ function EvaluationForm() {
                         type="number"
                         min={0.1}
                         step="0.1"
-                        value={field.value ?? ""}
+                        value={normalizeNumberInputValue(field.value)}
                         onChange={(event) => field.onChange(event.target.value)}
                         onBlur={field.onBlur}
                         ref={field.ref}
