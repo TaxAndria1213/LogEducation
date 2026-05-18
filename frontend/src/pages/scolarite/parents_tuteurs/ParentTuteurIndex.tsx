@@ -7,14 +7,14 @@ import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import { useParentTuteurStore } from "./store/ParentTuteurIndexStore";
 import { useEffect, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useAuth } from "../../../auth/AuthContext";
 
 function ParentTuteurIndex() {
   const { user, roles } = useAuth();
 
   //states
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const [renderList, setRenderList] = useState<JSX.Element[]>([<></>]);
 
   const menuListIsVisible = useParentTuteurStore((state) => state.menuListIsVisible);

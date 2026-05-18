@@ -3,11 +3,11 @@ import ERPPage from "../../../components/page/ERPPage";
 import { getComponentById } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useTransportStore } from "./store/TransportIndexStore";
 
 export default function TransportIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const menuListIsVisible = useTransportStore((state) => state.menuListIsVisible);
   const setMenuListIsVisible = useTransportStore((state) => state.setMenuListIsVisible);
   const renderState = useTransportStore((state) => state.renderState);

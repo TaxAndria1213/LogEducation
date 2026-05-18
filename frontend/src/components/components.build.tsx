@@ -237,7 +237,6 @@ function verifyAccess(
   roles: UtilisateurRole[],
   id: componentId,
 ): boolean {
-  console.log(user);
   const isAdmin = roles.some((role) =>
     resolveAssignmentRoleNames(role).some((roleName) => SYSTEM_ADMIN_ROLE_NAMES.has(roleName)),
   );
@@ -311,6 +310,5 @@ export function getScopesForPermission(
 }
 
 export { verifyAccess as hasAccess };
-
 
 

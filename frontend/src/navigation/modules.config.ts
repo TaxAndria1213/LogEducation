@@ -27,6 +27,7 @@ export type NavigationSubModule = {
   path: string;
   icon?: ReactNode;
   permission?: string;
+  permissions?: string[];
   description?: string;
 };
 
@@ -39,6 +40,7 @@ export type NavigationModule = {
   defaultPath: string;
   icon: ReactNode;
   permission?: string;
+  permissions?: string[];
   badge?: string;
   children: NavigationSubModule[];
 };
@@ -146,27 +148,32 @@ function pathToBasePath(path?: string) {
 }
 
 function firstRoute(items?: menu[]) {
-  return items?.find((item) => item.path)?.path ?? "/";
+  return items?.find((item) => item.path && item.elements)?.path ?? "/";
 }
 
 function toSubModule(item: menu): NavigationSubModule | null {
-  if (!item.path) return null;
+  if (!item.path || !item.elements) return null;
   return {
     key: item.key,
     label: item.name,
     path: item.path,
     icon: item.icon,
     permission: item.permission,
+    permissions: item.permissions,
     description: item.description,
   };
 }
 
-function toNavigationModule(module: menu): NavigationModule {
+function toNavigationModule(module: menu): NavigationModule | null {
   const children = module.submodules?.flatMap((item) => {
     const child = toSubModule(item);
     return child ? [child] : [];
   }) ?? [];
   const defaultPath = module.path ?? firstRoute(module.submodules);
+  const hasOwnRoute = Boolean(module.path && module.elements);
+  if (!hasOwnRoute && children.length === 0) {
+    return null;
+  }
   const meta = MODULE_META[module.key] ?? {
     description: module.description ?? "Acceder aux fonctionnalites du module.",
     icon: module.icon ?? faIcon(faGrip),
@@ -181,6 +188,7 @@ function toNavigationModule(module: menu): NavigationModule {
     defaultPath,
     icon: meta.icon ?? module.icon ?? faIcon(faGrip),
     permission: module.permission,
+    permissions: module.permissions,
     badge: meta.badge,
     children,
   };
@@ -188,4 +196,5 @@ function toNavigationModule(module: menu): NavigationModule {
 
 export const APP_MODULES = routeModules
   .filter((module) => module.key !== "dashboard")
-  .map(toNavigationModule);
+  .map(toNavigationModule)
+  .filter((module): module is NavigationModule => Boolean(module));

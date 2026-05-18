@@ -3,11 +3,11 @@ import ERPPage from "../../../components/page/ERPPage";
 import { getComponentById } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useEmpruntBibliothequeStore } from "./store/EmpruntBibliothequeIndexStore";
 
 export default function EmpruntsIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const menuListIsVisible = useEmpruntBibliothequeStore((state) => state.menuListIsVisible);
   const setMenuListIsVisible = useEmpruntBibliothequeStore((state) => state.setMenuListIsVisible);
   const renderState = useEmpruntBibliothequeStore((state) => state.renderState);

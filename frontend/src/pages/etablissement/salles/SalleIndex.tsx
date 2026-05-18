@@ -3,11 +3,11 @@ import { getComponentById } from "../../../components/components.build";
 import ERPPage from "../../../components/page/ERPPage";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useSalleStore } from "./store/SalleIndexStore";
 
 function SalleIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
 
   const menuListIsVisible = useSalleStore((state) => state.menuListIsVisible);
   const setMenuListIsVisible = useSalleStore((state) => state.setMenuListIsVisible);

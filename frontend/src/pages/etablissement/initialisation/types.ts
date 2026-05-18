@@ -139,7 +139,6 @@ export type InitialisationAcademicGroup = {
 
 export type InitialisationFinanceCatalogueDraft = {
   level_code: string;
-  class_name: string;
   usage_scope: string;
   nom: string;
   description: string;

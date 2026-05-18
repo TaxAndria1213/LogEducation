@@ -15,6 +15,7 @@ const SYSTEM_ADMIN_ROLE_NAMES = new Set([
 
 type PermissionSubject = {
   permission?: string;
+  permissions?: string[];
 };
 
 type PermissionContext = {
@@ -124,6 +125,11 @@ export function hasPermission(
 }
 
 function canAccessSubject(item: PermissionSubject, context: PermissionContext) {
+  if (Array.isArray(item.permissions) && item.permissions.length > 0) {
+    return item.permissions.some((permission) =>
+      hasPermission(permission, context),
+    );
+  }
   return hasPermission(item.permission, context);
 }
 
@@ -141,7 +147,7 @@ export function filterModulesByPermissions(
   return modules
     .map((module) => {
       const children = filterSubModulesByPermissions(module.children, context);
-      if (!canAccessSubject(module, context) && children.length === 0) return null;
+      if (children.length === 0) return null;
       return { ...module, children };
     })
     .filter((module): module is NavigationModule => Boolean(module));

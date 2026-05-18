@@ -17,7 +17,6 @@ import { SelectField } from "../../../../../components/Form/fields/SelectField";
 import { TextAreaField } from "../../../../../components/Form/fields/TextAreaField";
 import { TextField } from "../../../../../components/Form/fields/TextField";
 import type {
-  InitialisationClassGroup,
   InitialisationFinanceCatalogueDraft,
   InitialisationSetupDraft,
 } from "../../types";
@@ -31,12 +30,14 @@ type Props = {
 };
 
 type FormValues = Pick<InitialisationSetupDraft, "finance_catalogues">;
+type LegacyFinanceCatalogueDraft = InitialisationFinanceCatalogueDraft & {
+  class_name?: string;
+};
 
-type PlannedClass = {
+type PlannedLevel = {
   key: string;
   level_code: string;
   level_nom: string;
-  class_name: string;
 };
 
 const usageScopeOptions = [
@@ -74,31 +75,22 @@ const defaultAnnualScolaritePlans = JSON.stringify(
 
 const deviseOptions = ["MGA", "EUR", "USD"];
 
-function buildClassKey(levelCode: string, className: string) {
-  return `${levelCode}::${className.trim().toLowerCase()}`;
+function buildLevelKey(levelCode: string) {
+  return levelCode.trim().toLowerCase();
 }
 
-function resolvePlannedClasses(
-  groups: InitialisationClassGroup[],
-): PlannedClass[] {
-  return groups.flatMap((group) => {
-    const uniqueClassNames = Array.from(
-      new Set(
-        group.class_names.map((className) => className.trim()).filter(Boolean),
-      ),
-    );
-
-    return uniqueClassNames.map((className) => ({
-      key: buildClassKey(group.level_code, className),
-      level_code: group.level_code,
-      level_nom: group.level_nom,
-      class_name: className,
+function resolvePlannedLevels(levels: DraftLevelDefinition[]): PlannedLevel[] {
+  return levels
+    .filter((level) => level.code.trim())
+    .map((level) => ({
+      key: buildLevelKey(level.code),
+      level_code: level.code,
+      level_nom: level.nom,
     }));
-  });
 }
 
-function resolveDefaultName(usageScope: string, className?: string) {
-  const suffix = className ? ` - ${className}` : "";
+function resolveDefaultName(usageScope: string, levelName?: string) {
+  const suffix = levelName ? ` - ${levelName}` : "";
 
   switch (usageScope) {
     case "INSCRIPTION":
@@ -118,16 +110,15 @@ function resolveDefaultName(usageScope: string, className?: string) {
 
 function buildEmptyCatalogue(
   levelCode = "",
-  className = "",
+  levelName = "",
   usageScope = "SCOLARITE",
 ): InitialisationFinanceCatalogueDraft {
   const isScolarite = usageScope === "SCOLARITE";
 
   return {
     level_code: levelCode,
-    class_name: className,
     usage_scope: usageScope,
-    nom: resolveDefaultName(usageScope, className),
+    nom: resolveDefaultName(usageScope, levelName),
     description: "",
     montant: "",
     devise: "MGA",
@@ -142,28 +133,28 @@ function buildEmptyCatalogue(
   };
 }
 
-function buildMissingClassCatalogues(
-  plannedClasses: PlannedClass[],
+function buildMissingLevelCatalogues(
+  plannedLevels: PlannedLevel[],
   existingCatalogues: InitialisationFinanceCatalogueDraft[],
 ) {
   const existingTargets = new Set(
     existingCatalogues.map(
       (catalogue) =>
-        `${buildClassKey(catalogue.level_code, catalogue.class_name)}::${catalogue.usage_scope}`,
+        `${buildLevelKey(catalogue.level_code)}::${catalogue.usage_scope}`,
     ),
   );
 
-  return plannedClasses.flatMap((plannedClass) => {
-    const defaults = ["INSCRIPTION", "SCOLARITE"];
+  return plannedLevels.flatMap((plannedLevel) => {
+    const defaults = ["SCOLARITE"];
     return defaults
       .filter(
         (usageScope) =>
-          !existingTargets.has(`${plannedClass.key}::${usageScope}`),
+          !existingTargets.has(`${plannedLevel.key}::${usageScope}`),
       )
       .map((usageScope) =>
         buildEmptyCatalogue(
-          plannedClass.level_code,
-          plannedClass.class_name,
+          plannedLevel.level_code,
+          plannedLevel.level_nom,
           usageScope,
         ),
       );
@@ -180,24 +171,27 @@ function isCatalogueComplete(catalogue: InitialisationFinanceCatalogueDraft) {
 function normalizeFinanceDraftCatalogue(
   catalogue: InitialisationFinanceCatalogueDraft,
 ): InitialisationFinanceCatalogueDraft {
-  if (catalogue.usage_scope !== "SCOLARITE") {
+  const cleanCatalogue = { ...(catalogue as LegacyFinanceCatalogueDraft) };
+  delete cleanCatalogue.class_name;
+
+  if (cleanCatalogue.usage_scope !== "SCOLARITE") {
     return {
-      ...catalogue,
-      mode_facturation: catalogue.mode_facturation || "PONCTUEL",
+      ...cleanCatalogue,
+      mode_facturation: cleanCatalogue.mode_facturation || "PONCTUEL",
     };
   }
 
   return {
-    ...catalogue,
-    nombre_tranches: catalogue.nombre_tranches || "10",
+    ...cleanCatalogue,
+    nombre_tranches: cleanCatalogue.nombre_tranches || "10",
     mode_facturation: "ANNUEL",
     est_recurrent: false,
     periodicite: "",
     prorata_eligible: false,
     plans_paiement_autorises_json:
-      catalogue.plans_paiement_autorises_json || defaultAnnualScolaritePlans,
+      cleanCatalogue.plans_paiement_autorises_json || defaultAnnualScolaritePlans,
     plan_paiement_defaut_code:
-      catalogue.plan_paiement_defaut_code || "10X",
+      cleanCatalogue.plan_paiement_defaut_code || "10X",
   };
 }
 
@@ -210,25 +204,20 @@ export default function StepFinance({ draft, setDraft, levels }: Props) {
     name: "finance_catalogues",
   });
   const lastCataloguesRef = useRef(JSON.stringify(draft.finance_catalogues));
-  const [activeClassIndex, setActiveClassIndex] = useState(0);
+  const [activeLevelIndex, setActiveLevelIndex] = useState(0);
   const shouldCreateFinance = draft.finance_mode === "CREATION";
-  const plannedClasses = useMemo(
-    () => resolvePlannedClasses(draft.classes_by_level),
-    [draft.classes_by_level],
-  );
-  const currentClass = plannedClasses[activeClassIndex] ?? null;
+  const plannedLevels = useMemo(() => resolvePlannedLevels(levels), [levels]);
+  const currentLevel = plannedLevels[activeLevelIndex] ?? null;
   const enteredCatalogueCount = draft.finance_catalogues.filter((catalogue) =>
     catalogue.nom.trim(),
   ).length;
   const completedCatalogueCount =
     draft.finance_catalogues.filter(isCatalogueComplete).length;
-  const classCreationRequired =
-    plannedClasses.length > 0 && draft.classes_mode !== "CREATION";
 
   useEffect(() => {
-    if (activeClassIndex <= Math.max(plannedClasses.length - 1, 0)) return;
-    setActiveClassIndex(Math.max(plannedClasses.length - 1, 0));
-  }, [activeClassIndex, plannedClasses.length]);
+    if (activeLevelIndex <= Math.max(plannedLevels.length - 1, 0)) return;
+    setActiveLevelIndex(Math.max(plannedLevels.length - 1, 0));
+  }, [activeLevelIndex, plannedLevels.length]);
 
   useEffect(() => {
     const nextKey = JSON.stringify(draft.finance_catalogues);
@@ -252,53 +241,40 @@ export default function StepFinance({ draft, setDraft, levels }: Props) {
     }));
   }, [setDraft, watchedCatalogues]);
 
-  
-const currentClassEntries = useMemo(() => {
-  if (!currentClass) return [];
+  const currentLevelEntries = useMemo(() => {
+    if (!currentLevel) return [];
 
-  return draft.finance_catalogues
-    .map((catalogue, index) => ({ catalogue, index }))
-    .filter(
-      ({ catalogue }) =>
-        catalogue.level_code === currentClass.level_code &&
-        catalogue.class_name === currentClass.class_name
-    );
-}, [
-  draft.finance_catalogues,
-  currentClass
-]);
+    return draft.finance_catalogues
+      .map((catalogue, index) => ({ catalogue, index }))
+      .filter(
+        ({ catalogue }) =>
+          catalogue.level_code === currentLevel.level_code,
+      );
+  }, [draft.finance_catalogues, currentLevel]);
 
-  const [enableNext, setEnableNext] = useState(
-  currentClassEntries.every(({ catalogue }) => typeof catalogue.montant === "number")
-);
-
-useEffect(() => {
-  setEnableNext(
-    currentClassEntries.every(({ catalogue }) => typeof catalogue.montant === "number")
+  const enableNext = currentLevelEntries.every(({ catalogue }) =>
+    isCatalogueComplete(catalogue),
   );
-}, [currentClassEntries]);
 
   const globalEntries = draft.finance_catalogues
     .map((catalogue, index) => ({ catalogue, index }))
-    .filter(({ catalogue }) => !catalogue.class_name);
+    .filter(({ catalogue }) => !catalogue.level_code);
 
-  const classCompletionByKey = useMemo(() => {
+  const levelCompletionByKey = useMemo(() => {
     const map = new Map<string, { total: number; completed: number }>();
 
-    plannedClasses.forEach((plannedClass) => {
+    plannedLevels.forEach((plannedLevel) => {
       const entries = draft.finance_catalogues.filter(
-        (catalogue) =>
-          catalogue.level_code === plannedClass.level_code &&
-          catalogue.class_name === plannedClass.class_name,
+        (catalogue) => catalogue.level_code === plannedLevel.level_code,
       );
-      map.set(plannedClass.key, {
+      map.set(plannedLevel.key, {
         total: entries.length,
         completed: entries.filter(isCatalogueComplete).length,
       });
     });
 
     return map;
-  }, [draft.finance_catalogues, plannedClasses]);
+  }, [draft.finance_catalogues, plannedLevels]);
 
   const removeCatalogue = (index: number) => {
     setDraft((current) => ({
@@ -309,16 +285,16 @@ useEffect(() => {
     }));
   };
 
-  const addCatalogueForCurrentClass = (usageScope = "SCOLARITE") => {
-    if (!currentClass) return;
+  const addCatalogueForCurrentLevel = (usageScope = "SCOLARITE") => {
+    if (!currentLevel) return;
 
     setDraft((current) => ({
       ...current,
       finance_catalogues: [
         ...current.finance_catalogues,
         buildEmptyCatalogue(
-          currentClass.level_code,
-          currentClass.class_name,
+          currentLevel.level_code,
+          currentLevel.level_nom,
           usageScope,
         ),
       ],
@@ -335,11 +311,10 @@ useEffect(() => {
     }));
   };
 
-  const prepareAllClasses = () => {
+  const prepareAllLevels = () => {
     setDraft((current) => {
-      const classes = resolvePlannedClasses(current.classes_by_level);
-      const missing = buildMissingClassCatalogues(
-        classes,
+      const missing = buildMissingLevelCatalogues(
+        plannedLevels,
         current.finance_catalogues,
       );
 
@@ -350,13 +325,13 @@ useEffect(() => {
     });
   };
 
-  const goToPreviousClass = () => {
-    setActiveClassIndex((current) => Math.max(0, current - 1));
+  const goToPreviousLevel = () => {
+    setActiveLevelIndex((current) => Math.max(0, current - 1));
   };
 
-  const goToNextClass = () => {
-    setActiveClassIndex((current) =>
-      Math.min(plannedClasses.length - 1, current + 1),
+  const goToNextLevel = () => {
+    setActiveLevelIndex((current) =>
+      Math.min(plannedLevels.length - 1, current + 1),
     );
   };
 
@@ -365,150 +340,153 @@ useEffect(() => {
     index: number,
   ) => {
     const isScolarite = catalogue.usage_scope === "SCOLARITE";
+    const levelName =
+      levels.find((level) => level.code === catalogue.level_code)?.nom ??
+      catalogue.level_code;
 
     return (
-    <article
-      key={`finance-catalogue-${index}`}
-      className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm"
-    >
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
-            <FiDollarSign />
+      <article
+        key={`finance-catalogue-${index}`}
+        className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+              <FiDollarSign />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {catalogue.level_code ? `Niveau ${levelName}` : "Frais global"}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                {catalogue.level_code
+                  ? "Applicable a toutes les classes de ce niveau"
+                  : "Applicable sans restriction de niveau"}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-900">
-              {catalogue.class_name || "Frais global"}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              {catalogue.level_code
-                ? `Niveau ${levels.find((level) => level.code === catalogue.level_code)?.nom ?? catalogue.level_code}`
-                : "Applicable sans restriction de niveau"}
-            </p>
-          </div>
+
+          <button
+            type="button"
+            onClick={() => removeCatalogue(index)}
+            className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
+          >
+            <FiTrash2 />
+            Supprimer
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => removeCatalogue(index)}
-          className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
-        >
-          <FiTrash2 />
-          Supprimer
-        </button>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <SelectField<FormValues, string>
-          control={form.control}
-          name={`finance_catalogues.${index}.usage_scope` as Path<FormValues>}
-          label="Usage"
-          options={usageScopeOptions}
-          emptyLabel="Choisir un usage"
-        />
-
-        <TextField<FormValues>
-          control={form.control}
-          name={`finance_catalogues.${index}.nom` as Path<FormValues>}
-          label="Nom du frais"
-          placeholder="Ex: Frais de scolarite"
-          className="md:col-span-2"
-        />
-
-        <FloatField<FormValues>
-          control={form.control}
-          name={`finance_catalogues.${index}.montant` as Path<FormValues>}
-          label="Montant"
-          placeholder="150000"
-          required
-        />
-
-        <SelectField<FormValues, string>
-          control={form.control}
-          name={`finance_catalogues.${index}.devise` as Path<FormValues>}
-          label="Devise"
-          options={deviseOptions.map((devise) => ({
-            value: devise,
-            label: devise,
-          }))}
-          emptyLabel="Choisir une devise"
-        />
-
-        <IntField<FormValues>
-          control={form.control}
-          name={
-            `finance_catalogues.${index}.nombre_tranches` as Path<FormValues>
-          }
-          label="Tranches"
-          placeholder="1"
-        />
-
-        {!isScolarite ? (
-          <BooleanField<FormValues>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <SelectField<FormValues, string>
             control={form.control}
-            name={`finance_catalogues.${index}.est_recurrent` as Path<FormValues>}
-            label="Recurrent"
+            name={`finance_catalogues.${index}.usage_scope` as Path<FormValues>}
+            label="Usage"
+            options={usageScopeOptions}
+            emptyLabel="Choisir un usage"
           />
-        ) : (
+
           <TextField<FormValues>
             control={form.control}
-            name={`finance_catalogues.${index}.mode_facturation` as Path<FormValues>}
-            label="Mode de facturation"
-            disabled
+            name={`finance_catalogues.${index}.nom` as Path<FormValues>}
+            label="Nom du frais"
+            placeholder="Ex: Frais de scolarite"
+            className="md:col-span-2"
           />
-        )}
 
-        {catalogue.est_recurrent && !isScolarite ? (
-          <>
-            <SelectField<FormValues, string>
-              control={form.control}
-              name={
-                `finance_catalogues.${index}.periodicite` as Path<FormValues>
-              }
-              label="Periodicite"
-              options={periodiciteOptions}
-              emptyLabel="Choisir une periodicite"
-            />
+          <FloatField<FormValues>
+            control={form.control}
+            name={`finance_catalogues.${index}.montant` as Path<FormValues>}
+            label="Montant"
+            placeholder="150000"
+            required
+          />
 
+          <SelectField<FormValues, string>
+            control={form.control}
+            name={`finance_catalogues.${index}.devise` as Path<FormValues>}
+            label="Devise"
+            options={deviseOptions.map((devise) => ({
+              value: devise,
+              label: devise,
+            }))}
+            emptyLabel="Choisir une devise"
+          />
+
+          <IntField<FormValues>
+            control={form.control}
+            name={
+              `finance_catalogues.${index}.nombre_tranches` as Path<FormValues>
+            }
+            label="Tranches"
+            placeholder="1"
+          />
+
+          {!isScolarite ? (
             <BooleanField<FormValues>
               control={form.control}
-              name={
-                `finance_catalogues.${index}.prorata_eligible` as Path<FormValues>
-              }
-              label="Prorata mensuel"
-              disabled={catalogue.periodicite !== "monthly"}
+              name={`finance_catalogues.${index}.est_recurrent` as Path<FormValues>}
+              label="Recurrent"
             />
-          </>
-        ) : null}
-      </div>
+          ) : (
+            <TextField<FormValues>
+              control={form.control}
+              name={`finance_catalogues.${index}.mode_facturation` as Path<FormValues>}
+              label="Mode de facturation"
+              disabled
+            />
+          )}
 
-      <div className="mt-3">
-        <TextAreaField<FormValues>
-          control={form.control}
-          name={`finance_catalogues.${index}.description` as Path<FormValues>}
-          label="Description"
-          placeholder="Note courte visible dans le catalogue"
-        />
-      </div>
+          {catalogue.est_recurrent && !isScolarite ? (
+            <>
+              <SelectField<FormValues, string>
+                control={form.control}
+                name={
+                  `finance_catalogues.${index}.periodicite` as Path<FormValues>
+                }
+                label="Periodicite"
+                options={periodiciteOptions}
+                emptyLabel="Choisir une periodicite"
+              />
 
-      {isScolarite ? (
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <BooleanField<FormValues>
+                control={form.control}
+                name={
+                  `finance_catalogues.${index}.prorata_eligible` as Path<FormValues>
+                }
+                label="Prorata mensuel"
+                disabled={catalogue.periodicite !== "monthly"}
+              />
+            </>
+          ) : null}
+        </div>
+
+        <div className="mt-3">
           <TextAreaField<FormValues>
             control={form.control}
-            name={`finance_catalogues.${index}.plans_paiement_autorises_json` as Path<FormValues>}
-            label="Plans annuels autorises"
-            placeholder={defaultAnnualScolaritePlans}
-          />
-          <TextField<FormValues>
-            control={form.control}
-            name={`finance_catalogues.${index}.plan_paiement_defaut_code` as Path<FormValues>}
-            label="Plan annuel par defaut"
-            placeholder="10X"
+            name={`finance_catalogues.${index}.description` as Path<FormValues>}
+            label="Description"
+            placeholder="Note courte visible dans le catalogue"
           />
         </div>
-      ) : null}
-    </article>
-  );
+
+        {isScolarite ? (
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <TextAreaField<FormValues>
+              control={form.control}
+              name={`finance_catalogues.${index}.plans_paiement_autorises_json` as Path<FormValues>}
+              label="Plans annuels autorises"
+              placeholder={defaultAnnualScolaritePlans}
+            />
+            <TextField<FormValues>
+              control={form.control}
+              name={`finance_catalogues.${index}.plan_paiement_defaut_code` as Path<FormValues>}
+              label="Plan annuel par defaut"
+              placeholder="10X"
+            />
+          </div>
+        ) : null}
+      </article>
+    );
   };
 
   return (
@@ -521,16 +499,17 @@ useEffect(() => {
                 Finance
               </span>
               <span className="rounded-full bg-cyan-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                Wizard par classe
+                Wizard par niveau
               </span>
             </div>
             <h4 className="mt-4 text-lg font-semibold text-slate-900">
-              Catalogues de frais par classe
+              Catalogues de frais par niveau
             </h4>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Le wizard reprend les classes choisies precedemment, prepare les
-              frais classiques, puis te laisse completer les montants classe par
-              classe.
+              Le wizard reprend les niveaux choisis precedemment, prepare les
+              frais classiques, puis te laisse completer les montants niveau par
+              niveau. Les frais s'appliqueront automatiquement a toutes les
+              classes du niveau.
             </p>
           </div>
 
@@ -559,11 +538,10 @@ useEffect(() => {
         value={draft.finance_mode}
         onChange={(value) =>
           setDraft((current) => {
-            const classes = resolvePlannedClasses(current.classes_by_level);
             const missing =
               value === "CREATION" && current.finance_catalogues.length === 0
-                ? buildMissingClassCatalogues(
-                    classes,
+                ? buildMissingLevelCatalogues(
+                    plannedLevels,
                     current.finance_catalogues,
                   )
                 : [];
@@ -583,12 +561,12 @@ useEffect(() => {
           tard depuis le module Finance, sans bloquer le reste de
           l'initialisation.
         </div>
-      ) : plannedClasses.length === 0 ? (
+      ) : plannedLevels.length === 0 ? (
         <div className="space-y-4">
           <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-5 text-sm leading-6 text-amber-800">
-            Aucune classe n'est encore disponible dans l'etape Classes. Tu peux
-            creer un frais global maintenant, ou revenir completer les classes
-            pour activer le wizard automatique par classe.
+            Aucun niveau n'est encore disponible dans l'etape Niveaux. Tu peux
+            creer un frais global maintenant, ou revenir selectionner les
+            niveaux pour activer le wizard automatique par niveau.
           </div>
           <button
             type="button"
@@ -604,34 +582,24 @@ useEffect(() => {
         </div>
       ) : (
         <div className="space-y-4">
-          {classCreationRequired ? (
-            <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-5 text-sm leading-6 text-amber-800">
-              Les frais par classe necessitent que le bloc Classes soit en mode
-              Creation, afin que les classes existent au moment de generer les
-              catalogues.
-            </div>
-          ) : null}
-
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-slate-900">
-                {currentClass
-                  ? `${currentClass.class_name} - ${currentClass.level_nom}`
-                  : "Classe"}
+                {currentLevel ? currentLevel.level_nom : "Niveau"}
               </p>
               <p className="mt-1 text-sm text-slate-500">
-                Classe {activeClassIndex + 1} sur {plannedClasses.length}
+                Niveau {activeLevelIndex + 1} sur {plannedLevels.length}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={prepareAllClasses}
+                onClick={prepareAllLevels}
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 <FiCreditCard />
-                Preparer toutes les classes
+                Preparer tous les niveaux
               </button>
               <button
                 type="button"
@@ -647,10 +615,10 @@ useEffect(() => {
           <div className="grid gap-4 xl:grid-cols-[18rem_minmax(0,1fr)]">
             <aside className="rounded-[26px] border border-slate-200 bg-white p-3 shadow-sm">
               <div className="space-y-2">
-                {plannedClasses.map((plannedClass, index) => {
-                  const active = index === activeClassIndex;
-                  const progress = classCompletionByKey.get(
-                    plannedClass.key,
+                {plannedLevels.map((plannedLevel, index) => {
+                  const active = index === activeLevelIndex;
+                  const progress = levelCompletionByKey.get(
+                    plannedLevel.key,
                   ) ?? {
                     total: 0,
                     completed: 0,
@@ -658,9 +626,9 @@ useEffect(() => {
 
                   return (
                     <button
-                      key={plannedClass.key}
+                      key={plannedLevel.key}
                       type="button"
-                      onClick={() => setActiveClassIndex(index)}
+                      onClick={() => setActiveLevelIndex(index)}
                       className={`w-full rounded-[20px] border px-3 py-3 text-left transition ${
                         active
                           ? "border-cyan-300 bg-cyan-50"
@@ -670,10 +638,10 @@ useEffect(() => {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="text-sm font-semibold text-slate-900">
-                            {plannedClass.class_name}
+                            {plannedLevel.level_nom}
                           </p>
                           <p className="mt-1 text-xs text-slate-500">
-                            {plannedClass.level_nom}
+                            Toutes les classes du niveau
                           </p>
                         </div>
                         <span
@@ -699,7 +667,7 @@ useEffect(() => {
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => addCatalogueForCurrentClass("INSCRIPTION")}
+                      onClick={() => addCatalogueForCurrentLevel("INSCRIPTION")}
                       className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-700"
                     >
                       <FiPlus />
@@ -707,7 +675,7 @@ useEffect(() => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => addCatalogueForCurrentClass("SCOLARITE")}
+                      onClick={() => addCatalogueForCurrentLevel("SCOLARITE")}
                       className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
                     >
                       <FiPlus />
@@ -718,8 +686,8 @@ useEffect(() => {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={goToPreviousClass}
-                      disabled={activeClassIndex === 0}
+                      onClick={goToPreviousLevel}
+                      disabled={activeLevelIndex === 0}
                       className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                     >
                       <FiArrowLeft />
@@ -727,12 +695,11 @@ useEffect(() => {
                     </button>
                     <button
                       type="button"
-                      onClick={goToNextClass}
-                      title={!enableNext ? "Completer les frais de la classe avant de continuer" : "Passer à la classe suivante"}
-                      disabled={activeClassIndex >= plannedClasses.length - 1 || !enableNext}
+                      onClick={goToNextLevel}
+                      title={!enableNext ? "Completer les frais du niveau avant de continuer" : "Passer au niveau suivant"}
+                      disabled={activeLevelIndex >= plannedLevels.length - 1 || !enableNext}
                       className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                     >
-                      
                       Suivant
                       <FiArrowRight />
                     </button>
@@ -740,22 +707,22 @@ useEffect(() => {
                 </div>
               </div>
 
-              {currentClassEntries.length === 0 ? (
+              {currentLevelEntries.length === 0 ? (
                 <div className="rounded-[28px] border border-dashed border-cyan-300 bg-cyan-50/70 px-5 py-8 text-center">
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-cyan-700 shadow-sm">
                     <FiCreditCard />
                   </div>
                   <h5 className="mt-4 text-base font-semibold text-slate-900">
-                    Aucun frais pour cette classe
+                    Aucun frais pour ce niveau
                   </h5>
                   <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-600">
                     Ajoute un frais d'inscription ou de scolarite, ou utilise
-                    "Preparer toutes les classes" pour gagner du temps.
+                    "Preparer tous les niveaux" pour gagner du temps.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {currentClassEntries.map(({ catalogue, index }) =>
+                  {currentLevelEntries.map(({ catalogue, index }) =>
                     renderCatalogueFields(catalogue, index),
                   )}
                 </div>

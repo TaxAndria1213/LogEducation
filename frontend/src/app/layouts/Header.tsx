@@ -6,6 +6,7 @@ import {
   FiMessageCircle,
   FiChevronRight,
   FiLogOut,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { useAuth } from "../../auth/AuthContext";
 import IconButton from "../../components/actions/IconButton";
@@ -14,6 +15,8 @@ import UserPopup from "../process/headBar/components/UserPopup";
 import { getComponentById } from "../../components/components.build";
 import AdminPopup from "../process/headBar/components/AdminPopup";
 import { APP_MODULES, HOME_PATH } from "../../navigation/modules.config";
+
+const PAGE_REFRESH_EVENT = "logesco:page-refresh-request";
 
 function Header() {
   const { user, profil, logout } = useAuth();
@@ -71,6 +74,23 @@ function Header() {
     setPopupOpen(true, type);
   };
 
+  const handleRefreshPageData = () => {
+    if (typeof window === "undefined") return;
+
+    const event = new CustomEvent(PAGE_REFRESH_EVENT, {
+      cancelable: true,
+      detail: {
+        pathname: location.pathname,
+        requestedAt: Date.now(),
+      },
+    });
+
+    const handled = !window.dispatchEvent(event);
+    if (!handled) {
+      window.location.reload();
+    }
+  };
+
   return (
     <header className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-xl">
       <div className="relative flex min-h-[68px] items-center justify-between gap-4 px-6">
@@ -83,6 +103,16 @@ function Header() {
               <span>{routeContext.moduleName}</span>
               <FiChevronRight className="text-slate-300" />
               <span>{routeContext.sectionName}</span>
+              <button
+                type="button"
+                onClick={handleRefreshPageData}
+                className="ml-1 inline-flex h-7 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                aria-label="Recharger les donnees de la page"
+                title="Recharger les donnees"
+              >
+                <FiRefreshCw className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Recharger</span>
+              </button>
             </div>
           </div>
 

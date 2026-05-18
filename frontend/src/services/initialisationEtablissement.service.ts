@@ -4,6 +4,7 @@ import type {
   InitialisationSetupDraft,
   NouvelleAnneeDraft,
 } from "../pages/etablissement/initialisation/types";
+import { notifyStartupChecklistChanged } from "../components/startup/startupChecklistEvents";
 
 class InitialisationEtablissementService extends Service {
   constructor() {
@@ -34,10 +35,12 @@ class InitialisationEtablissementService extends Service {
   }
 
   async commitInitialSetup(payload: InitialisationSetupDraft) {
-    return Http.post(["/api", this.url, "commit-initial-setup"].join("/"), {
+    const response = await Http.post(["/api", this.url, "commit-initial-setup"].join("/"), {
       ...payload,
       custom_levels: payload.custom_levels,
     });
+    notifyStartupChecklistChanged();
+    return response;
   }
 
   async previewNewSchoolYear(payload: NouvelleAnneeDraft) {
@@ -45,7 +48,9 @@ class InitialisationEtablissementService extends Service {
   }
 
   async commitNewSchoolYear(payload: NouvelleAnneeDraft) {
-    return Http.post(["/api", this.url, "commit-new-school-year"].join("/"), payload);
+    const response = await Http.post(["/api", this.url, "commit-new-school-year"].join("/"), payload);
+    notifyStartupChecklistChanged();
+    return response;
   }
 }
 

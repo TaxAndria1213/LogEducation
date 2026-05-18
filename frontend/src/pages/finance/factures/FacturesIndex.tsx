@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useAuth } from "../../../auth/AuthContext";
 import FactureService, { type FactureWithRelations } from "../../../services/facture.service";
 import FinanceModuleLayout from "../components/FinanceModuleLayout";
@@ -10,7 +10,7 @@ import {
 } from "../utils/crossNavigation";
 
 export default function FacturesIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const { etablissement_id } = useAuth();
   const service = useMemo(() => new FactureService(), []);
   const renderState = useFactureStore((state) => state.renderState);

@@ -15,24 +15,28 @@ export const comptes_securite: menu = {
         key: "utilisateurs",
         name: "Utilisateurs",
         path: "/comptes_securite/utilisateurs",
+        permission: "CS.UTILISATEURS.MENUACTION",
         elements: <UtilisateursIndex />
       },
       {
         key: "profils",
         name: "Profils",
         path: "/comptes_securite/profils",
+        permission: "CS.PROFILS.MENUACTION",
         elements: <ProfilsIndex />
       },
       {
         key: "roles",
         name: "Rôles",
         path: "/comptes_securite/roles",
+        permission: "CS.ROLES.MENUACTION",
         elements: <RolesIndex />
       },
       {
         key: "permissions",
         name: "Permissions",
         path: "/comptes_securite/permissions",
+        permission: "CS.PERMISSIONS.MENUACTION",
         elements: <PermissionsIndex />
       },
       //Affectations & Scope
@@ -40,6 +44,7 @@ export const comptes_securite: menu = {
         key: "affectations",
         name: "Affectations & Scope",
         path: "/comptes_securite/affectations",
+        permission: "CS.AFFECTATIONS.MENUACTION",
         elements: <AffectationsIndex />
       },
     ],

@@ -128,34 +128,67 @@ function parseFinanceAmount(value: unknown) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function getFinanceNavigationIssue(draft: InitialisationSetupDraft) {
+function getSubmittableFinanceCatalogues(
+  catalogues: InitialisationSetupDraft["finance_catalogues"],
+) {
+  return catalogues.filter((catalogue) => {
+    const amount = parseFinanceAmount(catalogue.montant);
+    return Boolean(catalogue.nom.trim()) && amount !== null && amount >= 0;
+  });
+}
+
+function getFinanceNavigationIssue(
+  draft: InitialisationSetupDraft,
+  selectedLevelCodes: string[],
+) {
   if (draft.finance_mode !== "CREATION") {
     return null;
   }
 
-  if (draft.finance_catalogues.length === 0) {
+  const completeCatalogues = getSubmittableFinanceCatalogues(
+    draft.finance_catalogues,
+  );
+
+  if (completeCatalogues.length === 0) {
     return "Ajoute au moins un frais catalogue avant de passer a l'etape suivante.";
   }
 
-  const cataloguesSansMontant = draft.finance_catalogues.filter((catalogue) => {
-    const amount = parseFinanceAmount(catalogue.montant);
-    return amount === null || amount < 0;
-  });
+  const hasCompleteGlobalCatalogue = completeCatalogues.some(
+    (catalogue) => !catalogue.level_code,
+  );
 
-  if (cataloguesSansMontant.length === 0) {
+  if (hasCompleteGlobalCatalogue || selectedLevelCodes.length === 0) {
     return null;
   }
 
-  const labels = cataloguesSansMontant
+  const coveredLevelCodes = new Set(
+    completeCatalogues
+      .map((catalogue) => catalogue.level_code)
+      .filter(Boolean),
+  );
+  const missingLevelCodes = selectedLevelCodes.filter(
+    (levelCode) => !coveredLevelCodes.has(levelCode),
+  );
+
+  if (missingLevelCodes.length === 0) {
+    return null;
+  }
+
+  const labels = missingLevelCodes
     .slice(0, 3)
-    .map((catalogue) => catalogue.nom.trim() || "Frais sans nom")
+    .map((levelCode) => {
+      const level = draft.classes_by_level.find(
+        (group) => group.level_code === levelCode,
+      );
+      return level?.level_nom || levelCode;
+    })
     .join(", ");
   const suffix =
-    cataloguesSansMontant.length > 3
-      ? ` et ${cataloguesSansMontant.length - 3} autre(s)`
+    missingLevelCodes.length > 3
+      ? ` et ${missingLevelCodes.length - 3} autre(s)`
       : "";
 
-  return `Renseigne le montant de tous les frais avant de continuer : ${labels}${suffix}.`;
+  return `Renseigne au moins un frais complet pour chaque niveau : ${labels}${suffix}.`;
 }
 
 export default function InitialisationWizard({
@@ -314,16 +347,6 @@ export default function InitialisationWizard({
     const validLevelCodes = new Set(resolvedLevels.map((level) => level.code));
 
     setDraft((current) => {
-      const validClassKeys = new Set(
-        current.classes_by_level.flatMap((group) =>
-          group.class_names
-            .map((className) => className.trim())
-            .filter(Boolean)
-            .map(
-              (className) => `${group.level_code}::${className.toLowerCase()}`,
-            ),
-        ),
-      );
       const nextCatalogues = current.finance_catalogues.map((catalogue) => {
         if (
           catalogue.level_code &&
@@ -332,19 +355,6 @@ export default function InitialisationWizard({
           return {
             ...catalogue,
             level_code: "",
-            class_name: "",
-          };
-        }
-
-        if (
-          catalogue.class_name &&
-          !validClassKeys.has(
-            `${catalogue.level_code}::${catalogue.class_name.trim().toLowerCase()}`,
-          )
-        ) {
-          return {
-            ...catalogue,
-            class_name: "",
           };
         }
 
@@ -353,9 +363,7 @@ export default function InitialisationWizard({
       const changed = nextCatalogues.some(
         (catalogue, index) =>
           catalogue.level_code !==
-            current.finance_catalogues[index]?.level_code ||
-          catalogue.class_name !==
-            current.finance_catalogues[index]?.class_name,
+            current.finance_catalogues[index]?.level_code,
       );
 
       if (!changed) {
@@ -367,7 +375,7 @@ export default function InitialisationWizard({
         finance_catalogues: nextCatalogues,
       };
     });
-  }, [draft.classes_by_level, resolvedLevels]);
+  }, [resolvedLevels]);
 
   const steps = useMemo(
     () => [
@@ -468,7 +476,10 @@ export default function InitialisationWizard({
   const progress = Math.round(((step + 1) / steps.length) * 100);
   const isLastStep = step === steps.length - 1;
   const financeStepIndex = steps.findIndex((item) => item.title === "Finance");
-  const financeNavigationIssue = getFinanceNavigationIssue(draft);
+  const financeNavigationIssue = getFinanceNavigationIssue(
+    draft,
+    resolvedLevels.map((level) => level.code),
+  );
   const isFinanceNextBlocked =
     step === financeStepIndex && Boolean(financeNavigationIssue);
   const selectedLevelCount = resolvedLevels.length;
@@ -489,8 +500,15 @@ export default function InitialisationWizard({
   const handlePreview = useCallback(async () => {
     setIsPreviewing(true);
     try {
+      const payload = {
+        ...draft,
+        finance_catalogues:
+          draft.finance_mode === "CREATION"
+            ? getSubmittableFinanceCatalogues(draft.finance_catalogues)
+            : draft.finance_catalogues,
+      };
       const response =
-        await InitialisationEtablissementService.previewInitialSetup(draft);
+        await InitialisationEtablissementService.previewInitialSetup(payload);
       setPreview(response.data ?? null);
       info("Previsualisation mise a jour.", "success");
     } catch (error) {
@@ -503,8 +521,15 @@ export default function InitialisationWizard({
   const handleCommit = useCallback(async () => {
     setIsCommitting(true);
     try {
+      const payload = {
+        ...draft,
+        finance_catalogues:
+          draft.finance_mode === "CREATION"
+            ? getSubmittableFinanceCatalogues(draft.finance_catalogues)
+            : draft.finance_catalogues,
+      };
       const response =
-        await InitialisationEtablissementService.commitInitialSetup(draft);
+        await InitialisationEtablissementService.commitInitialSetup(payload);
       const result = (response.data ??
         null) as InitialisationCommitResult | null;
       setReport(result);

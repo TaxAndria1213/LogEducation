@@ -10,6 +10,7 @@ import {
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { hasAccess } from "../components.build";
 import InitialisationEtablissementService from "../../services/initialisationEtablissement.service";
 import EnseignantService from "../../services/enseignant.service";
 import PeriodeService from "../../services/periode.service";
@@ -17,6 +18,8 @@ import ProgrammeService from "../../services/programme.service";
 import CoursService from "../../services/cours.service";
 import RegleNoteService from "../../services/regleNote.service";
 import type { InitialisationStatus } from "../../pages/etablissement/initialisation/types";
+import type { componentId } from "../../types/types";
+import { STARTUP_CHECKLIST_REFRESH_EVENT } from "./startupChecklistEvents";
 
 type ChecklistTask = {
   key: string;
@@ -25,6 +28,7 @@ type ChecklistTask = {
   path: string;
   icon: ReactNode;
   done: boolean;
+  permissions?: componentId[];
 };
 
 type ChecklistSnapshot = {
@@ -37,23 +41,41 @@ type ChecklistSnapshot = {
 };
 
 const STORAGE_KEY = "logesco.startup-checklist.collapsed";
-const checklistSnapshotCache = new Map<string, ChecklistSnapshot>();
+const CACHE_TTL_MS = 2 * 60 * 1000;
+const checklistSnapshotCache = new Map<
+  string,
+  { snapshot: ChecklistSnapshot; loadedAt: number }
+>();
 
-function getStoredCollapsedState() {
+function getCollapsedStorageKey(etablissementId?: string | null) {
+  return etablissementId ? `${STORAGE_KEY}.${etablissementId}` : STORAGE_KEY;
+}
+
+function getStoredCollapsedState(etablissementId?: string | null) {
   if (typeof window === "undefined") return false;
 
   try {
+    const scopedValue = window.localStorage.getItem(
+      getCollapsedStorageKey(etablissementId),
+    );
+    if (scopedValue != null) return scopedValue === "true";
     return window.localStorage.getItem(STORAGE_KEY) === "true";
   } catch {
     return false;
   }
 }
 
-function setStoredCollapsedState(value: boolean) {
+function setStoredCollapsedState(
+  value: boolean,
+  etablissementId?: string | null,
+) {
   if (typeof window === "undefined") return;
 
   try {
-    window.localStorage.setItem(STORAGE_KEY, value ? "true" : "false");
+    window.localStorage.setItem(
+      getCollapsedStorageKey(etablissementId),
+      value ? "true" : "false",
+    );
   } catch {
     return;
   }
@@ -87,27 +109,67 @@ function getMetaTotal(result: unknown) {
     return result.data.data.length;
   }
 
+  if (
+    typeof result === "object" &&
+    result !== null &&
+    "data" in result &&
+    Array.isArray(result.data)
+  ) {
+    return result.data.length;
+  }
+
   return 0;
 }
 
+async function readOptionalCount(label: string, request: Promise<unknown>) {
+  try {
+    return getMetaTotal(await request);
+  } catch (error) {
+    console.warn(
+      `Verification du raccourci d'initialisation ignoree (${label}).`,
+      error,
+    );
+    return 0;
+  }
+}
+
 function StartupChecklistWidget() {
-  const { etablissement_id } = useAuth();
+  const { etablissement_id, roles, user } = useAuth();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(getStoredCollapsedState);
+  const [collapsed, setCollapsed] = useState(() => getStoredCollapsedState());
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [snapshot, setSnapshot] = useState<ChecklistSnapshot | null>(null);
 
+  const canAccessShortcut = useMemo(
+    () =>
+      Boolean(
+        user &&
+          roles &&
+          hasAccess(user, roles, "ET.INIT.MENUACTION"),
+      ),
+    [roles, user],
+  );
+
+  const hasAnyPermission = useCallback(
+    (permissions?: componentId[]) => {
+      if (!permissions || permissions.length === 0) return true;
+      if (!user || !roles) return false;
+      return permissions.some((permission) => hasAccess(user, roles, permission));
+    },
+    [roles, user],
+  );
+
   const loadChecklist = useCallback(async (options?: { force?: boolean }) => {
-    if (!etablissement_id) {
+    if (!etablissement_id || !canAccessShortcut) {
       setSnapshot(null);
       return;
     }
 
     if (!options?.force) {
-      const cachedSnapshot = checklistSnapshotCache.get(etablissement_id);
-      if (cachedSnapshot) {
-        setSnapshot(cachedSnapshot);
+      const cachedEntry = checklistSnapshotCache.get(etablissement_id);
+      if (cachedEntry && Date.now() - cachedEntry.loadedAt < CACHE_TTL_MS) {
+        setSnapshot(cachedEntry.snapshot);
         setErrorMessage("");
         return;
       }
@@ -128,53 +190,89 @@ function StartupChecklistWidget() {
 
       const status = (statusResponse.data ?? null) as InitialisationStatus | null;
       const activeYearId = status?.active_year?.id ?? null;
+      const canCheckTeachers = hasAnyPermission(["PE.ENSEIGNANTS.MENUACTION"]);
+      const canCheckPedagogy = hasAnyPermission([
+        "PD.PROGRAMMES.MENUACTION",
+        "PD.COURS.MENUACTION",
+        "PD.REGLESNOTES.MENUACTION",
+      ]);
 
       const [
-        teachersResponse,
-        periodesResponse,
-        programmesResponse,
-        coursResponse,
-        reglesResponse,
+        teacherCount,
+        periodCount,
+        programmeCount,
+        courseCount,
+        noteRuleCount,
       ] = await Promise.all([
-        enseignantService.getAll({
-          page: 1,
-          take: 1,
-          where: JSON.stringify({ personnel: { etablissement_id } }),
-        }),
-        activeYearId
-          ? PeriodeService.getAll({
-              page: 1,
-              take: 1,
-              where: JSON.stringify({ annee_scolaire_id: activeYearId }),
-            })
-          : Promise.resolve(null),
-        programmeService.getForEtablissement(etablissement_id, {
-          page: 1,
-          take: 1,
-          where: activeYearId ? { annee_scolaire_id: activeYearId } : undefined,
-        }),
-        coursService.getForEtablissement(etablissement_id, {
-          page: 1,
-          take: 1,
-          where: activeYearId ? { annee_scolaire_id: activeYearId } : undefined,
-        }),
-        regleNoteService.getAll({
-          page: 1,
-          take: 1,
-          where: JSON.stringify({ etablissement_id }),
-        }),
+        canCheckTeachers
+          ? readOptionalCount(
+              "enseignants",
+              enseignantService.getAll({
+                page: 1,
+                take: 1,
+                where: JSON.stringify({ personnel: { etablissement_id } }),
+              }),
+            )
+          : Promise.resolve(0),
+        canCheckPedagogy && activeYearId
+          ? readOptionalCount(
+              "periodes",
+              PeriodeService.getAll({
+                page: 1,
+                take: 1,
+                where: JSON.stringify({ annee_scolaire_id: activeYearId }),
+              }),
+            )
+          : Promise.resolve(0),
+        canCheckPedagogy
+          ? readOptionalCount(
+              "programmes",
+              programmeService.getForEtablissement(etablissement_id, {
+                page: 1,
+                take: 1,
+                where: activeYearId
+                  ? { annee_scolaire_id: activeYearId }
+                  : undefined,
+              }),
+            )
+          : Promise.resolve(0),
+        canCheckPedagogy
+          ? readOptionalCount(
+              "cours",
+              coursService.getForEtablissement(etablissement_id, {
+                page: 1,
+                take: 1,
+                where: activeYearId
+                  ? { annee_scolaire_id: activeYearId }
+                  : undefined,
+              }),
+            )
+          : Promise.resolve(0),
+        canCheckPedagogy
+          ? readOptionalCount(
+              "regles de notes",
+              regleNoteService.getAll({
+                page: 1,
+                take: 1,
+                where: JSON.stringify({ etablissement_id }),
+              }),
+            )
+          : Promise.resolve(0),
       ]);
 
       const nextSnapshot = {
         status,
-        teacherCount: getMetaTotal(teachersResponse),
-        periodCount: getMetaTotal(periodesResponse),
-        programmeCount: getMetaTotal(programmesResponse),
-        courseCount: getMetaTotal(coursResponse),
-        noteRuleCount: getMetaTotal(reglesResponse),
+        teacherCount,
+        periodCount,
+        programmeCount,
+        courseCount,
+        noteRuleCount,
       };
 
-      checklistSnapshotCache.set(etablissement_id, nextSnapshot);
+      checklistSnapshotCache.set(etablissement_id, {
+        snapshot: nextSnapshot,
+        loadedAt: Date.now(),
+      });
       setSnapshot(nextSnapshot);
     } catch (error) {
       console.warn(
@@ -185,19 +283,37 @@ function StartupChecklistWidget() {
     } finally {
       setLoading(false);
     }
-  }, [etablissement_id]);
+  }, [canAccessShortcut, etablissement_id, hasAnyPermission]);
 
   useEffect(() => {
     void loadChecklist();
   }, [loadChecklist]);
 
   useEffect(() => {
+    setCollapsed(getStoredCollapsedState(etablissement_id));
+  }, [etablissement_id]);
+
+  useEffect(() => {
     const handleFocus = () => {
-      void loadChecklist();
+      void loadChecklist({ force: true });
+    };
+    const handleRefreshRequest = () => {
+      void loadChecklist({ force: true });
     };
 
     window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
+    window.addEventListener(
+      STARTUP_CHECKLIST_REFRESH_EVENT,
+      handleRefreshRequest,
+    );
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener(
+        STARTUP_CHECKLIST_REFRESH_EVENT,
+        handleRefreshRequest,
+      );
+    };
   }, [loadChecklist]);
 
   const tasks = useMemo<ChecklistTask[]>(() => {
@@ -218,6 +334,7 @@ function StartupChecklistWidget() {
         path: "/etablissement/initialisation",
         icon: <FiSettings />,
         done: Boolean(status?.ready_for_operational_start),
+        permissions: ["ET.INIT.MENUACTION"],
       },
       {
         key: "enseignants",
@@ -226,6 +343,7 @@ function StartupChecklistWidget() {
         path: "/personnel/enseignants",
         icon: <FiUsers />,
         done: (snapshot?.teacherCount ?? 0) > 0,
+        permissions: ["PE.ENSEIGNANTS.MENUACTION"],
       },
       {
         key: "pedagogie",
@@ -234,6 +352,11 @@ function StartupChecklistWidget() {
         path: "/pedagogie/initialisation",
         icon: <FiBookOpen />,
         done: pedagogieReady,
+        permissions: [
+          "PD.PROGRAMMES.MENUACTION",
+          "PD.COURS.MENUACTION",
+          "PD.REGLESNOTES.MENUACTION",
+        ],
       },
       {
         key: "finance",
@@ -242,29 +365,35 @@ function StartupChecklistWidget() {
         path: "/finance/catalogue_frais",
         icon: <FiCreditCard />,
         done: (status?.counts.catalogue_frais ?? 0) > 0,
+        permissions: ["FIN.CATALOGUEFRAIS.MENUACTION"],
       },
     ];
   }, [snapshot]);
 
   const pendingTasks = useMemo(
-    () => tasks.filter((task) => !task.done),
-    [tasks],
+    () =>
+      tasks.filter((task) => !task.done && hasAnyPermission(task.permissions)),
+    [hasAnyPermission, tasks],
   );
 
   const progress = useMemo(() => {
-    if (tasks.length === 0) return 0;
-    return Math.round(((tasks.length - pendingTasks.length) / tasks.length) * 100);
-  }, [pendingTasks.length, tasks.length]);
+    const accessibleTasks = tasks.filter((task) =>
+      hasAnyPermission(task.permissions),
+    );
+    if (accessibleTasks.length === 0) return 0;
+    const doneCount = accessibleTasks.filter((task) => task.done).length;
+    return Math.round((doneCount / accessibleTasks.length) * 100);
+  }, [hasAnyPermission, tasks]);
 
   const toggleCollapsed = () => {
     setCollapsed((current) => {
       const next = !current;
-      setStoredCollapsedState(next);
+      setStoredCollapsedState(next, etablissement_id);
       return next;
     });
   };
 
-  if (!etablissement_id) return null;
+  if (!etablissement_id || !canAccessShortcut) return null;
   if (!loading && !errorMessage && pendingTasks.length === 0) return null;
 
   return (

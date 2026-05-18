@@ -3,11 +3,11 @@ import ERPPage from "../../../components/page/ERPPage";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import { getComponentById } from "../../../components/components.build";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useReferentielIndexStore } from "./store/ReferentielIndexStore";
 
 export default function ReferentielsIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
 
   const menuListIsVisible = useReferentielIndexStore(
     (state) => state.menuListIsVisible,

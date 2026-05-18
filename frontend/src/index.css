@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@keyframes preload-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(70%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
 
 /* Scrollbar global */
 :root {

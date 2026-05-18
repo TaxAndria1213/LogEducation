@@ -1,10 +1,10 @@
 import { useEffect, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import FinanceModuleLayout from "../components/FinanceModuleLayout";
 import { useRemiseStore } from "./store/RemiseIndexStore";
 
 export default function RemisesIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const renderState = useRemiseStore((state) => state.renderState);
   const renderedElement = useRemiseStore((state) => state.renderedComponent);
   const setRenderState = useRemiseStore((state) => state.setRenderState);

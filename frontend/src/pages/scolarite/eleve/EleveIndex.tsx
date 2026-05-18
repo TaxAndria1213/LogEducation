@@ -7,12 +7,12 @@ import {
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import { useAuth } from "../../../auth/AuthContext";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useEleveStore } from "./store/EleveIndexStore";
 
 function EleveIndex() {
   const { user, roles } = useAuth();
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const [renderList, setRenderList] = useState<JSX.Element[]>([<></>]);
 
   const menuListIsVisible = useEleveStore((state) => state.menuListIsVisible);

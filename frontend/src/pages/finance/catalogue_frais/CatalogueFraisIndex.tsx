@@ -1,10 +1,10 @@
 import { useEffect, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import FinanceModuleLayout from "../components/FinanceModuleLayout";
 import { useCatalogueFraisStore } from "./store/CatalogueFraisIndexStore";
 
 export default function CatalogueFraisIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const renderState = useCatalogueFraisStore((state) => state.renderState);
   const renderedElement = useCatalogueFraisStore((state) => state.renderedComponent);
   const setRenderState = useCatalogueFraisStore((state) => state.setRenderState);

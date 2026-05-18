@@ -3,12 +3,12 @@ import { getComponentById } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import { useEffect, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useEnseignantStore } from "./store/EnseignantIndexStore";
 
 function EnseignantsIndex() {
   //states
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
 
   const menuListIsVisible = useEnseignantStore(
     (state) => state.menuListIsVisible,

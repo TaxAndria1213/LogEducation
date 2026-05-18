@@ -3,11 +3,11 @@ import { getComponentById } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import { useEffect, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useNoteStore } from "./store/NoteIndexStore";
 
 function NotesIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const menuListIsVisible = useNoteStore((s) => s.menuListIsVisible);
   const setMenuListIsVisible = useNoteStore((s) => s.setMenuListIsVisible);
   const renderState = useNoteStore((s) => s.renderState);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useAuth } from "../../../auth/AuthContext";
 import PlanPaiementEleveService, {
   type PlanPaiementEleveWithRelations,
@@ -12,7 +12,7 @@ import {
 } from "../utils/crossNavigation";
 
 export default function PlansPaiementIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const { etablissement_id } = useAuth();
   const service = useMemo(() => new PlanPaiementEleveService(), []);
   const renderState = usePlanPaiementStore((state) => state.renderState);

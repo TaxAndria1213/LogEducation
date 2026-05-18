@@ -18,6 +18,7 @@ export const scolarite: menu = {
         key: "eleves",
         name: "Élèves",
         path: "/scolarite/eleves",
+        permission: "SC.ELEVES.MENUACTION",
         elements: <EleveIndex />
       },
       //Identifiants élève
@@ -25,6 +26,7 @@ export const scolarite: menu = {
         key: "identifiants_eleves",
         name: "Identifiants des élèves",
         path: "/scolarite/identifiants_eleves",
+        permission: "SC.IDENTIFIANTS.MENUACTION",
         elements: <IdentifiantEleveIndex />
       },
       //Parents/tuteurs
@@ -32,6 +34,7 @@ export const scolarite: menu = {
         key: "parents_tuteurs",
         name: "Parents/Tuteurs",
         path: "/scolarite/parents_tuteurs",
+        permission: "SC.PARENTSTUTEURS.MENUACTION",
         elements: <ParentTuteurIndex />
       },
       //Niveaux
@@ -39,6 +42,7 @@ export const scolarite: menu = {
         key: "niveaux",
         name: "Niveaux",
         path: "/scolarite/niveaux",
+        permission: "SC.NIVEAUX.MENUACTION",
         elements: <NiveauIndex />
       },
       //Classes
@@ -46,6 +50,7 @@ export const scolarite: menu = {
         key: "classes",
         name: "Classes",
         path: "/scolarite/classes",
+        permission: "SC.CLASSES.MENUACTION",
         elements: <ClasseIndex />
       },
       //Inscriptions
@@ -53,12 +58,14 @@ export const scolarite: menu = {
         key: "inscriptions",
         name: "Inscriptions",
         path: "/scolarite/inscriptions",
+        permission: "SC.INSCRIPTIONS.MENUACTION",
         elements: <InscriptionsIndex />
       },
       {
         key: "inscriptions_brouillons",
         name: "Brouillons d'inscription",
         path: "/scolarite/inscriptions/brouillons",
+        permission: "SC.INSCRIPTIONS.MENUACTION.DRAFTS",
         elements: <EnrollmentDraftListPage />
       },
     ],

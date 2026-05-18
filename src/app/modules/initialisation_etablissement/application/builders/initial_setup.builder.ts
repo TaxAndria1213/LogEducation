@@ -57,7 +57,6 @@ export type InitialSetupPayload = {
   }[];
   finance_catalogues: {
     level_code?: string;
-    class_name?: string;
     nom: string;
     description?: string;
     montant?: number;
@@ -513,7 +512,6 @@ function normalizeFinanceCatalogues(value: unknown) {
 
       return {
         level_code: toTrimmedString(catalogue.level_code),
-        class_name: toTrimmedString(catalogue.class_name),
         nom: toTrimmedString(catalogue.nom) ?? "",
         description: toTrimmedString(catalogue.description),
         montant: parseOptionalNumber(catalogue.montant),
@@ -708,12 +706,6 @@ export function validateInitialSetupFinanceCatalogues(
       payload.custom_levels,
     ).map((level) => level.code),
   );
-  const classNamesByLevel = new Map(
-    payload.classes_by_level.map((group) => [
-      group.level_code,
-      new Set(group.class_names),
-    ]),
-  );
   const issues: string[] = [];
 
   payload.finance_catalogues.forEach((catalogue, index) => {
@@ -770,21 +762,6 @@ export function validateInitialSetupFinanceCatalogues(
       );
     }
 
-    if (catalogue.class_name && !catalogue.level_code) {
-      issues.push(
-        `Le frais ${label} doit avoir un niveau pour cibler une classe.`,
-      );
-    }
-
-    if (
-      catalogue.class_name &&
-      catalogue.level_code &&
-      !classNamesByLevel.get(catalogue.level_code)?.has(catalogue.class_name)
-    ) {
-      issues.push(
-        `La classe cible du frais ${label} n'est plus presente dans l'etape Classes.`,
-      );
-    }
   });
 
   return issues;

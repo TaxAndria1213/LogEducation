@@ -3,11 +3,11 @@ import ERPPage from "../../../components/page/ERPPage";
 import { getComponentById } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useRessourceBibliothequeStore } from "./store/RessourceBibliothequeIndexStore";
 
 export default function RessourcesIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const menuListIsVisible = useRessourceBibliothequeStore((state) => state.menuListIsVisible);
   const setMenuListIsVisible = useRessourceBibliothequeStore((state) => state.setMenuListIsVisible);
   const renderState = useRessourceBibliothequeStore((state) => state.renderState);

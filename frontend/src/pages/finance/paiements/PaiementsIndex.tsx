@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useAuth } from "../../../auth/AuthContext";
 import PaiementService, { type PaiementWithRelations } from "../../../services/paiement.service";
 import FinanceModuleLayout from "../components/FinanceModuleLayout";
@@ -11,7 +11,7 @@ import {
 } from "../utils/crossNavigation";
 
 export default function PaiementsIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const { etablissement_id } = useAuth();
   const service = useMemo(() => new PaiementService(), []);
   const renderState = usePaiementStore((state) => state.renderState);

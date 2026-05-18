@@ -3,11 +3,11 @@ import { getComponentById } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
 import { useEffect, useState, type JSX } from "react";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useMatiereStore } from "./store/MatiereIndexStore";
 
 function MatieresIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const menuListIsVisible = useMatiereStore((s) => s.menuListIsVisible);
   const setMenuListIsVisible = useMatiereStore((s) => s.setMenuListIsVisible);
   const renderState = useMatiereStore((s) => s.renderState);

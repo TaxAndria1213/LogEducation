@@ -602,50 +602,6 @@ class InitialisationCommitService {
             continue;
           }
 
-          let classRecord: { id: string; nom: string } | null = null;
-          if (catalogue.class_name) {
-            if (!levelRecord) {
-              warnings.push(
-                `La classe cible du frais ${catalogue.nom} ne peut pas etre resolue sans niveau.`,
-              );
-              continue;
-            }
-
-            if (!targetYear) {
-              throw new Error(
-                `La classe ${catalogue.class_name} ne peut pas etre ciblee sans annee scolaire active.`,
-              );
-            }
-
-            const classLevelCode = catalogue.level_code ?? "";
-            const classKey = buildClassRecordKey(
-              classLevelCode,
-              catalogue.class_name,
-            );
-            classRecord = classRecords.get(classKey) ?? null;
-
-            if (!classRecord) {
-              classRecord = await db.classe.findFirst({
-                where: {
-                  etablissement_id: payload.etablissement_id,
-                  annee_scolaire_id: targetYear.id,
-                  niveau_scolaire_id: levelRecord.id,
-                  nom: catalogue.class_name,
-                },
-                select: { id: true, nom: true },
-              });
-              if (classRecord) {
-                classRecords.set(classKey, classRecord);
-              }
-            }
-
-            if (!classRecord) {
-              throw new Error(
-                `La classe ${catalogue.class_name} doit etre creee avant de generer le frais ${catalogue.nom}.`,
-              );
-            }
-          }
-
           const niveauScolaireId = levelRecord?.id ?? null;
           const exists = await db.catalogueFrais.findFirst({
             where: {
@@ -668,16 +624,6 @@ class InitialisationCommitService {
           const eligibilityJson: Record<string, unknown> = {
             ...(catalogue.eligibilite_json ?? {}),
           };
-          if (classRecord) {
-            const existingClasseIds = Array.isArray(eligibilityJson.classe_ids)
-              ? eligibilityJson.classe_ids.filter(
-                  (entry): entry is string => typeof entry === "string",
-                )
-              : [];
-            eligibilityJson.classe_ids = Array.from(
-              new Set([...existingClasseIds, classRecord.id]),
-            );
-          }
           const eligibilityInput =
             Object.keys(eligibilityJson).length > 0
               ? (eligibilityJson as Prisma.InputJsonObject)

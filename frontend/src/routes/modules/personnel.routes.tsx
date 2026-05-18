@@ -13,18 +13,21 @@ export const personnel: menu = {
         key: "personnels",
         name: "Personnels",
         path: "/personnel/personnels",
+        permission: "PE.PERSONNELS.MENUACTION",
         elements: <PersonnelsIndex />
       },
       {
         key: "enseignants",
         name: "Enseignants",
         path: "/personnel/enseignants",
+        permission: "PE.ENSEIGNANTS.MENUACTION",
         elements: <EnseignantsIndex />
       },
       {
         key: "departements",
         name: "Départements",
         path: "/personnel/departements",
+        permission: "PE.DEPARTEMENTS.MENUACTION",
         elements: <DepartementIndex />
       },
     ],

@@ -11,6 +11,7 @@ export const documents: menu = {
       key: "types_documents_inscription",
       name: "Types d'inscription",
       path: "/documents/types-inscription",
+      permission: "DOC.INSCRIPTIONTYPES.PAGE",
       elements: <DocumentTypesInscriptionPage />,
     },
     {

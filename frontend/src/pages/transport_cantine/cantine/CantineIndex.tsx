@@ -3,11 +3,11 @@ import ERPPage from "../../../components/page/ERPPage";
 import { getComponentById } from "../../../components/components.build";
 import ListContainer from "../../../components/sidebar/ListContainer";
 import PageSidebarPopup from "../../../components/sidebar/PageSidebarPopup";
-import NotFound from "../../NotFound";
+import PreloadPage from "../../PreloadPage";
 import { useCantineStore } from "./store/CantineIndexStore";
 
 export default function CantineIndex() {
-  const [render, setRender] = useState<JSX.Element>(<NotFound />);
+  const [render, setRender] = useState<JSX.Element>(<PreloadPage />);
   const menuListIsVisible = useCantineStore((state) => state.menuListIsVisible);
   const setMenuListIsVisible = useCantineStore((state) => state.setMenuListIsVisible);
   const renderState = useCantineStore((state) => state.renderState);
