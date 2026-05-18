@@ -13,11 +13,12 @@ import { useHeaderStore } from "../store/headerStore";
 import UserPopup from "../process/headBar/components/UserPopup";
 import { getComponentById } from "../../components/components.build";
 import AdminPopup from "../process/headBar/components/AdminPopup";
-import { modules } from "../../routes/modules";
+import { APP_MODULES, HOME_PATH } from "../../navigation/modules.config";
 
 function Header() {
   const { user, profil, logout } = useAuth();
   const location = useLocation();
+  const etablissementName = user?.etablissement?.nom ?? "Etablissement";
 
   const popupOpen = useHeaderStore((state) => state.popupOpen);
   const popupType = useHeaderStore((state) => state.popupType);
@@ -28,23 +29,37 @@ function Header() {
   const EtablissementChoiceButton = getComponentById("ADM.BARRE.SELECT.ETABLISSEMENT");
 
   const routeContext = useMemo(() => {
-    for (const module of modules) {
-      const directMatch = module.path && location.pathname.startsWith(module.path);
-      if (directMatch) {
-        return { moduleName: module.name, sectionName: module.name };
-      }
+    const isHome =
+      location.pathname === "/" ||
+      location.pathname === HOME_PATH ||
+      location.pathname === "/dashboard";
+    if (isHome) {
+      return {
+        moduleName: "Accueil",
+        sectionName: "Modules",
+      };
+    }
 
-      const submodule = module.submodules?.find((item) =>
-        location.pathname.startsWith(item.path ?? ""),
+    for (const module of APP_MODULES) {
+      const directMatch =
+        location.pathname === module.defaultPath ||
+        location.pathname === module.basePath ||
+        location.pathname.startsWith(`${module.basePath}/`);
+      if (!directMatch) continue;
+
+      const submodule = module.children.find((item) =>
+        location.pathname === item.path || location.pathname.startsWith(`${item.path}/`),
       );
       if (submodule) {
-        return { moduleName: module.name, sectionName: submodule.name };
+        return { moduleName: module.title, sectionName: submodule.label };
       }
+
+      return { moduleName: module.title, sectionName: module.title };
     }
 
     return {
-      moduleName: "Pilotage",
-      sectionName: "Vue generale",
+      moduleName: "Accueil",
+      sectionName: "Modules",
     };
   }, [location.pathname]);
 
@@ -61,15 +76,14 @@ function Header() {
       <div className="relative flex min-h-[68px] items-center justify-between gap-4 px-6">
         <div className="min-w-0 flex flex-1 items-center gap-4">
           <div className="min-w-0 shrink">
-            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+            <p className="truncate text-sm font-bold text-slate-950">
+              {etablissementName}
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
               <span>{routeContext.moduleName}</span>
               <FiChevronRight className="text-slate-300" />
               <span>{routeContext.sectionName}</span>
             </div>
-            <p className="mt-1 truncate text-sm font-semibold text-slate-900">
-              {profil?.prenom || user?.email || "equipe"}
-              <span className="ml-2 text-xs font-medium text-slate-500">session active</span>
-            </p>
           </div>
 
           <div className="hidden xl:block">

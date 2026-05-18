@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useERPPageNavigationMode } from "../page/navigationPreference";
 
 type Props = {
   open: boolean;
@@ -15,6 +16,8 @@ function PageSidebarPopup({
   title = "Actions",
 }: Props) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [inlineTarget, setInlineTarget] = useState<HTMLElement | null>(null);
+  const navigationMode = useERPPageNavigationMode();
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -22,7 +25,11 @@ function PageSidebarPopup({
       "[data-erp-header-action-trigger='true']",
     ) as HTMLElement | null;
     setAnchor(nextAnchor);
-  }, [open]);
+    const nextInlineTarget = document.querySelector(
+      "[data-erp-header-inline-menu='true']",
+    ) as HTMLElement | null;
+    setInlineTarget(nextInlineTarget);
+  }, [navigationMode, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -61,12 +68,20 @@ function PageSidebarPopup({
   }, [anchor, onClose, open]);
 
   const content = useMemo(() => {
+    if (navigationMode === "inline" && inlineTarget) {
+      return (
+        <div className="[&>div]:!flex-row [&>div]:!flex-wrap [&>div]:!items-center [&>div]:!justify-end [&>div]:!gap-2 [&>div>div]:!rounded-2xl [&>div>div]:!border-slate-200 [&>div>div]:!bg-white [&>div>div]:!px-3 [&>div>div]:!py-2 [&>div>div]:!shadow-sm">
+          {children}
+        </div>
+      );
+    }
+
     if (!open || !anchor) return null;
 
     return (
       <div
         data-erp-dropdown="true"
-        className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] origin-top-right"
+        className="absolute right-0 top-full z-[90] mt-2 w-[min(20rem,calc(100vw-2rem))] origin-top-right"
       >
         <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white/98 shadow-[0_24px_65px_-30px_rgba(15,23,42,0.45)] ring-1 ring-slate-950/5 backdrop-blur">
           <div className="absolute -top-1.5 right-4 h-3 w-3 rotate-45 border-l border-t border-slate-200 bg-white/98" />
@@ -81,7 +96,12 @@ function PageSidebarPopup({
         </div>
       </div>
     );
-  }, [anchor, children, open, title]);
+  }, [anchor, children, inlineTarget, navigationMode, open, title]);
+
+  if (navigationMode === "inline") {
+    if (!inlineTarget || !content) return null;
+    return createPortal(content, inlineTarget);
+  }
 
   if (!anchor || !content) return null;
 

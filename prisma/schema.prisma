@@ -49,6 +49,29 @@ enum TypeInscription {
   PASSAGE_CLASSE_SUPERIEURE
 }
 
+enum EnrollmentDraftType {
+  NEW_ENROLLMENT
+  RE_ENROLLMENT
+  TRANSFER
+  PRE_ENROLLMENT
+}
+
+enum EnrollmentDraftStatus {
+  DRAFT
+  IN_PROGRESS
+  READY_TO_SUBMIT
+  SUBMITTED
+  EXPIRED
+  DELETED
+}
+
+enum EnrollmentDraftFileStatus {
+  TEMPORARY
+  ATTACHED_TO_ENROLLMENT
+  DELETED
+  ORPHANED
+}
+
 enum StatutAdministratifInscription {
   EN_ATTENTE
   DOSSIER_INCOMPLET
@@ -305,6 +328,7 @@ model Etablissement {
   Message                  Message[]
   Facture                  Facture[]
   operationsFinancieres    OperationFinanciere[]
+  enrollmentDrafts         EnrollmentDraft[]
 
   @@map("etablissements")
 }
@@ -358,6 +382,7 @@ model AnneeScolaire {
   pedagogicalItems     PedagogicalItem[]
   gradingScales        GradingScale[]
   pedagogicalItemAverages PedagogicalItemAverage[]
+  enrollmentDrafts     EnrollmentDraft[]
 
   @@index([etablissement_id])
   @@map("annees_scolaires")
@@ -462,6 +487,9 @@ model Utilisateur {
   programmesCrees     Programme[]        @relation("programme_createur")
   programmesMaj       Programme[]        @relation("programme_modificateur")
   programmeChangeLogs ProgrammeChangeLog[] @relation("programme_change_log_actor")
+  enrollmentDraftsCreated EnrollmentDraft[] @relation("enrollment_draft_createur")
+  enrollmentDraftsUpdated EnrollmentDraft[] @relation("enrollment_draft_modificateur")
+  enrollmentDraftFilesUploaded EnrollmentDraftFile[] @relation("enrollment_draft_file_uploader")
   Eleve               Eleve[]
   ParentTuteur        ParentTuteur[]
   Personnel           Personnel[]
@@ -592,6 +620,7 @@ model Eleve {
   emprunts             Emprunt[]
   profilMedical        EleveMedicalProfile?
   pedagogicalItemAverages PedagogicalItemAverage[]
+  enrollmentDrafts     EnrollmentDraft[]
 
   @@unique([etablissement_id, code_eleve])
   @@index([etablissement_id])
@@ -743,6 +772,7 @@ model Inscription {
   annee     AnneeScolaire       @relation(fields: [annee_scolaire_id], references: [id])
   documents InscriptionDocument[]
   historiqueScolaire InscriptionSchoolHistory?
+  sourceDraft EnrollmentDraft?
 
   @@unique([eleve_id, annee_scolaire_id])
   @@index([eleve_id])
@@ -772,6 +802,83 @@ model InscriptionSchoolHistory {
 
   @@index([inscription_id])
   @@map("inscriptions_historiques_scolaires")
+}
+
+model EnrollmentDraft {
+  id                       String                @id @default(uuid())
+  etablissement_id          String
+  annee_scolaire_id         String
+  eleve_id                  String?
+  draft_type                EnrollmentDraftType
+  status                    EnrollmentDraftStatus @default(DRAFT)
+  current_step              Int                   @default(1)
+  student_data              Json?
+  schooling_data            Json?
+  guardians_data            Json?
+  finance_data              Json?
+  documents_data            Json?
+  medical_data              Json?
+  previous_school_data      Json?
+  access_data               Json?
+  consents_data             Json?
+  observations_data         Json?
+  services_data             Json?
+  payment_schedule_data     Json?
+  completion_rate           Decimal?              @db.Decimal(5, 2)
+  missing_fields            Json?
+  created_by_utilisateur_id String?
+  updated_by_utilisateur_id String?
+  submitted_inscription_id  String?               @unique
+  active_unique_key         String?               @unique
+  expires_at                DateTime?
+  submitted_at              DateTime?
+  deleted_at                DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  etablissement        Etablissement          @relation(fields: [etablissement_id], references: [id])
+  annee                AnneeScolaire          @relation(fields: [annee_scolaire_id], references: [id])
+  eleve                Eleve?                 @relation(fields: [eleve_id], references: [id])
+  createur             Utilisateur?           @relation("enrollment_draft_createur", fields: [created_by_utilisateur_id], references: [id])
+  modificateur         Utilisateur?           @relation("enrollment_draft_modificateur", fields: [updated_by_utilisateur_id], references: [id])
+  submittedInscription Inscription?           @relation(fields: [submitted_inscription_id], references: [id])
+  files                EnrollmentDraftFile[]
+
+  @@index([etablissement_id, status])
+  @@index([annee_scolaire_id])
+  @@index([eleve_id])
+  @@index([created_by_utilisateur_id])
+  @@index([updated_by_utilisateur_id])
+  @@map("enrollment_drafts")
+}
+
+model EnrollmentDraftFile {
+  id               String                    @id @default(uuid())
+  draft_id         String
+  document_type_id String?
+  fichier_id       String?
+  filename         String
+  original_name    String?
+  mime_type        String?
+  size             Int?
+  path             String?
+  status           EnrollmentDraftFileStatus @default(TEMPORARY)
+  uploaded_by_id   String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  draft        EnrollmentDraft          @relation(fields: [draft_id], references: [id], onDelete: Cascade)
+  documentType DocumentTypeInscription? @relation(fields: [document_type_id], references: [id])
+  fichier      Fichier?                 @relation(fields: [fichier_id], references: [id])
+  uploadedBy   Utilisateur?             @relation("enrollment_draft_file_uploader", fields: [uploaded_by_id], references: [id])
+
+  @@index([draft_id])
+  @@index([document_type_id])
+  @@index([fichier_id])
+  @@index([uploaded_by_id])
+  @@map("enrollment_draft_files")
 }
 
 model IdentifiantEleve {
@@ -2587,6 +2694,7 @@ model Fichier {
   proprietaire  Utilisateur?  @relation("fichiers_proprietaire", fields: [proprietaire_utilisateur_id], references: [id])
   liens         LienFichier[]
   documentsInscriptions InscriptionDocument[]
+  enrollmentDraftFiles EnrollmentDraftFile[]
 
   @@index([etablissement_id])
   @@map("fichiers")
@@ -2624,6 +2732,7 @@ model DocumentTypeInscription {
 
   etablissement Etablissement?         @relation(fields: [etablissement_id], references: [id])
   documents     InscriptionDocument[]
+  enrollmentDraftFiles EnrollmentDraftFile[]
 
   @@unique([etablissement_id, code])
   @@index([etablissement_id])

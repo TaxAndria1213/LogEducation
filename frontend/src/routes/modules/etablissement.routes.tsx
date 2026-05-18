@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import AnneeScolaireIndex from "../../pages/etablissement/anneeScolaire/AnneeScolaireIndex";
 import InitialisationEtablissementIndex from "../../pages/etablissement/initialisation/InitialisationEtablissementIndex";
+import NavigationConfigPage from "../../pages/etablissement/navigation/NavigationConfigPage";
 import PeriodeIndex from "../../pages/etablissement/periodes/PeriodeIndex";
 import ProfileEtablissementIndex from "../../pages/etablissement/profileEtablissement/ProfileEtablissementIndex";
 import ReferentielsIndex from "../../pages/etablissement/referentiels/ReferentielsIndex";
@@ -55,6 +56,12 @@ export const etablissement: menu = {
       name: "Référentiels",
       path: "/etablissement/referentiels",
       elements: <ReferentielsIndex />,
+    },
+    {
+      key: "navigation_config",
+      name: "Configuration navigation",
+      path: "/etablissement/navigation",
+      elements: <NavigationConfigPage />,
     },
   ],
 };

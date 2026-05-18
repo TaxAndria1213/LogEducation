@@ -38,6 +38,7 @@ import ReferencielService, {
 import type { StatutInscription } from "../../../../../types/models";
 import { useInscriptionCreateStore } from "../../store/InscriptionCreateStore";
 import InscriptionService from "../../../../../services/inscription.service";
+import type { EnrollmentDraftPayload } from "../../../../../services/enrollmentDraft.service";
 
 type WizardData = {
   eleve?: any;
@@ -307,12 +308,71 @@ function fileToBase64(file: File) {
   });
 }
 
+function asRecord(value: unknown): Record<string, any> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, any>)
+    : undefined;
+}
+
+function splitName(fullName: unknown) {
+  const normalized = typeof fullName === "string" ? fullName.trim() : "";
+  if (!normalized) return { nom: "", prenom: "" };
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return { nom: parts[0], prenom: "" };
+  return {
+    nom: parts[0],
+    prenom: parts.slice(1).join(" "),
+  };
+}
+
+function normalizeDraftGuardian(
+  guardian: unknown,
+  defaults: Record<string, unknown>,
+) {
+  const record = asRecord(guardian);
+  if (!record) return defaults;
+  const split = splitName(record.nom_complet ?? record.name);
+
+  return {
+    ...defaults,
+    ...record,
+    nom: record.nom ?? split.nom,
+    prenom: record.prenom ?? split.prenom,
+    telephone: record.telephone ?? record.phone ?? "",
+    email: record.email ?? "",
+    relation: record.relation ?? defaults.relation ?? "",
+  };
+}
+
+function getDraftGuardians(draft?: {
+  guardians_data?: Record<string, unknown> | null;
+}) {
+  const guardiansData = draft?.guardians_data;
+  if (Array.isArray(guardiansData?.items)) {
+    return guardiansData.items as Array<Record<string, unknown>>;
+  }
+  if (Array.isArray(guardiansData?.tuteurs)) {
+    return guardiansData.tuteurs as Array<Record<string, unknown>>;
+  }
+  return [];
+}
+
 export default function InscriptionForm({
   mode = "create",
   inscriptionId,
+  draft,
+  onDraftAutosave,
+  onDraftFinalize,
 }: {
   mode?: "create" | "edit";
   inscriptionId?: string;
+  draft?: EnrollmentDraftPayload & {
+    id?: string;
+    current_step?: number;
+    draft_type?: string;
+  };
+  onDraftAutosave?: (payload: EnrollmentDraftPayload) => Promise<void>;
+  onDraftFinalize?: (payload: EnrollmentDraftPayload) => Promise<string>;
 }) {
   const navigate = useNavigate();
   const { etablissement_id, user, roles } = useAuth();
@@ -3063,8 +3123,9 @@ export default function InscriptionForm({
       mode === "edit"
         ? ((editPayload?.eleve as Record<string, unknown> | undefined) ??
           undefined)
-        : undefined,
-    [editPayload?.eleve, mode],
+        : ((draft?.student_data as Record<string, unknown> | undefined) ??
+          undefined),
+    [draft?.student_data, editPayload?.eleve, mode],
   );
 
   const scolariteStepInitialValues = useMemo(
@@ -3080,12 +3141,15 @@ export default function InscriptionForm({
           } as Record<string, unknown>)
         : ({
             ...(scolariteInitialData ?? {}),
+            ...(draft?.schooling_data ?? {}),
             statut_inscription:
-              enrollmentFormMode === "RAPIDE"
+              draft?.schooling_data?.statut_inscription ??
+              (enrollmentFormMode === "RAPIDE"
                 ? "PREINSCRIT"
-                : (scolariteInitialData?.statut_inscription ?? "INSCRIT"),
+                : (scolariteInitialData?.statut_inscription ?? "INSCRIT")),
           } as Record<string, unknown>),
     [
+      draft?.schooling_data,
       editPayload?.current_classe?.id,
       editPayload?.scolarite,
       enrollmentFormMode,
@@ -3095,43 +3159,41 @@ export default function InscriptionForm({
   );
 
   const tuteur1InitialValues = useMemo(
-    () =>
-      mode === "edit"
-        ? ((editPayload?.tuteur1 as Record<string, unknown> | undefined) ?? {
-            est_principal: true,
-            est_responsable_legal: true,
-            est_responsable_financier: true,
-            est_contact_urgence: true,
-            autorise_recuperation: true,
-          })
-        : {
-            est_principal: true,
-            est_responsable_legal: true,
-            est_responsable_financier: true,
-            est_contact_urgence: true,
-            autorise_recuperation: true,
-          },
-    [editPayload?.tuteur1, mode],
+    () => {
+      const draftGuardians = getDraftGuardians(draft);
+      const defaults = {
+        est_principal: true,
+        est_responsable_legal: true,
+        est_responsable_financier: true,
+        est_contact_urgence: true,
+        autorise_recuperation: true,
+      };
+
+      return mode === "edit"
+        ? ((editPayload?.tuteur1 as Record<string, unknown> | undefined) ??
+            defaults)
+        : normalizeDraftGuardian(draftGuardians[0], defaults);
+    },
+    [draft, editPayload?.tuteur1, mode],
   );
 
   const tuteur2InitialValues = useMemo(
-    () =>
-      mode === "edit"
-        ? ((editPayload?.tuteur2 as Record<string, unknown> | undefined) ?? {
-            est_principal: false,
-            est_responsable_legal: false,
-            est_responsable_financier: false,
-            est_contact_urgence: false,
-            autorise_recuperation: true,
-          })
-        : {
-            est_principal: false,
-            est_responsable_legal: false,
-            est_responsable_financier: false,
-            est_contact_urgence: false,
-            autorise_recuperation: true,
-          },
-    [editPayload?.tuteur2, mode],
+    () => {
+      const draftGuardians = getDraftGuardians(draft);
+      const defaults = {
+        est_principal: false,
+        est_responsable_legal: false,
+        est_responsable_financier: false,
+        est_contact_urgence: false,
+        autorise_recuperation: true,
+      };
+
+      return mode === "edit"
+        ? ((editPayload?.tuteur2 as Record<string, unknown> | undefined) ??
+            defaults)
+        : normalizeDraftGuardian(draftGuardians[1], defaults);
+    },
+    [draft, editPayload?.tuteur2, mode],
   );
 
   const documentsInitialValues = useMemo(
@@ -3141,6 +3203,32 @@ export default function InscriptionForm({
       ) as Record<string, boolean>,
     [documentFieldEntries],
   );
+
+  const draftDocumentInitialValues = useMemo(() => {
+    const values = { ...documentsInitialValues };
+    const draftDocuments = draft?.documents_data;
+    const fields = asRecord(draftDocuments?.fields);
+
+    if (fields) {
+      for (const item of documentFieldEntries) {
+        values[item.fieldName] = Boolean(fields[item.fieldName]);
+      }
+      return values;
+    }
+
+    const items = Array.isArray(draftDocuments?.items)
+      ? (draftDocuments.items as Array<Record<string, unknown>>)
+      : [];
+
+    for (const item of documentFieldEntries) {
+      const found = items.find(
+        (document) => document.document_type_id === item.id,
+      );
+      values[item.fieldName] = Boolean(found?.fourni);
+    }
+
+    return values;
+  }, [documentFieldEntries, documentsInitialValues, draft?.documents_data]);
 
   const medicalInitialValues = useMemo(
     () =>
@@ -3156,7 +3244,7 @@ export default function InscriptionForm({
             personne_a_contacter_urgence: "",
             telephone_urgence: "",
           })
-        : {
+        : ((draft?.medical_data as Record<string, unknown> | undefined) ?? {
             groupe_sanguin: "",
             allergies: "",
             maladies_particulieres: "",
@@ -3166,8 +3254,8 @@ export default function InscriptionForm({
             autorisation_prise_en_charge_medicale: false,
             personne_a_contacter_urgence: "",
             telephone_urgence: "",
-          },
-    [editPayload?.medical, mode],
+          }),
+    [draft?.medical_data, editPayload?.medical, mode],
   );
 
   const historiqueScolaireInitialValues = useMemo(
@@ -3186,7 +3274,7 @@ export default function InscriptionForm({
             observations: "",
             reprise_auto: false,
           })
-        : {
+        : ((draft?.previous_school_data as Record<string, unknown> | undefined) ?? {
             ancien_etablissement: "",
             ancienne_classe: "",
             annee_precedente: "",
@@ -3196,8 +3284,8 @@ export default function InscriptionForm({
             motif_transfert: "",
             observations: "",
             reprise_auto: false,
-          },
-    [editPayload?.historique_scolaire, mode],
+          }),
+    [draft?.previous_school_data, editPayload?.historique_scolaire, mode],
   );
 
   const accesSystemeInitialValues = useMemo(
@@ -3213,15 +3301,15 @@ export default function InscriptionForm({
             methode_envoi_identifiants: "EMAIL",
             envoyer_identifiants_apres_validation: true,
           })
-        : {
+        : ((draft?.access_data as Record<string, unknown> | undefined) ?? {
             creer_compte_parent: false,
             creer_compte_eleve: false,
             email_connexion_parent: "",
             identifiant_connexion_eleve: "",
             methode_envoi_identifiants: "EMAIL",
             envoyer_identifiants_apres_validation: true,
-          },
-    [editPayload?.acces_systeme, mode],
+          }),
+    [draft?.access_data, editPayload?.acces_systeme, mode],
   );
 
   const consentementsInitialValues = useMemo(
@@ -3240,7 +3328,7 @@ export default function InscriptionForm({
             signataire_nom: "",
             commentaire: "",
           })
-        : {
+        : ((draft?.consents_data as Record<string, unknown> | undefined) ?? {
             autorisation_sortie: false,
             autorisation_photo_video: false,
             autorisation_activite_scolaire: false,
@@ -3250,8 +3338,8 @@ export default function InscriptionForm({
             date_acceptation: null,
             signataire_nom: "",
             commentaire: "",
-          },
-    [editPayload?.consentements, mode],
+          }),
+    [draft?.consents_data, editPayload?.consentements, mode],
   );
 
   const observationsInitialValues = useMemo(
@@ -3265,13 +3353,13 @@ export default function InscriptionForm({
             observation_financiere: "",
             note_interne: "",
           })
-        : {
+        : ((draft?.observations_data as Record<string, unknown> | undefined) ?? {
             observation_administrative: "",
             observation_pedagogique: "",
             observation_financiere: "",
             note_interne: "",
-          },
-    [editPayload?.observations, mode],
+          }),
+    [draft?.observations_data, editPayload?.observations, mode],
   );
 
   const finalValidationSchema = useMemo(() => z.object({}), []);
@@ -3889,7 +3977,7 @@ export default function InscriptionForm({
             : "Aucun document obligatoire n'est encore configure pour ce type d'inscription. La verification restera possible depuis le resume.",
         schema: documentsSchema,
         fields: documentsFields,
-        initialValues: documentsInitialValues,
+        initialValues: draftDocumentInitialValues,
         labelMessage: "Documents",
         icon: <FiFileText />,
         onValuesChange: (data) => {
@@ -3989,6 +4077,7 @@ export default function InscriptionForm({
             mode_paiement_initial: "",
             reference_paiement_initial: "",
             date_paiement_initial: null,
+            ...(draft?.finance_data ?? {}),
           },
           labelMessage: "Finance",
           icon: <FiCreditCard />,
@@ -4021,6 +4110,7 @@ export default function InscriptionForm({
           transport_mode_facturation: "SERVICE_ONLY",
           cantine_active: false,
           cantine_mode_facturation: "SERVICE_ONLY",
+          ...(draft?.services_data ?? {}),
         },
         labelMessage: "Services",
         icon: <FiTruck />,
@@ -4044,6 +4134,7 @@ export default function InscriptionForm({
           mode_paiement_initial: "",
           reference_paiement_initial: "",
           date_paiement_initial: null,
+          ...(draft?.finance_data ?? {}),
         },
         labelMessage: "Finance",
         icon: <FiCreditCard />,
@@ -4062,6 +4153,7 @@ export default function InscriptionForm({
         initialValues: {
           jour_paiement_mensuel: 5,
           notes: "",
+          ...(draft?.payment_schedule_data ?? {}),
         },
         labelMessage: "Echeancier",
         icon: <FiMapPin />,
@@ -4080,6 +4172,9 @@ export default function InscriptionForm({
     ];
   }, [
     eleveInitialValues,
+    draft?.finance_data,
+    draft?.services_data,
+    draft?.payment_schedule_data,
     echeancierFields,
     echeancierSchema,
     finalValidationSchema,
@@ -4098,6 +4193,7 @@ export default function InscriptionForm({
     financeSchema,
     documentFieldEntries.length,
     documentsFields,
+    draftDocumentInitialValues,
     documentsInitialValues,
     documentsSupplementary,
     documentsSchema,
@@ -4136,6 +4232,92 @@ export default function InscriptionForm({
     () => steps.findIndex((item) => item.key === "finance"),
     [steps],
   );
+
+  const wizardInitialData = useMemo<WizardData>(
+    () => ({
+      eleve: eleveInitialValues ?? {},
+      scolarite: scolariteStepInitialValues ?? {},
+      tuteur1: tuteur1InitialValues ?? {},
+      tuteur2: tuteur2InitialValues ?? {},
+      documents: draftDocumentInitialValues ?? {},
+      medical: medicalInitialValues ?? {},
+      historique_scolaire: historiqueScolaireInitialValues ?? {},
+      acces_systeme: accesSystemeInitialValues ?? {},
+      consentements: consentementsInitialValues ?? {},
+      observations: observationsInitialValues ?? {},
+      services: {
+        transport_active: false,
+        transport_mode_facturation: "SERVICE_ONLY",
+        cantine_active: false,
+        cantine_mode_facturation: "SERVICE_ONLY",
+        ...(draft?.services_data ?? {}),
+      },
+      finance: {
+        catalogue_frais_inscription_id: "",
+        catalogue_frais_inscription_plan_code: "",
+        catalogue_frais_scolarite_id: "",
+        catalogue_frais_scolarite_plan_code: "",
+        remise_id: "",
+        remise_type: "AUCUNE",
+        remise_valeur: 0,
+        montant_paye_initial: 0,
+        mode_paiement_initial: "",
+        reference_paiement_initial: "",
+        date_paiement_initial: null,
+        ...(draft?.finance_data ?? {}),
+      },
+      echeancier: {
+        jour_paiement_mensuel: 5,
+        notes: "",
+        ...(draft?.payment_schedule_data ?? {}),
+      },
+    }),
+    [
+      accesSystemeInitialValues,
+      consentementsInitialValues,
+      draft?.finance_data,
+      draft?.payment_schedule_data,
+      draft?.services_data,
+      draftDocumentInitialValues,
+      eleveInitialValues,
+      historiqueScolaireInitialValues,
+      medicalInitialValues,
+      observationsInitialValues,
+      scolariteStepInitialValues,
+      tuteur1InitialValues,
+      tuteur2InitialValues,
+    ],
+  );
+
+  const wizardInitialStep = useMemo(() => {
+    const stepFromDraft = Number(draft?.current_step ?? 1);
+    return Number.isFinite(stepFromDraft) ? Math.max(0, stepFromDraft - 1) : 0;
+  }, [draft?.current_step]);
+
+  const buildDraftPayloadFromWizardData = (
+    allData: WizardData,
+    currentStep?: number,
+  ): EnrollmentDraftPayload => ({
+    etablissement_id,
+    annee_scolaire_id: anneeScolaireId,
+    draft_type:
+      draft?.draft_type === "RE_ENROLLMENT" ? "RE_ENROLLMENT" : "NEW_ENROLLMENT",
+    current_step: currentStep,
+    student_data: allData.eleve ?? null,
+    schooling_data: allData.scolarite ?? null,
+    guardians_data: {
+      items: [allData.tuteur1, allData.tuteur2].filter(hasTutorDraftData),
+    },
+    documents_data: allData.documents ? { fields: allData.documents } : null,
+    medical_data: allData.medical ?? null,
+    previous_school_data: allData.historique_scolaire ?? null,
+    access_data: allData.acces_systeme ?? null,
+    consents_data: allData.consentements ?? null,
+    observations_data: allData.observations ?? null,
+    finance_data: allData.finance ?? null,
+    services_data: allData.services ?? null,
+    payment_schedule_data: allData.echeancier ?? null,
+  });
 
   const handleFinish = async (finalData: WizardData) => {
     try {
@@ -4507,6 +4689,28 @@ export default function InscriptionForm({
         },
       };
 
+      if (onDraftFinalize) {
+        const inscriptionId = await onDraftFinalize({
+          ...buildDraftPayloadFromWizardData(finalData, steps.length),
+          student_data: basePayload.eleve,
+          schooling_data: basePayload.scolarite,
+          guardians_data: { items: basePayload.tuteurs },
+          documents_data: { items: normalizedDocuments },
+          medical_data: normalizedMedical,
+          previous_school_data: normalizedSchoolHistory,
+          access_data: normalizedAccessSystem,
+          consents_data: normalizedConsents,
+          observations_data: normalizedObservations,
+          finance_data: normalizedFinance,
+          services_data: normalizedServices,
+          payment_schedule_data: payload.echeancier,
+        });
+        await getInscriptionOptions(etablissement_id);
+        setDocumentUploads({});
+        navigate(`/scolarite/inscriptions/${inscriptionId}/resume`);
+        return;
+      }
+
       const result = await onCreateInscriptionFull(payload);
       if (!result?.status?.success) {
         throw new Error("Creation de l'inscription impossible");
@@ -4600,7 +4804,7 @@ export default function InscriptionForm({
       ) : null}
 
       <MultiStepFormWizard
-        key={`${mode}-${enrollmentFormMode}`}
+        key={`${mode}-${enrollmentFormMode}-${draft?.id ?? "standard"}`}
         title={
           mode === "edit" ? "Modifier une inscription" : "Inscrire un eleve"
         }
@@ -4612,6 +4816,8 @@ export default function InscriptionForm({
               : "Construisez un dossier complet et propre, depuis la fiche eleve jusqu'aux services et au plan financier."
         }
         steps={steps}
+        initialData={wizardInitialData}
+        initialStep={wizardInitialStep}
         onFinish={handleFinish}
         onStepChange={(stepIndex, allData) => {
           if (
@@ -4685,6 +4891,12 @@ export default function InscriptionForm({
             (selectedInscriptionPlan?.nombre_tranches ?? 1) > 1 ||
               (selectedScolaritePlan?.nombre_tranches ?? 1) > 1,
           );
+
+          if (onDraftAutosave) {
+            void onDraftAutosave(
+              buildDraftPayloadFromWizardData(allData, stepIndex + 1),
+            );
+          }
         }}
         submitHint={
           mode === "edit"

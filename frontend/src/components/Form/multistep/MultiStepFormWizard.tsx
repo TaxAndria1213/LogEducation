@@ -30,6 +30,8 @@ type MultiStepFormWizardProps = {
   title?: string;
   subtitle?: string;
   steps: WizardStep[];
+  initialData?: WizardData;
+  initialStep?: number;
   onFinish: (data: WizardData) => void | Promise<void>;
   onStepChange?: (stepIndex: number, allData: WizardData) => void;
   onReset?: () => void;
@@ -75,6 +77,8 @@ export function MultiStepFormWizard({
   title = "Formulaire multi-etapes",
   subtitle = "Completez les etapes. Vous pouvez revenir en arriere a tout moment.",
   steps,
+  initialData,
+  initialStep = 0,
   onFinish,
   onStepChange,
   onReset,
@@ -83,9 +87,18 @@ export function MultiStepFormWizard({
 }: MultiStepFormWizardProps) {
   const wizardTopRef = useRef<HTMLDivElement | null>(null);
   const previousStepKeyRef = useRef<string | null>(null);
-  const [step, setStep] = useState(0);
-  const [allData, setAllData] = useState<WizardData>({});
-  const [completed, setCompleted] = useState<Record<number, boolean>>({});
+  const [step, setStep] = useState(() =>
+    Math.max(0, Math.min(initialStep, Math.max(steps.length - 1, 0))),
+  );
+  const [allData, setAllData] = useState<WizardData>(() => initialData ?? {});
+  const [completed, setCompleted] = useState<Record<number, boolean>>(() =>
+    Object.fromEntries(
+      Array.from({ length: Math.max(0, initialStep) }, (_, index) => [
+        index,
+        true,
+      ]),
+    ) as Record<number, boolean>,
+  );
   const [currentStepData, setCurrentStepData] = useState<Record<string, any>>({});
 
   const progress = useMemo(

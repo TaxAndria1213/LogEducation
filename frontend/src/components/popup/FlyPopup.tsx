@@ -56,7 +56,7 @@ function FlyPopup({
                 &times;
               </button>
             </div>
-            <div className="min-w-0 overflow-x-hidden break-words">
+            <div className="min-w-0 overflow-x-hidden break-words px-4 py-5 sm:px-6">
               {children}
             </div>
           </div>

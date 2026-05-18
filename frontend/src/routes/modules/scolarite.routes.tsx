@@ -2,6 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ClasseIndex from "../../pages/scolarite/classes/ClasseIndex";
 import EleveIndex from "../../pages/scolarite/eleve/EleveIndex";
 import IdentifiantEleveIndex from "../../pages/scolarite/identifiant_eleve/IdEleveIndex";
+import EnrollmentDraftListPage from "../../pages/scolarite/inscriptions/EnrollmentDraftListPage";
 import InscriptionsIndex from "../../pages/scolarite/inscriptions/InscriptionIndex";
 import NiveauIndex from "../../pages/scolarite/niveaux/NiveauIndex";
 import ParentTuteurIndex from "../../pages/scolarite/parents_tuteurs/ParentTuteurIndex";
@@ -53,6 +54,12 @@ export const scolarite: menu = {
         name: "Inscriptions",
         path: "/scolarite/inscriptions",
         elements: <InscriptionsIndex />
+      },
+      {
+        key: "inscriptions_brouillons",
+        name: "Brouillons d'inscription",
+        path: "/scolarite/inscriptions/brouillons",
+        elements: <EnrollmentDraftListPage />
       },
     ],
   }

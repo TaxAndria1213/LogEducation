@@ -1,11 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import Service from "../../app/api/Service";
-import Spin from "../../components/anim/Spin";
-import TableActionButton, {
-  TableViewActionLabel,
-} from "../../components/actions/TableActionButton";
-import { useERPPageBackButton } from "../../components/page/ERPPage";
+import { useERPPageBackButton } from "../../components/page/ERPPageBackButtonContext";
 import {
   enrichGeneratedDetailModelHints,
   getGeneratedDetailIncludePaths,
@@ -26,9 +22,19 @@ import {
 } from "../model-config/runtime";
 import type { ModelConfig } from "../model-config/types";
 import EditDrawer from "../forms/EditDrawer";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowDown, faArrowUp, faSort } from "@fortawesome/free-solid-svg-icons";
+import DataTableActions from "./DataTableActions";
+import DataTableEmptyState from "./DataTableEmptyState";
+import DataTableErrorState from "./DataTableErrorState";
+import DataTableLoadingState from "./DataTableLoadingState";
+import DataTablePagination from "./DataTablePagination";
+import DataTableToolbar from "./DataTableToolbar";
+import { formatStatusLabel, getStatusBadgeVariant } from "./statusBadge";
+import { getColumnAlignmentClass, isStatusColumn, tableStyles } from "./tableStyles";
 import { tableQueryToParams } from "./query";
 import { useTable } from "./useTable";
-import { type ColumnDef, type RowAction, type TableQuery } from "./types";
+import { type ColumnDef, type RowAction, type SortDir, type TableOrderBy, type TableQuery } from "./types";
 
 export type DataTableHandle = {
   reset: () => void;
@@ -297,14 +303,6 @@ function extractRelationRecordFromParent(
   return relationValue.find(isPlainObject) ?? null;
 }
 
-function getDefaultActionContent<T>(action: RowAction<T>) {
-  if (action.label === "Voir") {
-    return <TableViewActionLabel label={action.label} />;
-  }
-
-  return action.label;
-}
-
 function normalizeActionLabel(label: string) {
   return label.trim().toLowerCase();
 }
@@ -341,35 +339,70 @@ function resolveEditAction<T extends object>(
   });
 }
 
-function ActionButton<T extends object>({
-  action,
-  row,
-  onExecute,
-}: {
-  action: RowAction<T>;
-  row: T;
-  onExecute?: (action: RowAction<T>, row: T) => void | Promise<void>;
-}) {
-  const onClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    if (action.confirm) {
-      const ok = window.confirm(
-        `${action.confirm.title ? `${action.confirm.title}\n\n` : ""}${action.confirm.message ?? "Confirmer ?"}`,
-      );
-      if (!ok) return;
-    }
-    if (onExecute) {
-      await onExecute(action, row);
-      return;
-    }
-    await action.onClick(row);
-  };
+function normalizeOrderBy(orderBy?: TableOrderBy) {
+  if (!orderBy) return [];
+  return Array.isArray(orderBy) ? orderBy : [orderBy];
+}
 
-  return (
-    <TableActionButton variant={action.variant ?? "primary"} onClick={onClick}>
-      {action.render ? action.render(row) : getDefaultActionContent(action)}
-    </TableActionButton>
-  );
+function getSortDirection(orderBy: TableOrderBy | undefined, field: string): SortDir | null {
+  for (const order of normalizeOrderBy(orderBy)) {
+    const direction = order[field];
+    if (direction === "asc" || direction === "desc") {
+      return direction;
+    }
+  }
+
+  return null;
+}
+
+function getCellValue<T extends object>(row: T, column: ColumnDef<T>) {
+  if (column.render) {
+    return column.render(row);
+  }
+
+  if (column.accessor) {
+    return (row as any)[column.accessor as any];
+  }
+
+  return (row as any)[column.key];
+}
+
+function renderCellValue<T extends object>(row: T, column: ColumnDef<T>) {
+  const value = getCellValue(row, column);
+
+  if (
+    isStatusColumn(column.key) &&
+    (value === null ||
+      value === undefined ||
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean")
+  ) {
+    return (
+      <span
+        className={`inline-flex max-w-full items-center justify-center rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] ${getStatusBadgeVariant(value)}`}
+        title={formatStatusLabel(value)}
+      >
+        <span className="truncate">{formatStatusLabel(value)}</span>
+      </span>
+    );
+  }
+
+  if (
+    value === null ||
+    value === undefined ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return (
+      <span className="block truncate" title={String(value ?? "-")}>
+        {String(value ?? "-")}
+      </span>
+    );
+  }
+
+  return value as React.ReactNode;
 }
 
 function DataTableInner<T extends object>(
@@ -805,7 +838,7 @@ function DataTableInner<T extends object>(
     if (!loading) {
       closeDetail();
     }
-  }, [closeDetail, getRowId, loading, rows, selectedRow]);
+  }, [closeDetail, detailView, getRowId, loading, rows, selectedRow]);
 
   React.useEffect(() => {
     if (!hasDetailView || !detailView || !selectedRow) {
@@ -875,7 +908,15 @@ function DataTableInner<T extends object>(
     return () => {
       isCancelled = true;
     };
-  }, [detailView, getRowId, hasDetailView, loadAutoDetailRecord, selectedRow, service]);
+  }, [
+    detailView,
+    getRowId,
+    hasDetailView,
+    loadAutoDetailRecord,
+    rootAutoIncludeDepth,
+    selectedRow,
+    service,
+  ]);
 
   const handleRowClick = React.useCallback(
     (row: T) => {
@@ -1029,155 +1070,137 @@ function DataTableInner<T extends object>(
   const isRowInteractive = Boolean(onRowClick || detailView?.openOnRowClick);
 
   const renderTableContent = () => (
-    <>
-      {title ? <h3 style={{ marginBottom: 12 }}>{title}</h3> : null}
+    <div className={tableStyles.shell}>
+      <DataTableToolbar
+        title={title}
+        total={total}
+        search={search}
+        showSearch={Boolean(showSearch && onSearchBuildWhere)}
+        loading={loading}
+        onSearchChange={setSearch}
+        onSearchSubmit={applySearch}
+        onReset={doReset}
+      />
 
-      {showSearch && onSearchBuildWhere ? (
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") applySearch();
+      <div className="px-5 pt-4">
+        {error ? (
+          <DataTableErrorState
+            message={error}
+            onRetry={() => {
+              void table.refresh();
             }}
-            placeholder="Rechercher..."
-            style={{ padding: 8, flex: 1 }}
+            disabled={loading}
           />
+        ) : null}
+      </div>
 
-          <TableActionButton
-            variant="secondary"
-            onClick={() => {
-              applySearch();
-            }}
-            disabled={loading}
-          >
-            Chercher
-          </TableActionButton>
-
-          <TableActionButton
-            variant="secondary"
-            onClick={() => {
-              doReset();
-            }}
-            disabled={loading}
-          >
-            Actualiser
-          </TableActionButton>
-        </div>
-      ) : null}
-
-      {error ? (
-        <div style={{ padding: 10, marginBottom: 10, border: "1px solid #f00" }}>
-          {error}
-        </div>
-      ) : null}
-
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div className={tableStyles.scroll}>
+        <table className={tableStyles.table}>
           <thead>
             <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={column.headerClassName}
-                  onClick={() =>
-                    column.sortable
-                      ? toggleSort(column.sortKey ?? String(column.accessor ?? column.key))
-                      : undefined
-                  }
-                  style={{
-                    textAlign: "left",
-                    padding: 10,
-                    borderBottom: "1px solid #ddd",
-                    cursor: column.sortable ? "pointer" : "default",
-                    userSelect: "none",
-                  }}
-                >
-                  {column.header} {column.sortable ? "<>" : null}
-                </th>
-              ))}
+              {columns.map((column) => {
+                const sortField = column.sortKey ?? String(column.accessor ?? column.key);
+                const sortDirection = getSortDirection(query.orderBy, sortField);
+                const alignmentClass = getColumnAlignmentClass(column.key);
+
+                return (
+                  <th
+                    key={column.key}
+                    className={[
+                      tableStyles.header,
+                      alignmentClass,
+                      column.sortable ? "cursor-pointer select-none hover:bg-slate-100" : "",
+                      column.headerClassName,
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    onClick={() => {
+                      if (column.sortable) toggleSort(sortField);
+                    }}
+                    scope="col"
+                  >
+                    <span
+                      className={`inline-flex w-full items-center gap-2 ${
+                        alignmentClass === "text-right"
+                          ? "justify-end"
+                          : alignmentClass === "text-center"
+                            ? "justify-center"
+                            : "justify-start"
+                      }`}
+                    >
+                      <span className="truncate">{column.header}</span>
+                      {column.sortable ? (
+                        <FontAwesomeIcon
+                          icon={
+                            sortDirection === "asc"
+                              ? faArrowUp
+                              : sortDirection === "desc"
+                                ? faArrowDown
+                                : faSort
+                          }
+                          className={sortDirection ? "text-sky-600" : "text-slate-300"}
+                        />
+                      ) : null}
+                    </span>
+                  </th>
+                );
+              })}
               {resolvedActions.length ? (
-                <th style={{ padding: 10, borderBottom: "1px solid #ddd" }}>Actions</th>
+                <th
+                  className={`${tableStyles.header} sticky right-0 z-[11] bg-slate-50/95 text-right shadow-[-12px_0_24px_rgba(248,250,252,0.88)]`}
+                  scope="col"
+                >
+                  Actions
+                </th>
               ) : null}
             </tr>
           </thead>
 
           <tbody>
             {loading ? (
-              <tr>
-                <td
-                  colSpan={columns.length + (resolvedActions.length ? 1 : 0)}
-                  style={{ padding: 20, textAlign: "center" }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Spin label="Chargement des donnees" showLabel />
-                  </div>
-                </td>
-              </tr>
+              <DataTableLoadingState
+                colSpan={columns.length + (resolvedActions.length ? 1 : 0)}
+              />
             ) : rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length + (resolvedActions.length ? 1 : 0)}
-                  style={{ padding: 20, textAlign: "center" }}
-                >
-                  Aucun resultat.
-                </td>
-              </tr>
+              <DataTableEmptyState
+                colSpan={columns.length + (resolvedActions.length ? 1 : 0)}
+              />
             ) : (
               rows.map((row) => (
                 <tr
                   key={String(getRowId(row))}
                   onClick={() => handleRowClick(row)}
-                  style={{
-                    borderBottom: "1px solid #f0f0f0",
-                    cursor: isRowInteractive ? "pointer" : "default",
-                  }}
+                  className={`${tableStyles.row} ${isRowInteractive ? "cursor-pointer" : ""}`}
                 >
-                  {columns.map((column) => {
-                    const value = column.render
-                      ? column.render(row)
-                      : column.accessor
-                        ? (row as any)[column.accessor as any]
-                        : (row as any)[column.key];
-
-                    return (
-                      <td
-                        key={column.key}
-                        className={column.className}
-                        style={{ padding: 10 }}
-                      >
-                        {value as any}
-                      </td>
-                    );
-                  })}
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={[
+                        tableStyles.cell,
+                        getColumnAlignmentClass(column.key),
+                        column.className,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    >
+                      {renderCellValue(row, column)}
+                    </td>
+                  ))}
 
                   {resolvedActions.length ? (
-                    <td style={{ padding: 10, whiteSpace: "nowrap" }}>
-                      <div className="flex flex-wrap gap-2">
-                        {resolvedActions
-                          .filter((action) => (action.show ? action.show(row) : true))
-                          .map((action, index) => (
-                            <React.Fragment key={`${action.label}-${index}`}>
-                              <ActionButton
-                                action={action}
-                                row={row}
-                                onExecute={
-                                  isDetailViewAction(action, detailView)
-                                    ? (_, currentRow) => {
-                                        openDetail(currentRow);
-                                      }
-                                    : undefined
-                                }
-                              />
-                            </React.Fragment>
-                          ))}
-                      </div>
+                    <td className={tableStyles.actionCell}>
+                      <DataTableActions
+                        actions={resolvedActions.filter((action) =>
+                          action.show ? action.show(row) : true,
+                        )}
+                        row={row}
+                        onExecute={(action, currentRow) => {
+                          if (isDetailViewAction(action, detailView)) {
+                            openDetail(currentRow);
+                            return true;
+                          }
+                        }}
+                      />
                     </td>
                   ) : null}
                 </tr>
@@ -1187,54 +1210,17 @@ function DataTableInner<T extends object>(
         </table>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginTop: 12,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <TableActionButton
-            variant="secondary"
-            disabled={page <= 1 || loading}
-            onClick={() => setPage(page - 1)}
-          >
-            Precedent
-          </TableActionButton>
-
-          <span style={{ margin: "0 10px" }}>
-            Page {page} / {pageCount}
-          </span>
-
-          <TableActionButton
-            variant="secondary"
-            disabled={page >= pageCount || loading}
-            onClick={() => setPage(page + 1)}
-          >
-            Suivant
-          </TableActionButton>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span>Par page:</span>
-          <select
-            value={take}
-            onChange={(event) => setTake(Number(event.target.value))}
-            disabled={loading}
-          >
-            {pageSizes.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-
-          <span style={{ marginLeft: 10 }}>Total: {total ?? 0}</span>
-        </div>
-      </div>
-    </>
+      <DataTablePagination
+        page={page}
+        pageCount={pageCount}
+        take={take}
+        total={total ?? 0}
+        pageSizes={pageSizes}
+        loading={loading}
+        onPageChange={setPage}
+        onTakeChange={setTake}
+      />
+    </div>
   );
 
   return (

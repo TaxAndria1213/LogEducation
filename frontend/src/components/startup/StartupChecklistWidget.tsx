@@ -4,12 +4,11 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiCreditCard,
-  FiLayers,
   FiRefreshCw,
   FiSettings,
   FiUsers,
 } from "react-icons/fi";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import InitialisationEtablissementService from "../../services/initialisationEtablissement.service";
 import EnseignantService from "../../services/enseignant.service";
@@ -38,6 +37,7 @@ type ChecklistSnapshot = {
 };
 
 const STORAGE_KEY = "logesco.startup-checklist.collapsed";
+const checklistSnapshotCache = new Map<string, ChecklistSnapshot>();
 
 function getStoredCollapsedState() {
   if (typeof window === "undefined") return false;
@@ -93,16 +93,24 @@ function getMetaTotal(result: unknown) {
 function StartupChecklistWidget() {
   const { etablissement_id } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [collapsed, setCollapsed] = useState(getStoredCollapsedState);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [snapshot, setSnapshot] = useState<ChecklistSnapshot | null>(null);
 
-  const loadChecklist = useCallback(async () => {
+  const loadChecklist = useCallback(async (options?: { force?: boolean }) => {
     if (!etablissement_id) {
       setSnapshot(null);
       return;
+    }
+
+    if (!options?.force) {
+      const cachedSnapshot = checklistSnapshotCache.get(etablissement_id);
+      if (cachedSnapshot) {
+        setSnapshot(cachedSnapshot);
+        setErrorMessage("");
+        return;
+      }
     }
 
     setLoading(true);
@@ -157,14 +165,17 @@ function StartupChecklistWidget() {
         }),
       ]);
 
-      setSnapshot({
+      const nextSnapshot = {
         status,
         teacherCount: getMetaTotal(teachersResponse),
         periodCount: getMetaTotal(periodesResponse),
         programmeCount: getMetaTotal(programmesResponse),
         courseCount: getMetaTotal(coursResponse),
         noteRuleCount: getMetaTotal(reglesResponse),
-      });
+      };
+
+      checklistSnapshotCache.set(etablissement_id, nextSnapshot);
+      setSnapshot(nextSnapshot);
     } catch (error) {
       console.warn(
         "Impossible de charger le raccourci d'initialisation d'etablissement.",
@@ -178,7 +189,7 @@ function StartupChecklistWidget() {
 
   useEffect(() => {
     void loadChecklist();
-  }, [loadChecklist, location.pathname]);
+  }, [loadChecklist]);
 
   useEffect(() => {
     const handleFocus = () => {
@@ -223,14 +234,6 @@ function StartupChecklistWidget() {
         path: "/pedagogie/initialisation",
         icon: <FiBookOpen />,
         done: pedagogieReady,
-      },
-      {
-        key: "departements",
-        title: "Departements pedagogiques",
-        description: "Structure les equipes par departement pour mieux organiser les matieres et enseignants.",
-        path: "/personnel/departements",
-        icon: <FiLayers />,
-        done: (status?.counts.departements ?? 0) > 0,
       },
       {
         key: "finance",
@@ -328,7 +331,7 @@ function StartupChecklistWidget() {
 
                 <button
                   type="button"
-                  onClick={() => void loadChecklist()}
+                  onClick={() => void loadChecklist({ force: true })}
                   className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   <FiRefreshCw />

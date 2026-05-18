@@ -119,6 +119,10 @@ export const InscriptionScalarFieldEnumSchema = z.enum(['id','eleve_id','niveau_
 
 export const InscriptionSchoolHistoryScalarFieldEnumSchema = z.enum(['id','inscription_id','ancien_etablissement','ancienne_classe','annee_precedente','derniere_moyenne','decision_precedente','mention_precedente','motif_transfert','observations','reprise_auto','created_at','updated_at']);
 
+export const EnrollmentDraftScalarFieldEnumSchema = z.enum(['id','etablissement_id','annee_scolaire_id','eleve_id','draft_type','status','current_step','student_data','schooling_data','guardians_data','finance_data','documents_data','medical_data','previous_school_data','access_data','consents_data','observations_data','services_data','payment_schedule_data','completion_rate','missing_fields','created_by_utilisateur_id','updated_by_utilisateur_id','submitted_inscription_id','active_unique_key','expires_at','submitted_at','deleted_at','created_at','updated_at']);
+
+export const EnrollmentDraftFileScalarFieldEnumSchema = z.enum(['id','draft_id','document_type_id','fichier_id','filename','original_name','mime_type','size','path','status','uploaded_by_id','created_at','updated_at']);
+
 export const IdentifiantEleveScalarFieldEnumSchema = z.enum(['id','eleve_id','type','valeur','delivre_le','expire_le','created_at','updated_at']);
 
 export const PersonnelScalarFieldEnumSchema = z.enum(['id','etablissement_id','code_personnel','utilisateur_id','date_embauche','statut','poste','created_at','updated_at']);
@@ -321,6 +325,10 @@ export const InscriptionOrderByRelevanceFieldEnumSchema = z.enum(['id','eleve_id
 
 export const InscriptionSchoolHistoryOrderByRelevanceFieldEnumSchema = z.enum(['id','inscription_id','ancien_etablissement','ancienne_classe','annee_precedente','decision_precedente','mention_precedente','motif_transfert','observations']);
 
+export const EnrollmentDraftOrderByRelevanceFieldEnumSchema = z.enum(['id','etablissement_id','annee_scolaire_id','eleve_id','created_by_utilisateur_id','updated_by_utilisateur_id','submitted_inscription_id','active_unique_key']);
+
+export const EnrollmentDraftFileOrderByRelevanceFieldEnumSchema = z.enum(['id','draft_id','document_type_id','fichier_id','filename','original_name','mime_type','path','uploaded_by_id']);
+
 export const IdentifiantEleveOrderByRelevanceFieldEnumSchema = z.enum(['id','eleve_id','type','valeur']);
 
 export const PersonnelOrderByRelevanceFieldEnumSchema = z.enum(['id','etablissement_id','code_personnel','utilisateur_id','statut','poste']);
@@ -482,6 +490,18 @@ export type StatutInscriptionType = `${z.infer<typeof StatutInscriptionSchema>}`
 export const TypeInscriptionSchema = z.enum(['NOUVELLE_INSCRIPTION','REINSCRIPTION','TRANSFERT_ENTRANT','REDOUBLEMENT','PASSAGE_CLASSE_SUPERIEURE']);
 
 export type TypeInscriptionType = `${z.infer<typeof TypeInscriptionSchema>}`
+
+export const EnrollmentDraftTypeSchema = z.enum(['NEW_ENROLLMENT','RE_ENROLLMENT','TRANSFER','PRE_ENROLLMENT']);
+
+export type EnrollmentDraftTypeType = `${z.infer<typeof EnrollmentDraftTypeSchema>}`
+
+export const EnrollmentDraftStatusSchema = z.enum(['DRAFT','IN_PROGRESS','READY_TO_SUBMIT','SUBMITTED','EXPIRED','DELETED']);
+
+export type EnrollmentDraftStatusType = `${z.infer<typeof EnrollmentDraftStatusSchema>}`
+
+export const EnrollmentDraftFileStatusSchema = z.enum(['TEMPORARY','ATTACHED_TO_ENROLLMENT','DELETED','ORPHANED']);
+
+export type EnrollmentDraftFileStatusType = `${z.infer<typeof EnrollmentDraftFileStatusSchema>}`
 
 export const StatutAdministratifInscriptionSchema = z.enum(['EN_ATTENTE','DOSSIER_INCOMPLET','EN_ATTENTE_VERIFICATION','VALIDE','REJETE','ANNULE']);
 
@@ -971,6 +991,67 @@ export const InscriptionSchoolHistorySchema = z.object({
 })
 
 export type InscriptionSchoolHistory = z.infer<typeof InscriptionSchoolHistorySchema>
+
+/////////////////////////////////////////
+// ENROLLMENT DRAFT SCHEMA
+/////////////////////////////////////////
+
+export const EnrollmentDraftSchema = z.object({
+  draft_type: EnrollmentDraftTypeSchema,
+  status: EnrollmentDraftStatusSchema,
+  id: z.uuid(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().nullable(),
+  current_step: z.number().int(),
+  student_data: JsonValueSchema.nullable(),
+  schooling_data: JsonValueSchema.nullable(),
+  guardians_data: JsonValueSchema.nullable(),
+  finance_data: JsonValueSchema.nullable(),
+  documents_data: JsonValueSchema.nullable(),
+  medical_data: JsonValueSchema.nullable(),
+  previous_school_data: JsonValueSchema.nullable(),
+  access_data: JsonValueSchema.nullable(),
+  consents_data: JsonValueSchema.nullable(),
+  observations_data: JsonValueSchema.nullable(),
+  services_data: JsonValueSchema.nullable(),
+  payment_schedule_data: JsonValueSchema.nullable(),
+  completion_rate: z.instanceof(Prisma.Decimal, { message: "Field 'completion_rate' must be a Decimal. Location: ['Models', 'EnrollmentDraft']"}).nullable(),
+  missing_fields: JsonValueSchema.nullable(),
+  created_by_utilisateur_id: z.string().nullable(),
+  updated_by_utilisateur_id: z.string().nullable(),
+  submitted_inscription_id: z.string().nullable(),
+  active_unique_key: z.string().nullable(),
+  expires_at: z.coerce.date().nullable(),
+  submitted_at: z.coerce.date().nullable(),
+  deleted_at: z.coerce.date().nullable(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+})
+
+export type EnrollmentDraft = z.infer<typeof EnrollmentDraftSchema>
+
+/////////////////////////////////////////
+// ENROLLMENT DRAFT FILE SCHEMA
+/////////////////////////////////////////
+
+export const EnrollmentDraftFileSchema = z.object({
+  status: EnrollmentDraftFileStatusSchema,
+  id: z.uuid(),
+  draft_id: z.string(),
+  document_type_id: z.string().nullable(),
+  fichier_id: z.string().nullable(),
+  filename: z.string(),
+  original_name: z.string().nullable(),
+  mime_type: z.string().nullable(),
+  size: z.number().int().nullable(),
+  path: z.string().nullable(),
+  uploaded_by_id: z.string().nullable(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+})
+
+export type EnrollmentDraftFile = z.infer<typeof EnrollmentDraftFileSchema>
 
 /////////////////////////////////////////
 // IDENTIFIANT ELEVE SCHEMA
@@ -2675,6 +2756,7 @@ export const EtablissementIncludeSchema: z.ZodType<Prisma.EtablissementInclude> 
   Message: z.union([z.boolean(),z.lazy(() => MessageFindManyArgsSchema)]).optional(),
   Facture: z.union([z.boolean(),z.lazy(() => FactureFindManyArgsSchema)]).optional(),
   operationsFinancieres: z.union([z.boolean(),z.lazy(() => OperationFinanciereFindManyArgsSchema)]).optional(),
+  enrollmentDrafts: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => EtablissementCountOutputTypeArgsSchema)]).optional(),
 }).strict();
 
@@ -2726,6 +2808,7 @@ export const EtablissementCountOutputTypeSelectSchema: z.ZodType<Prisma.Etabliss
   Message: z.boolean().optional(),
   Facture: z.boolean().optional(),
   operationsFinancieres: z.boolean().optional(),
+  enrollmentDrafts: z.boolean().optional(),
 }).strict();
 
 export const EtablissementSelectSchema: z.ZodType<Prisma.EtablissementSelect> = z.object({
@@ -2774,6 +2857,7 @@ export const EtablissementSelectSchema: z.ZodType<Prisma.EtablissementSelect> = 
   Message: z.union([z.boolean(),z.lazy(() => MessageFindManyArgsSchema)]).optional(),
   Facture: z.union([z.boolean(),z.lazy(() => FactureFindManyArgsSchema)]).optional(),
   operationsFinancieres: z.union([z.boolean(),z.lazy(() => OperationFinanciereFindManyArgsSchema)]).optional(),
+  enrollmentDrafts: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => EtablissementCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
@@ -2841,6 +2925,7 @@ export const AnneeScolaireIncludeSchema: z.ZodType<Prisma.AnneeScolaireInclude> 
   pedagogicalItems: z.union([z.boolean(),z.lazy(() => PedagogicalItemFindManyArgsSchema)]).optional(),
   gradingScales: z.union([z.boolean(),z.lazy(() => GradingScaleFindManyArgsSchema)]).optional(),
   pedagogicalItemAverages: z.union([z.boolean(),z.lazy(() => PedagogicalItemAverageFindManyArgsSchema)]).optional(),
+  enrollmentDrafts: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => AnneeScolaireCountOutputTypeArgsSchema)]).optional(),
 }).strict();
 
@@ -2872,6 +2957,7 @@ export const AnneeScolaireCountOutputTypeSelectSchema: z.ZodType<Prisma.AnneeSco
   pedagogicalItems: z.boolean().optional(),
   gradingScales: z.boolean().optional(),
   pedagogicalItemAverages: z.boolean().optional(),
+  enrollmentDrafts: z.boolean().optional(),
 }).strict();
 
 export const AnneeScolaireSelectSchema: z.ZodType<Prisma.AnneeScolaireSelect> = z.object({
@@ -2902,6 +2988,7 @@ export const AnneeScolaireSelectSchema: z.ZodType<Prisma.AnneeScolaireSelect> = 
   pedagogicalItems: z.union([z.boolean(),z.lazy(() => PedagogicalItemFindManyArgsSchema)]).optional(),
   gradingScales: z.union([z.boolean(),z.lazy(() => GradingScaleFindManyArgsSchema)]).optional(),
   pedagogicalItemAverages: z.union([z.boolean(),z.lazy(() => PedagogicalItemAverageFindManyArgsSchema)]).optional(),
+  enrollmentDrafts: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => AnneeScolaireCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
@@ -3059,6 +3146,9 @@ export const UtilisateurIncludeSchema: z.ZodType<Prisma.UtilisateurInclude> = z.
   programmesCrees: z.union([z.boolean(),z.lazy(() => ProgrammeFindManyArgsSchema)]).optional(),
   programmesMaj: z.union([z.boolean(),z.lazy(() => ProgrammeFindManyArgsSchema)]).optional(),
   programmeChangeLogs: z.union([z.boolean(),z.lazy(() => ProgrammeChangeLogFindManyArgsSchema)]).optional(),
+  enrollmentDraftsCreated: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFindManyArgsSchema)]).optional(),
+  enrollmentDraftsUpdated: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFindManyArgsSchema)]).optional(),
+  enrollmentDraftFilesUploaded: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFileFindManyArgsSchema)]).optional(),
   Eleve: z.union([z.boolean(),z.lazy(() => EleveFindManyArgsSchema)]).optional(),
   ParentTuteur: z.union([z.boolean(),z.lazy(() => ParentTuteurFindManyArgsSchema)]).optional(),
   Personnel: z.union([z.boolean(),z.lazy(() => PersonnelFindManyArgsSchema)]).optional(),
@@ -3095,6 +3185,9 @@ export const UtilisateurCountOutputTypeSelectSchema: z.ZodType<Prisma.Utilisateu
   programmesCrees: z.boolean().optional(),
   programmesMaj: z.boolean().optional(),
   programmeChangeLogs: z.boolean().optional(),
+  enrollmentDraftsCreated: z.boolean().optional(),
+  enrollmentDraftsUpdated: z.boolean().optional(),
+  enrollmentDraftFilesUploaded: z.boolean().optional(),
   Eleve: z.boolean().optional(),
   ParentTuteur: z.boolean().optional(),
   Personnel: z.boolean().optional(),
@@ -3133,6 +3226,9 @@ export const UtilisateurSelectSchema: z.ZodType<Prisma.UtilisateurSelect> = z.ob
   programmesCrees: z.union([z.boolean(),z.lazy(() => ProgrammeFindManyArgsSchema)]).optional(),
   programmesMaj: z.union([z.boolean(),z.lazy(() => ProgrammeFindManyArgsSchema)]).optional(),
   programmeChangeLogs: z.union([z.boolean(),z.lazy(() => ProgrammeChangeLogFindManyArgsSchema)]).optional(),
+  enrollmentDraftsCreated: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFindManyArgsSchema)]).optional(),
+  enrollmentDraftsUpdated: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFindManyArgsSchema)]).optional(),
+  enrollmentDraftFilesUploaded: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFileFindManyArgsSchema)]).optional(),
   Eleve: z.union([z.boolean(),z.lazy(() => EleveFindManyArgsSchema)]).optional(),
   ParentTuteur: z.union([z.boolean(),z.lazy(() => ParentTuteurFindManyArgsSchema)]).optional(),
   Personnel: z.union([z.boolean(),z.lazy(() => PersonnelFindManyArgsSchema)]).optional(),
@@ -3311,6 +3407,7 @@ export const EleveIncludeSchema: z.ZodType<Prisma.EleveInclude> = z.object({
   emprunts: z.union([z.boolean(),z.lazy(() => EmpruntFindManyArgsSchema)]).optional(),
   profilMedical: z.union([z.boolean(),z.lazy(() => EleveMedicalProfileArgsSchema)]).optional(),
   pedagogicalItemAverages: z.union([z.boolean(),z.lazy(() => PedagogicalItemAverageFindManyArgsSchema)]).optional(),
+  enrollmentDrafts: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => EleveCountOutputTypeArgsSchema)]).optional(),
 }).strict();
 
@@ -3345,6 +3442,7 @@ export const EleveCountOutputTypeSelectSchema: z.ZodType<Prisma.EleveCountOutput
   dossiersRecouvrement: z.boolean().optional(),
   emprunts: z.boolean().optional(),
   pedagogicalItemAverages: z.boolean().optional(),
+  enrollmentDrafts: z.boolean().optional(),
 }).strict();
 
 export const EleveSelectSchema: z.ZodType<Prisma.EleveSelect> = z.object({
@@ -3380,6 +3478,7 @@ export const EleveSelectSchema: z.ZodType<Prisma.EleveSelect> = z.object({
   emprunts: z.union([z.boolean(),z.lazy(() => EmpruntFindManyArgsSchema)]).optional(),
   profilMedical: z.union([z.boolean(),z.lazy(() => EleveMedicalProfileArgsSchema)]).optional(),
   pedagogicalItemAverages: z.union([z.boolean(),z.lazy(() => PedagogicalItemAverageFindManyArgsSchema)]).optional(),
+  enrollmentDrafts: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => EleveCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
@@ -3601,6 +3700,7 @@ export const InscriptionIncludeSchema: z.ZodType<Prisma.InscriptionInclude> = z.
   annee: z.union([z.boolean(),z.lazy(() => AnneeScolaireArgsSchema)]).optional(),
   documents: z.union([z.boolean(),z.lazy(() => InscriptionDocumentFindManyArgsSchema)]).optional(),
   historiqueScolaire: z.union([z.boolean(),z.lazy(() => InscriptionSchoolHistoryArgsSchema)]).optional(),
+  sourceDraft: z.union([z.boolean(),z.lazy(() => EnrollmentDraftArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => InscriptionCountOutputTypeArgsSchema)]).optional(),
 }).strict();
 
@@ -3644,6 +3744,7 @@ export const InscriptionSelectSchema: z.ZodType<Prisma.InscriptionSelect> = z.ob
   annee: z.union([z.boolean(),z.lazy(() => AnneeScolaireArgsSchema)]).optional(),
   documents: z.union([z.boolean(),z.lazy(() => InscriptionDocumentFindManyArgsSchema)]).optional(),
   historiqueScolaire: z.union([z.boolean(),z.lazy(() => InscriptionSchoolHistoryArgsSchema)]).optional(),
+  sourceDraft: z.union([z.boolean(),z.lazy(() => EnrollmentDraftArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => InscriptionCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
@@ -3674,6 +3775,109 @@ export const InscriptionSchoolHistorySelectSchema: z.ZodType<Prisma.InscriptionS
   created_at: z.boolean().optional(),
   updated_at: z.boolean().optional(),
   inscription: z.union([z.boolean(),z.lazy(() => InscriptionArgsSchema)]).optional(),
+}).strict()
+
+// ENROLLMENT DRAFT
+//------------------------------------------------------
+
+export const EnrollmentDraftIncludeSchema: z.ZodType<Prisma.EnrollmentDraftInclude> = z.object({
+  etablissement: z.union([z.boolean(),z.lazy(() => EtablissementArgsSchema)]).optional(),
+  annee: z.union([z.boolean(),z.lazy(() => AnneeScolaireArgsSchema)]).optional(),
+  eleve: z.union([z.boolean(),z.lazy(() => EleveArgsSchema)]).optional(),
+  createur: z.union([z.boolean(),z.lazy(() => UtilisateurArgsSchema)]).optional(),
+  modificateur: z.union([z.boolean(),z.lazy(() => UtilisateurArgsSchema)]).optional(),
+  submittedInscription: z.union([z.boolean(),z.lazy(() => InscriptionArgsSchema)]).optional(),
+  files: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFileFindManyArgsSchema)]).optional(),
+  _count: z.union([z.boolean(),z.lazy(() => EnrollmentDraftCountOutputTypeArgsSchema)]).optional(),
+}).strict();
+
+export const EnrollmentDraftArgsSchema: z.ZodType<Prisma.EnrollmentDraftDefaultArgs> = z.object({
+  select: z.lazy(() => EnrollmentDraftSelectSchema).optional(),
+  include: z.lazy(() => EnrollmentDraftIncludeSchema).optional(),
+}).strict();
+
+export const EnrollmentDraftCountOutputTypeArgsSchema: z.ZodType<Prisma.EnrollmentDraftCountOutputTypeDefaultArgs> = z.object({
+  select: z.lazy(() => EnrollmentDraftCountOutputTypeSelectSchema).nullish(),
+}).strict();
+
+export const EnrollmentDraftCountOutputTypeSelectSchema: z.ZodType<Prisma.EnrollmentDraftCountOutputTypeSelect> = z.object({
+  files: z.boolean().optional(),
+}).strict();
+
+export const EnrollmentDraftSelectSchema: z.ZodType<Prisma.EnrollmentDraftSelect> = z.object({
+  id: z.boolean().optional(),
+  etablissement_id: z.boolean().optional(),
+  annee_scolaire_id: z.boolean().optional(),
+  eleve_id: z.boolean().optional(),
+  draft_type: z.boolean().optional(),
+  status: z.boolean().optional(),
+  current_step: z.boolean().optional(),
+  student_data: z.boolean().optional(),
+  schooling_data: z.boolean().optional(),
+  guardians_data: z.boolean().optional(),
+  finance_data: z.boolean().optional(),
+  documents_data: z.boolean().optional(),
+  medical_data: z.boolean().optional(),
+  previous_school_data: z.boolean().optional(),
+  access_data: z.boolean().optional(),
+  consents_data: z.boolean().optional(),
+  observations_data: z.boolean().optional(),
+  services_data: z.boolean().optional(),
+  payment_schedule_data: z.boolean().optional(),
+  completion_rate: z.boolean().optional(),
+  missing_fields: z.boolean().optional(),
+  created_by_utilisateur_id: z.boolean().optional(),
+  updated_by_utilisateur_id: z.boolean().optional(),
+  submitted_inscription_id: z.boolean().optional(),
+  active_unique_key: z.boolean().optional(),
+  expires_at: z.boolean().optional(),
+  submitted_at: z.boolean().optional(),
+  deleted_at: z.boolean().optional(),
+  created_at: z.boolean().optional(),
+  updated_at: z.boolean().optional(),
+  etablissement: z.union([z.boolean(),z.lazy(() => EtablissementArgsSchema)]).optional(),
+  annee: z.union([z.boolean(),z.lazy(() => AnneeScolaireArgsSchema)]).optional(),
+  eleve: z.union([z.boolean(),z.lazy(() => EleveArgsSchema)]).optional(),
+  createur: z.union([z.boolean(),z.lazy(() => UtilisateurArgsSchema)]).optional(),
+  modificateur: z.union([z.boolean(),z.lazy(() => UtilisateurArgsSchema)]).optional(),
+  submittedInscription: z.union([z.boolean(),z.lazy(() => InscriptionArgsSchema)]).optional(),
+  files: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFileFindManyArgsSchema)]).optional(),
+  _count: z.union([z.boolean(),z.lazy(() => EnrollmentDraftCountOutputTypeArgsSchema)]).optional(),
+}).strict()
+
+// ENROLLMENT DRAFT FILE
+//------------------------------------------------------
+
+export const EnrollmentDraftFileIncludeSchema: z.ZodType<Prisma.EnrollmentDraftFileInclude> = z.object({
+  draft: z.union([z.boolean(),z.lazy(() => EnrollmentDraftArgsSchema)]).optional(),
+  documentType: z.union([z.boolean(),z.lazy(() => DocumentTypeInscriptionArgsSchema)]).optional(),
+  fichier: z.union([z.boolean(),z.lazy(() => FichierArgsSchema)]).optional(),
+  uploadedBy: z.union([z.boolean(),z.lazy(() => UtilisateurArgsSchema)]).optional(),
+}).strict();
+
+export const EnrollmentDraftFileArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileDefaultArgs> = z.object({
+  select: z.lazy(() => EnrollmentDraftFileSelectSchema).optional(),
+  include: z.lazy(() => EnrollmentDraftFileIncludeSchema).optional(),
+}).strict();
+
+export const EnrollmentDraftFileSelectSchema: z.ZodType<Prisma.EnrollmentDraftFileSelect> = z.object({
+  id: z.boolean().optional(),
+  draft_id: z.boolean().optional(),
+  document_type_id: z.boolean().optional(),
+  fichier_id: z.boolean().optional(),
+  filename: z.boolean().optional(),
+  original_name: z.boolean().optional(),
+  mime_type: z.boolean().optional(),
+  size: z.boolean().optional(),
+  path: z.boolean().optional(),
+  status: z.boolean().optional(),
+  uploaded_by_id: z.boolean().optional(),
+  created_at: z.boolean().optional(),
+  updated_at: z.boolean().optional(),
+  draft: z.union([z.boolean(),z.lazy(() => EnrollmentDraftArgsSchema)]).optional(),
+  documentType: z.union([z.boolean(),z.lazy(() => DocumentTypeInscriptionArgsSchema)]).optional(),
+  fichier: z.union([z.boolean(),z.lazy(() => FichierArgsSchema)]).optional(),
+  uploadedBy: z.union([z.boolean(),z.lazy(() => UtilisateurArgsSchema)]).optional(),
 }).strict()
 
 // IDENTIFIANT ELEVE
@@ -6407,6 +6611,7 @@ export const FichierIncludeSchema: z.ZodType<Prisma.FichierInclude> = z.object({
   proprietaire: z.union([z.boolean(),z.lazy(() => UtilisateurArgsSchema)]).optional(),
   liens: z.union([z.boolean(),z.lazy(() => LienFichierFindManyArgsSchema)]).optional(),
   documentsInscriptions: z.union([z.boolean(),z.lazy(() => InscriptionDocumentFindManyArgsSchema)]).optional(),
+  enrollmentDraftFiles: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFileFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => FichierCountOutputTypeArgsSchema)]).optional(),
 }).strict();
 
@@ -6422,6 +6627,7 @@ export const FichierCountOutputTypeArgsSchema: z.ZodType<Prisma.FichierCountOutp
 export const FichierCountOutputTypeSelectSchema: z.ZodType<Prisma.FichierCountOutputTypeSelect> = z.object({
   liens: z.boolean().optional(),
   documentsInscriptions: z.boolean().optional(),
+  enrollmentDraftFiles: z.boolean().optional(),
 }).strict();
 
 export const FichierSelectSchema: z.ZodType<Prisma.FichierSelect> = z.object({
@@ -6440,6 +6646,7 @@ export const FichierSelectSchema: z.ZodType<Prisma.FichierSelect> = z.object({
   proprietaire: z.union([z.boolean(),z.lazy(() => UtilisateurArgsSchema)]).optional(),
   liens: z.union([z.boolean(),z.lazy(() => LienFichierFindManyArgsSchema)]).optional(),
   documentsInscriptions: z.union([z.boolean(),z.lazy(() => InscriptionDocumentFindManyArgsSchema)]).optional(),
+  enrollmentDraftFiles: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFileFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => FichierCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
@@ -6472,6 +6679,7 @@ export const LienFichierSelectSchema: z.ZodType<Prisma.LienFichierSelect> = z.ob
 export const DocumentTypeInscriptionIncludeSchema: z.ZodType<Prisma.DocumentTypeInscriptionInclude> = z.object({
   etablissement: z.union([z.boolean(),z.lazy(() => EtablissementArgsSchema)]).optional(),
   documents: z.union([z.boolean(),z.lazy(() => InscriptionDocumentFindManyArgsSchema)]).optional(),
+  enrollmentDraftFiles: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFileFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => DocumentTypeInscriptionCountOutputTypeArgsSchema)]).optional(),
 }).strict();
 
@@ -6486,6 +6694,7 @@ export const DocumentTypeInscriptionCountOutputTypeArgsSchema: z.ZodType<Prisma.
 
 export const DocumentTypeInscriptionCountOutputTypeSelectSchema: z.ZodType<Prisma.DocumentTypeInscriptionCountOutputTypeSelect> = z.object({
   documents: z.boolean().optional(),
+  enrollmentDraftFiles: z.boolean().optional(),
 }).strict();
 
 export const DocumentTypeInscriptionSelectSchema: z.ZodType<Prisma.DocumentTypeInscriptionSelect> = z.object({
@@ -6502,6 +6711,7 @@ export const DocumentTypeInscriptionSelectSchema: z.ZodType<Prisma.DocumentTypeI
   updated_at: z.boolean().optional(),
   etablissement: z.union([z.boolean(),z.lazy(() => EtablissementArgsSchema)]).optional(),
   documents: z.union([z.boolean(),z.lazy(() => InscriptionDocumentFindManyArgsSchema)]).optional(),
+  enrollmentDraftFiles: z.union([z.boolean(),z.lazy(() => EnrollmentDraftFileFindManyArgsSchema)]).optional(),
   _count: z.union([z.boolean(),z.lazy(() => DocumentTypeInscriptionCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
@@ -6671,6 +6881,7 @@ export const EtablissementWhereInputSchema: z.ZodType<Prisma.EtablissementWhereI
   Message: z.lazy(() => MessageListRelationFilterSchema).optional(),
   Facture: z.lazy(() => FactureListRelationFilterSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereListRelationFilterSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftListRelationFilterSchema).optional(),
 });
 
 export const EtablissementOrderByWithRelationInputSchema: z.ZodType<Prisma.EtablissementOrderByWithRelationInput> = z.strictObject({
@@ -6719,6 +6930,7 @@ export const EtablissementOrderByWithRelationInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageOrderByRelationAggregateInputSchema).optional(),
   Facture: z.lazy(() => FactureOrderByRelationAggregateInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereOrderByRelationAggregateInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftOrderByRelationAggregateInputSchema).optional(),
   _relevance: z.lazy(() => EtablissementOrderByRelevanceInputSchema).optional(),
 });
 
@@ -6783,6 +6995,7 @@ export const EtablissementWhereUniqueInputSchema: z.ZodType<Prisma.Etablissement
   Message: z.lazy(() => MessageListRelationFilterSchema).optional(),
   Facture: z.lazy(() => FactureListRelationFilterSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereListRelationFilterSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftListRelationFilterSchema).optional(),
 }));
 
 export const EtablissementOrderByWithAggregationInputSchema: z.ZodType<Prisma.EtablissementOrderByWithAggregationInput> = z.strictObject({
@@ -6920,6 +7133,7 @@ export const AnneeScolaireWhereInputSchema: z.ZodType<Prisma.AnneeScolaireWhereI
   pedagogicalItems: z.lazy(() => PedagogicalItemListRelationFilterSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleListRelationFilterSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageListRelationFilterSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftListRelationFilterSchema).optional(),
 });
 
 export const AnneeScolaireOrderByWithRelationInputSchema: z.ZodType<Prisma.AnneeScolaireOrderByWithRelationInput> = z.strictObject({
@@ -6950,6 +7164,7 @@ export const AnneeScolaireOrderByWithRelationInputSchema: z.ZodType<Prisma.Annee
   pedagogicalItems: z.lazy(() => PedagogicalItemOrderByRelationAggregateInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleOrderByRelationAggregateInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageOrderByRelationAggregateInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftOrderByRelationAggregateInputSchema).optional(),
   _relevance: z.lazy(() => AnneeScolaireOrderByRelevanceInputSchema).optional(),
 });
 
@@ -6987,6 +7202,7 @@ export const AnneeScolaireWhereUniqueInputSchema: z.ZodType<Prisma.AnneeScolaire
   pedagogicalItems: z.lazy(() => PedagogicalItemListRelationFilterSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleListRelationFilterSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageListRelationFilterSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftListRelationFilterSchema).optional(),
 }));
 
 export const AnneeScolaireOrderByWithAggregationInputSchema: z.ZodType<Prisma.AnneeScolaireOrderByWithAggregationInput> = z.strictObject({
@@ -7322,6 +7538,9 @@ export const UtilisateurWhereInputSchema: z.ZodType<Prisma.UtilisateurWhereInput
   programmesCrees: z.lazy(() => ProgrammeListRelationFilterSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeListRelationFilterSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogListRelationFilterSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftListRelationFilterSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftListRelationFilterSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileListRelationFilterSchema).optional(),
   Eleve: z.lazy(() => EleveListRelationFilterSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurListRelationFilterSchema).optional(),
   Personnel: z.lazy(() => PersonnelListRelationFilterSchema).optional(),
@@ -7360,6 +7579,9 @@ export const UtilisateurOrderByWithRelationInputSchema: z.ZodType<Prisma.Utilisa
   programmesCrees: z.lazy(() => ProgrammeOrderByRelationAggregateInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeOrderByRelationAggregateInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogOrderByRelationAggregateInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftOrderByRelationAggregateInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftOrderByRelationAggregateInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileOrderByRelationAggregateInputSchema).optional(),
   Eleve: z.lazy(() => EleveOrderByRelationAggregateInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurOrderByRelationAggregateInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelOrderByRelationAggregateInputSchema).optional(),
@@ -7415,6 +7637,9 @@ export const UtilisateurWhereUniqueInputSchema: z.ZodType<Prisma.UtilisateurWher
   programmesCrees: z.lazy(() => ProgrammeListRelationFilterSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeListRelationFilterSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogListRelationFilterSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftListRelationFilterSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftListRelationFilterSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileListRelationFilterSchema).optional(),
   Eleve: z.lazy(() => EleveListRelationFilterSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurListRelationFilterSchema).optional(),
   Personnel: z.lazy(() => PersonnelListRelationFilterSchema).optional(),
@@ -7855,6 +8080,7 @@ export const EleveWhereInputSchema: z.ZodType<Prisma.EleveWhereInput> = z.strict
   emprunts: z.lazy(() => EmpruntListRelationFilterSchema).optional(),
   profilMedical: z.union([ z.lazy(() => EleveMedicalProfileNullableScalarRelationFilterSchema), z.lazy(() => EleveMedicalProfileWhereInputSchema) ]).optional().nullable(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageListRelationFilterSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftListRelationFilterSchema).optional(),
 });
 
 export const EleveOrderByWithRelationInputSchema: z.ZodType<Prisma.EleveOrderByWithRelationInput> = z.strictObject({
@@ -7890,6 +8116,7 @@ export const EleveOrderByWithRelationInputSchema: z.ZodType<Prisma.EleveOrderByW
   emprunts: z.lazy(() => EmpruntOrderByRelationAggregateInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileOrderByWithRelationInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageOrderByRelationAggregateInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftOrderByRelationAggregateInputSchema).optional(),
   _relevance: z.lazy(() => EleveOrderByRelevanceInputSchema).optional(),
 });
 
@@ -7942,6 +8169,7 @@ export const EleveWhereUniqueInputSchema: z.ZodType<Prisma.EleveWhereUniqueInput
   emprunts: z.lazy(() => EmpruntListRelationFilterSchema).optional(),
   profilMedical: z.union([ z.lazy(() => EleveMedicalProfileNullableScalarRelationFilterSchema), z.lazy(() => EleveMedicalProfileWhereInputSchema) ]).optional().nullable(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageListRelationFilterSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftListRelationFilterSchema).optional(),
 }));
 
 export const EleveOrderByWithAggregationInputSchema: z.ZodType<Prisma.EleveOrderByWithAggregationInput> = z.strictObject({
@@ -8503,6 +8731,7 @@ export const InscriptionWhereInputSchema: z.ZodType<Prisma.InscriptionWhereInput
   annee: z.union([ z.lazy(() => AnneeScolaireScalarRelationFilterSchema), z.lazy(() => AnneeScolaireWhereInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentListRelationFilterSchema).optional(),
   historiqueScolaire: z.union([ z.lazy(() => InscriptionSchoolHistoryNullableScalarRelationFilterSchema), z.lazy(() => InscriptionSchoolHistoryWhereInputSchema) ]).optional().nullable(),
+  sourceDraft: z.union([ z.lazy(() => EnrollmentDraftNullableScalarRelationFilterSchema), z.lazy(() => EnrollmentDraftWhereInputSchema) ]).optional().nullable(),
 });
 
 export const InscriptionOrderByWithRelationInputSchema: z.ZodType<Prisma.InscriptionOrderByWithRelationInput> = z.strictObject({
@@ -8532,6 +8761,7 @@ export const InscriptionOrderByWithRelationInputSchema: z.ZodType<Prisma.Inscrip
   annee: z.lazy(() => AnneeScolaireOrderByWithRelationInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentOrderByRelationAggregateInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryOrderByWithRelationInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftOrderByWithRelationInputSchema).optional(),
   _relevance: z.lazy(() => InscriptionOrderByRelevanceInputSchema).optional(),
 });
 
@@ -8578,6 +8808,7 @@ export const InscriptionWhereUniqueInputSchema: z.ZodType<Prisma.InscriptionWher
   annee: z.union([ z.lazy(() => AnneeScolaireScalarRelationFilterSchema), z.lazy(() => AnneeScolaireWhereInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentListRelationFilterSchema).optional(),
   historiqueScolaire: z.union([ z.lazy(() => InscriptionSchoolHistoryNullableScalarRelationFilterSchema), z.lazy(() => InscriptionSchoolHistoryWhereInputSchema) ]).optional().nullable(),
+  sourceDraft: z.union([ z.lazy(() => EnrollmentDraftNullableScalarRelationFilterSchema), z.lazy(() => EnrollmentDraftWhereInputSchema) ]).optional().nullable(),
 }));
 
 export const InscriptionOrderByWithAggregationInputSchema: z.ZodType<Prisma.InscriptionOrderByWithAggregationInput> = z.strictObject({
@@ -8740,6 +8971,345 @@ export const InscriptionSchoolHistoryScalarWhereWithAggregatesInputSchema: z.Zod
   motif_transfert: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   observations: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   reprise_auto: z.union([ z.lazy(() => BoolWithAggregatesFilterSchema), z.boolean() ]).optional(),
+  created_at: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
+  updated_at: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
+});
+
+export const EnrollmentDraftWhereInputSchema: z.ZodType<Prisma.EnrollmentDraftWhereInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => EnrollmentDraftWhereInputSchema), z.lazy(() => EnrollmentDraftWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => EnrollmentDraftWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => EnrollmentDraftWhereInputSchema), z.lazy(() => EnrollmentDraftWhereInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  etablissement_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  annee_scolaire_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  eleve_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnumEnrollmentDraftTypeFilterSchema), z.lazy(() => EnrollmentDraftTypeSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnumEnrollmentDraftStatusFilterSchema), z.lazy(() => EnrollmentDraftStatusSchema) ]).optional(),
+  current_step: z.union([ z.lazy(() => IntFilterSchema), z.number() ]).optional(),
+  student_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  schooling_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  guardians_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  finance_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  documents_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  medical_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  previous_school_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  access_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  consents_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  observations_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  services_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  payment_schedule_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  completion_rate: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  missing_fields: z.lazy(() => JsonNullableFilterSchema).optional(),
+  created_by_utilisateur_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  active_unique_key: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  expires_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  submitted_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  deleted_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  created_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  updated_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  etablissement: z.union([ z.lazy(() => EtablissementScalarRelationFilterSchema), z.lazy(() => EtablissementWhereInputSchema) ]).optional(),
+  annee: z.union([ z.lazy(() => AnneeScolaireScalarRelationFilterSchema), z.lazy(() => AnneeScolaireWhereInputSchema) ]).optional(),
+  eleve: z.union([ z.lazy(() => EleveNullableScalarRelationFilterSchema), z.lazy(() => EleveWhereInputSchema) ]).optional().nullable(),
+  createur: z.union([ z.lazy(() => UtilisateurNullableScalarRelationFilterSchema), z.lazy(() => UtilisateurWhereInputSchema) ]).optional().nullable(),
+  modificateur: z.union([ z.lazy(() => UtilisateurNullableScalarRelationFilterSchema), z.lazy(() => UtilisateurWhereInputSchema) ]).optional().nullable(),
+  submittedInscription: z.union([ z.lazy(() => InscriptionNullableScalarRelationFilterSchema), z.lazy(() => InscriptionWhereInputSchema) ]).optional().nullable(),
+  files: z.lazy(() => EnrollmentDraftFileListRelationFilterSchema).optional(),
+});
+
+export const EnrollmentDraftOrderByWithRelationInputSchema: z.ZodType<Prisma.EnrollmentDraftOrderByWithRelationInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  etablissement_id: z.lazy(() => SortOrderSchema).optional(),
+  annee_scolaire_id: z.lazy(() => SortOrderSchema).optional(),
+  eleve_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  draft_type: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  current_step: z.lazy(() => SortOrderSchema).optional(),
+  student_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  schooling_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  guardians_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  finance_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  documents_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  medical_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  access_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  consents_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  observations_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  services_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  completion_rate: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  missing_fields: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  created_by_utilisateur_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  updated_by_utilisateur_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  submitted_inscription_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  active_unique_key: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  expires_at: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  submitted_at: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  deleted_at: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  created_at: z.lazy(() => SortOrderSchema).optional(),
+  updated_at: z.lazy(() => SortOrderSchema).optional(),
+  etablissement: z.lazy(() => EtablissementOrderByWithRelationInputSchema).optional(),
+  annee: z.lazy(() => AnneeScolaireOrderByWithRelationInputSchema).optional(),
+  eleve: z.lazy(() => EleveOrderByWithRelationInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurOrderByWithRelationInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurOrderByWithRelationInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionOrderByWithRelationInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileOrderByRelationAggregateInputSchema).optional(),
+  _relevance: z.lazy(() => EnrollmentDraftOrderByRelevanceInputSchema).optional(),
+});
+
+export const EnrollmentDraftWhereUniqueInputSchema: z.ZodType<Prisma.EnrollmentDraftWhereUniqueInput> = z.union([
+  z.object({
+    id: z.uuid(),
+    submitted_inscription_id: z.string(),
+    active_unique_key: z.string(),
+  }),
+  z.object({
+    id: z.uuid(),
+    submitted_inscription_id: z.string(),
+  }),
+  z.object({
+    id: z.uuid(),
+    active_unique_key: z.string(),
+  }),
+  z.object({
+    id: z.uuid(),
+  }),
+  z.object({
+    submitted_inscription_id: z.string(),
+    active_unique_key: z.string(),
+  }),
+  z.object({
+    submitted_inscription_id: z.string(),
+  }),
+  z.object({
+    active_unique_key: z.string(),
+  }),
+])
+.and(z.strictObject({
+  id: z.uuid().optional(),
+  submitted_inscription_id: z.string().optional(),
+  active_unique_key: z.string().optional(),
+  AND: z.union([ z.lazy(() => EnrollmentDraftWhereInputSchema), z.lazy(() => EnrollmentDraftWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => EnrollmentDraftWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => EnrollmentDraftWhereInputSchema), z.lazy(() => EnrollmentDraftWhereInputSchema).array() ]).optional(),
+  etablissement_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  annee_scolaire_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  eleve_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnumEnrollmentDraftTypeFilterSchema), z.lazy(() => EnrollmentDraftTypeSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnumEnrollmentDraftStatusFilterSchema), z.lazy(() => EnrollmentDraftStatusSchema) ]).optional(),
+  current_step: z.union([ z.lazy(() => IntFilterSchema), z.number().int() ]).optional(),
+  student_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  schooling_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  guardians_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  finance_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  documents_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  medical_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  previous_school_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  access_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  consents_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  observations_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  services_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  payment_schedule_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  completion_rate: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  missing_fields: z.lazy(() => JsonNullableFilterSchema).optional(),
+  created_by_utilisateur_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  expires_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  submitted_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  deleted_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  created_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  updated_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  etablissement: z.union([ z.lazy(() => EtablissementScalarRelationFilterSchema), z.lazy(() => EtablissementWhereInputSchema) ]).optional(),
+  annee: z.union([ z.lazy(() => AnneeScolaireScalarRelationFilterSchema), z.lazy(() => AnneeScolaireWhereInputSchema) ]).optional(),
+  eleve: z.union([ z.lazy(() => EleveNullableScalarRelationFilterSchema), z.lazy(() => EleveWhereInputSchema) ]).optional().nullable(),
+  createur: z.union([ z.lazy(() => UtilisateurNullableScalarRelationFilterSchema), z.lazy(() => UtilisateurWhereInputSchema) ]).optional().nullable(),
+  modificateur: z.union([ z.lazy(() => UtilisateurNullableScalarRelationFilterSchema), z.lazy(() => UtilisateurWhereInputSchema) ]).optional().nullable(),
+  submittedInscription: z.union([ z.lazy(() => InscriptionNullableScalarRelationFilterSchema), z.lazy(() => InscriptionWhereInputSchema) ]).optional().nullable(),
+  files: z.lazy(() => EnrollmentDraftFileListRelationFilterSchema).optional(),
+}));
+
+export const EnrollmentDraftOrderByWithAggregationInputSchema: z.ZodType<Prisma.EnrollmentDraftOrderByWithAggregationInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  etablissement_id: z.lazy(() => SortOrderSchema).optional(),
+  annee_scolaire_id: z.lazy(() => SortOrderSchema).optional(),
+  eleve_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  draft_type: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  current_step: z.lazy(() => SortOrderSchema).optional(),
+  student_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  schooling_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  guardians_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  finance_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  documents_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  medical_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  access_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  consents_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  observations_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  services_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  completion_rate: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  missing_fields: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  created_by_utilisateur_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  updated_by_utilisateur_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  submitted_inscription_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  active_unique_key: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  expires_at: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  submitted_at: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  deleted_at: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  created_at: z.lazy(() => SortOrderSchema).optional(),
+  updated_at: z.lazy(() => SortOrderSchema).optional(),
+  _count: z.lazy(() => EnrollmentDraftCountOrderByAggregateInputSchema).optional(),
+  _avg: z.lazy(() => EnrollmentDraftAvgOrderByAggregateInputSchema).optional(),
+  _max: z.lazy(() => EnrollmentDraftMaxOrderByAggregateInputSchema).optional(),
+  _min: z.lazy(() => EnrollmentDraftMinOrderByAggregateInputSchema).optional(),
+  _sum: z.lazy(() => EnrollmentDraftSumOrderByAggregateInputSchema).optional(),
+});
+
+export const EnrollmentDraftScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.EnrollmentDraftScalarWhereWithAggregatesInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => EnrollmentDraftScalarWhereWithAggregatesInputSchema), z.lazy(() => EnrollmentDraftScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  OR: z.lazy(() => EnrollmentDraftScalarWhereWithAggregatesInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => EnrollmentDraftScalarWhereWithAggregatesInputSchema), z.lazy(() => EnrollmentDraftScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  etablissement_id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  annee_scolaire_id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  eleve_id: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnumEnrollmentDraftTypeWithAggregatesFilterSchema), z.lazy(() => EnrollmentDraftTypeSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnumEnrollmentDraftStatusWithAggregatesFilterSchema), z.lazy(() => EnrollmentDraftStatusSchema) ]).optional(),
+  current_step: z.union([ z.lazy(() => IntWithAggregatesFilterSchema), z.number() ]).optional(),
+  student_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  schooling_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  guardians_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  finance_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  documents_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  medical_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  previous_school_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  access_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  consents_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  observations_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  services_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  payment_schedule_data: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  completion_rate: z.union([ z.lazy(() => DecimalNullableWithAggregatesFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  missing_fields: z.lazy(() => JsonNullableWithAggregatesFilterSchema).optional(),
+  created_by_utilisateur_id: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  active_unique_key: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  expires_at: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
+  submitted_at: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
+  deleted_at: z.union([ z.lazy(() => DateTimeNullableWithAggregatesFilterSchema), z.coerce.date() ]).optional().nullable(),
+  created_at: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
+  updated_at: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
+});
+
+export const EnrollmentDraftFileWhereInputSchema: z.ZodType<Prisma.EnrollmentDraftFileWhereInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => EnrollmentDraftFileWhereInputSchema), z.lazy(() => EnrollmentDraftFileWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => EnrollmentDraftFileWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => EnrollmentDraftFileWhereInputSchema), z.lazy(() => EnrollmentDraftFileWhereInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  draft_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  document_type_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  fichier_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  filename: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  original_name: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  mime_type: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  size: z.union([ z.lazy(() => IntNullableFilterSchema), z.number() ]).optional().nullable(),
+  path: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnumEnrollmentDraftFileStatusFilterSchema), z.lazy(() => EnrollmentDraftFileStatusSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  created_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  updated_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  draft: z.union([ z.lazy(() => EnrollmentDraftScalarRelationFilterSchema), z.lazy(() => EnrollmentDraftWhereInputSchema) ]).optional(),
+  documentType: z.union([ z.lazy(() => DocumentTypeInscriptionNullableScalarRelationFilterSchema), z.lazy(() => DocumentTypeInscriptionWhereInputSchema) ]).optional().nullable(),
+  fichier: z.union([ z.lazy(() => FichierNullableScalarRelationFilterSchema), z.lazy(() => FichierWhereInputSchema) ]).optional().nullable(),
+  uploadedBy: z.union([ z.lazy(() => UtilisateurNullableScalarRelationFilterSchema), z.lazy(() => UtilisateurWhereInputSchema) ]).optional().nullable(),
+});
+
+export const EnrollmentDraftFileOrderByWithRelationInputSchema: z.ZodType<Prisma.EnrollmentDraftFileOrderByWithRelationInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  draft_id: z.lazy(() => SortOrderSchema).optional(),
+  document_type_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  fichier_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  filename: z.lazy(() => SortOrderSchema).optional(),
+  original_name: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  mime_type: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  size: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  path: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  uploaded_by_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  created_at: z.lazy(() => SortOrderSchema).optional(),
+  updated_at: z.lazy(() => SortOrderSchema).optional(),
+  draft: z.lazy(() => EnrollmentDraftOrderByWithRelationInputSchema).optional(),
+  documentType: z.lazy(() => DocumentTypeInscriptionOrderByWithRelationInputSchema).optional(),
+  fichier: z.lazy(() => FichierOrderByWithRelationInputSchema).optional(),
+  uploadedBy: z.lazy(() => UtilisateurOrderByWithRelationInputSchema).optional(),
+  _relevance: z.lazy(() => EnrollmentDraftFileOrderByRelevanceInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileWhereUniqueInputSchema: z.ZodType<Prisma.EnrollmentDraftFileWhereUniqueInput> = z.object({
+  id: z.uuid(),
+})
+.and(z.strictObject({
+  id: z.uuid().optional(),
+  AND: z.union([ z.lazy(() => EnrollmentDraftFileWhereInputSchema), z.lazy(() => EnrollmentDraftFileWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => EnrollmentDraftFileWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => EnrollmentDraftFileWhereInputSchema), z.lazy(() => EnrollmentDraftFileWhereInputSchema).array() ]).optional(),
+  draft_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  document_type_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  fichier_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  filename: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  original_name: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  mime_type: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  size: z.union([ z.lazy(() => IntNullableFilterSchema), z.number().int() ]).optional().nullable(),
+  path: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnumEnrollmentDraftFileStatusFilterSchema), z.lazy(() => EnrollmentDraftFileStatusSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  created_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  updated_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  draft: z.union([ z.lazy(() => EnrollmentDraftScalarRelationFilterSchema), z.lazy(() => EnrollmentDraftWhereInputSchema) ]).optional(),
+  documentType: z.union([ z.lazy(() => DocumentTypeInscriptionNullableScalarRelationFilterSchema), z.lazy(() => DocumentTypeInscriptionWhereInputSchema) ]).optional().nullable(),
+  fichier: z.union([ z.lazy(() => FichierNullableScalarRelationFilterSchema), z.lazy(() => FichierWhereInputSchema) ]).optional().nullable(),
+  uploadedBy: z.union([ z.lazy(() => UtilisateurNullableScalarRelationFilterSchema), z.lazy(() => UtilisateurWhereInputSchema) ]).optional().nullable(),
+}));
+
+export const EnrollmentDraftFileOrderByWithAggregationInputSchema: z.ZodType<Prisma.EnrollmentDraftFileOrderByWithAggregationInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  draft_id: z.lazy(() => SortOrderSchema).optional(),
+  document_type_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  fichier_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  filename: z.lazy(() => SortOrderSchema).optional(),
+  original_name: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  mime_type: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  size: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  path: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  uploaded_by_id: z.union([ z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema) ]).optional(),
+  created_at: z.lazy(() => SortOrderSchema).optional(),
+  updated_at: z.lazy(() => SortOrderSchema).optional(),
+  _count: z.lazy(() => EnrollmentDraftFileCountOrderByAggregateInputSchema).optional(),
+  _avg: z.lazy(() => EnrollmentDraftFileAvgOrderByAggregateInputSchema).optional(),
+  _max: z.lazy(() => EnrollmentDraftFileMaxOrderByAggregateInputSchema).optional(),
+  _min: z.lazy(() => EnrollmentDraftFileMinOrderByAggregateInputSchema).optional(),
+  _sum: z.lazy(() => EnrollmentDraftFileSumOrderByAggregateInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.EnrollmentDraftFileScalarWhereWithAggregatesInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereWithAggregatesInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  OR: z.lazy(() => EnrollmentDraftFileScalarWhereWithAggregatesInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereWithAggregatesInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  draft_id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  document_type_id: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  fichier_id: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  filename: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  original_name: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  mime_type: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  size: z.union([ z.lazy(() => IntNullableWithAggregatesFilterSchema), z.number() ]).optional().nullable(),
+  path: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnumEnrollmentDraftFileStatusWithAggregatesFilterSchema), z.lazy(() => EnrollmentDraftFileStatusSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string() ]).optional().nullable(),
   created_at: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
   updated_at: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
 });
@@ -16313,6 +16883,7 @@ export const FichierWhereInputSchema: z.ZodType<Prisma.FichierWhereInput> = z.st
   proprietaire: z.union([ z.lazy(() => UtilisateurNullableScalarRelationFilterSchema), z.lazy(() => UtilisateurWhereInputSchema) ]).optional().nullable(),
   liens: z.lazy(() => LienFichierListRelationFilterSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentListRelationFilterSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileListRelationFilterSchema).optional(),
 });
 
 export const FichierOrderByWithRelationInputSchema: z.ZodType<Prisma.FichierOrderByWithRelationInput> = z.strictObject({
@@ -16331,6 +16902,7 @@ export const FichierOrderByWithRelationInputSchema: z.ZodType<Prisma.FichierOrde
   proprietaire: z.lazy(() => UtilisateurOrderByWithRelationInputSchema).optional(),
   liens: z.lazy(() => LienFichierOrderByRelationAggregateInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentOrderByRelationAggregateInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileOrderByRelationAggregateInputSchema).optional(),
   _relevance: z.lazy(() => FichierOrderByRelevanceInputSchema).optional(),
 });
 
@@ -16356,6 +16928,7 @@ export const FichierWhereUniqueInputSchema: z.ZodType<Prisma.FichierWhereUniqueI
   proprietaire: z.union([ z.lazy(() => UtilisateurNullableScalarRelationFilterSchema), z.lazy(() => UtilisateurWhereInputSchema) ]).optional().nullable(),
   liens: z.lazy(() => LienFichierListRelationFilterSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentListRelationFilterSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileListRelationFilterSchema).optional(),
 }));
 
 export const FichierOrderByWithAggregationInputSchema: z.ZodType<Prisma.FichierOrderByWithAggregationInput> = z.strictObject({
@@ -16480,6 +17053,7 @@ export const DocumentTypeInscriptionWhereInputSchema: z.ZodType<Prisma.DocumentT
   updated_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   etablissement: z.union([ z.lazy(() => EtablissementNullableScalarRelationFilterSchema), z.lazy(() => EtablissementWhereInputSchema) ]).optional().nullable(),
   documents: z.lazy(() => InscriptionDocumentListRelationFilterSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileListRelationFilterSchema).optional(),
 });
 
 export const DocumentTypeInscriptionOrderByWithRelationInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionOrderByWithRelationInput> = z.strictObject({
@@ -16496,6 +17070,7 @@ export const DocumentTypeInscriptionOrderByWithRelationInputSchema: z.ZodType<Pr
   updated_at: z.lazy(() => SortOrderSchema).optional(),
   etablissement: z.lazy(() => EtablissementOrderByWithRelationInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentOrderByRelationAggregateInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileOrderByRelationAggregateInputSchema).optional(),
   _relevance: z.lazy(() => DocumentTypeInscriptionOrderByRelevanceInputSchema).optional(),
 });
 
@@ -16529,6 +17104,7 @@ export const DocumentTypeInscriptionWhereUniqueInputSchema: z.ZodType<Prisma.Doc
   updated_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   etablissement: z.union([ z.lazy(() => EtablissementNullableScalarRelationFilterSchema), z.lazy(() => EtablissementWhereInputSchema) ]).optional().nullable(),
   documents: z.lazy(() => InscriptionDocumentListRelationFilterSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileListRelationFilterSchema).optional(),
 }));
 
 export const DocumentTypeInscriptionOrderByWithAggregationInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionOrderByWithAggregationInput> = z.strictObject({
@@ -16971,6 +17547,7 @@ export const EtablissementCreateInputSchema: z.ZodType<Prisma.EtablissementCreat
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateInput> = z.strictObject({
@@ -17019,6 +17596,7 @@ export const EtablissementUncheckedCreateInputSchema: z.ZodType<Prisma.Etablisse
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUpdateInputSchema: z.ZodType<Prisma.EtablissementUpdateInput> = z.strictObject({
@@ -17067,6 +17645,7 @@ export const EtablissementUpdateInputSchema: z.ZodType<Prisma.EtablissementUpdat
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateInput> = z.strictObject({
@@ -17115,6 +17694,7 @@ export const EtablissementUncheckedUpdateInputSchema: z.ZodType<Prisma.Etablisse
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementCreateManyInputSchema: z.ZodType<Prisma.EtablissementCreateManyInput> = z.strictObject({
@@ -17255,6 +17835,7 @@ export const AnneeScolaireCreateInputSchema: z.ZodType<Prisma.AnneeScolaireCreat
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateInput> = z.strictObject({
@@ -17284,6 +17865,7 @@ export const AnneeScolaireUncheckedCreateInputSchema: z.ZodType<Prisma.AnneeScol
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUpdateInputSchema: z.ZodType<Prisma.AnneeScolaireUpdateInput> = z.strictObject({
@@ -17313,6 +17895,7 @@ export const AnneeScolaireUpdateInputSchema: z.ZodType<Prisma.AnneeScolaireUpdat
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateInput> = z.strictObject({
@@ -17342,6 +17925,7 @@ export const AnneeScolaireUncheckedUpdateInputSchema: z.ZodType<Prisma.AnneeScol
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateManyInputSchema: z.ZodType<Prisma.AnneeScolaireCreateManyInput> = z.strictObject({
@@ -17668,6 +18252,9 @@ export const UtilisateurCreateInputSchema: z.ZodType<Prisma.UtilisateurCreateInp
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -17705,6 +18292,9 @@ export const UtilisateurUncheckedCreateInputSchema: z.ZodType<Prisma.Utilisateur
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -17742,6 +18332,9 @@ export const UtilisateurUpdateInputSchema: z.ZodType<Prisma.UtilisateurUpdateInp
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -17779,6 +18372,9 @@ export const UtilisateurUncheckedUpdateInputSchema: z.ZodType<Prisma.Utilisateur
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -18188,6 +18784,7 @@ export const EleveCreateInputSchema: z.ZodType<Prisma.EleveCreateInput> = z.stri
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateInputSchema: z.ZodType<Prisma.EleveUncheckedCreateInput> = z.strictObject({
@@ -18221,6 +18818,7 @@ export const EleveUncheckedCreateInputSchema: z.ZodType<Prisma.EleveUncheckedCre
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUpdateInputSchema: z.ZodType<Prisma.EleveUpdateInput> = z.strictObject({
@@ -18254,6 +18852,7 @@ export const EleveUpdateInputSchema: z.ZodType<Prisma.EleveUpdateInput> = z.stri
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateInput> = z.strictObject({
@@ -18287,6 +18886,7 @@ export const EleveUncheckedUpdateInputSchema: z.ZodType<Prisma.EleveUncheckedUpd
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveCreateManyInputSchema: z.ZodType<Prisma.EleveCreateManyInput> = z.strictObject({
@@ -18839,6 +19439,7 @@ export const InscriptionCreateInputSchema: z.ZodType<Prisma.InscriptionCreateInp
   annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutInscriptionsInputSchema),
   documents: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutInscriptionInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionUncheckedCreateInputSchema: z.ZodType<Prisma.InscriptionUncheckedCreateInput> = z.strictObject({
@@ -18864,6 +19465,7 @@ export const InscriptionUncheckedCreateInputSchema: z.ZodType<Prisma.Inscription
   updated_at: z.coerce.date().optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutInscriptionInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionUpdateInputSchema: z.ZodType<Prisma.InscriptionUpdateInput> = z.strictObject({
@@ -18889,6 +19491,7 @@ export const InscriptionUpdateInputSchema: z.ZodType<Prisma.InscriptionUpdateInp
   annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutInscriptionsNestedInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentUpdateManyWithoutInscriptionNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateInput> = z.strictObject({
@@ -18914,6 +19517,7 @@ export const InscriptionUncheckedUpdateInputSchema: z.ZodType<Prisma.Inscription
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutInscriptionNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionCreateManyInputSchema: z.ZodType<Prisma.InscriptionCreateManyInput> = z.strictObject({
@@ -19088,6 +19692,343 @@ export const InscriptionSchoolHistoryUncheckedUpdateManyInputSchema: z.ZodType<P
   motif_transfert: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   observations: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   reprise_auto: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftCreateInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  eleve: z.lazy(() => EleveCreateNestedOneWithoutEnrollmentDraftsInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsCreatedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsUpdatedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionCreateNestedOneWithoutSourceDraftInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftUpdateInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  eleve: z.lazy(() => EleveUpdateOneWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsCreatedNestedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsUpdatedNestedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionUpdateOneWithoutSourceDraftNestedInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftCreateManyInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftUpdateManyMutationInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyMutationInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateManyInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileCreateInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateInput> = z.strictObject({
+  id: z.uuid().optional(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  draft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutFilesInputSchema),
+  documentType: z.lazy(() => DocumentTypeInscriptionCreateNestedOneWithoutEnrollmentDraftFilesInputSchema).optional(),
+  fichier: z.lazy(() => FichierCreateNestedOneWithoutEnrollmentDraftFilesInputSchema).optional(),
+  uploadedBy: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftFilesUploadedInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedCreateInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedCreateInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_id: z.string(),
+  document_type_id: z.string().optional().nullable(),
+  fichier_id: z.string().optional().nullable(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  uploaded_by_id: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftFileUpdateInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  draft: z.lazy(() => EnrollmentDraftUpdateOneRequiredWithoutFilesNestedInputSchema).optional(),
+  documentType: z.lazy(() => DocumentTypeInscriptionUpdateOneWithoutEnrollmentDraftFilesNestedInputSchema).optional(),
+  fichier: z.lazy(() => FichierUpdateOneWithoutEnrollmentDraftFilesNestedInputSchema).optional(),
+  uploadedBy: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftFilesUploadedNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  document_type_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  fichier_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileCreateManyInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateManyInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_id: z.string(),
+  document_type_id: z.string().optional().nullable(),
+  fichier_id: z.string().optional().nullable(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  uploaded_by_id: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftFileUpdateManyMutationInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateManyMutationInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateManyInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateManyInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  document_type_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  fichier_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
@@ -26643,6 +27584,7 @@ export const FichierCreateInputSchema: z.ZodType<Prisma.FichierCreateInput> = z.
   proprietaire: z.lazy(() => UtilisateurCreateNestedOneWithoutFichiersInputSchema).optional(),
   liens: z.lazy(() => LienFichierCreateNestedManyWithoutFichierInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutFichierInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutFichierInputSchema).optional(),
 });
 
 export const FichierUncheckedCreateInputSchema: z.ZodType<Prisma.FichierUncheckedCreateInput> = z.strictObject({
@@ -26659,6 +27601,7 @@ export const FichierUncheckedCreateInputSchema: z.ZodType<Prisma.FichierUnchecke
   updated_at: z.coerce.date().optional(),
   liens: z.lazy(() => LienFichierUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
 });
 
 export const FichierUpdateInputSchema: z.ZodType<Prisma.FichierUpdateInput> = z.strictObject({
@@ -26675,6 +27618,7 @@ export const FichierUpdateInputSchema: z.ZodType<Prisma.FichierUpdateInput> = z.
   proprietaire: z.lazy(() => UtilisateurUpdateOneWithoutFichiersNestedInputSchema).optional(),
   liens: z.lazy(() => LienFichierUpdateManyWithoutFichierNestedInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUpdateManyWithoutFichierNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutFichierNestedInputSchema).optional(),
 });
 
 export const FichierUncheckedUpdateInputSchema: z.ZodType<Prisma.FichierUncheckedUpdateInput> = z.strictObject({
@@ -26691,6 +27635,7 @@ export const FichierUncheckedUpdateInputSchema: z.ZodType<Prisma.FichierUnchecke
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   liens: z.lazy(() => LienFichierUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
 });
 
 export const FichierCreateManyInputSchema: z.ZodType<Prisma.FichierCreateManyInput> = z.strictObject({
@@ -26815,6 +27760,7 @@ export const DocumentTypeInscriptionCreateInputSchema: z.ZodType<Prisma.Document
   updated_at: z.coerce.date().optional(),
   etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutDocumentTypesInscriptionInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionUncheckedCreateInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUncheckedCreateInput> = z.strictObject({
@@ -26830,6 +27776,7 @@ export const DocumentTypeInscriptionUncheckedCreateInputSchema: z.ZodType<Prisma
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionUpdateInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUpdateInput> = z.strictObject({
@@ -26845,6 +27792,7 @@ export const DocumentTypeInscriptionUpdateInputSchema: z.ZodType<Prisma.Document
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   etablissement: z.lazy(() => EtablissementUpdateOneWithoutDocumentTypesInscriptionNestedInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionUncheckedUpdateInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUncheckedUpdateInput> = z.strictObject({
@@ -26860,6 +27808,7 @@ export const DocumentTypeInscriptionUncheckedUpdateInputSchema: z.ZodType<Prisma
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionCreateManyInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionCreateManyInput> = z.strictObject({
@@ -27544,6 +28493,12 @@ export const OperationFinanciereListRelationFilterSchema: z.ZodType<Prisma.Opera
   none: z.lazy(() => OperationFinanciereWhereInputSchema).optional(),
 });
 
+export const EnrollmentDraftListRelationFilterSchema: z.ZodType<Prisma.EnrollmentDraftListRelationFilter> = z.strictObject({
+  every: z.lazy(() => EnrollmentDraftWhereInputSchema).optional(),
+  some: z.lazy(() => EnrollmentDraftWhereInputSchema).optional(),
+  none: z.lazy(() => EnrollmentDraftWhereInputSchema).optional(),
+});
+
 export const SortOrderInputSchema: z.ZodType<Prisma.SortOrderInput> = z.strictObject({
   sort: z.lazy(() => SortOrderSchema),
   nulls: z.lazy(() => NullsOrderSchema).optional(),
@@ -27698,6 +28653,10 @@ export const FactureOrderByRelationAggregateInputSchema: z.ZodType<Prisma.Factur
 });
 
 export const OperationFinanciereOrderByRelationAggregateInputSchema: z.ZodType<Prisma.OperationFinanciereOrderByRelationAggregateInput> = z.strictObject({
+  _count: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnrollmentDraftOrderByRelationAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftOrderByRelationAggregateInput> = z.strictObject({
   _count: z.lazy(() => SortOrderSchema).optional(),
 });
 
@@ -28236,6 +29195,12 @@ export const ProgrammeChangeLogListRelationFilterSchema: z.ZodType<Prisma.Progra
   none: z.lazy(() => ProgrammeChangeLogWhereInputSchema).optional(),
 });
 
+export const EnrollmentDraftFileListRelationFilterSchema: z.ZodType<Prisma.EnrollmentDraftFileListRelationFilter> = z.strictObject({
+  every: z.lazy(() => EnrollmentDraftFileWhereInputSchema).optional(),
+  some: z.lazy(() => EnrollmentDraftFileWhereInputSchema).optional(),
+  none: z.lazy(() => EnrollmentDraftFileWhereInputSchema).optional(),
+});
+
 export const MessageDestinataireListRelationFilterSchema: z.ZodType<Prisma.MessageDestinataireListRelationFilter> = z.strictObject({
   every: z.lazy(() => MessageDestinataireWhereInputSchema).optional(),
   some: z.lazy(() => MessageDestinataireWhereInputSchema).optional(),
@@ -28255,6 +29220,10 @@ export const InscriptionDocumentOrderByRelationAggregateInputSchema: z.ZodType<P
 });
 
 export const ProgrammeChangeLogOrderByRelationAggregateInputSchema: z.ZodType<Prisma.ProgrammeChangeLogOrderByRelationAggregateInput> = z.strictObject({
+  _count: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnrollmentDraftFileOrderByRelationAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftFileOrderByRelationAggregateInput> = z.strictObject({
   _count: z.lazy(() => SortOrderSchema).optional(),
 });
 
@@ -29029,6 +29998,11 @@ export const InscriptionSchoolHistoryNullableScalarRelationFilterSchema: z.ZodTy
   isNot: z.lazy(() => InscriptionSchoolHistoryWhereInputSchema).optional().nullable(),
 });
 
+export const EnrollmentDraftNullableScalarRelationFilterSchema: z.ZodType<Prisma.EnrollmentDraftNullableScalarRelationFilter> = z.strictObject({
+  is: z.lazy(() => EnrollmentDraftWhereInputSchema).optional().nullable(),
+  isNot: z.lazy(() => EnrollmentDraftWhereInputSchema).optional().nullable(),
+});
+
 export const InscriptionOrderByRelevanceInputSchema: z.ZodType<Prisma.InscriptionOrderByRelevanceInput> = z.strictObject({
   fields: z.union([ z.lazy(() => InscriptionOrderByRelevanceFieldEnumSchema), z.lazy(() => InscriptionOrderByRelevanceFieldEnumSchema).array() ]),
   sort: z.lazy(() => SortOrderSchema),
@@ -29242,6 +30216,260 @@ export const InscriptionSchoolHistoryMinOrderByAggregateInputSchema: z.ZodType<P
 
 export const InscriptionSchoolHistorySumOrderByAggregateInputSchema: z.ZodType<Prisma.InscriptionSchoolHistorySumOrderByAggregateInput> = z.strictObject({
   derniere_moyenne: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnumEnrollmentDraftTypeFilterSchema: z.ZodType<Prisma.EnumEnrollmentDraftTypeFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftTypeSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftTypeSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftTypeSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => NestedEnumEnrollmentDraftTypeFilterSchema) ]).optional(),
+});
+
+export const EnumEnrollmentDraftStatusFilterSchema: z.ZodType<Prisma.EnumEnrollmentDraftStatusFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftStatusSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => NestedEnumEnrollmentDraftStatusFilterSchema) ]).optional(),
+});
+
+export const IntFilterSchema: z.ZodType<Prisma.IntFilter> = z.strictObject({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedIntFilterSchema) ]).optional(),
+});
+
+export const EleveNullableScalarRelationFilterSchema: z.ZodType<Prisma.EleveNullableScalarRelationFilter> = z.strictObject({
+  is: z.lazy(() => EleveWhereInputSchema).optional().nullable(),
+  isNot: z.lazy(() => EleveWhereInputSchema).optional().nullable(),
+});
+
+export const InscriptionNullableScalarRelationFilterSchema: z.ZodType<Prisma.InscriptionNullableScalarRelationFilter> = z.strictObject({
+  is: z.lazy(() => InscriptionWhereInputSchema).optional().nullable(),
+  isNot: z.lazy(() => InscriptionWhereInputSchema).optional().nullable(),
+});
+
+export const EnrollmentDraftOrderByRelevanceInputSchema: z.ZodType<Prisma.EnrollmentDraftOrderByRelevanceInput> = z.strictObject({
+  fields: z.union([ z.lazy(() => EnrollmentDraftOrderByRelevanceFieldEnumSchema), z.lazy(() => EnrollmentDraftOrderByRelevanceFieldEnumSchema).array() ]),
+  sort: z.lazy(() => SortOrderSchema),
+  search: z.string(),
+});
+
+export const EnrollmentDraftCountOrderByAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftCountOrderByAggregateInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  etablissement_id: z.lazy(() => SortOrderSchema).optional(),
+  annee_scolaire_id: z.lazy(() => SortOrderSchema).optional(),
+  eleve_id: z.lazy(() => SortOrderSchema).optional(),
+  draft_type: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  current_step: z.lazy(() => SortOrderSchema).optional(),
+  student_data: z.lazy(() => SortOrderSchema).optional(),
+  schooling_data: z.lazy(() => SortOrderSchema).optional(),
+  guardians_data: z.lazy(() => SortOrderSchema).optional(),
+  finance_data: z.lazy(() => SortOrderSchema).optional(),
+  documents_data: z.lazy(() => SortOrderSchema).optional(),
+  medical_data: z.lazy(() => SortOrderSchema).optional(),
+  previous_school_data: z.lazy(() => SortOrderSchema).optional(),
+  access_data: z.lazy(() => SortOrderSchema).optional(),
+  consents_data: z.lazy(() => SortOrderSchema).optional(),
+  observations_data: z.lazy(() => SortOrderSchema).optional(),
+  services_data: z.lazy(() => SortOrderSchema).optional(),
+  payment_schedule_data: z.lazy(() => SortOrderSchema).optional(),
+  completion_rate: z.lazy(() => SortOrderSchema).optional(),
+  missing_fields: z.lazy(() => SortOrderSchema).optional(),
+  created_by_utilisateur_id: z.lazy(() => SortOrderSchema).optional(),
+  updated_by_utilisateur_id: z.lazy(() => SortOrderSchema).optional(),
+  submitted_inscription_id: z.lazy(() => SortOrderSchema).optional(),
+  active_unique_key: z.lazy(() => SortOrderSchema).optional(),
+  expires_at: z.lazy(() => SortOrderSchema).optional(),
+  submitted_at: z.lazy(() => SortOrderSchema).optional(),
+  deleted_at: z.lazy(() => SortOrderSchema).optional(),
+  created_at: z.lazy(() => SortOrderSchema).optional(),
+  updated_at: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnrollmentDraftAvgOrderByAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftAvgOrderByAggregateInput> = z.strictObject({
+  current_step: z.lazy(() => SortOrderSchema).optional(),
+  completion_rate: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnrollmentDraftMaxOrderByAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftMaxOrderByAggregateInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  etablissement_id: z.lazy(() => SortOrderSchema).optional(),
+  annee_scolaire_id: z.lazy(() => SortOrderSchema).optional(),
+  eleve_id: z.lazy(() => SortOrderSchema).optional(),
+  draft_type: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  current_step: z.lazy(() => SortOrderSchema).optional(),
+  completion_rate: z.lazy(() => SortOrderSchema).optional(),
+  created_by_utilisateur_id: z.lazy(() => SortOrderSchema).optional(),
+  updated_by_utilisateur_id: z.lazy(() => SortOrderSchema).optional(),
+  submitted_inscription_id: z.lazy(() => SortOrderSchema).optional(),
+  active_unique_key: z.lazy(() => SortOrderSchema).optional(),
+  expires_at: z.lazy(() => SortOrderSchema).optional(),
+  submitted_at: z.lazy(() => SortOrderSchema).optional(),
+  deleted_at: z.lazy(() => SortOrderSchema).optional(),
+  created_at: z.lazy(() => SortOrderSchema).optional(),
+  updated_at: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnrollmentDraftMinOrderByAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftMinOrderByAggregateInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  etablissement_id: z.lazy(() => SortOrderSchema).optional(),
+  annee_scolaire_id: z.lazy(() => SortOrderSchema).optional(),
+  eleve_id: z.lazy(() => SortOrderSchema).optional(),
+  draft_type: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  current_step: z.lazy(() => SortOrderSchema).optional(),
+  completion_rate: z.lazy(() => SortOrderSchema).optional(),
+  created_by_utilisateur_id: z.lazy(() => SortOrderSchema).optional(),
+  updated_by_utilisateur_id: z.lazy(() => SortOrderSchema).optional(),
+  submitted_inscription_id: z.lazy(() => SortOrderSchema).optional(),
+  active_unique_key: z.lazy(() => SortOrderSchema).optional(),
+  expires_at: z.lazy(() => SortOrderSchema).optional(),
+  submitted_at: z.lazy(() => SortOrderSchema).optional(),
+  deleted_at: z.lazy(() => SortOrderSchema).optional(),
+  created_at: z.lazy(() => SortOrderSchema).optional(),
+  updated_at: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnrollmentDraftSumOrderByAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftSumOrderByAggregateInput> = z.strictObject({
+  current_step: z.lazy(() => SortOrderSchema).optional(),
+  completion_rate: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnumEnrollmentDraftTypeWithAggregatesFilterSchema: z.ZodType<Prisma.EnumEnrollmentDraftTypeWithAggregatesFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftTypeSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftTypeSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftTypeSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => NestedEnumEnrollmentDraftTypeWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedEnumEnrollmentDraftTypeFilterSchema).optional(),
+  _max: z.lazy(() => NestedEnumEnrollmentDraftTypeFilterSchema).optional(),
+});
+
+export const EnumEnrollmentDraftStatusWithAggregatesFilterSchema: z.ZodType<Prisma.EnumEnrollmentDraftStatusWithAggregatesFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftStatusSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => NestedEnumEnrollmentDraftStatusWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedEnumEnrollmentDraftStatusFilterSchema).optional(),
+  _max: z.lazy(() => NestedEnumEnrollmentDraftStatusFilterSchema).optional(),
+});
+
+export const IntWithAggregatesFilterSchema: z.ZodType<Prisma.IntWithAggregatesFilter> = z.strictObject({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedIntWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _avg: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _sum: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedIntFilterSchema).optional(),
+  _max: z.lazy(() => NestedIntFilterSchema).optional(),
+});
+
+export const EnumEnrollmentDraftFileStatusFilterSchema: z.ZodType<Prisma.EnumEnrollmentDraftFileStatusFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftFileStatusSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftFileStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => NestedEnumEnrollmentDraftFileStatusFilterSchema) ]).optional(),
+});
+
+export const EnrollmentDraftScalarRelationFilterSchema: z.ZodType<Prisma.EnrollmentDraftScalarRelationFilter> = z.strictObject({
+  is: z.lazy(() => EnrollmentDraftWhereInputSchema).optional(),
+  isNot: z.lazy(() => EnrollmentDraftWhereInputSchema).optional(),
+});
+
+export const DocumentTypeInscriptionNullableScalarRelationFilterSchema: z.ZodType<Prisma.DocumentTypeInscriptionNullableScalarRelationFilter> = z.strictObject({
+  is: z.lazy(() => DocumentTypeInscriptionWhereInputSchema).optional().nullable(),
+  isNot: z.lazy(() => DocumentTypeInscriptionWhereInputSchema).optional().nullable(),
+});
+
+export const FichierNullableScalarRelationFilterSchema: z.ZodType<Prisma.FichierNullableScalarRelationFilter> = z.strictObject({
+  is: z.lazy(() => FichierWhereInputSchema).optional().nullable(),
+  isNot: z.lazy(() => FichierWhereInputSchema).optional().nullable(),
+});
+
+export const EnrollmentDraftFileOrderByRelevanceInputSchema: z.ZodType<Prisma.EnrollmentDraftFileOrderByRelevanceInput> = z.strictObject({
+  fields: z.union([ z.lazy(() => EnrollmentDraftFileOrderByRelevanceFieldEnumSchema), z.lazy(() => EnrollmentDraftFileOrderByRelevanceFieldEnumSchema).array() ]),
+  sort: z.lazy(() => SortOrderSchema),
+  search: z.string(),
+});
+
+export const EnrollmentDraftFileCountOrderByAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCountOrderByAggregateInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  draft_id: z.lazy(() => SortOrderSchema).optional(),
+  document_type_id: z.lazy(() => SortOrderSchema).optional(),
+  fichier_id: z.lazy(() => SortOrderSchema).optional(),
+  filename: z.lazy(() => SortOrderSchema).optional(),
+  original_name: z.lazy(() => SortOrderSchema).optional(),
+  mime_type: z.lazy(() => SortOrderSchema).optional(),
+  size: z.lazy(() => SortOrderSchema).optional(),
+  path: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  uploaded_by_id: z.lazy(() => SortOrderSchema).optional(),
+  created_at: z.lazy(() => SortOrderSchema).optional(),
+  updated_at: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnrollmentDraftFileAvgOrderByAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftFileAvgOrderByAggregateInput> = z.strictObject({
+  size: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnrollmentDraftFileMaxOrderByAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftFileMaxOrderByAggregateInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  draft_id: z.lazy(() => SortOrderSchema).optional(),
+  document_type_id: z.lazy(() => SortOrderSchema).optional(),
+  fichier_id: z.lazy(() => SortOrderSchema).optional(),
+  filename: z.lazy(() => SortOrderSchema).optional(),
+  original_name: z.lazy(() => SortOrderSchema).optional(),
+  mime_type: z.lazy(() => SortOrderSchema).optional(),
+  size: z.lazy(() => SortOrderSchema).optional(),
+  path: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  uploaded_by_id: z.lazy(() => SortOrderSchema).optional(),
+  created_at: z.lazy(() => SortOrderSchema).optional(),
+  updated_at: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnrollmentDraftFileMinOrderByAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftFileMinOrderByAggregateInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  draft_id: z.lazy(() => SortOrderSchema).optional(),
+  document_type_id: z.lazy(() => SortOrderSchema).optional(),
+  fichier_id: z.lazy(() => SortOrderSchema).optional(),
+  filename: z.lazy(() => SortOrderSchema).optional(),
+  original_name: z.lazy(() => SortOrderSchema).optional(),
+  mime_type: z.lazy(() => SortOrderSchema).optional(),
+  size: z.lazy(() => SortOrderSchema).optional(),
+  path: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  uploaded_by_id: z.lazy(() => SortOrderSchema).optional(),
+  created_at: z.lazy(() => SortOrderSchema).optional(),
+  updated_at: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnrollmentDraftFileSumOrderByAggregateInputSchema: z.ZodType<Prisma.EnrollmentDraftFileSumOrderByAggregateInput> = z.strictObject({
+  size: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const EnumEnrollmentDraftFileStatusWithAggregatesFilterSchema: z.ZodType<Prisma.EnumEnrollmentDraftFileStatusWithAggregatesFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftFileStatusSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftFileStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => NestedEnumEnrollmentDraftFileStatusWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedEnumEnrollmentDraftFileStatusFilterSchema).optional(),
+  _max: z.lazy(() => NestedEnumEnrollmentDraftFileStatusFilterSchema).optional(),
 });
 
 export const IdentifiantEleveOrderByRelevanceInputSchema: z.ZodType<Prisma.IdentifiantEleveOrderByRelevanceInput> = z.strictObject({
@@ -29478,17 +30706,6 @@ export const EnumPedagogicalItemTypeFilterSchema: z.ZodType<Prisma.EnumPedagogic
   not: z.union([ z.lazy(() => PedagogicalItemTypeSchema), z.lazy(() => NestedEnumPedagogicalItemTypeFilterSchema) ]).optional(),
 });
 
-export const IntFilterSchema: z.ZodType<Prisma.IntFilter> = z.strictObject({
-  equals: z.number().optional(),
-  in: z.number().array().optional(),
-  notIn: z.number().array().optional(),
-  lt: z.number().optional(),
-  lte: z.number().optional(),
-  gt: z.number().optional(),
-  gte: z.number().optional(),
-  not: z.union([ z.number(),z.lazy(() => NestedIntFilterSchema) ]).optional(),
-});
-
 export const FloatNullableFilterSchema: z.ZodType<Prisma.FloatNullableFilter> = z.strictObject({
   equals: z.number().optional().nullable(),
   in: z.number().array().optional().nullable(),
@@ -29650,22 +30867,6 @@ export const EnumPedagogicalItemTypeWithAggregatesFilterSchema: z.ZodType<Prisma
   _count: z.lazy(() => NestedIntFilterSchema).optional(),
   _min: z.lazy(() => NestedEnumPedagogicalItemTypeFilterSchema).optional(),
   _max: z.lazy(() => NestedEnumPedagogicalItemTypeFilterSchema).optional(),
-});
-
-export const IntWithAggregatesFilterSchema: z.ZodType<Prisma.IntWithAggregatesFilter> = z.strictObject({
-  equals: z.number().optional(),
-  in: z.number().array().optional(),
-  notIn: z.number().array().optional(),
-  lt: z.number().optional(),
-  lte: z.number().optional(),
-  gt: z.number().optional(),
-  gte: z.number().optional(),
-  not: z.union([ z.number(),z.lazy(() => NestedIntWithAggregatesFilterSchema) ]).optional(),
-  _count: z.lazy(() => NestedIntFilterSchema).optional(),
-  _avg: z.lazy(() => NestedFloatFilterSchema).optional(),
-  _sum: z.lazy(() => NestedIntFilterSchema).optional(),
-  _min: z.lazy(() => NestedIntFilterSchema).optional(),
-  _max: z.lazy(() => NestedIntFilterSchema).optional(),
 });
 
 export const FloatNullableWithAggregatesFilterSchema: z.ZodType<Prisma.FloatNullableWithAggregatesFilter> = z.strictObject({
@@ -33767,11 +34968,6 @@ export const RessourceBibliothequeScalarRelationFilterSchema: z.ZodType<Prisma.R
   isNot: z.lazy(() => RessourceBibliothequeWhereInputSchema).optional(),
 });
 
-export const EleveNullableScalarRelationFilterSchema: z.ZodType<Prisma.EleveNullableScalarRelationFilter> = z.strictObject({
-  is: z.lazy(() => EleveWhereInputSchema).optional().nullable(),
-  isNot: z.lazy(() => EleveWhereInputSchema).optional().nullable(),
-});
-
 export const PersonnelNullableScalarRelationFilterSchema: z.ZodType<Prisma.PersonnelNullableScalarRelationFilter> = z.strictObject({
   is: z.lazy(() => PersonnelWhereInputSchema).optional().nullable(),
   isNot: z.lazy(() => PersonnelWhereInputSchema).optional().nullable(),
@@ -34550,11 +35746,6 @@ export const DocumentTypeInscriptionScalarRelationFilterSchema: z.ZodType<Prisma
   isNot: z.lazy(() => DocumentTypeInscriptionWhereInputSchema).optional(),
 });
 
-export const FichierNullableScalarRelationFilterSchema: z.ZodType<Prisma.FichierNullableScalarRelationFilter> = z.strictObject({
-  is: z.lazy(() => FichierWhereInputSchema).optional().nullable(),
-  isNot: z.lazy(() => FichierWhereInputSchema).optional().nullable(),
-});
-
 export const InscriptionDocumentOrderByRelevanceInputSchema: z.ZodType<Prisma.InscriptionDocumentOrderByRelevanceInput> = z.strictObject({
   fields: z.union([ z.lazy(() => InscriptionDocumentOrderByRelevanceFieldEnumSchema), z.lazy(() => InscriptionDocumentOrderByRelevanceFieldEnumSchema).array() ]),
   sort: z.lazy(() => SortOrderSchema),
@@ -35008,6 +36199,13 @@ export const OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema:
   connect: z.union([ z.lazy(() => OperationFinanciereWhereUniqueInputSchema), z.lazy(() => OperationFinanciereWhereUniqueInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateNestedManyWithoutEtablissementInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutEtablissementInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEtablissementInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyEtablissementInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+});
+
 export const SiteUncheckedCreateNestedManyWithoutEtablissementInputSchema: z.ZodType<Prisma.SiteUncheckedCreateNestedManyWithoutEtablissementInput> = z.strictObject({
   create: z.union([ z.lazy(() => SiteCreateWithoutEtablissementInputSchema), z.lazy(() => SiteCreateWithoutEtablissementInputSchema).array(), z.lazy(() => SiteUncheckedCreateWithoutEtablissementInputSchema), z.lazy(() => SiteUncheckedCreateWithoutEtablissementInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => SiteCreateOrConnectWithoutEtablissementInputSchema), z.lazy(() => SiteCreateOrConnectWithoutEtablissementInputSchema).array() ]).optional(),
@@ -35272,6 +36470,13 @@ export const OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInp
   connectOrCreate: z.union([ z.lazy(() => OperationFinanciereCreateOrConnectWithoutEtablissementInputSchema), z.lazy(() => OperationFinanciereCreateOrConnectWithoutEtablissementInputSchema).array() ]).optional(),
   createMany: z.lazy(() => OperationFinanciereCreateManyEtablissementInputEnvelopeSchema).optional(),
   connect: z.union([ z.lazy(() => OperationFinanciereWhereUniqueInputSchema), z.lazy(() => OperationFinanciereWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutEtablissementInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEtablissementInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyEtablissementInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
 });
 
 export const StringFieldUpdateOperationsInputSchema: z.ZodType<Prisma.StringFieldUpdateOperationsInput> = z.strictObject({
@@ -35818,6 +37023,20 @@ export const OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema:
   deleteMany: z.union([ z.lazy(() => OperationFinanciereScalarWhereInputSchema), z.lazy(() => OperationFinanciereScalarWhereInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyWithoutEtablissementNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutEtablissementInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEtablissementInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutEtablissementInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyEtablissementInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutEtablissementInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutEtablissementInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
+});
+
 export const SiteUncheckedUpdateManyWithoutEtablissementNestedInputSchema: z.ZodType<Prisma.SiteUncheckedUpdateManyWithoutEtablissementNestedInput> = z.strictObject({
   create: z.union([ z.lazy(() => SiteCreateWithoutEtablissementInputSchema), z.lazy(() => SiteCreateWithoutEtablissementInputSchema).array(), z.lazy(() => SiteUncheckedCreateWithoutEtablissementInputSchema), z.lazy(() => SiteUncheckedCreateWithoutEtablissementInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => SiteCreateOrConnectWithoutEtablissementInputSchema), z.lazy(() => SiteCreateOrConnectWithoutEtablissementInputSchema).array() ]).optional(),
@@ -36350,6 +37569,20 @@ export const OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInp
   deleteMany: z.union([ z.lazy(() => OperationFinanciereScalarWhereInputSchema), z.lazy(() => OperationFinanciereScalarWhereInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutEtablissementInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEtablissementInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutEtablissementInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyEtablissementInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutEtablissementInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutEtablissementInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
+});
+
 export const EtablissementCreateNestedOneWithoutSitesInputSchema: z.ZodType<Prisma.EtablissementCreateNestedOneWithoutSitesInput> = z.strictObject({
   create: z.union([ z.lazy(() => EtablissementCreateWithoutSitesInputSchema), z.lazy(() => EtablissementUncheckedCreateWithoutSitesInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => EtablissementCreateOrConnectWithoutSitesInputSchema).optional(),
@@ -36622,6 +37855,13 @@ export const PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema: z.Zo
   connect: z.union([ z.lazy(() => PedagogicalItemAverageWhereUniqueInputSchema), z.lazy(() => PedagogicalItemAverageWhereUniqueInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateNestedManyWithoutAnneeInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutAnneeInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutAnneeInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyAnneeInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+});
+
 export const PeriodeUncheckedCreateNestedManyWithoutAnneeInputSchema: z.ZodType<Prisma.PeriodeUncheckedCreateNestedManyWithoutAnneeInput> = z.strictObject({
   create: z.union([ z.lazy(() => PeriodeCreateWithoutAnneeInputSchema), z.lazy(() => PeriodeCreateWithoutAnneeInputSchema).array(), z.lazy(() => PeriodeUncheckedCreateWithoutAnneeInputSchema), z.lazy(() => PeriodeUncheckedCreateWithoutAnneeInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => PeriodeCreateOrConnectWithoutAnneeInputSchema), z.lazy(() => PeriodeCreateOrConnectWithoutAnneeInputSchema).array() ]).optional(),
@@ -36746,6 +37986,13 @@ export const PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSch
   connectOrCreate: z.union([ z.lazy(() => PedagogicalItemAverageCreateOrConnectWithoutAnneeInputSchema), z.lazy(() => PedagogicalItemAverageCreateOrConnectWithoutAnneeInputSchema).array() ]).optional(),
   createMany: z.lazy(() => PedagogicalItemAverageCreateManyAnneeInputEnvelopeSchema).optional(),
   connect: z.union([ z.lazy(() => PedagogicalItemAverageWhereUniqueInputSchema), z.lazy(() => PedagogicalItemAverageWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutAnneeInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutAnneeInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyAnneeInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
 });
 
 export const BoolFieldUpdateOperationsInputSchema: z.ZodType<Prisma.BoolFieldUpdateOperationsInput> = z.strictObject({
@@ -37012,6 +38259,20 @@ export const PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema: z.Zo
   deleteMany: z.union([ z.lazy(() => PedagogicalItemAverageScalarWhereInputSchema), z.lazy(() => PedagogicalItemAverageScalarWhereInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyWithoutAnneeNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutAnneeInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutAnneeInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutAnneeInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyAnneeInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutAnneeInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutAnneeInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
+});
+
 export const PeriodeUncheckedUpdateManyWithoutAnneeNestedInputSchema: z.ZodType<Prisma.PeriodeUncheckedUpdateManyWithoutAnneeNestedInput> = z.strictObject({
   create: z.union([ z.lazy(() => PeriodeCreateWithoutAnneeInputSchema), z.lazy(() => PeriodeCreateWithoutAnneeInputSchema).array(), z.lazy(() => PeriodeUncheckedCreateWithoutAnneeInputSchema), z.lazy(() => PeriodeUncheckedCreateWithoutAnneeInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => PeriodeCreateOrConnectWithoutAnneeInputSchema), z.lazy(() => PeriodeCreateOrConnectWithoutAnneeInputSchema).array() ]).optional(),
@@ -37262,6 +38523,20 @@ export const PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSch
   update: z.union([ z.lazy(() => PedagogicalItemAverageUpdateWithWhereUniqueWithoutAnneeInputSchema), z.lazy(() => PedagogicalItemAverageUpdateWithWhereUniqueWithoutAnneeInputSchema).array() ]).optional(),
   updateMany: z.union([ z.lazy(() => PedagogicalItemAverageUpdateManyWithWhereWithoutAnneeInputSchema), z.lazy(() => PedagogicalItemAverageUpdateManyWithWhereWithoutAnneeInputSchema).array() ]).optional(),
   deleteMany: z.union([ z.lazy(() => PedagogicalItemAverageScalarWhereInputSchema), z.lazy(() => PedagogicalItemAverageScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutAnneeInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutAnneeInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutAnneeInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyAnneeInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutAnneeInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutAnneeInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const AnneeScolaireCreateNestedOneWithoutPeriodesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateNestedOneWithoutPeriodesInput> = z.strictObject({
@@ -37685,6 +38960,27 @@ export const ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema: z.Zo
   connect: z.union([ z.lazy(() => ProgrammeChangeLogWhereUniqueInputSchema), z.lazy(() => ProgrammeChangeLogWhereUniqueInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateNestedManyWithoutCreateurInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutCreateurInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutCreateurInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyCreateurInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateNestedManyWithoutModificateurInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutModificateurInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutModificateurInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyModificateurInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateNestedManyWithoutUploadedByInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutUploadedByInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutUploadedByInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyUploadedByInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+});
+
 export const EleveCreateNestedManyWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveCreateNestedManyWithoutUtilisateurInput> = z.strictObject({
   create: z.union([ z.lazy(() => EleveCreateWithoutUtilisateurInputSchema), z.lazy(() => EleveCreateWithoutUtilisateurInputSchema).array(), z.lazy(() => EleveUncheckedCreateWithoutUtilisateurInputSchema), z.lazy(() => EleveUncheckedCreateWithoutUtilisateurInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => EleveCreateOrConnectWithoutUtilisateurInputSchema), z.lazy(() => EleveCreateOrConnectWithoutUtilisateurInputSchema).array() ]).optional(),
@@ -37850,6 +39146,27 @@ export const ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSch
   connectOrCreate: z.union([ z.lazy(() => ProgrammeChangeLogCreateOrConnectWithoutChangedByInputSchema), z.lazy(() => ProgrammeChangeLogCreateOrConnectWithoutChangedByInputSchema).array() ]).optional(),
   createMany: z.lazy(() => ProgrammeChangeLogCreateManyChangedByInputEnvelopeSchema).optional(),
   connect: z.union([ z.lazy(() => ProgrammeChangeLogWhereUniqueInputSchema), z.lazy(() => ProgrammeChangeLogWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutCreateurInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutCreateurInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyCreateurInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutModificateurInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutModificateurInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyModificateurInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutUploadedByInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutUploadedByInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyUploadedByInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
 });
 
 export const EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveUncheckedCreateNestedManyWithoutUtilisateurInput> = z.strictObject({
@@ -38172,6 +39489,48 @@ export const ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema: z.Zo
   update: z.union([ z.lazy(() => ProgrammeChangeLogUpdateWithWhereUniqueWithoutChangedByInputSchema), z.lazy(() => ProgrammeChangeLogUpdateWithWhereUniqueWithoutChangedByInputSchema).array() ]).optional(),
   updateMany: z.union([ z.lazy(() => ProgrammeChangeLogUpdateManyWithWhereWithoutChangedByInputSchema), z.lazy(() => ProgrammeChangeLogUpdateManyWithWhereWithoutChangedByInputSchema).array() ]).optional(),
   deleteMany: z.union([ z.lazy(() => ProgrammeChangeLogScalarWhereInputSchema), z.lazy(() => ProgrammeChangeLogScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyWithoutCreateurNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutCreateurInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutCreateurInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutCreateurInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyCreateurInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutCreateurInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutCreateurInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyWithoutModificateurNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutModificateurInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutModificateurInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutModificateurInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyModificateurInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutModificateurInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutModificateurInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutUploadedByInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutUploadedByInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutUploadedByInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyUploadedByInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutUploadedByInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutUploadedByInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const EleveUpdateManyWithoutUtilisateurNestedInputSchema: z.ZodType<Prisma.EleveUpdateManyWithoutUtilisateurNestedInput> = z.strictObject({
@@ -38504,6 +39863,48 @@ export const ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSch
   update: z.union([ z.lazy(() => ProgrammeChangeLogUpdateWithWhereUniqueWithoutChangedByInputSchema), z.lazy(() => ProgrammeChangeLogUpdateWithWhereUniqueWithoutChangedByInputSchema).array() ]).optional(),
   updateMany: z.union([ z.lazy(() => ProgrammeChangeLogUpdateManyWithWhereWithoutChangedByInputSchema), z.lazy(() => ProgrammeChangeLogUpdateManyWithWhereWithoutChangedByInputSchema).array() ]).optional(),
   deleteMany: z.union([ z.lazy(() => ProgrammeChangeLogScalarWhereInputSchema), z.lazy(() => ProgrammeChangeLogScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutCreateurInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutCreateurInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutCreateurInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyCreateurInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutCreateurInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutCreateurInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutModificateurInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutModificateurInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutModificateurInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyModificateurInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutModificateurInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutModificateurInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutUploadedByInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutUploadedByInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutUploadedByInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyUploadedByInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutUploadedByInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutUploadedByInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateManyWithoutUtilisateurNestedInput> = z.strictObject({
@@ -38955,6 +40356,13 @@ export const PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema: z.Zo
   connect: z.union([ z.lazy(() => PedagogicalItemAverageWhereUniqueInputSchema), z.lazy(() => PedagogicalItemAverageWhereUniqueInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftCreateNestedManyWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateNestedManyWithoutEleveInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutEleveInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEleveInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEleveInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyEleveInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+});
+
 export const EleveParentTuteurUncheckedCreateNestedManyWithoutEleveInputSchema: z.ZodType<Prisma.EleveParentTuteurUncheckedCreateNestedManyWithoutEleveInput> = z.strictObject({
   create: z.union([ z.lazy(() => EleveParentTuteurCreateWithoutEleveInputSchema), z.lazy(() => EleveParentTuteurCreateWithoutEleveInputSchema).array(), z.lazy(() => EleveParentTuteurUncheckedCreateWithoutEleveInputSchema), z.lazy(() => EleveParentTuteurUncheckedCreateWithoutEleveInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => EleveParentTuteurCreateOrConnectWithoutEleveInputSchema), z.lazy(() => EleveParentTuteurCreateOrConnectWithoutEleveInputSchema).array() ]).optional(),
@@ -39106,6 +40514,13 @@ export const PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSch
   connectOrCreate: z.union([ z.lazy(() => PedagogicalItemAverageCreateOrConnectWithoutEleveInputSchema), z.lazy(() => PedagogicalItemAverageCreateOrConnectWithoutEleveInputSchema).array() ]).optional(),
   createMany: z.lazy(() => PedagogicalItemAverageCreateManyEleveInputEnvelopeSchema).optional(),
   connect: z.union([ z.lazy(() => PedagogicalItemAverageWhereUniqueInputSchema), z.lazy(() => PedagogicalItemAverageWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutEleveInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEleveInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEleveInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyEleveInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
 });
 
 export const EtablissementUpdateOneRequiredWithoutElevesNestedInputSchema: z.ZodType<Prisma.EtablissementUpdateOneRequiredWithoutElevesNestedInput> = z.strictObject({
@@ -39430,6 +40845,20 @@ export const PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema: z.Zo
   deleteMany: z.union([ z.lazy(() => PedagogicalItemAverageScalarWhereInputSchema), z.lazy(() => PedagogicalItemAverageScalarWhereInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyWithoutEleveNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutEleveInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEleveInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEleveInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutEleveInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyEleveInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutEleveInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutEleveInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
+});
+
 export const EleveParentTuteurUncheckedUpdateManyWithoutEleveNestedInputSchema: z.ZodType<Prisma.EleveParentTuteurUncheckedUpdateManyWithoutEleveNestedInput> = z.strictObject({
   create: z.union([ z.lazy(() => EleveParentTuteurCreateWithoutEleveInputSchema), z.lazy(() => EleveParentTuteurCreateWithoutEleveInputSchema).array(), z.lazy(() => EleveParentTuteurUncheckedCreateWithoutEleveInputSchema), z.lazy(() => EleveParentTuteurUncheckedCreateWithoutEleveInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => EleveParentTuteurCreateOrConnectWithoutEleveInputSchema), z.lazy(() => EleveParentTuteurCreateOrConnectWithoutEleveInputSchema).array() ]).optional(),
@@ -39732,6 +41161,20 @@ export const PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSch
   update: z.union([ z.lazy(() => PedagogicalItemAverageUpdateWithWhereUniqueWithoutEleveInputSchema), z.lazy(() => PedagogicalItemAverageUpdateWithWhereUniqueWithoutEleveInputSchema).array() ]).optional(),
   updateMany: z.union([ z.lazy(() => PedagogicalItemAverageUpdateManyWithWhereWithoutEleveInputSchema), z.lazy(() => PedagogicalItemAverageUpdateManyWithWhereWithoutEleveInputSchema).array() ]).optional(),
   deleteMany: z.union([ z.lazy(() => PedagogicalItemAverageScalarWhereInputSchema), z.lazy(() => PedagogicalItemAverageScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftCreateWithoutEleveInputSchema).array(), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEleveInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftCreateOrConnectWithoutEleveInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUpsertWithWhereUniqueWithoutEleveInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftCreateManyEleveInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUpdateWithWhereUniqueWithoutEleveInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUpdateManyWithWhereWithoutEleveInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const EleveCreateNestedOneWithoutProfilMedicalInputSchema: z.ZodType<Prisma.EleveCreateNestedOneWithoutProfilMedicalInput> = z.strictObject({
@@ -40477,6 +41920,12 @@ export const InscriptionSchoolHistoryCreateNestedOneWithoutInscriptionInputSchem
   connect: z.lazy(() => InscriptionSchoolHistoryWhereUniqueInputSchema).optional(),
 });
 
+export const EnrollmentDraftCreateNestedOneWithoutSubmittedInscriptionInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateNestedOneWithoutSubmittedInscriptionInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutSubmittedInscriptionInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => EnrollmentDraftCreateOrConnectWithoutSubmittedInscriptionInputSchema).optional(),
+  connect: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).optional(),
+});
+
 export const InscriptionDocumentUncheckedCreateNestedManyWithoutInscriptionInputSchema: z.ZodType<Prisma.InscriptionDocumentUncheckedCreateNestedManyWithoutInscriptionInput> = z.strictObject({
   create: z.union([ z.lazy(() => InscriptionDocumentCreateWithoutInscriptionInputSchema), z.lazy(() => InscriptionDocumentCreateWithoutInscriptionInputSchema).array(), z.lazy(() => InscriptionDocumentUncheckedCreateWithoutInscriptionInputSchema), z.lazy(() => InscriptionDocumentUncheckedCreateWithoutInscriptionInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => InscriptionDocumentCreateOrConnectWithoutInscriptionInputSchema), z.lazy(() => InscriptionDocumentCreateOrConnectWithoutInscriptionInputSchema).array() ]).optional(),
@@ -40488,6 +41937,12 @@ export const InscriptionSchoolHistoryUncheckedCreateNestedOneWithoutInscriptionI
   create: z.union([ z.lazy(() => InscriptionSchoolHistoryCreateWithoutInscriptionInputSchema), z.lazy(() => InscriptionSchoolHistoryUncheckedCreateWithoutInscriptionInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => InscriptionSchoolHistoryCreateOrConnectWithoutInscriptionInputSchema).optional(),
   connect: z.lazy(() => InscriptionSchoolHistoryWhereUniqueInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateNestedOneWithoutSubmittedInscriptionInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateNestedOneWithoutSubmittedInscriptionInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutSubmittedInscriptionInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => EnrollmentDraftCreateOrConnectWithoutSubmittedInscriptionInputSchema).optional(),
+  connect: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).optional(),
 });
 
 export const EnumTypeInscriptionFieldUpdateOperationsInputSchema: z.ZodType<Prisma.EnumTypeInscriptionFieldUpdateOperationsInput> = z.strictObject({
@@ -40578,6 +42033,16 @@ export const InscriptionSchoolHistoryUpdateOneWithoutInscriptionNestedInputSchem
   update: z.union([ z.lazy(() => InscriptionSchoolHistoryUpdateToOneWithWhereWithoutInscriptionInputSchema), z.lazy(() => InscriptionSchoolHistoryUpdateWithoutInscriptionInputSchema), z.lazy(() => InscriptionSchoolHistoryUncheckedUpdateWithoutInscriptionInputSchema) ]).optional(),
 });
 
+export const EnrollmentDraftUpdateOneWithoutSubmittedInscriptionNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateOneWithoutSubmittedInscriptionNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutSubmittedInscriptionInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => EnrollmentDraftCreateOrConnectWithoutSubmittedInscriptionInputSchema).optional(),
+  upsert: z.lazy(() => EnrollmentDraftUpsertWithoutSubmittedInscriptionInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => EnrollmentDraftWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => EnrollmentDraftWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateToOneWithWhereWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUpdateWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutSubmittedInscriptionInputSchema) ]).optional(),
+});
+
 export const InscriptionDocumentUncheckedUpdateManyWithoutInscriptionNestedInputSchema: z.ZodType<Prisma.InscriptionDocumentUncheckedUpdateManyWithoutInscriptionNestedInput> = z.strictObject({
   create: z.union([ z.lazy(() => InscriptionDocumentCreateWithoutInscriptionInputSchema), z.lazy(() => InscriptionDocumentCreateWithoutInscriptionInputSchema).array(), z.lazy(() => InscriptionDocumentUncheckedCreateWithoutInscriptionInputSchema), z.lazy(() => InscriptionDocumentUncheckedCreateWithoutInscriptionInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => InscriptionDocumentCreateOrConnectWithoutInscriptionInputSchema), z.lazy(() => InscriptionDocumentCreateOrConnectWithoutInscriptionInputSchema).array() ]).optional(),
@@ -40602,6 +42067,16 @@ export const InscriptionSchoolHistoryUncheckedUpdateOneWithoutInscriptionNestedI
   update: z.union([ z.lazy(() => InscriptionSchoolHistoryUpdateToOneWithWhereWithoutInscriptionInputSchema), z.lazy(() => InscriptionSchoolHistoryUpdateWithoutInscriptionInputSchema), z.lazy(() => InscriptionSchoolHistoryUncheckedUpdateWithoutInscriptionInputSchema) ]).optional(),
 });
 
+export const EnrollmentDraftUncheckedUpdateOneWithoutSubmittedInscriptionNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateOneWithoutSubmittedInscriptionNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutSubmittedInscriptionInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => EnrollmentDraftCreateOrConnectWithoutSubmittedInscriptionInputSchema).optional(),
+  upsert: z.lazy(() => EnrollmentDraftUpsertWithoutSubmittedInscriptionInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => EnrollmentDraftWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => EnrollmentDraftWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateToOneWithWhereWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUpdateWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutSubmittedInscriptionInputSchema) ]).optional(),
+});
+
 export const InscriptionCreateNestedOneWithoutHistoriqueScolaireInputSchema: z.ZodType<Prisma.InscriptionCreateNestedOneWithoutHistoriqueScolaireInput> = z.strictObject({
   create: z.union([ z.lazy(() => InscriptionCreateWithoutHistoriqueScolaireInputSchema), z.lazy(() => InscriptionUncheckedCreateWithoutHistoriqueScolaireInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => InscriptionCreateOrConnectWithoutHistoriqueScolaireInputSchema).optional(),
@@ -40614,6 +42089,222 @@ export const InscriptionUpdateOneRequiredWithoutHistoriqueScolaireNestedInputSch
   upsert: z.lazy(() => InscriptionUpsertWithoutHistoriqueScolaireInputSchema).optional(),
   connect: z.lazy(() => InscriptionWhereUniqueInputSchema).optional(),
   update: z.union([ z.lazy(() => InscriptionUpdateToOneWithWhereWithoutHistoriqueScolaireInputSchema), z.lazy(() => InscriptionUpdateWithoutHistoriqueScolaireInputSchema), z.lazy(() => InscriptionUncheckedUpdateWithoutHistoriqueScolaireInputSchema) ]).optional(),
+});
+
+export const EtablissementCreateNestedOneWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EtablissementCreateNestedOneWithoutEnrollmentDraftsInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EtablissementCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EtablissementUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => EtablissementCreateOrConnectWithoutEnrollmentDraftsInputSchema).optional(),
+  connect: z.lazy(() => EtablissementWhereUniqueInputSchema).optional(),
+});
+
+export const AnneeScolaireCreateNestedOneWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.AnneeScolaireCreateNestedOneWithoutEnrollmentDraftsInput> = z.strictObject({
+  create: z.union([ z.lazy(() => AnneeScolaireCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => AnneeScolaireUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => AnneeScolaireCreateOrConnectWithoutEnrollmentDraftsInputSchema).optional(),
+  connect: z.lazy(() => AnneeScolaireWhereUniqueInputSchema).optional(),
+});
+
+export const EleveCreateNestedOneWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EleveCreateNestedOneWithoutEnrollmentDraftsInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EleveCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EleveUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => EleveCreateOrConnectWithoutEnrollmentDraftsInputSchema).optional(),
+  connect: z.lazy(() => EleveWhereUniqueInputSchema).optional(),
+});
+
+export const UtilisateurCreateNestedOneWithoutEnrollmentDraftsCreatedInputSchema: z.ZodType<Prisma.UtilisateurCreateNestedOneWithoutEnrollmentDraftsCreatedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftsCreatedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftsCreatedInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => UtilisateurCreateOrConnectWithoutEnrollmentDraftsCreatedInputSchema).optional(),
+  connect: z.lazy(() => UtilisateurWhereUniqueInputSchema).optional(),
+});
+
+export const UtilisateurCreateNestedOneWithoutEnrollmentDraftsUpdatedInputSchema: z.ZodType<Prisma.UtilisateurCreateNestedOneWithoutEnrollmentDraftsUpdatedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftsUpdatedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftsUpdatedInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => UtilisateurCreateOrConnectWithoutEnrollmentDraftsUpdatedInputSchema).optional(),
+  connect: z.lazy(() => UtilisateurWhereUniqueInputSchema).optional(),
+});
+
+export const InscriptionCreateNestedOneWithoutSourceDraftInputSchema: z.ZodType<Prisma.InscriptionCreateNestedOneWithoutSourceDraftInput> = z.strictObject({
+  create: z.union([ z.lazy(() => InscriptionCreateWithoutSourceDraftInputSchema), z.lazy(() => InscriptionUncheckedCreateWithoutSourceDraftInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => InscriptionCreateOrConnectWithoutSourceDraftInputSchema).optional(),
+  connect: z.lazy(() => InscriptionWhereUniqueInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileCreateNestedManyWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateNestedManyWithoutDraftInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutDraftInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDraftInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyDraftInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedCreateNestedManyWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedCreateNestedManyWithoutDraftInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutDraftInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDraftInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyDraftInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema: z.ZodType<Prisma.EnumEnrollmentDraftTypeFieldUpdateOperationsInput> = z.strictObject({
+  set: z.lazy(() => EnrollmentDraftTypeSchema).optional(),
+});
+
+export const EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema: z.ZodType<Prisma.EnumEnrollmentDraftStatusFieldUpdateOperationsInput> = z.strictObject({
+  set: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+});
+
+export const IntFieldUpdateOperationsInputSchema: z.ZodType<Prisma.IntFieldUpdateOperationsInput> = z.strictObject({
+  set: z.number().optional(),
+  increment: z.number().optional(),
+  decrement: z.number().optional(),
+  multiply: z.number().optional(),
+  divide: z.number().optional(),
+});
+
+export const EtablissementUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema: z.ZodType<Prisma.EtablissementUpdateOneRequiredWithoutEnrollmentDraftsNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EtablissementCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EtablissementUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => EtablissementCreateOrConnectWithoutEnrollmentDraftsInputSchema).optional(),
+  upsert: z.lazy(() => EtablissementUpsertWithoutEnrollmentDraftsInputSchema).optional(),
+  connect: z.lazy(() => EtablissementWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => EtablissementUpdateToOneWithWhereWithoutEnrollmentDraftsInputSchema), z.lazy(() => EtablissementUpdateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EtablissementUncheckedUpdateWithoutEnrollmentDraftsInputSchema) ]).optional(),
+});
+
+export const AnneeScolaireUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema: z.ZodType<Prisma.AnneeScolaireUpdateOneRequiredWithoutEnrollmentDraftsNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => AnneeScolaireCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => AnneeScolaireUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => AnneeScolaireCreateOrConnectWithoutEnrollmentDraftsInputSchema).optional(),
+  upsert: z.lazy(() => AnneeScolaireUpsertWithoutEnrollmentDraftsInputSchema).optional(),
+  connect: z.lazy(() => AnneeScolaireWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => AnneeScolaireUpdateToOneWithWhereWithoutEnrollmentDraftsInputSchema), z.lazy(() => AnneeScolaireUpdateWithoutEnrollmentDraftsInputSchema), z.lazy(() => AnneeScolaireUncheckedUpdateWithoutEnrollmentDraftsInputSchema) ]).optional(),
+});
+
+export const EleveUpdateOneWithoutEnrollmentDraftsNestedInputSchema: z.ZodType<Prisma.EleveUpdateOneWithoutEnrollmentDraftsNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EleveCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EleveUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => EleveCreateOrConnectWithoutEnrollmentDraftsInputSchema).optional(),
+  upsert: z.lazy(() => EleveUpsertWithoutEnrollmentDraftsInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => EleveWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => EleveWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => EleveWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => EleveUpdateToOneWithWhereWithoutEnrollmentDraftsInputSchema), z.lazy(() => EleveUpdateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EleveUncheckedUpdateWithoutEnrollmentDraftsInputSchema) ]).optional(),
+});
+
+export const UtilisateurUpdateOneWithoutEnrollmentDraftsCreatedNestedInputSchema: z.ZodType<Prisma.UtilisateurUpdateOneWithoutEnrollmentDraftsCreatedNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftsCreatedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftsCreatedInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => UtilisateurCreateOrConnectWithoutEnrollmentDraftsCreatedInputSchema).optional(),
+  upsert: z.lazy(() => UtilisateurUpsertWithoutEnrollmentDraftsCreatedInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => UtilisateurWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => UtilisateurWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => UtilisateurWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => UtilisateurUpdateToOneWithWhereWithoutEnrollmentDraftsCreatedInputSchema), z.lazy(() => UtilisateurUpdateWithoutEnrollmentDraftsCreatedInputSchema), z.lazy(() => UtilisateurUncheckedUpdateWithoutEnrollmentDraftsCreatedInputSchema) ]).optional(),
+});
+
+export const UtilisateurUpdateOneWithoutEnrollmentDraftsUpdatedNestedInputSchema: z.ZodType<Prisma.UtilisateurUpdateOneWithoutEnrollmentDraftsUpdatedNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftsUpdatedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftsUpdatedInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => UtilisateurCreateOrConnectWithoutEnrollmentDraftsUpdatedInputSchema).optional(),
+  upsert: z.lazy(() => UtilisateurUpsertWithoutEnrollmentDraftsUpdatedInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => UtilisateurWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => UtilisateurWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => UtilisateurWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => UtilisateurUpdateToOneWithWhereWithoutEnrollmentDraftsUpdatedInputSchema), z.lazy(() => UtilisateurUpdateWithoutEnrollmentDraftsUpdatedInputSchema), z.lazy(() => UtilisateurUncheckedUpdateWithoutEnrollmentDraftsUpdatedInputSchema) ]).optional(),
+});
+
+export const InscriptionUpdateOneWithoutSourceDraftNestedInputSchema: z.ZodType<Prisma.InscriptionUpdateOneWithoutSourceDraftNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => InscriptionCreateWithoutSourceDraftInputSchema), z.lazy(() => InscriptionUncheckedCreateWithoutSourceDraftInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => InscriptionCreateOrConnectWithoutSourceDraftInputSchema).optional(),
+  upsert: z.lazy(() => InscriptionUpsertWithoutSourceDraftInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => InscriptionWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => InscriptionWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => InscriptionWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => InscriptionUpdateToOneWithWhereWithoutSourceDraftInputSchema), z.lazy(() => InscriptionUpdateWithoutSourceDraftInputSchema), z.lazy(() => InscriptionUncheckedUpdateWithoutSourceDraftInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileUpdateManyWithoutDraftNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateManyWithoutDraftNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutDraftInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDraftInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutDraftInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyDraftInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutDraftInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutDraftInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateManyWithoutDraftNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateManyWithoutDraftNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutDraftInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDraftInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutDraftInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyDraftInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutDraftInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutDraftInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftCreateNestedOneWithoutFilesInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateNestedOneWithoutFilesInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutFilesInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutFilesInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => EnrollmentDraftCreateOrConnectWithoutFilesInputSchema).optional(),
+  connect: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).optional(),
+});
+
+export const DocumentTypeInscriptionCreateNestedOneWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionCreateNestedOneWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  create: z.union([ z.lazy(() => DocumentTypeInscriptionCreateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => DocumentTypeInscriptionUncheckedCreateWithoutEnrollmentDraftFilesInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => DocumentTypeInscriptionCreateOrConnectWithoutEnrollmentDraftFilesInputSchema).optional(),
+  connect: z.lazy(() => DocumentTypeInscriptionWhereUniqueInputSchema).optional(),
+});
+
+export const FichierCreateNestedOneWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.FichierCreateNestedOneWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  create: z.union([ z.lazy(() => FichierCreateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => FichierUncheckedCreateWithoutEnrollmentDraftFilesInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => FichierCreateOrConnectWithoutEnrollmentDraftFilesInputSchema).optional(),
+  connect: z.lazy(() => FichierWhereUniqueInputSchema).optional(),
+});
+
+export const UtilisateurCreateNestedOneWithoutEnrollmentDraftFilesUploadedInputSchema: z.ZodType<Prisma.UtilisateurCreateNestedOneWithoutEnrollmentDraftFilesUploadedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftFilesUploadedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftFilesUploadedInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => UtilisateurCreateOrConnectWithoutEnrollmentDraftFilesUploadedInputSchema).optional(),
+  connect: z.lazy(() => UtilisateurWhereUniqueInputSchema).optional(),
+});
+
+export const EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema: z.ZodType<Prisma.EnumEnrollmentDraftFileStatusFieldUpdateOperationsInput> = z.strictObject({
+  set: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+});
+
+export const EnrollmentDraftUpdateOneRequiredWithoutFilesNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateOneRequiredWithoutFilesNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutFilesInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutFilesInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => EnrollmentDraftCreateOrConnectWithoutFilesInputSchema).optional(),
+  upsert: z.lazy(() => EnrollmentDraftUpsertWithoutFilesInputSchema).optional(),
+  connect: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateToOneWithWhereWithoutFilesInputSchema), z.lazy(() => EnrollmentDraftUpdateWithoutFilesInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutFilesInputSchema) ]).optional(),
+});
+
+export const DocumentTypeInscriptionUpdateOneWithoutEnrollmentDraftFilesNestedInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUpdateOneWithoutEnrollmentDraftFilesNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => DocumentTypeInscriptionCreateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => DocumentTypeInscriptionUncheckedCreateWithoutEnrollmentDraftFilesInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => DocumentTypeInscriptionCreateOrConnectWithoutEnrollmentDraftFilesInputSchema).optional(),
+  upsert: z.lazy(() => DocumentTypeInscriptionUpsertWithoutEnrollmentDraftFilesInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => DocumentTypeInscriptionWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => DocumentTypeInscriptionWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => DocumentTypeInscriptionWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => DocumentTypeInscriptionUpdateToOneWithWhereWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => DocumentTypeInscriptionUpdateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => DocumentTypeInscriptionUncheckedUpdateWithoutEnrollmentDraftFilesInputSchema) ]).optional(),
+});
+
+export const FichierUpdateOneWithoutEnrollmentDraftFilesNestedInputSchema: z.ZodType<Prisma.FichierUpdateOneWithoutEnrollmentDraftFilesNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => FichierCreateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => FichierUncheckedCreateWithoutEnrollmentDraftFilesInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => FichierCreateOrConnectWithoutEnrollmentDraftFilesInputSchema).optional(),
+  upsert: z.lazy(() => FichierUpsertWithoutEnrollmentDraftFilesInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => FichierWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => FichierWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => FichierWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => FichierUpdateToOneWithWhereWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => FichierUpdateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => FichierUncheckedUpdateWithoutEnrollmentDraftFilesInputSchema) ]).optional(),
+});
+
+export const UtilisateurUpdateOneWithoutEnrollmentDraftFilesUploadedNestedInputSchema: z.ZodType<Prisma.UtilisateurUpdateOneWithoutEnrollmentDraftFilesUploadedNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftFilesUploadedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftFilesUploadedInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => UtilisateurCreateOrConnectWithoutEnrollmentDraftFilesUploadedInputSchema).optional(),
+  upsert: z.lazy(() => UtilisateurUpsertWithoutEnrollmentDraftFilesUploadedInputSchema).optional(),
+  disconnect: z.union([ z.boolean(),z.lazy(() => UtilisateurWhereInputSchema) ]).optional(),
+  delete: z.union([ z.boolean(),z.lazy(() => UtilisateurWhereInputSchema) ]).optional(),
+  connect: z.lazy(() => UtilisateurWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => UtilisateurUpdateToOneWithWhereWithoutEnrollmentDraftFilesUploadedInputSchema), z.lazy(() => UtilisateurUpdateWithoutEnrollmentDraftFilesUploadedInputSchema), z.lazy(() => UtilisateurUncheckedUpdateWithoutEnrollmentDraftFilesUploadedInputSchema) ]).optional(),
 });
 
 export const EleveCreateNestedOneWithoutIdentifiantsInputSchema: z.ZodType<Prisma.EleveCreateNestedOneWithoutIdentifiantsInput> = z.strictObject({
@@ -41462,14 +43153,6 @@ export const BulletinLigneUncheckedCreateNestedManyWithoutPedagogicalItemInputSc
 
 export const EnumPedagogicalItemTypeFieldUpdateOperationsInputSchema: z.ZodType<Prisma.EnumPedagogicalItemTypeFieldUpdateOperationsInput> = z.strictObject({
   set: z.lazy(() => PedagogicalItemTypeSchema).optional(),
-});
-
-export const IntFieldUpdateOperationsInputSchema: z.ZodType<Prisma.IntFieldUpdateOperationsInput> = z.strictObject({
-  set: z.number().optional(),
-  increment: z.number().optional(),
-  decrement: z.number().optional(),
-  multiply: z.number().optional(),
-  divide: z.number().optional(),
 });
 
 export const NullableFloatFieldUpdateOperationsInputSchema: z.ZodType<Prisma.NullableFloatFieldUpdateOperationsInput> = z.strictObject({
@@ -47092,6 +48775,13 @@ export const InscriptionDocumentCreateNestedManyWithoutFichierInputSchema: z.Zod
   connect: z.union([ z.lazy(() => InscriptionDocumentWhereUniqueInputSchema), z.lazy(() => InscriptionDocumentWhereUniqueInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftFileCreateNestedManyWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateNestedManyWithoutFichierInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutFichierInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutFichierInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyFichierInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+});
+
 export const LienFichierUncheckedCreateNestedManyWithoutFichierInputSchema: z.ZodType<Prisma.LienFichierUncheckedCreateNestedManyWithoutFichierInput> = z.strictObject({
   create: z.union([ z.lazy(() => LienFichierCreateWithoutFichierInputSchema), z.lazy(() => LienFichierCreateWithoutFichierInputSchema).array(), z.lazy(() => LienFichierUncheckedCreateWithoutFichierInputSchema), z.lazy(() => LienFichierUncheckedCreateWithoutFichierInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => LienFichierCreateOrConnectWithoutFichierInputSchema), z.lazy(() => LienFichierCreateOrConnectWithoutFichierInputSchema).array() ]).optional(),
@@ -47104,6 +48794,13 @@ export const InscriptionDocumentUncheckedCreateNestedManyWithoutFichierInputSche
   connectOrCreate: z.union([ z.lazy(() => InscriptionDocumentCreateOrConnectWithoutFichierInputSchema), z.lazy(() => InscriptionDocumentCreateOrConnectWithoutFichierInputSchema).array() ]).optional(),
   createMany: z.lazy(() => InscriptionDocumentCreateManyFichierInputEnvelopeSchema).optional(),
   connect: z.union([ z.lazy(() => InscriptionDocumentWhereUniqueInputSchema), z.lazy(() => InscriptionDocumentWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedCreateNestedManyWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedCreateNestedManyWithoutFichierInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutFichierInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutFichierInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyFichierInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
 });
 
 export const EtablissementUpdateOneRequiredWithoutFichiersNestedInputSchema: z.ZodType<Prisma.EtablissementUpdateOneRequiredWithoutFichiersNestedInput> = z.strictObject({
@@ -47152,6 +48849,20 @@ export const InscriptionDocumentUpdateManyWithoutFichierNestedInputSchema: z.Zod
   deleteMany: z.union([ z.lazy(() => InscriptionDocumentScalarWhereInputSchema), z.lazy(() => InscriptionDocumentScalarWhereInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftFileUpdateManyWithoutFichierNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateManyWithoutFichierNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutFichierInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutFichierInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutFichierInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyFichierInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutFichierInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutFichierInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array() ]).optional(),
+});
+
 export const LienFichierUncheckedUpdateManyWithoutFichierNestedInputSchema: z.ZodType<Prisma.LienFichierUncheckedUpdateManyWithoutFichierNestedInput> = z.strictObject({
   create: z.union([ z.lazy(() => LienFichierCreateWithoutFichierInputSchema), z.lazy(() => LienFichierCreateWithoutFichierInputSchema).array(), z.lazy(() => LienFichierUncheckedCreateWithoutFichierInputSchema), z.lazy(() => LienFichierUncheckedCreateWithoutFichierInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => LienFichierCreateOrConnectWithoutFichierInputSchema), z.lazy(() => LienFichierCreateOrConnectWithoutFichierInputSchema).array() ]).optional(),
@@ -47178,6 +48889,20 @@ export const InscriptionDocumentUncheckedUpdateManyWithoutFichierNestedInputSche
   update: z.union([ z.lazy(() => InscriptionDocumentUpdateWithWhereUniqueWithoutFichierInputSchema), z.lazy(() => InscriptionDocumentUpdateWithWhereUniqueWithoutFichierInputSchema).array() ]).optional(),
   updateMany: z.union([ z.lazy(() => InscriptionDocumentUpdateManyWithWhereWithoutFichierInputSchema), z.lazy(() => InscriptionDocumentUpdateManyWithWhereWithoutFichierInputSchema).array() ]).optional(),
   deleteMany: z.union([ z.lazy(() => InscriptionDocumentScalarWhereInputSchema), z.lazy(() => InscriptionDocumentScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateManyWithoutFichierNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateManyWithoutFichierNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutFichierInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutFichierInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutFichierInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyFichierInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutFichierInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutFichierInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const FichierCreateNestedOneWithoutLiensInputSchema: z.ZodType<Prisma.FichierCreateNestedOneWithoutLiensInput> = z.strictObject({
@@ -47207,11 +48932,25 @@ export const InscriptionDocumentCreateNestedManyWithoutDocumentTypeInputSchema: 
   connect: z.union([ z.lazy(() => InscriptionDocumentWhereUniqueInputSchema), z.lazy(() => InscriptionDocumentWhereUniqueInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftFileCreateNestedManyWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateNestedManyWithoutDocumentTypeInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDocumentTypeInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyDocumentTypeInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+});
+
 export const InscriptionDocumentUncheckedCreateNestedManyWithoutDocumentTypeInputSchema: z.ZodType<Prisma.InscriptionDocumentUncheckedCreateNestedManyWithoutDocumentTypeInput> = z.strictObject({
   create: z.union([ z.lazy(() => InscriptionDocumentCreateWithoutDocumentTypeInputSchema), z.lazy(() => InscriptionDocumentCreateWithoutDocumentTypeInputSchema).array(), z.lazy(() => InscriptionDocumentUncheckedCreateWithoutDocumentTypeInputSchema), z.lazy(() => InscriptionDocumentUncheckedCreateWithoutDocumentTypeInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => InscriptionDocumentCreateOrConnectWithoutDocumentTypeInputSchema), z.lazy(() => InscriptionDocumentCreateOrConnectWithoutDocumentTypeInputSchema).array() ]).optional(),
   createMany: z.lazy(() => InscriptionDocumentCreateManyDocumentTypeInputEnvelopeSchema).optional(),
   connect: z.union([ z.lazy(() => InscriptionDocumentWhereUniqueInputSchema), z.lazy(() => InscriptionDocumentWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedCreateNestedManyWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedCreateNestedManyWithoutDocumentTypeInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDocumentTypeInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyDocumentTypeInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
 });
 
 export const EtablissementUpdateOneWithoutDocumentTypesInscriptionNestedInputSchema: z.ZodType<Prisma.EtablissementUpdateOneWithoutDocumentTypesInscriptionNestedInput> = z.strictObject({
@@ -47238,6 +48977,20 @@ export const InscriptionDocumentUpdateManyWithoutDocumentTypeNestedInputSchema: 
   deleteMany: z.union([ z.lazy(() => InscriptionDocumentScalarWhereInputSchema), z.lazy(() => InscriptionDocumentScalarWhereInputSchema).array() ]).optional(),
 });
 
+export const EnrollmentDraftFileUpdateManyWithoutDocumentTypeNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateManyWithoutDocumentTypeNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDocumentTypeInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutDocumentTypeInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyDocumentTypeInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutDocumentTypeInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutDocumentTypeInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array() ]).optional(),
+});
+
 export const InscriptionDocumentUncheckedUpdateManyWithoutDocumentTypeNestedInputSchema: z.ZodType<Prisma.InscriptionDocumentUncheckedUpdateManyWithoutDocumentTypeNestedInput> = z.strictObject({
   create: z.union([ z.lazy(() => InscriptionDocumentCreateWithoutDocumentTypeInputSchema), z.lazy(() => InscriptionDocumentCreateWithoutDocumentTypeInputSchema).array(), z.lazy(() => InscriptionDocumentUncheckedCreateWithoutDocumentTypeInputSchema), z.lazy(() => InscriptionDocumentUncheckedCreateWithoutDocumentTypeInputSchema).array() ]).optional(),
   connectOrCreate: z.union([ z.lazy(() => InscriptionDocumentCreateOrConnectWithoutDocumentTypeInputSchema), z.lazy(() => InscriptionDocumentCreateOrConnectWithoutDocumentTypeInputSchema).array() ]).optional(),
@@ -47250,6 +49003,20 @@ export const InscriptionDocumentUncheckedUpdateManyWithoutDocumentTypeNestedInpu
   update: z.union([ z.lazy(() => InscriptionDocumentUpdateWithWhereUniqueWithoutDocumentTypeInputSchema), z.lazy(() => InscriptionDocumentUpdateWithWhereUniqueWithoutDocumentTypeInputSchema).array() ]).optional(),
   updateMany: z.union([ z.lazy(() => InscriptionDocumentUpdateManyWithWhereWithoutDocumentTypeInputSchema), z.lazy(() => InscriptionDocumentUpdateManyWithWhereWithoutDocumentTypeInputSchema).array() ]).optional(),
   deleteMany: z.union([ z.lazy(() => InscriptionDocumentScalarWhereInputSchema), z.lazy(() => InscriptionDocumentScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateManyWithoutDocumentTypeNestedInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateManyWithoutDocumentTypeNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema).array(), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileCreateOrConnectWithoutDocumentTypeInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUpsertWithWhereUniqueWithoutDocumentTypeInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => EnrollmentDraftFileCreateManyDocumentTypeInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema), z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUpdateWithWhereUniqueWithoutDocumentTypeInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUpdateManyWithWhereWithoutDocumentTypeInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const InscriptionCreateNestedOneWithoutDocumentsInputSchema: z.ZodType<Prisma.InscriptionCreateNestedOneWithoutDocumentsInput> = z.strictObject({
@@ -47697,6 +49464,84 @@ export const NestedDecimalNullableWithAggregatesFilterSchema: z.ZodType<Prisma.N
   _max: z.lazy(() => NestedDecimalNullableFilterSchema).optional(),
 });
 
+export const NestedEnumEnrollmentDraftTypeFilterSchema: z.ZodType<Prisma.NestedEnumEnrollmentDraftTypeFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftTypeSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftTypeSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftTypeSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => NestedEnumEnrollmentDraftTypeFilterSchema) ]).optional(),
+});
+
+export const NestedEnumEnrollmentDraftStatusFilterSchema: z.ZodType<Prisma.NestedEnumEnrollmentDraftStatusFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftStatusSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => NestedEnumEnrollmentDraftStatusFilterSchema) ]).optional(),
+});
+
+export const NestedEnumEnrollmentDraftTypeWithAggregatesFilterSchema: z.ZodType<Prisma.NestedEnumEnrollmentDraftTypeWithAggregatesFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftTypeSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftTypeSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftTypeSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => NestedEnumEnrollmentDraftTypeWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedEnumEnrollmentDraftTypeFilterSchema).optional(),
+  _max: z.lazy(() => NestedEnumEnrollmentDraftTypeFilterSchema).optional(),
+});
+
+export const NestedEnumEnrollmentDraftStatusWithAggregatesFilterSchema: z.ZodType<Prisma.NestedEnumEnrollmentDraftStatusWithAggregatesFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftStatusSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => NestedEnumEnrollmentDraftStatusWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedEnumEnrollmentDraftStatusFilterSchema).optional(),
+  _max: z.lazy(() => NestedEnumEnrollmentDraftStatusFilterSchema).optional(),
+});
+
+export const NestedIntWithAggregatesFilterSchema: z.ZodType<Prisma.NestedIntWithAggregatesFilter> = z.strictObject({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedIntWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _avg: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _sum: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedIntFilterSchema).optional(),
+  _max: z.lazy(() => NestedIntFilterSchema).optional(),
+});
+
+export const NestedFloatFilterSchema: z.ZodType<Prisma.NestedFloatFilter> = z.strictObject({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedFloatFilterSchema) ]).optional(),
+});
+
+export const NestedEnumEnrollmentDraftFileStatusFilterSchema: z.ZodType<Prisma.NestedEnumEnrollmentDraftFileStatusFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftFileStatusSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftFileStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => NestedEnumEnrollmentDraftFileStatusFilterSchema) ]).optional(),
+});
+
+export const NestedEnumEnrollmentDraftFileStatusWithAggregatesFilterSchema: z.ZodType<Prisma.NestedEnumEnrollmentDraftFileStatusWithAggregatesFilter> = z.strictObject({
+  equals: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  in: z.lazy(() => EnrollmentDraftFileStatusSchema).array().optional(),
+  notIn: z.lazy(() => EnrollmentDraftFileStatusSchema).array().optional(),
+  not: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => NestedEnumEnrollmentDraftFileStatusWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedEnumEnrollmentDraftFileStatusFilterSchema).optional(),
+  _max: z.lazy(() => NestedEnumEnrollmentDraftFileStatusFilterSchema).optional(),
+});
+
 export const NestedEnumPedagogicalItemTypeFilterSchema: z.ZodType<Prisma.NestedEnumPedagogicalItemTypeFilter> = z.strictObject({
   equals: z.lazy(() => PedagogicalItemTypeSchema).optional(),
   in: z.lazy(() => PedagogicalItemTypeSchema).array().optional(),
@@ -47726,33 +49571,6 @@ export const NestedEnumPedagogicalItemTypeWithAggregatesFilterSchema: z.ZodType<
   _count: z.lazy(() => NestedIntFilterSchema).optional(),
   _min: z.lazy(() => NestedEnumPedagogicalItemTypeFilterSchema).optional(),
   _max: z.lazy(() => NestedEnumPedagogicalItemTypeFilterSchema).optional(),
-});
-
-export const NestedIntWithAggregatesFilterSchema: z.ZodType<Prisma.NestedIntWithAggregatesFilter> = z.strictObject({
-  equals: z.number().optional(),
-  in: z.number().array().optional(),
-  notIn: z.number().array().optional(),
-  lt: z.number().optional(),
-  lte: z.number().optional(),
-  gt: z.number().optional(),
-  gte: z.number().optional(),
-  not: z.union([ z.number(),z.lazy(() => NestedIntWithAggregatesFilterSchema) ]).optional(),
-  _count: z.lazy(() => NestedIntFilterSchema).optional(),
-  _avg: z.lazy(() => NestedFloatFilterSchema).optional(),
-  _sum: z.lazy(() => NestedIntFilterSchema).optional(),
-  _min: z.lazy(() => NestedIntFilterSchema).optional(),
-  _max: z.lazy(() => NestedIntFilterSchema).optional(),
-});
-
-export const NestedFloatFilterSchema: z.ZodType<Prisma.NestedFloatFilter> = z.strictObject({
-  equals: z.number().optional(),
-  in: z.number().array().optional(),
-  notIn: z.number().array().optional(),
-  lt: z.number().optional(),
-  lte: z.number().optional(),
-  gt: z.number().optional(),
-  gte: z.number().optional(),
-  not: z.union([ z.number(),z.lazy(() => NestedFloatFilterSchema) ]).optional(),
 });
 
 export const NestedFloatNullableWithAggregatesFilterSchema: z.ZodType<Prisma.NestedFloatNullableWithAggregatesFilter> = z.strictObject({
@@ -48280,6 +50098,7 @@ export const AnneeScolaireCreateWithoutEtablissementInputSchema: z.ZodType<Prism
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutEtablissementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutEtablissementInput> = z.strictObject({
@@ -48308,6 +50127,7 @@ export const AnneeScolaireUncheckedCreateWithoutEtablissementInputSchema: z.ZodT
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutEtablissementInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutEtablissementInput> = z.strictObject({
@@ -48374,6 +50194,9 @@ export const UtilisateurCreateWithoutEtablissementInputSchema: z.ZodType<Prisma.
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -48410,6 +50233,9 @@ export const UtilisateurUncheckedCreateWithoutEtablissementInputSchema: z.ZodTyp
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -48514,6 +50340,7 @@ export const EleveCreateWithoutEtablissementInputSchema: z.ZodType<Prisma.EleveC
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutEtablissementInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutEtablissementInput> = z.strictObject({
@@ -48546,6 +50373,7 @@ export const EleveUncheckedCreateWithoutEtablissementInputSchema: z.ZodType<Pris
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutEtablissementInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutEtablissementInput> = z.strictObject({
@@ -49033,6 +50861,7 @@ export const FichierCreateWithoutEtablissementInputSchema: z.ZodType<Prisma.Fich
   proprietaire: z.lazy(() => UtilisateurCreateNestedOneWithoutFichiersInputSchema).optional(),
   liens: z.lazy(() => LienFichierCreateNestedManyWithoutFichierInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutFichierInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutFichierInputSchema).optional(),
 });
 
 export const FichierUncheckedCreateWithoutEtablissementInputSchema: z.ZodType<Prisma.FichierUncheckedCreateWithoutEtablissementInput> = z.strictObject({
@@ -49048,6 +50877,7 @@ export const FichierUncheckedCreateWithoutEtablissementInputSchema: z.ZodType<Pr
   updated_at: z.coerce.date().optional(),
   liens: z.lazy(() => LienFichierUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
 });
 
 export const FichierCreateOrConnectWithoutEtablissementInputSchema: z.ZodType<Prisma.FichierCreateOrConnectWithoutEtablissementInput> = z.strictObject({
@@ -49072,6 +50902,7 @@ export const DocumentTypeInscriptionCreateWithoutEtablissementInputSchema: z.Zod
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   documents: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionUncheckedCreateWithoutEtablissementInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUncheckedCreateWithoutEtablissementInput> = z.strictObject({
@@ -49086,6 +50917,7 @@ export const DocumentTypeInscriptionUncheckedCreateWithoutEtablissementInputSche
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionCreateOrConnectWithoutEtablissementInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionCreateOrConnectWithoutEtablissementInput> = z.strictObject({
@@ -49943,6 +51775,82 @@ export const OperationFinanciereCreateOrConnectWithoutEtablissementInputSchema: 
 
 export const OperationFinanciereCreateManyEtablissementInputEnvelopeSchema: z.ZodType<Prisma.OperationFinanciereCreateManyEtablissementInputEnvelope> = z.strictObject({
   data: z.union([ z.lazy(() => OperationFinanciereCreateManyEtablissementInputSchema), z.lazy(() => OperationFinanciereCreateManyEtablissementInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
+});
+
+export const EnrollmentDraftCreateWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateWithoutEtablissementInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  eleve: z.lazy(() => EleveCreateNestedOneWithoutEnrollmentDraftsInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsCreatedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsUpdatedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionCreateNestedOneWithoutSourceDraftInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateWithoutEtablissementInput> = z.strictObject({
+  id: z.uuid().optional(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftCreateOrConnectWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateOrConnectWithoutEtablissementInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema) ]),
+});
+
+export const EnrollmentDraftCreateManyEtablissementInputEnvelopeSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyEtablissementInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => EnrollmentDraftCreateManyEtablissementInputSchema), z.lazy(() => EnrollmentDraftCreateManyEtablissementInputSchema).array() ]),
   skipDuplicates: z.boolean().optional(),
 });
 
@@ -51247,6 +53155,58 @@ export const OperationFinanciereScalarWhereInputSchema: z.ZodType<Prisma.Operati
   updated_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
 });
 
+export const EnrollmentDraftUpsertWithWhereUniqueWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftUpsertWithWhereUniqueWithoutEtablissementInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutEtablissementInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEtablissementInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateWithWhereUniqueWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithWhereUniqueWithoutEtablissementInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutEtablissementInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutEtablissementInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateManyWithWhereWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyWithWhereWithoutEtablissementInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateManyMutationInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementInputSchema) ]),
+});
+
+export const EnrollmentDraftScalarWhereInputSchema: z.ZodType<Prisma.EnrollmentDraftScalarWhereInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => EnrollmentDraftScalarWhereInputSchema), z.lazy(() => EnrollmentDraftScalarWhereInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  etablissement_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  annee_scolaire_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  eleve_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnumEnrollmentDraftTypeFilterSchema), z.lazy(() => EnrollmentDraftTypeSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnumEnrollmentDraftStatusFilterSchema), z.lazy(() => EnrollmentDraftStatusSchema) ]).optional(),
+  current_step: z.union([ z.lazy(() => IntFilterSchema), z.number() ]).optional(),
+  student_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  schooling_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  guardians_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  finance_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  documents_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  medical_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  previous_school_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  access_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  consents_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  observations_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  services_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  payment_schedule_data: z.lazy(() => JsonNullableFilterSchema).optional(),
+  completion_rate: z.union([ z.lazy(() => DecimalNullableFilterSchema), z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }) ]).optional().nullable(),
+  missing_fields: z.lazy(() => JsonNullableFilterSchema).optional(),
+  created_by_utilisateur_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  active_unique_key: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  expires_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  submitted_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  deleted_at: z.union([ z.lazy(() => DateTimeNullableFilterSchema), z.coerce.date() ]).optional().nullable(),
+  created_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  updated_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+});
+
 export const EtablissementCreateWithoutSitesInputSchema: z.ZodType<Prisma.EtablissementCreateWithoutSitesInput> = z.strictObject({
   id: z.uuid().optional(),
   nom: z.string(),
@@ -51292,6 +53252,7 @@ export const EtablissementCreateWithoutSitesInputSchema: z.ZodType<Prisma.Etabli
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutSitesInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutSitesInput> = z.strictObject({
@@ -51339,6 +53300,7 @@ export const EtablissementUncheckedCreateWithoutSitesInputSchema: z.ZodType<Pris
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutSitesInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutSitesInput> = z.strictObject({
@@ -51512,6 +53474,7 @@ export const EtablissementUpdateWithoutSitesInputSchema: z.ZodType<Prisma.Etabli
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutSitesInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutSitesInput> = z.strictObject({
@@ -51559,6 +53522,7 @@ export const EtablissementUncheckedUpdateWithoutSitesInputSchema: z.ZodType<Pris
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const SalleUpsertWithWhereUniqueWithoutSiteInputSchema: z.ZodType<Prisma.SalleUpsertWithWhereUniqueWithoutSiteInput> = z.strictObject({
@@ -51667,6 +53631,7 @@ export const EtablissementCreateWithoutAnneesInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutAnneesInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutAnneesInput> = z.strictObject({
@@ -51714,6 +53679,7 @@ export const EtablissementUncheckedCreateWithoutAnneesInputSchema: z.ZodType<Pri
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutAnneesInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutAnneesInput> = z.strictObject({
@@ -51825,6 +53791,7 @@ export const InscriptionCreateWithoutAnneeInputSchema: z.ZodType<Prisma.Inscript
   classe: z.lazy(() => ClasseCreateNestedOneWithoutInscriptionsInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutInscriptionInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionUncheckedCreateWithoutAnneeInputSchema: z.ZodType<Prisma.InscriptionUncheckedCreateWithoutAnneeInput> = z.strictObject({
@@ -51849,6 +53816,7 @@ export const InscriptionUncheckedCreateWithoutAnneeInputSchema: z.ZodType<Prisma
   updated_at: z.coerce.date().optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutInscriptionInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionCreateOrConnectWithoutAnneeInputSchema: z.ZodType<Prisma.InscriptionCreateOrConnectWithoutAnneeInput> = z.strictObject({
@@ -52691,6 +54659,82 @@ export const PedagogicalItemAverageCreateManyAnneeInputEnvelopeSchema: z.ZodType
   skipDuplicates: z.boolean().optional(),
 });
 
+export const EnrollmentDraftCreateWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateWithoutAnneeInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  eleve: z.lazy(() => EleveCreateNestedOneWithoutEnrollmentDraftsInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsCreatedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsUpdatedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionCreateNestedOneWithoutSourceDraftInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateWithoutAnneeInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftCreateOrConnectWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateOrConnectWithoutAnneeInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema) ]),
+});
+
+export const EnrollmentDraftCreateManyAnneeInputEnvelopeSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyAnneeInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => EnrollmentDraftCreateManyAnneeInputSchema), z.lazy(() => EnrollmentDraftCreateManyAnneeInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
+});
+
 export const EtablissementUpsertWithoutAnneesInputSchema: z.ZodType<Prisma.EtablissementUpsertWithoutAnneesInput> = z.strictObject({
   update: z.union([ z.lazy(() => EtablissementUpdateWithoutAnneesInputSchema), z.lazy(() => EtablissementUncheckedUpdateWithoutAnneesInputSchema) ]),
   create: z.union([ z.lazy(() => EtablissementCreateWithoutAnneesInputSchema), z.lazy(() => EtablissementUncheckedCreateWithoutAnneesInputSchema) ]),
@@ -52747,6 +54791,7 @@ export const EtablissementUpdateWithoutAnneesInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutAnneesInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutAnneesInput> = z.strictObject({
@@ -52794,6 +54839,7 @@ export const EtablissementUncheckedUpdateWithoutAnneesInputSchema: z.ZodType<Pri
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const PeriodeUpsertWithWhereUniqueWithoutAnneeInputSchema: z.ZodType<Prisma.PeriodeUpsertWithWhereUniqueWithoutAnneeInput> = z.strictObject({
@@ -53197,6 +55243,22 @@ export const PedagogicalItemAverageUpdateManyWithWhereWithoutAnneeInputSchema: z
   data: z.union([ z.lazy(() => PedagogicalItemAverageUpdateManyMutationInputSchema), z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeInputSchema) ]),
 });
 
+export const EnrollmentDraftUpsertWithWhereUniqueWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftUpsertWithWhereUniqueWithoutAnneeInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutAnneeInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutAnneeInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateWithWhereUniqueWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithWhereUniqueWithoutAnneeInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutAnneeInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutAnneeInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateManyWithWhereWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyWithWhereWithoutAnneeInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateManyMutationInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeInputSchema) ]),
+});
+
 export const AnneeScolaireCreateWithoutPeriodesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateWithoutPeriodesInput> = z.strictObject({
   id: z.uuid().optional(),
   nom: z.string(),
@@ -53223,6 +55285,7 @@ export const AnneeScolaireCreateWithoutPeriodesInputSchema: z.ZodType<Prisma.Ann
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutPeriodesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutPeriodesInput> = z.strictObject({
@@ -53251,6 +55314,7 @@ export const AnneeScolaireUncheckedCreateWithoutPeriodesInputSchema: z.ZodType<P
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutPeriodesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutPeriodesInput> = z.strictObject({
@@ -53459,6 +55523,7 @@ export const AnneeScolaireUpdateWithoutPeriodesInputSchema: z.ZodType<Prisma.Ann
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutPeriodesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutPeriodesInput> = z.strictObject({
@@ -53487,6 +55552,7 @@ export const AnneeScolaireUncheckedUpdateWithoutPeriodesInputSchema: z.ZodType<P
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const EvaluationUpsertWithWhereUniqueWithoutPeriodeInputSchema: z.ZodType<Prisma.EvaluationUpsertWithWhereUniqueWithoutPeriodeInput> = z.strictObject({
@@ -53819,6 +55885,7 @@ export const EtablissementCreateWithoutEtablissementReferencielInputSchema: z.Zo
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutEtablissementReferencielInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutEtablissementReferencielInput> = z.strictObject({
@@ -53866,6 +55933,7 @@ export const EtablissementUncheckedCreateWithoutEtablissementReferencielInputSch
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutEtablissementReferencielInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutEtablissementReferencielInput> = z.strictObject({
@@ -53946,6 +56014,7 @@ export const EtablissementUpdateWithoutEtablissementReferencielInputSchema: z.Zo
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutEtablissementReferencielInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutEtablissementReferencielInput> = z.strictObject({
@@ -53993,6 +56062,7 @@ export const EtablissementUncheckedUpdateWithoutEtablissementReferencielInputSch
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const ReferencielUpsertWithoutEtablissementReferencielInputSchema: z.ZodType<Prisma.ReferencielUpsertWithoutEtablissementReferencielInput> = z.strictObject({
@@ -54063,6 +56133,7 @@ export const EtablissementCreateWithoutUtilisateursInputSchema: z.ZodType<Prisma
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutUtilisateursInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutUtilisateursInput> = z.strictObject({
@@ -54110,6 +56181,7 @@ export const EtablissementUncheckedCreateWithoutUtilisateursInputSchema: z.ZodTy
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutUtilisateursInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutUtilisateursInput> = z.strictObject({
@@ -54249,6 +56321,7 @@ export const FichierCreateWithoutProprietaireInputSchema: z.ZodType<Prisma.Fichi
   etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutFichiersInputSchema),
   liens: z.lazy(() => LienFichierCreateNestedManyWithoutFichierInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutFichierInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutFichierInputSchema).optional(),
 });
 
 export const FichierUncheckedCreateWithoutProprietaireInputSchema: z.ZodType<Prisma.FichierUncheckedCreateWithoutProprietaireInput> = z.strictObject({
@@ -54264,6 +56337,7 @@ export const FichierUncheckedCreateWithoutProprietaireInputSchema: z.ZodType<Pri
   updated_at: z.coerce.date().optional(),
   liens: z.lazy(() => LienFichierUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
 });
 
 export const FichierCreateOrConnectWithoutProprietaireInputSchema: z.ZodType<Prisma.FichierCreateOrConnectWithoutProprietaireInput> = z.strictObject({
@@ -54984,6 +57058,198 @@ export const ProgrammeChangeLogCreateManyChangedByInputEnvelopeSchema: z.ZodType
   skipDuplicates: z.boolean().optional(),
 });
 
+export const EnrollmentDraftCreateWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateWithoutCreateurInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  eleve: z.lazy(() => EleveCreateNestedOneWithoutEnrollmentDraftsInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsUpdatedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionCreateNestedOneWithoutSourceDraftInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateWithoutCreateurInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftCreateOrConnectWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateOrConnectWithoutCreateurInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema) ]),
+});
+
+export const EnrollmentDraftCreateManyCreateurInputEnvelopeSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyCreateurInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => EnrollmentDraftCreateManyCreateurInputSchema), z.lazy(() => EnrollmentDraftCreateManyCreateurInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
+});
+
+export const EnrollmentDraftCreateWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateWithoutModificateurInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  eleve: z.lazy(() => EleveCreateNestedOneWithoutEnrollmentDraftsInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsCreatedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionCreateNestedOneWithoutSourceDraftInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateWithoutModificateurInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftCreateOrConnectWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateOrConnectWithoutModificateurInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema) ]),
+});
+
+export const EnrollmentDraftCreateManyModificateurInputEnvelopeSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyModificateurInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => EnrollmentDraftCreateManyModificateurInputSchema), z.lazy(() => EnrollmentDraftCreateManyModificateurInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
+});
+
+export const EnrollmentDraftFileCreateWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateWithoutUploadedByInput> = z.strictObject({
+  id: z.uuid().optional(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  draft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutFilesInputSchema),
+  documentType: z.lazy(() => DocumentTypeInscriptionCreateNestedOneWithoutEnrollmentDraftFilesInputSchema).optional(),
+  fichier: z.lazy(() => FichierCreateNestedOneWithoutEnrollmentDraftFilesInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedCreateWithoutUploadedByInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_id: z.string(),
+  document_type_id: z.string().optional().nullable(),
+  fichier_id: z.string().optional().nullable(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftFileCreateOrConnectWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateOrConnectWithoutUploadedByInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema) ]),
+});
+
+export const EnrollmentDraftFileCreateManyUploadedByInputEnvelopeSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateManyUploadedByInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => EnrollmentDraftFileCreateManyUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileCreateManyUploadedByInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
+});
+
 export const EleveCreateWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveCreateWithoutUtilisateurInput> = z.strictObject({
   id: z.uuid().optional(),
   code_eleve: z.string().optional().nullable(),
@@ -55014,6 +57280,7 @@ export const EleveCreateWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveCre
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutUtilisateurInput> = z.strictObject({
@@ -55046,6 +57313,7 @@ export const EleveUncheckedCreateWithoutUtilisateurInputSchema: z.ZodType<Prisma
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutUtilisateurInput> = z.strictObject({
@@ -55214,6 +57482,7 @@ export const EtablissementUpdateWithoutUtilisateursInputSchema: z.ZodType<Prisma
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutUtilisateursInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutUtilisateursInput> = z.strictObject({
@@ -55261,6 +57530,7 @@ export const EtablissementUncheckedUpdateWithoutUtilisateursInputSchema: z.ZodTy
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const ProfilUpsertWithoutUtilisateurInputSchema: z.ZodType<Prisma.ProfilUpsertWithoutUtilisateurInput> = z.strictObject({
@@ -55671,6 +57941,73 @@ export const ProgrammeChangeLogScalarWhereInputSchema: z.ZodType<Prisma.Programm
   changed_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
 });
 
+export const EnrollmentDraftUpsertWithWhereUniqueWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUpsertWithWhereUniqueWithoutCreateurInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutCreateurInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutCreateurInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateWithWhereUniqueWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithWhereUniqueWithoutCreateurInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutCreateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutCreateurInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateManyWithWhereWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyWithWhereWithoutCreateurInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateManyMutationInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurInputSchema) ]),
+});
+
+export const EnrollmentDraftUpsertWithWhereUniqueWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUpsertWithWhereUniqueWithoutModificateurInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutModificateurInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutModificateurInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateWithWhereUniqueWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithWhereUniqueWithoutModificateurInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutModificateurInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutModificateurInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateManyWithWhereWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyWithWhereWithoutModificateurInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateManyMutationInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurInputSchema) ]),
+});
+
+export const EnrollmentDraftFileUpsertWithWhereUniqueWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpsertWithWhereUniqueWithoutUploadedByInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateWithoutUploadedByInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutUploadedByInputSchema) ]),
+});
+
+export const EnrollmentDraftFileUpdateWithWhereUniqueWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateWithWhereUniqueWithoutUploadedByInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithoutUploadedByInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateWithoutUploadedByInputSchema) ]),
+});
+
+export const EnrollmentDraftFileUpdateManyWithWhereWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateManyWithWhereWithoutUploadedByInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyMutationInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByInputSchema) ]),
+});
+
+export const EnrollmentDraftFileScalarWhereInputSchema: z.ZodType<Prisma.EnrollmentDraftFileScalarWhereInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema), z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  draft_id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  document_type_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  fichier_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  filename: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  original_name: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  mime_type: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  size: z.union([ z.lazy(() => IntNullableFilterSchema), z.number() ]).optional().nullable(),
+  path: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnumEnrollmentDraftFileStatusFilterSchema), z.lazy(() => EnrollmentDraftFileStatusSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.lazy(() => StringNullableFilterSchema), z.string() ]).optional().nullable(),
+  created_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  updated_at: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+});
+
 export const EleveUpsertWithWhereUniqueWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveUpsertWithWhereUniqueWithoutUtilisateurInput> = z.strictObject({
   where: z.lazy(() => EleveWhereUniqueInputSchema),
   update: z.union([ z.lazy(() => EleveUpdateWithoutUtilisateurInputSchema), z.lazy(() => EleveUncheckedUpdateWithoutUtilisateurInputSchema) ]),
@@ -55775,6 +58112,9 @@ export const UtilisateurCreateWithoutProfilInputSchema: z.ZodType<Prisma.Utilisa
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -55811,6 +58151,9 @@ export const UtilisateurUncheckedCreateWithoutProfilInputSchema: z.ZodType<Prism
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -55863,6 +58206,9 @@ export const UtilisateurUpdateWithoutProfilInputSchema: z.ZodType<Prisma.Utilisa
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -55899,6 +58245,9 @@ export const UtilisateurUncheckedUpdateWithoutProfilInputSchema: z.ZodType<Prism
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -55950,6 +58299,7 @@ export const EtablissementCreateWithoutRolesInputSchema: z.ZodType<Prisma.Etabli
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutRolesInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutRolesInput> = z.strictObject({
@@ -55997,6 +58347,7 @@ export const EtablissementUncheckedCreateWithoutRolesInputSchema: z.ZodType<Pris
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutRolesInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutRolesInput> = z.strictObject({
@@ -56098,6 +58449,7 @@ export const EtablissementUpdateWithoutRolesInputSchema: z.ZodType<Prisma.Etabli
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutRolesInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutRolesInput> = z.strictObject({
@@ -56145,6 +58497,7 @@ export const EtablissementUncheckedUpdateWithoutRolesInputSchema: z.ZodType<Pris
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const RolePermissionUpsertWithWhereUniqueWithoutRoleInputSchema: z.ZodType<Prisma.RolePermissionUpsertWithWhereUniqueWithoutRoleInput> = z.strictObject({
@@ -56232,6 +58585,7 @@ export const EtablissementCreateWithoutPermissionsInputSchema: z.ZodType<Prisma.
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutPermissionsInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutPermissionsInput> = z.strictObject({
@@ -56279,6 +58633,7 @@ export const EtablissementUncheckedCreateWithoutPermissionsInputSchema: z.ZodTyp
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutPermissionsInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutPermissionsInput> = z.strictObject({
@@ -56360,6 +58715,7 @@ export const EtablissementUpdateWithoutPermissionsInputSchema: z.ZodType<Prisma.
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutPermissionsInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutPermissionsInput> = z.strictObject({
@@ -56407,6 +58763,7 @@ export const EtablissementUncheckedUpdateWithoutPermissionsInputSchema: z.ZodTyp
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const RolePermissionUpsertWithWhereUniqueWithoutPermissionInputSchema: z.ZodType<Prisma.RolePermissionUpsertWithWhereUniqueWithoutPermissionInput> = z.strictObject({
@@ -56563,6 +58920,9 @@ export const UtilisateurCreateWithoutRolesInputSchema: z.ZodType<Prisma.Utilisat
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -56599,6 +58959,9 @@ export const UtilisateurUncheckedCreateWithoutRolesInputSchema: z.ZodType<Prisma
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -56676,6 +59039,9 @@ export const UtilisateurUpdateWithoutRolesInputSchema: z.ZodType<Prisma.Utilisat
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -56712,6 +59078,9 @@ export const UtilisateurUncheckedUpdateWithoutRolesInputSchema: z.ZodType<Prisma
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -56794,6 +59163,7 @@ export const EtablissementCreateWithoutElevesInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutElevesInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutElevesInput> = z.strictObject({
@@ -56841,6 +59211,7 @@ export const EtablissementUncheckedCreateWithoutElevesInputSchema: z.ZodType<Pri
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutElevesInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutElevesInput> = z.strictObject({
@@ -56879,6 +59250,9 @@ export const UtilisateurCreateWithoutEleveInputSchema: z.ZodType<Prisma.Utilisat
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -56915,6 +59289,9 @@ export const UtilisateurUncheckedCreateWithoutEleveInputSchema: z.ZodType<Prisma
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -56977,6 +59354,7 @@ export const InscriptionCreateWithoutEleveInputSchema: z.ZodType<Prisma.Inscript
   annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutInscriptionsInputSchema),
   documents: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutInscriptionInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionUncheckedCreateWithoutEleveInputSchema: z.ZodType<Prisma.InscriptionUncheckedCreateWithoutEleveInput> = z.strictObject({
@@ -57001,6 +59379,7 @@ export const InscriptionUncheckedCreateWithoutEleveInputSchema: z.ZodType<Prisma
   updated_at: z.coerce.date().optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutInscriptionInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionCreateOrConnectWithoutEleveInputSchema: z.ZodType<Prisma.InscriptionCreateOrConnectWithoutEleveInput> = z.strictObject({
@@ -57860,6 +60239,82 @@ export const PedagogicalItemAverageCreateManyEleveInputEnvelopeSchema: z.ZodType
   skipDuplicates: z.boolean().optional(),
 });
 
+export const EnrollmentDraftCreateWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateWithoutEleveInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  createur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsCreatedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsUpdatedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionCreateNestedOneWithoutSourceDraftInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateWithoutEleveInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftCreateOrConnectWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateOrConnectWithoutEleveInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEleveInputSchema) ]),
+});
+
+export const EnrollmentDraftCreateManyEleveInputEnvelopeSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyEleveInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => EnrollmentDraftCreateManyEleveInputSchema), z.lazy(() => EnrollmentDraftCreateManyEleveInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
+});
+
 export const EtablissementUpsertWithoutElevesInputSchema: z.ZodType<Prisma.EtablissementUpsertWithoutElevesInput> = z.strictObject({
   update: z.union([ z.lazy(() => EtablissementUpdateWithoutElevesInputSchema), z.lazy(() => EtablissementUncheckedUpdateWithoutElevesInputSchema) ]),
   create: z.union([ z.lazy(() => EtablissementCreateWithoutElevesInputSchema), z.lazy(() => EtablissementUncheckedCreateWithoutElevesInputSchema) ]),
@@ -57916,6 +60371,7 @@ export const EtablissementUpdateWithoutElevesInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutElevesInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutElevesInput> = z.strictObject({
@@ -57963,6 +60419,7 @@ export const EtablissementUncheckedUpdateWithoutElevesInputSchema: z.ZodType<Pri
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const UtilisateurUpsertWithoutEleveInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutEleveInput> = z.strictObject({
@@ -58007,6 +60464,9 @@ export const UtilisateurUpdateWithoutEleveInputSchema: z.ZodType<Prisma.Utilisat
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -58043,6 +60503,9 @@ export const UtilisateurUncheckedUpdateWithoutEleveInputSchema: z.ZodType<Prisma
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -58568,6 +61031,22 @@ export const PedagogicalItemAverageUpdateManyWithWhereWithoutEleveInputSchema: z
   data: z.union([ z.lazy(() => PedagogicalItemAverageUpdateManyMutationInputSchema), z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveInputSchema) ]),
 });
 
+export const EnrollmentDraftUpsertWithWhereUniqueWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftUpsertWithWhereUniqueWithoutEleveInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutEleveInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutEleveInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateWithWhereUniqueWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithWhereUniqueWithoutEleveInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutEleveInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutEleveInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateManyWithWhereWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyWithWhereWithoutEleveInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateManyMutationInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveInputSchema) ]),
+});
+
 export const EleveCreateWithoutProfilMedicalInputSchema: z.ZodType<Prisma.EleveCreateWithoutProfilMedicalInput> = z.strictObject({
   id: z.uuid().optional(),
   code_eleve: z.string().optional().nullable(),
@@ -58598,6 +61077,7 @@ export const EleveCreateWithoutProfilMedicalInputSchema: z.ZodType<Prisma.EleveC
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutEleveInputSchema).optional(),
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutProfilMedicalInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutProfilMedicalInput> = z.strictObject({
@@ -58630,6 +61110,7 @@ export const EleveUncheckedCreateWithoutProfilMedicalInputSchema: z.ZodType<Pris
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutProfilMedicalInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutProfilMedicalInput> = z.strictObject({
@@ -58678,6 +61159,7 @@ export const EleveUpdateWithoutProfilMedicalInputSchema: z.ZodType<Prisma.EleveU
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementUpdateManyWithoutEleveNestedInputSchema).optional(),
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutProfilMedicalInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutProfilMedicalInput> = z.strictObject({
@@ -58710,6 +61192,7 @@ export const EleveUncheckedUpdateWithoutProfilMedicalInputSchema: z.ZodType<Pris
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EtablissementCreateWithoutParentTuteurInputSchema: z.ZodType<Prisma.EtablissementCreateWithoutParentTuteurInput> = z.strictObject({
@@ -58757,6 +61240,7 @@ export const EtablissementCreateWithoutParentTuteurInputSchema: z.ZodType<Prisma
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutParentTuteurInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutParentTuteurInput> = z.strictObject({
@@ -58804,6 +61288,7 @@ export const EtablissementUncheckedCreateWithoutParentTuteurInputSchema: z.ZodTy
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutParentTuteurInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutParentTuteurInput> = z.strictObject({
@@ -58842,6 +61327,9 @@ export const UtilisateurCreateWithoutParentTuteurInputSchema: z.ZodType<Prisma.U
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -58878,6 +61366,9 @@ export const UtilisateurUncheckedCreateWithoutParentTuteurInputSchema: z.ZodType
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -58974,6 +61465,7 @@ export const EtablissementUpdateWithoutParentTuteurInputSchema: z.ZodType<Prisma
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutParentTuteurInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutParentTuteurInput> = z.strictObject({
@@ -59021,6 +61513,7 @@ export const EtablissementUncheckedUpdateWithoutParentTuteurInputSchema: z.ZodTy
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const UtilisateurUpsertWithoutParentTuteurInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutParentTuteurInput> = z.strictObject({
@@ -59065,6 +61558,9 @@ export const UtilisateurUpdateWithoutParentTuteurInputSchema: z.ZodType<Prisma.U
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -59101,6 +61597,9 @@ export const UtilisateurUncheckedUpdateWithoutParentTuteurInputSchema: z.ZodType
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -59152,6 +61651,7 @@ export const EleveCreateWithoutLiensParentsInputSchema: z.ZodType<Prisma.EleveCr
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutLiensParentsInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutLiensParentsInput> = z.strictObject({
@@ -59184,6 +61684,7 @@ export const EleveUncheckedCreateWithoutLiensParentsInputSchema: z.ZodType<Prism
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutLiensParentsInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutLiensParentsInput> = z.strictObject({
@@ -59267,6 +61768,7 @@ export const EleveUpdateWithoutLiensParentsInputSchema: z.ZodType<Prisma.EleveUp
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutLiensParentsInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutLiensParentsInput> = z.strictObject({
@@ -59299,6 +61801,7 @@ export const EleveUncheckedUpdateWithoutLiensParentsInputSchema: z.ZodType<Prism
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const ParentTuteurUpsertWithoutElevesInputSchema: z.ZodType<Prisma.ParentTuteurUpsertWithoutElevesInput> = z.strictObject({
@@ -59387,6 +61890,7 @@ export const EtablissementCreateWithoutNiveauScolaireInputSchema: z.ZodType<Pris
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutNiveauScolaireInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutNiveauScolaireInput> = z.strictObject({
@@ -59434,6 +61938,7 @@ export const EtablissementUncheckedCreateWithoutNiveauScolaireInputSchema: z.Zod
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutNiveauScolaireInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutNiveauScolaireInput> = z.strictObject({
@@ -59509,6 +62014,7 @@ export const InscriptionCreateWithoutNiveauInputSchema: z.ZodType<Prisma.Inscrip
   annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutInscriptionsInputSchema),
   documents: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutInscriptionInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionUncheckedCreateWithoutNiveauInputSchema: z.ZodType<Prisma.InscriptionUncheckedCreateWithoutNiveauInput> = z.strictObject({
@@ -59533,6 +62039,7 @@ export const InscriptionUncheckedCreateWithoutNiveauInputSchema: z.ZodType<Prism
   updated_at: z.coerce.date().optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutInscriptionInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionCreateOrConnectWithoutNiveauInputSchema: z.ZodType<Prisma.InscriptionCreateOrConnectWithoutNiveauInput> = z.strictObject({
@@ -59937,6 +62444,7 @@ export const EtablissementUpdateWithoutNiveauScolaireInputSchema: z.ZodType<Pris
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutNiveauScolaireInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutNiveauScolaireInput> = z.strictObject({
@@ -59984,6 +62492,7 @@ export const EtablissementUncheckedUpdateWithoutNiveauScolaireInputSchema: z.Zod
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const ClasseUpsertWithWhereUniqueWithoutNiveauInputSchema: z.ZodType<Prisma.ClasseUpsertWithWhereUniqueWithoutNiveauInput> = z.strictObject({
@@ -60127,6 +62636,7 @@ export const EtablissementCreateWithoutClasseInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutClasseInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutClasseInput> = z.strictObject({
@@ -60174,6 +62684,7 @@ export const EtablissementUncheckedCreateWithoutClasseInputSchema: z.ZodType<Pri
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutClasseInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutClasseInput> = z.strictObject({
@@ -60207,6 +62718,7 @@ export const AnneeScolaireCreateWithoutClassesInputSchema: z.ZodType<Prisma.Anne
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutClassesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutClassesInput> = z.strictObject({
@@ -60235,6 +62747,7 @@ export const AnneeScolaireUncheckedCreateWithoutClassesInputSchema: z.ZodType<Pr
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutClassesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutClassesInput> = z.strictObject({
@@ -60355,6 +62868,7 @@ export const InscriptionCreateWithoutClasseInputSchema: z.ZodType<Prisma.Inscrip
   annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutInscriptionsInputSchema),
   documents: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutInscriptionInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionUncheckedCreateWithoutClasseInputSchema: z.ZodType<Prisma.InscriptionUncheckedCreateWithoutClasseInput> = z.strictObject({
@@ -60379,6 +62893,7 @@ export const InscriptionUncheckedCreateWithoutClasseInputSchema: z.ZodType<Prism
   updated_at: z.coerce.date().optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutInscriptionInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionCreateOrConnectWithoutClasseInputSchema: z.ZodType<Prisma.InscriptionCreateOrConnectWithoutClasseInput> = z.strictObject({
@@ -60667,6 +63182,7 @@ export const EtablissementUpdateWithoutClasseInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutClasseInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutClasseInput> = z.strictObject({
@@ -60714,6 +63230,7 @@ export const EtablissementUncheckedUpdateWithoutClasseInputSchema: z.ZodType<Pri
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutClassesInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutClassesInput> = z.strictObject({
@@ -60753,6 +63270,7 @@ export const AnneeScolaireUpdateWithoutClassesInputSchema: z.ZodType<Prisma.Anne
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutClassesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutClassesInput> = z.strictObject({
@@ -60781,6 +63299,7 @@ export const AnneeScolaireUncheckedUpdateWithoutClassesInputSchema: z.ZodType<Pr
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const NiveauScolaireUpsertWithoutClassesInputSchema: z.ZodType<Prisma.NiveauScolaireUpsertWithoutClassesInput> = z.strictObject({
@@ -61033,6 +63552,7 @@ export const EleveCreateWithoutInscriptionsInputSchema: z.ZodType<Prisma.EleveCr
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutInscriptionsInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutInscriptionsInput> = z.strictObject({
@@ -61065,6 +63585,7 @@ export const EleveUncheckedCreateWithoutInscriptionsInputSchema: z.ZodType<Prism
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutInscriptionsInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutInscriptionsInput> = z.strictObject({
@@ -61172,6 +63693,7 @@ export const AnneeScolaireCreateWithoutInscriptionsInputSchema: z.ZodType<Prisma
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutInscriptionsInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutInscriptionsInput> = z.strictObject({
@@ -61200,6 +63722,7 @@ export const AnneeScolaireUncheckedCreateWithoutInscriptionsInputSchema: z.ZodTy
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutInscriptionsInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutInscriptionsInput> = z.strictObject({
@@ -61282,6 +63805,77 @@ export const InscriptionSchoolHistoryCreateOrConnectWithoutInscriptionInputSchem
   create: z.union([ z.lazy(() => InscriptionSchoolHistoryCreateWithoutInscriptionInputSchema), z.lazy(() => InscriptionSchoolHistoryUncheckedCreateWithoutInscriptionInputSchema) ]),
 });
 
+export const EnrollmentDraftCreateWithoutSubmittedInscriptionInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateWithoutSubmittedInscriptionInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  eleve: z.lazy(() => EleveCreateNestedOneWithoutEnrollmentDraftsInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsCreatedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsUpdatedInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateWithoutSubmittedInscriptionInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateWithoutSubmittedInscriptionInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftCreateOrConnectWithoutSubmittedInscriptionInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateOrConnectWithoutSubmittedInscriptionInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutSubmittedInscriptionInputSchema) ]),
+});
+
 export const EleveUpsertWithoutInscriptionsInputSchema: z.ZodType<Prisma.EleveUpsertWithoutInscriptionsInput> = z.strictObject({
   update: z.union([ z.lazy(() => EleveUpdateWithoutInscriptionsInputSchema), z.lazy(() => EleveUncheckedUpdateWithoutInscriptionsInputSchema) ]),
   create: z.union([ z.lazy(() => EleveCreateWithoutInscriptionsInputSchema), z.lazy(() => EleveUncheckedCreateWithoutInscriptionsInputSchema) ]),
@@ -61323,6 +63917,7 @@ export const EleveUpdateWithoutInscriptionsInputSchema: z.ZodType<Prisma.EleveUp
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutInscriptionsInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutInscriptionsInput> = z.strictObject({
@@ -61355,6 +63950,7 @@ export const EleveUncheckedUpdateWithoutInscriptionsInputSchema: z.ZodType<Prism
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const NiveauScolaireUpsertWithoutInscriptionsInputSchema: z.ZodType<Prisma.NiveauScolaireUpsertWithoutInscriptionsInput> = z.strictObject({
@@ -61480,6 +64076,7 @@ export const AnneeScolaireUpdateWithoutInscriptionsInputSchema: z.ZodType<Prisma
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutInscriptionsInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutInscriptionsInput> = z.strictObject({
@@ -61508,6 +64105,7 @@ export const AnneeScolaireUncheckedUpdateWithoutInscriptionsInputSchema: z.ZodTy
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const InscriptionDocumentUpsertWithWhereUniqueWithoutInscriptionInputSchema: z.ZodType<Prisma.InscriptionDocumentUpsertWithWhereUniqueWithoutInscriptionInput> = z.strictObject({
@@ -61567,6 +64165,83 @@ export const InscriptionSchoolHistoryUncheckedUpdateWithoutInscriptionInputSchem
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
+export const EnrollmentDraftUpsertWithoutSubmittedInscriptionInputSchema: z.ZodType<Prisma.EnrollmentDraftUpsertWithoutSubmittedInscriptionInput> = z.strictObject({
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutSubmittedInscriptionInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutSubmittedInscriptionInputSchema) ]),
+  where: z.lazy(() => EnrollmentDraftWhereInputSchema).optional(),
+});
+
+export const EnrollmentDraftUpdateToOneWithWhereWithoutSubmittedInscriptionInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateToOneWithWhereWithoutSubmittedInscriptionInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutSubmittedInscriptionInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutSubmittedInscriptionInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateWithoutSubmittedInscriptionInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithoutSubmittedInscriptionInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  eleve: z.lazy(() => EleveUpdateOneWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsCreatedNestedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsUpdatedNestedInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateWithoutSubmittedInscriptionInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateWithoutSubmittedInscriptionInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
 export const InscriptionCreateWithoutHistoriqueScolaireInputSchema: z.ZodType<Prisma.InscriptionCreateWithoutHistoriqueScolaireInput> = z.strictObject({
   id: z.uuid().optional(),
   date_inscription: z.coerce.date().optional(),
@@ -61589,6 +64264,7 @@ export const InscriptionCreateWithoutHistoriqueScolaireInputSchema: z.ZodType<Pr
   classe: z.lazy(() => ClasseCreateNestedOneWithoutInscriptionsInputSchema).optional(),
   annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutInscriptionsInputSchema),
   documents: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionUncheckedCreateWithoutHistoriqueScolaireInputSchema: z.ZodType<Prisma.InscriptionUncheckedCreateWithoutHistoriqueScolaireInput> = z.strictObject({
@@ -61613,6 +64289,7 @@ export const InscriptionUncheckedCreateWithoutHistoriqueScolaireInputSchema: z.Z
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionCreateOrConnectWithoutHistoriqueScolaireInputSchema: z.ZodType<Prisma.InscriptionCreateOrConnectWithoutHistoriqueScolaireInput> = z.strictObject({
@@ -61653,6 +64330,7 @@ export const InscriptionUpdateWithoutHistoriqueScolaireInputSchema: z.ZodType<Pr
   classe: z.lazy(() => ClasseUpdateOneWithoutInscriptionsNestedInputSchema).optional(),
   annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutInscriptionsNestedInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentUpdateManyWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateWithoutHistoriqueScolaireInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateWithoutHistoriqueScolaireInput> = z.strictObject({
@@ -61677,6 +64355,1487 @@ export const InscriptionUncheckedUpdateWithoutHistoriqueScolaireInputSchema: z.Z
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
+});
+
+export const EtablissementCreateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EtablissementCreateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.uuid().optional(),
+  nom: z.string(),
+  code: z.string().optional().nullable(),
+  fuseau_horaire: z.string().optional().nullable(),
+  parametres_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  sites: z.lazy(() => SiteCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  annees: z.lazy(() => AnneeScolaireCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  etablissementReferenciel: z.lazy(() => EtablissementReferencielCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  utilisateurs: z.lazy(() => UtilisateurCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  roles: z.lazy(() => RoleCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  permissions: z.lazy(() => PermissionCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  eleves: z.lazy(() => EleveCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  personnel: z.lazy(() => PersonnelCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  departements: z.lazy(() => DepartementCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  matieres: z.lazy(() => MatiereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  canaux: z.lazy(() => CanalCommunicationCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  catalogueFrais: z.lazy(() => CatalogueFraisCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  remises: z.lazy(() => RemiseCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  reglesRecouvrement: z.lazy(() => RegleRecouvrementFinanceCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  fichiers: z.lazy(() => FichierCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  documentTypesInscription: z.lazy(() => DocumentTypeInscriptionCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  webhooks: z.lazy(() => WebhookCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  jetons: z.lazy(() => JetonIntegrationCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  NiveauScolaire: z.lazy(() => NiveauScolaireCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Classe: z.lazy(() => ClasseCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Programme: z.lazy(() => ProgrammeCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Cours: z.lazy(() => CoursCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  RegleNote: z.lazy(() => RegleNoteCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  reportCardTemplates: z.lazy(() => ReportCardTemplateCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  EvenementCalendrier: z.lazy(() => EvenementCalendrierCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Annonce: z.lazy(() => AnnonceCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+});
+
+export const EtablissementUncheckedCreateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.uuid().optional(),
+  nom: z.string(),
+  code: z.string().optional().nullable(),
+  fuseau_horaire: z.string().optional().nullable(),
+  parametres_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  sites: z.lazy(() => SiteUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  annees: z.lazy(() => AnneeScolaireUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  etablissementReferenciel: z.lazy(() => EtablissementReferencielUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  utilisateurs: z.lazy(() => UtilisateurUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  roles: z.lazy(() => RoleUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  permissions: z.lazy(() => PermissionUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  eleves: z.lazy(() => EleveUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  departements: z.lazy(() => DepartementUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  matieres: z.lazy(() => MatiereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  canaux: z.lazy(() => CanalCommunicationUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  catalogueFrais: z.lazy(() => CatalogueFraisUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  remises: z.lazy(() => RemiseUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  reglesRecouvrement: z.lazy(() => RegleRecouvrementFinanceUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  documentTypesInscription: z.lazy(() => DocumentTypeInscriptionUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  webhooks: z.lazy(() => WebhookUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  jetons: z.lazy(() => JetonIntegrationUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  NiveauScolaire: z.lazy(() => NiveauScolaireUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Classe: z.lazy(() => ClasseUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Programme: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Cours: z.lazy(() => CoursUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  RegleNote: z.lazy(() => RegleNoteUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  reportCardTemplates: z.lazy(() => ReportCardTemplateUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  EvenementCalendrier: z.lazy(() => EvenementCalendrierUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Annonce: z.lazy(() => AnnonceUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+});
+
+export const EtablissementCreateOrConnectWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutEnrollmentDraftsInput> = z.strictObject({
+  where: z.lazy(() => EtablissementWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EtablissementCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EtablissementUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]),
+});
+
+export const AnneeScolaireCreateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.AnneeScolaireCreateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.uuid().optional(),
+  nom: z.string(),
+  date_debut: z.coerce.date(),
+  date_fin: z.coerce.date(),
+  est_active: z.boolean().optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutAnneesInputSchema),
+  periodes: z.lazy(() => PeriodeCreateNestedManyWithoutAnneeInputSchema).optional(),
+  classes: z.lazy(() => ClasseCreateNestedManyWithoutAnneeInputSchema).optional(),
+  inscriptions: z.lazy(() => InscriptionCreateNestedManyWithoutAnneeInputSchema).optional(),
+  programmes: z.lazy(() => ProgrammeCreateNestedManyWithoutAnneeInputSchema).optional(),
+  cours: z.lazy(() => CoursCreateNestedManyWithoutAnneeInputSchema).optional(),
+  factures: z.lazy(() => FactureCreateNestedManyWithoutAnneeInputSchema).optional(),
+  plansPaiement: z.lazy(() => PlanPaiementEleveCreateNestedManyWithoutAnneeInputSchema).optional(),
+  echeancesPaiement: z.lazy(() => EcheancePaiementCreateNestedManyWithoutAnneeInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionCreateNestedManyWithoutAnneeInputSchema).optional(),
+  abonnementsTransport: z.lazy(() => AbonnementTransportCreateNestedManyWithoutAnneeInputSchema).optional(),
+  abonnementsCantine: z.lazy(() => AbonnementCantineCreateNestedManyWithoutAnneeInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementCreateNestedManyWithoutAnneeInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeCreateNestedManyWithoutAnneeInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutAnneeInputSchema).optional(),
+  reportCardTemplates: z.lazy(() => ReportCardTemplateCreateNestedManyWithoutAnneeInputSchema).optional(),
+  pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
+  gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+});
+
+export const AnneeScolaireUncheckedCreateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  nom: z.string(),
+  date_debut: z.coerce.date(),
+  date_fin: z.coerce.date(),
+  est_active: z.boolean().optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  periodes: z.lazy(() => PeriodeUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  classes: z.lazy(() => ClasseUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  inscriptions: z.lazy(() => InscriptionUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  programmes: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  cours: z.lazy(() => CoursUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  factures: z.lazy(() => FactureUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  plansPaiement: z.lazy(() => PlanPaiementEleveUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  echeancesPaiement: z.lazy(() => EcheancePaiementUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  abonnementsTransport: z.lazy(() => AbonnementTransportUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  abonnementsCantine: z.lazy(() => AbonnementCantineUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  reportCardTemplates: z.lazy(() => ReportCardTemplateUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+});
+
+export const AnneeScolaireCreateOrConnectWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutEnrollmentDraftsInput> = z.strictObject({
+  where: z.lazy(() => AnneeScolaireWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => AnneeScolaireCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => AnneeScolaireUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]),
+});
+
+export const EleveCreateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EleveCreateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.uuid().optional(),
+  code_eleve: z.string().optional().nullable(),
+  statut: z.string().optional().nullable(),
+  date_entree: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutElevesInputSchema),
+  utilisateur: z.lazy(() => UtilisateurCreateNestedOneWithoutEleveInputSchema).optional(),
+  liensParents: z.lazy(() => EleveParentTuteurCreateNestedManyWithoutEleveInputSchema).optional(),
+  inscriptions: z.lazy(() => InscriptionCreateNestedManyWithoutEleveInputSchema).optional(),
+  identifiants: z.lazy(() => IdentifiantEleveCreateNestedManyWithoutEleveInputSchema).optional(),
+  notes: z.lazy(() => NoteCreateNestedManyWithoutEleveInputSchema).optional(),
+  assessmentResults: z.lazy(() => AssessmentResultCreateNestedManyWithoutStudentInputSchema).optional(),
+  presences: z.lazy(() => PresenceEleveCreateNestedManyWithoutEleveInputSchema).optional(),
+  justificatifs: z.lazy(() => JustificatifAbsenceCreateNestedManyWithoutEleveInputSchema).optional(),
+  incidents: z.lazy(() => IncidentDisciplinaireCreateNestedManyWithoutEleveInputSchema).optional(),
+  recompenses: z.lazy(() => RecompenseCreateNestedManyWithoutEleveInputSchema).optional(),
+  bulletins: z.lazy(() => BulletinCreateNestedManyWithoutEleveInputSchema).optional(),
+  factures: z.lazy(() => FactureCreateNestedManyWithoutEleveInputSchema).optional(),
+  plansPaiement: z.lazy(() => PlanPaiementEleveCreateNestedManyWithoutEleveInputSchema).optional(),
+  echeancesPaiement: z.lazy(() => EcheancePaiementCreateNestedManyWithoutEleveInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionCreateNestedManyWithoutEleveInputSchema).optional(),
+  abonnementsTransport: z.lazy(() => AbonnementTransportCreateNestedManyWithoutEleveInputSchema).optional(),
+  abonnementsCantine: z.lazy(() => AbonnementCantineCreateNestedManyWithoutEleveInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementCreateNestedManyWithoutEleveInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeCreateNestedManyWithoutEleveInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutEleveInputSchema).optional(),
+  emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
+  profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+});
+
+export const EleveUncheckedCreateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  code_eleve: z.string().optional().nullable(),
+  utilisateur_id: z.string().optional().nullable(),
+  statut: z.string().optional().nullable(),
+  date_entree: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  liensParents: z.lazy(() => EleveParentTuteurUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  inscriptions: z.lazy(() => InscriptionUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  identifiants: z.lazy(() => IdentifiantEleveUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  notes: z.lazy(() => NoteUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  assessmentResults: z.lazy(() => AssessmentResultUncheckedCreateNestedManyWithoutStudentInputSchema).optional(),
+  presences: z.lazy(() => PresenceEleveUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  justificatifs: z.lazy(() => JustificatifAbsenceUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  incidents: z.lazy(() => IncidentDisciplinaireUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  recompenses: z.lazy(() => RecompenseUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  bulletins: z.lazy(() => BulletinUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  factures: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  plansPaiement: z.lazy(() => PlanPaiementEleveUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  echeancesPaiement: z.lazy(() => EcheancePaiementUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  abonnementsTransport: z.lazy(() => AbonnementTransportUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  abonnementsCantine: z.lazy(() => AbonnementCantineUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+});
+
+export const EleveCreateOrConnectWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutEnrollmentDraftsInput> = z.strictObject({
+  where: z.lazy(() => EleveWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EleveCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EleveUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]),
+});
+
+export const UtilisateurCreateWithoutEnrollmentDraftsCreatedInputSchema: z.ZodType<Prisma.UtilisateurCreateWithoutEnrollmentDraftsCreatedInput> = z.strictObject({
+  id: z.uuid().optional(),
+  email: z.string().optional().nullable(),
+  telephone: z.string().optional().nullable(),
+  mot_de_passe_hash: z.string().optional().nullable(),
+  statut: z.lazy(() => StatutCompteSchema).optional(),
+  dernier_login: z.coerce.date().optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutUtilisateursInputSchema).optional(),
+  profil: z.lazy(() => ProfilCreateNestedOneWithoutUtilisateurInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageCreateNestedManyWithoutExpediteurInputSchema).optional(),
+  notifications: z.lazy(() => NotificationCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  fichiers: z.lazy(() => FichierCreateNestedManyWithoutProprietaireInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutVerifieParInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditCreateNestedManyWithoutActeurInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionCreateNestedManyWithoutCreateurInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutCreateurInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementCreateNestedManyWithoutCreateurInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementCreateNestedManyWithoutValidateurInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeCreateNestedManyWithoutCreateurInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeCreateNestedManyWithoutLeveurInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutCreateurInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutValidateurInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
+  Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+});
+
+export const UtilisateurUncheckedCreateWithoutEnrollmentDraftsCreatedInputSchema: z.ZodType<Prisma.UtilisateurUncheckedCreateWithoutEnrollmentDraftsCreatedInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  telephone: z.string().optional().nullable(),
+  mot_de_passe_hash: z.string().optional().nullable(),
+  statut: z.lazy(() => StatutCompteSchema).optional(),
+  dernier_login: z.coerce.date().optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  profil: z.lazy(() => ProfilUncheckedCreateNestedOneWithoutUtilisateurInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageUncheckedCreateNestedManyWithoutExpediteurInputSchema).optional(),
+  notifications: z.lazy(() => NotificationUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUncheckedCreateNestedManyWithoutProprietaireInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutVerifieParInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUncheckedCreateNestedManyWithoutActeurInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisUncheckedCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceUncheckedCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementUncheckedCreateNestedManyWithoutValidateurInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeUncheckedCreateNestedManyWithoutLeveurInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutValidateurInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
+  Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+});
+
+export const UtilisateurCreateOrConnectWithoutEnrollmentDraftsCreatedInputSchema: z.ZodType<Prisma.UtilisateurCreateOrConnectWithoutEnrollmentDraftsCreatedInput> = z.strictObject({
+  where: z.lazy(() => UtilisateurWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftsCreatedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftsCreatedInputSchema) ]),
+});
+
+export const UtilisateurCreateWithoutEnrollmentDraftsUpdatedInputSchema: z.ZodType<Prisma.UtilisateurCreateWithoutEnrollmentDraftsUpdatedInput> = z.strictObject({
+  id: z.uuid().optional(),
+  email: z.string().optional().nullable(),
+  telephone: z.string().optional().nullable(),
+  mot_de_passe_hash: z.string().optional().nullable(),
+  statut: z.lazy(() => StatutCompteSchema).optional(),
+  dernier_login: z.coerce.date().optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutUtilisateursInputSchema).optional(),
+  profil: z.lazy(() => ProfilCreateNestedOneWithoutUtilisateurInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageCreateNestedManyWithoutExpediteurInputSchema).optional(),
+  notifications: z.lazy(() => NotificationCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  fichiers: z.lazy(() => FichierCreateNestedManyWithoutProprietaireInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutVerifieParInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditCreateNestedManyWithoutActeurInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionCreateNestedManyWithoutCreateurInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutCreateurInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementCreateNestedManyWithoutCreateurInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementCreateNestedManyWithoutValidateurInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeCreateNestedManyWithoutCreateurInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeCreateNestedManyWithoutLeveurInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutCreateurInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutValidateurInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
+  Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+});
+
+export const UtilisateurUncheckedCreateWithoutEnrollmentDraftsUpdatedInputSchema: z.ZodType<Prisma.UtilisateurUncheckedCreateWithoutEnrollmentDraftsUpdatedInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  telephone: z.string().optional().nullable(),
+  mot_de_passe_hash: z.string().optional().nullable(),
+  statut: z.lazy(() => StatutCompteSchema).optional(),
+  dernier_login: z.coerce.date().optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  profil: z.lazy(() => ProfilUncheckedCreateNestedOneWithoutUtilisateurInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageUncheckedCreateNestedManyWithoutExpediteurInputSchema).optional(),
+  notifications: z.lazy(() => NotificationUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUncheckedCreateNestedManyWithoutProprietaireInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutVerifieParInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUncheckedCreateNestedManyWithoutActeurInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisUncheckedCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceUncheckedCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementUncheckedCreateNestedManyWithoutValidateurInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeUncheckedCreateNestedManyWithoutLeveurInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutValidateurInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
+  Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+});
+
+export const UtilisateurCreateOrConnectWithoutEnrollmentDraftsUpdatedInputSchema: z.ZodType<Prisma.UtilisateurCreateOrConnectWithoutEnrollmentDraftsUpdatedInput> = z.strictObject({
+  where: z.lazy(() => UtilisateurWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftsUpdatedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftsUpdatedInputSchema) ]),
+});
+
+export const InscriptionCreateWithoutSourceDraftInputSchema: z.ZodType<Prisma.InscriptionCreateWithoutSourceDraftInput> = z.strictObject({
+  id: z.uuid().optional(),
+  date_inscription: z.coerce.date().optional(),
+  type_inscription: z.lazy(() => TypeInscriptionSchema).optional(),
+  statut: z.lazy(() => StatutInscriptionSchema).optional(),
+  statut_administratif: z.lazy(() => StatutAdministratifInscriptionSchema).optional(),
+  statut_financier: z.lazy(() => StatutFinancierInscriptionSchema).optional(),
+  statut_dossier: z.lazy(() => StatutDossierInscriptionSchema).optional(),
+  validation_date: z.coerce.date().optional().nullable(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  acces_systeme_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consentements_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  date_sortie: z.coerce.date().optional().nullable(),
+  raison_sortie: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  eleve: z.lazy(() => EleveCreateNestedOneWithoutInscriptionsInputSchema),
+  niveau: z.lazy(() => NiveauScolaireCreateNestedOneWithoutInscriptionsInputSchema).optional(),
+  classe: z.lazy(() => ClasseCreateNestedOneWithoutInscriptionsInputSchema).optional(),
+  annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutInscriptionsInputSchema),
+  documents: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutInscriptionInputSchema).optional(),
+  historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryCreateNestedOneWithoutInscriptionInputSchema).optional(),
+});
+
+export const InscriptionUncheckedCreateWithoutSourceDraftInputSchema: z.ZodType<Prisma.InscriptionUncheckedCreateWithoutSourceDraftInput> = z.strictObject({
+  id: z.uuid().optional(),
+  eleve_id: z.string(),
+  niveau_scolaire_id: z.string().optional().nullable(),
+  classe_id: z.string().optional().nullable(),
+  annee_scolaire_id: z.string(),
+  date_inscription: z.coerce.date().optional(),
+  type_inscription: z.lazy(() => TypeInscriptionSchema).optional(),
+  statut: z.lazy(() => StatutInscriptionSchema).optional(),
+  statut_administratif: z.lazy(() => StatutAdministratifInscriptionSchema).optional(),
+  statut_financier: z.lazy(() => StatutFinancierInscriptionSchema).optional(),
+  statut_dossier: z.lazy(() => StatutDossierInscriptionSchema).optional(),
+  validation_date: z.coerce.date().optional().nullable(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  acces_systeme_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consentements_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  date_sortie: z.coerce.date().optional().nullable(),
+  raison_sortie: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  documents: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutInscriptionInputSchema).optional(),
+  historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedCreateNestedOneWithoutInscriptionInputSchema).optional(),
+});
+
+export const InscriptionCreateOrConnectWithoutSourceDraftInputSchema: z.ZodType<Prisma.InscriptionCreateOrConnectWithoutSourceDraftInput> = z.strictObject({
+  where: z.lazy(() => InscriptionWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => InscriptionCreateWithoutSourceDraftInputSchema), z.lazy(() => InscriptionUncheckedCreateWithoutSourceDraftInputSchema) ]),
+});
+
+export const EnrollmentDraftFileCreateWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateWithoutDraftInput> = z.strictObject({
+  id: z.uuid().optional(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  documentType: z.lazy(() => DocumentTypeInscriptionCreateNestedOneWithoutEnrollmentDraftFilesInputSchema).optional(),
+  fichier: z.lazy(() => FichierCreateNestedOneWithoutEnrollmentDraftFilesInputSchema).optional(),
+  uploadedBy: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftFilesUploadedInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedCreateWithoutDraftInput> = z.strictObject({
+  id: z.uuid().optional(),
+  document_type_id: z.string().optional().nullable(),
+  fichier_id: z.string().optional().nullable(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  uploaded_by_id: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftFileCreateOrConnectWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateOrConnectWithoutDraftInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema) ]),
+});
+
+export const EnrollmentDraftFileCreateManyDraftInputEnvelopeSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateManyDraftInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => EnrollmentDraftFileCreateManyDraftInputSchema), z.lazy(() => EnrollmentDraftFileCreateManyDraftInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
+});
+
+export const EtablissementUpsertWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EtablissementUpsertWithoutEnrollmentDraftsInput> = z.strictObject({
+  update: z.union([ z.lazy(() => EtablissementUpdateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EtablissementUncheckedUpdateWithoutEnrollmentDraftsInputSchema) ]),
+  create: z.union([ z.lazy(() => EtablissementCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EtablissementUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]),
+  where: z.lazy(() => EtablissementWhereInputSchema).optional(),
+});
+
+export const EtablissementUpdateToOneWithWhereWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EtablissementUpdateToOneWithWhereWithoutEnrollmentDraftsInput> = z.strictObject({
+  where: z.lazy(() => EtablissementWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => EtablissementUpdateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EtablissementUncheckedUpdateWithoutEnrollmentDraftsInputSchema) ]),
+});
+
+export const EtablissementUpdateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EtablissementUpdateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  nom: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  code: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  fuseau_horaire: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  parametres_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  sites: z.lazy(() => SiteUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  annees: z.lazy(() => AnneeScolaireUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  etablissementReferenciel: z.lazy(() => EtablissementReferencielUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  utilisateurs: z.lazy(() => UtilisateurUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  roles: z.lazy(() => RoleUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  permissions: z.lazy(() => PermissionUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  eleves: z.lazy(() => EleveUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  personnel: z.lazy(() => PersonnelUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  departements: z.lazy(() => DepartementUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  matieres: z.lazy(() => MatiereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  canaux: z.lazy(() => CanalCommunicationUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  catalogueFrais: z.lazy(() => CatalogueFraisUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  remises: z.lazy(() => RemiseUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  reglesRecouvrement: z.lazy(() => RegleRecouvrementFinanceUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  documentTypesInscription: z.lazy(() => DocumentTypeInscriptionUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  webhooks: z.lazy(() => WebhookUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  jetons: z.lazy(() => JetonIntegrationUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  NiveauScolaire: z.lazy(() => NiveauScolaireUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Classe: z.lazy(() => ClasseUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Programme: z.lazy(() => ProgrammeUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Cours: z.lazy(() => CoursUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  RegleNote: z.lazy(() => RegleNoteUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  reportCardTemplates: z.lazy(() => ReportCardTemplateUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  EvenementCalendrier: z.lazy(() => EvenementCalendrierUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Annonce: z.lazy(() => AnnonceUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+});
+
+export const EtablissementUncheckedUpdateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  nom: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  code: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  fuseau_horaire: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  parametres_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  sites: z.lazy(() => SiteUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  annees: z.lazy(() => AnneeScolaireUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  etablissementReferenciel: z.lazy(() => EtablissementReferencielUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  utilisateurs: z.lazy(() => UtilisateurUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  roles: z.lazy(() => RoleUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  permissions: z.lazy(() => PermissionUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  eleves: z.lazy(() => EleveUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  departements: z.lazy(() => DepartementUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  matieres: z.lazy(() => MatiereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  canaux: z.lazy(() => CanalCommunicationUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  catalogueFrais: z.lazy(() => CatalogueFraisUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  remises: z.lazy(() => RemiseUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  reglesRecouvrement: z.lazy(() => RegleRecouvrementFinanceUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  documentTypesInscription: z.lazy(() => DocumentTypeInscriptionUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  webhooks: z.lazy(() => WebhookUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  jetons: z.lazy(() => JetonIntegrationUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  NiveauScolaire: z.lazy(() => NiveauScolaireUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Classe: z.lazy(() => ClasseUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Programme: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Cours: z.lazy(() => CoursUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  RegleNote: z.lazy(() => RegleNoteUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  reportCardTemplates: z.lazy(() => ReportCardTemplateUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  EvenementCalendrier: z.lazy(() => EvenementCalendrierUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Annonce: z.lazy(() => AnnonceUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+});
+
+export const AnneeScolaireUpsertWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutEnrollmentDraftsInput> = z.strictObject({
+  update: z.union([ z.lazy(() => AnneeScolaireUpdateWithoutEnrollmentDraftsInputSchema), z.lazy(() => AnneeScolaireUncheckedUpdateWithoutEnrollmentDraftsInputSchema) ]),
+  create: z.union([ z.lazy(() => AnneeScolaireCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => AnneeScolaireUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]),
+  where: z.lazy(() => AnneeScolaireWhereInputSchema).optional(),
+});
+
+export const AnneeScolaireUpdateToOneWithWhereWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.AnneeScolaireUpdateToOneWithWhereWithoutEnrollmentDraftsInput> = z.strictObject({
+  where: z.lazy(() => AnneeScolaireWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => AnneeScolaireUpdateWithoutEnrollmentDraftsInputSchema), z.lazy(() => AnneeScolaireUncheckedUpdateWithoutEnrollmentDraftsInputSchema) ]),
+});
+
+export const AnneeScolaireUpdateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.AnneeScolaireUpdateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  nom: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  date_debut: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  date_fin: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  est_active: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutAnneesNestedInputSchema).optional(),
+  periodes: z.lazy(() => PeriodeUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  classes: z.lazy(() => ClasseUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  inscriptions: z.lazy(() => InscriptionUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  programmes: z.lazy(() => ProgrammeUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  cours: z.lazy(() => CoursUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  factures: z.lazy(() => FactureUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  plansPaiement: z.lazy(() => PlanPaiementEleveUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  echeancesPaiement: z.lazy(() => EcheancePaiementUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  abonnementsTransport: z.lazy(() => AbonnementTransportUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  abonnementsCantine: z.lazy(() => AbonnementCantineUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  reportCardTemplates: z.lazy(() => ReportCardTemplateUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+});
+
+export const AnneeScolaireUncheckedUpdateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  nom: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  date_debut: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  date_fin: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  est_active: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  periodes: z.lazy(() => PeriodeUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  classes: z.lazy(() => ClasseUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  inscriptions: z.lazy(() => InscriptionUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  programmes: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  cours: z.lazy(() => CoursUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  factures: z.lazy(() => FactureUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  plansPaiement: z.lazy(() => PlanPaiementEleveUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  echeancesPaiement: z.lazy(() => EcheancePaiementUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  abonnementsTransport: z.lazy(() => AbonnementTransportUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  abonnementsCantine: z.lazy(() => AbonnementCantineUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  reportCardTemplates: z.lazy(() => ReportCardTemplateUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+});
+
+export const EleveUpsertWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EleveUpsertWithoutEnrollmentDraftsInput> = z.strictObject({
+  update: z.union([ z.lazy(() => EleveUpdateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EleveUncheckedUpdateWithoutEnrollmentDraftsInputSchema) ]),
+  create: z.union([ z.lazy(() => EleveCreateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EleveUncheckedCreateWithoutEnrollmentDraftsInputSchema) ]),
+  where: z.lazy(() => EleveWhereInputSchema).optional(),
+});
+
+export const EleveUpdateToOneWithWhereWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EleveUpdateToOneWithWhereWithoutEnrollmentDraftsInput> = z.strictObject({
+  where: z.lazy(() => EleveWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => EleveUpdateWithoutEnrollmentDraftsInputSchema), z.lazy(() => EleveUncheckedUpdateWithoutEnrollmentDraftsInputSchema) ]),
+});
+
+export const EleveUpdateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EleveUpdateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  code_eleve: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  date_entree: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutElevesNestedInputSchema).optional(),
+  utilisateur: z.lazy(() => UtilisateurUpdateOneWithoutEleveNestedInputSchema).optional(),
+  liensParents: z.lazy(() => EleveParentTuteurUpdateManyWithoutEleveNestedInputSchema).optional(),
+  inscriptions: z.lazy(() => InscriptionUpdateManyWithoutEleveNestedInputSchema).optional(),
+  identifiants: z.lazy(() => IdentifiantEleveUpdateManyWithoutEleveNestedInputSchema).optional(),
+  notes: z.lazy(() => NoteUpdateManyWithoutEleveNestedInputSchema).optional(),
+  assessmentResults: z.lazy(() => AssessmentResultUpdateManyWithoutStudentNestedInputSchema).optional(),
+  presences: z.lazy(() => PresenceEleveUpdateManyWithoutEleveNestedInputSchema).optional(),
+  justificatifs: z.lazy(() => JustificatifAbsenceUpdateManyWithoutEleveNestedInputSchema).optional(),
+  incidents: z.lazy(() => IncidentDisciplinaireUpdateManyWithoutEleveNestedInputSchema).optional(),
+  recompenses: z.lazy(() => RecompenseUpdateManyWithoutEleveNestedInputSchema).optional(),
+  bulletins: z.lazy(() => BulletinUpdateManyWithoutEleveNestedInputSchema).optional(),
+  factures: z.lazy(() => FactureUpdateManyWithoutEleveNestedInputSchema).optional(),
+  plansPaiement: z.lazy(() => PlanPaiementEleveUpdateManyWithoutEleveNestedInputSchema).optional(),
+  echeancesPaiement: z.lazy(() => EcheancePaiementUpdateManyWithoutEleveNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUpdateManyWithoutEleveNestedInputSchema).optional(),
+  abonnementsTransport: z.lazy(() => AbonnementTransportUpdateManyWithoutEleveNestedInputSchema).optional(),
+  abonnementsCantine: z.lazy(() => AbonnementCantineUpdateManyWithoutEleveNestedInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementUpdateManyWithoutEleveNestedInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeUpdateManyWithoutEleveNestedInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementUpdateManyWithoutEleveNestedInputSchema).optional(),
+  emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
+  profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+});
+
+export const EleveUncheckedUpdateWithoutEnrollmentDraftsInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutEnrollmentDraftsInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  code_eleve: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  statut: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  date_entree: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  liensParents: z.lazy(() => EleveParentTuteurUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  inscriptions: z.lazy(() => InscriptionUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  identifiants: z.lazy(() => IdentifiantEleveUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  notes: z.lazy(() => NoteUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  assessmentResults: z.lazy(() => AssessmentResultUncheckedUpdateManyWithoutStudentNestedInputSchema).optional(),
+  presences: z.lazy(() => PresenceEleveUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  justificatifs: z.lazy(() => JustificatifAbsenceUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  incidents: z.lazy(() => IncidentDisciplinaireUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  recompenses: z.lazy(() => RecompenseUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  bulletins: z.lazy(() => BulletinUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  factures: z.lazy(() => FactureUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  plansPaiement: z.lazy(() => PlanPaiementEleveUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  echeancesPaiement: z.lazy(() => EcheancePaiementUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  abonnementsTransport: z.lazy(() => AbonnementTransportUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  abonnementsCantine: z.lazy(() => AbonnementCantineUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  promessesPaiement: z.lazy(() => PromessePaiementUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  restrictionsAdministratives: z.lazy(() => RestrictionAdministrativeUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
+  pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+});
+
+export const UtilisateurUpsertWithoutEnrollmentDraftsCreatedInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutEnrollmentDraftsCreatedInput> = z.strictObject({
+  update: z.union([ z.lazy(() => UtilisateurUpdateWithoutEnrollmentDraftsCreatedInputSchema), z.lazy(() => UtilisateurUncheckedUpdateWithoutEnrollmentDraftsCreatedInputSchema) ]),
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftsCreatedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftsCreatedInputSchema) ]),
+  where: z.lazy(() => UtilisateurWhereInputSchema).optional(),
+});
+
+export const UtilisateurUpdateToOneWithWhereWithoutEnrollmentDraftsCreatedInputSchema: z.ZodType<Prisma.UtilisateurUpdateToOneWithWhereWithoutEnrollmentDraftsCreatedInput> = z.strictObject({
+  where: z.lazy(() => UtilisateurWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => UtilisateurUpdateWithoutEnrollmentDraftsCreatedInputSchema), z.lazy(() => UtilisateurUncheckedUpdateWithoutEnrollmentDraftsCreatedInputSchema) ]),
+});
+
+export const UtilisateurUpdateWithoutEnrollmentDraftsCreatedInputSchema: z.ZodType<Prisma.UtilisateurUpdateWithoutEnrollmentDraftsCreatedInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  email: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  telephone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mot_de_passe_hash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  statut: z.union([ z.lazy(() => StatutCompteSchema), z.lazy(() => EnumStatutCompteFieldUpdateOperationsInputSchema) ]).optional(),
+  dernier_login: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneWithoutUtilisateursNestedInputSchema).optional(),
+  profil: z.lazy(() => ProfilUpdateOneWithoutUtilisateurNestedInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageUpdateManyWithoutExpediteurNestedInputSchema).optional(),
+  notifications: z.lazy(() => NotificationUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUpdateManyWithoutProprietaireNestedInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentUpdateManyWithoutVerifieParNestedInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUpdateManyWithoutActeurNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeUpdateManyWithoutLeveurNestedInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
+  Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+});
+
+export const UtilisateurUncheckedUpdateWithoutEnrollmentDraftsCreatedInputSchema: z.ZodType<Prisma.UtilisateurUncheckedUpdateWithoutEnrollmentDraftsCreatedInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  email: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  telephone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mot_de_passe_hash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  statut: z.union([ z.lazy(() => StatutCompteSchema), z.lazy(() => EnumStatutCompteFieldUpdateOperationsInputSchema) ]).optional(),
+  dernier_login: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  profil: z.lazy(() => ProfilUncheckedUpdateOneWithoutUtilisateurNestedInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageUncheckedUpdateManyWithoutExpediteurNestedInputSchema).optional(),
+  notifications: z.lazy(() => NotificationUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUncheckedUpdateManyWithoutProprietaireNestedInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutVerifieParNestedInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUncheckedUpdateManyWithoutActeurNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisUncheckedUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceUncheckedUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementUncheckedUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeUncheckedUpdateManyWithoutLeveurNestedInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
+  Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+});
+
+export const UtilisateurUpsertWithoutEnrollmentDraftsUpdatedInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutEnrollmentDraftsUpdatedInput> = z.strictObject({
+  update: z.union([ z.lazy(() => UtilisateurUpdateWithoutEnrollmentDraftsUpdatedInputSchema), z.lazy(() => UtilisateurUncheckedUpdateWithoutEnrollmentDraftsUpdatedInputSchema) ]),
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftsUpdatedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftsUpdatedInputSchema) ]),
+  where: z.lazy(() => UtilisateurWhereInputSchema).optional(),
+});
+
+export const UtilisateurUpdateToOneWithWhereWithoutEnrollmentDraftsUpdatedInputSchema: z.ZodType<Prisma.UtilisateurUpdateToOneWithWhereWithoutEnrollmentDraftsUpdatedInput> = z.strictObject({
+  where: z.lazy(() => UtilisateurWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => UtilisateurUpdateWithoutEnrollmentDraftsUpdatedInputSchema), z.lazy(() => UtilisateurUncheckedUpdateWithoutEnrollmentDraftsUpdatedInputSchema) ]),
+});
+
+export const UtilisateurUpdateWithoutEnrollmentDraftsUpdatedInputSchema: z.ZodType<Prisma.UtilisateurUpdateWithoutEnrollmentDraftsUpdatedInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  email: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  telephone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mot_de_passe_hash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  statut: z.union([ z.lazy(() => StatutCompteSchema), z.lazy(() => EnumStatutCompteFieldUpdateOperationsInputSchema) ]).optional(),
+  dernier_login: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneWithoutUtilisateursNestedInputSchema).optional(),
+  profil: z.lazy(() => ProfilUpdateOneWithoutUtilisateurNestedInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageUpdateManyWithoutExpediteurNestedInputSchema).optional(),
+  notifications: z.lazy(() => NotificationUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUpdateManyWithoutProprietaireNestedInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentUpdateManyWithoutVerifieParNestedInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUpdateManyWithoutActeurNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeUpdateManyWithoutLeveurNestedInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
+  Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+});
+
+export const UtilisateurUncheckedUpdateWithoutEnrollmentDraftsUpdatedInputSchema: z.ZodType<Prisma.UtilisateurUncheckedUpdateWithoutEnrollmentDraftsUpdatedInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  email: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  telephone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mot_de_passe_hash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  statut: z.union([ z.lazy(() => StatutCompteSchema), z.lazy(() => EnumStatutCompteFieldUpdateOperationsInputSchema) ]).optional(),
+  dernier_login: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  profil: z.lazy(() => ProfilUncheckedUpdateOneWithoutUtilisateurNestedInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageUncheckedUpdateManyWithoutExpediteurNestedInputSchema).optional(),
+  notifications: z.lazy(() => NotificationUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUncheckedUpdateManyWithoutProprietaireNestedInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutVerifieParNestedInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUncheckedUpdateManyWithoutActeurNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisUncheckedUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceUncheckedUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementUncheckedUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeUncheckedUpdateManyWithoutLeveurNestedInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
+  Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+});
+
+export const InscriptionUpsertWithoutSourceDraftInputSchema: z.ZodType<Prisma.InscriptionUpsertWithoutSourceDraftInput> = z.strictObject({
+  update: z.union([ z.lazy(() => InscriptionUpdateWithoutSourceDraftInputSchema), z.lazy(() => InscriptionUncheckedUpdateWithoutSourceDraftInputSchema) ]),
+  create: z.union([ z.lazy(() => InscriptionCreateWithoutSourceDraftInputSchema), z.lazy(() => InscriptionUncheckedCreateWithoutSourceDraftInputSchema) ]),
+  where: z.lazy(() => InscriptionWhereInputSchema).optional(),
+});
+
+export const InscriptionUpdateToOneWithWhereWithoutSourceDraftInputSchema: z.ZodType<Prisma.InscriptionUpdateToOneWithWhereWithoutSourceDraftInput> = z.strictObject({
+  where: z.lazy(() => InscriptionWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => InscriptionUpdateWithoutSourceDraftInputSchema), z.lazy(() => InscriptionUncheckedUpdateWithoutSourceDraftInputSchema) ]),
+});
+
+export const InscriptionUpdateWithoutSourceDraftInputSchema: z.ZodType<Prisma.InscriptionUpdateWithoutSourceDraftInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  date_inscription: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  type_inscription: z.union([ z.lazy(() => TypeInscriptionSchema), z.lazy(() => EnumTypeInscriptionFieldUpdateOperationsInputSchema) ]).optional(),
+  statut: z.union([ z.lazy(() => StatutInscriptionSchema), z.lazy(() => EnumStatutInscriptionFieldUpdateOperationsInputSchema) ]).optional(),
+  statut_administratif: z.union([ z.lazy(() => StatutAdministratifInscriptionSchema), z.lazy(() => EnumStatutAdministratifInscriptionFieldUpdateOperationsInputSchema) ]).optional(),
+  statut_financier: z.union([ z.lazy(() => StatutFinancierInscriptionSchema), z.lazy(() => EnumStatutFinancierInscriptionFieldUpdateOperationsInputSchema) ]).optional(),
+  statut_dossier: z.union([ z.lazy(() => StatutDossierInscriptionSchema), z.lazy(() => EnumStatutDossierInscriptionFieldUpdateOperationsInputSchema) ]).optional(),
+  validation_date: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  acces_systeme_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consentements_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  date_sortie: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  raison_sortie: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve: z.lazy(() => EleveUpdateOneRequiredWithoutInscriptionsNestedInputSchema).optional(),
+  niveau: z.lazy(() => NiveauScolaireUpdateOneWithoutInscriptionsNestedInputSchema).optional(),
+  classe: z.lazy(() => ClasseUpdateOneWithoutInscriptionsNestedInputSchema).optional(),
+  annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutInscriptionsNestedInputSchema).optional(),
+  documents: z.lazy(() => InscriptionDocumentUpdateManyWithoutInscriptionNestedInputSchema).optional(),
+  historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+});
+
+export const InscriptionUncheckedUpdateWithoutSourceDraftInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateWithoutSourceDraftInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  niveau_scolaire_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  classe_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  date_inscription: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  type_inscription: z.union([ z.lazy(() => TypeInscriptionSchema), z.lazy(() => EnumTypeInscriptionFieldUpdateOperationsInputSchema) ]).optional(),
+  statut: z.union([ z.lazy(() => StatutInscriptionSchema), z.lazy(() => EnumStatutInscriptionFieldUpdateOperationsInputSchema) ]).optional(),
+  statut_administratif: z.union([ z.lazy(() => StatutAdministratifInscriptionSchema), z.lazy(() => EnumStatutAdministratifInscriptionFieldUpdateOperationsInputSchema) ]).optional(),
+  statut_financier: z.union([ z.lazy(() => StatutFinancierInscriptionSchema), z.lazy(() => EnumStatutFinancierInscriptionFieldUpdateOperationsInputSchema) ]).optional(),
+  statut_dossier: z.union([ z.lazy(() => StatutDossierInscriptionSchema), z.lazy(() => EnumStatutDossierInscriptionFieldUpdateOperationsInputSchema) ]).optional(),
+  validation_date: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  acces_systeme_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consentements_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  date_sortie: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  raison_sortie: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  documents: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutInscriptionNestedInputSchema).optional(),
+  historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUpsertWithWhereUniqueWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpsertWithWhereUniqueWithoutDraftInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateWithoutDraftInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDraftInputSchema) ]),
+});
+
+export const EnrollmentDraftFileUpdateWithWhereUniqueWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateWithWhereUniqueWithoutDraftInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithoutDraftInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateWithoutDraftInputSchema) ]),
+});
+
+export const EnrollmentDraftFileUpdateManyWithWhereWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateManyWithWhereWithoutDraftInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyMutationInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDraftInputSchema) ]),
+});
+
+export const EnrollmentDraftCreateWithoutFilesInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateWithoutFilesInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutEnrollmentDraftsInputSchema),
+  eleve: z.lazy(() => EleveCreateNestedOneWithoutEnrollmentDraftsInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsCreatedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftsUpdatedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionCreateNestedOneWithoutSourceDraftInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedCreateWithoutFilesInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedCreateWithoutFilesInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftCreateOrConnectWithoutFilesInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateOrConnectWithoutFilesInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutFilesInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutFilesInputSchema) ]),
+});
+
+export const DocumentTypeInscriptionCreateWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionCreateWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  id: z.uuid().optional(),
+  code: z.string(),
+  nom: z.string(),
+  description: z.string().optional().nullable(),
+  type_inscriptions_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  est_obligatoire_par_defaut: z.boolean().optional(),
+  est_actif: z.boolean().optional(),
+  ordre: z.number().int().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutDocumentTypesInscriptionInputSchema).optional(),
+  documents: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
+});
+
+export const DocumentTypeInscriptionUncheckedCreateWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUncheckedCreateWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string().optional().nullable(),
+  code: z.string(),
+  nom: z.string(),
+  description: z.string().optional().nullable(),
+  type_inscriptions_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  est_obligatoire_par_defaut: z.boolean().optional(),
+  est_actif: z.boolean().optional(),
+  ordre: z.number().int().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  documents: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
+});
+
+export const DocumentTypeInscriptionCreateOrConnectWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionCreateOrConnectWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  where: z.lazy(() => DocumentTypeInscriptionWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => DocumentTypeInscriptionCreateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => DocumentTypeInscriptionUncheckedCreateWithoutEnrollmentDraftFilesInputSchema) ]),
+});
+
+export const FichierCreateWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.FichierCreateWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  id: z.uuid().optional(),
+  fournisseur_stockage: z.string().optional().nullable(),
+  chemin: z.string(),
+  type_mime: z.string().optional().nullable(),
+  taille: z.number().int().optional().nullable(),
+  checksum: z.string().optional().nullable(),
+  televerse_le: z.coerce.date().optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutFichiersInputSchema),
+  proprietaire: z.lazy(() => UtilisateurCreateNestedOneWithoutFichiersInputSchema).optional(),
+  liens: z.lazy(() => LienFichierCreateNestedManyWithoutFichierInputSchema).optional(),
+  documentsInscriptions: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutFichierInputSchema).optional(),
+});
+
+export const FichierUncheckedCreateWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.FichierUncheckedCreateWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  proprietaire_utilisateur_id: z.string().optional().nullable(),
+  fournisseur_stockage: z.string().optional().nullable(),
+  chemin: z.string(),
+  type_mime: z.string().optional().nullable(),
+  taille: z.number().int().optional().nullable(),
+  checksum: z.string().optional().nullable(),
+  televerse_le: z.coerce.date().optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  liens: z.lazy(() => LienFichierUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
+  documentsInscriptions: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
+});
+
+export const FichierCreateOrConnectWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.FichierCreateOrConnectWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  where: z.lazy(() => FichierWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => FichierCreateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => FichierUncheckedCreateWithoutEnrollmentDraftFilesInputSchema) ]),
+});
+
+export const UtilisateurCreateWithoutEnrollmentDraftFilesUploadedInputSchema: z.ZodType<Prisma.UtilisateurCreateWithoutEnrollmentDraftFilesUploadedInput> = z.strictObject({
+  id: z.uuid().optional(),
+  email: z.string().optional().nullable(),
+  telephone: z.string().optional().nullable(),
+  mot_de_passe_hash: z.string().optional().nullable(),
+  statut: z.lazy(() => StatutCompteSchema).optional(),
+  dernier_login: z.coerce.date().optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutUtilisateursInputSchema).optional(),
+  profil: z.lazy(() => ProfilCreateNestedOneWithoutUtilisateurInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageCreateNestedManyWithoutExpediteurInputSchema).optional(),
+  notifications: z.lazy(() => NotificationCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  fichiers: z.lazy(() => FichierCreateNestedManyWithoutProprietaireInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutVerifieParInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditCreateNestedManyWithoutActeurInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionCreateNestedManyWithoutCreateurInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutCreateurInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementCreateNestedManyWithoutCreateurInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementCreateNestedManyWithoutValidateurInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeCreateNestedManyWithoutCreateurInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeCreateNestedManyWithoutLeveurInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutCreateurInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutValidateurInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+});
+
+export const UtilisateurUncheckedCreateWithoutEnrollmentDraftFilesUploadedInputSchema: z.ZodType<Prisma.UtilisateurUncheckedCreateWithoutEnrollmentDraftFilesUploadedInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  telephone: z.string().optional().nullable(),
+  mot_de_passe_hash: z.string().optional().nullable(),
+  statut: z.lazy(() => StatutCompteSchema).optional(),
+  dernier_login: z.coerce.date().optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  profil: z.lazy(() => ProfilUncheckedCreateNestedOneWithoutUtilisateurInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageUncheckedCreateNestedManyWithoutExpediteurInputSchema).optional(),
+  notifications: z.lazy(() => NotificationUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUncheckedCreateNestedManyWithoutProprietaireInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutVerifieParInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUncheckedCreateNestedManyWithoutActeurInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisUncheckedCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceUncheckedCreateNestedManyWithoutApprobateurInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementUncheckedCreateNestedManyWithoutValidateurInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeUncheckedCreateNestedManyWithoutLeveurInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutValidateurInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
+});
+
+export const UtilisateurCreateOrConnectWithoutEnrollmentDraftFilesUploadedInputSchema: z.ZodType<Prisma.UtilisateurCreateOrConnectWithoutEnrollmentDraftFilesUploadedInput> = z.strictObject({
+  where: z.lazy(() => UtilisateurWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftFilesUploadedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftFilesUploadedInputSchema) ]),
+});
+
+export const EnrollmentDraftUpsertWithoutFilesInputSchema: z.ZodType<Prisma.EnrollmentDraftUpsertWithoutFilesInput> = z.strictObject({
+  update: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutFilesInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutFilesInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftCreateWithoutFilesInputSchema), z.lazy(() => EnrollmentDraftUncheckedCreateWithoutFilesInputSchema) ]),
+  where: z.lazy(() => EnrollmentDraftWhereInputSchema).optional(),
+});
+
+export const EnrollmentDraftUpdateToOneWithWhereWithoutFilesInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateToOneWithWhereWithoutFilesInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => EnrollmentDraftUpdateWithoutFilesInputSchema), z.lazy(() => EnrollmentDraftUncheckedUpdateWithoutFilesInputSchema) ]),
+});
+
+export const EnrollmentDraftUpdateWithoutFilesInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithoutFilesInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  eleve: z.lazy(() => EleveUpdateOneWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsCreatedNestedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsUpdatedNestedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionUpdateOneWithoutSourceDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateWithoutFilesInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateWithoutFilesInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const DocumentTypeInscriptionUpsertWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUpsertWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  update: z.union([ z.lazy(() => DocumentTypeInscriptionUpdateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => DocumentTypeInscriptionUncheckedUpdateWithoutEnrollmentDraftFilesInputSchema) ]),
+  create: z.union([ z.lazy(() => DocumentTypeInscriptionCreateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => DocumentTypeInscriptionUncheckedCreateWithoutEnrollmentDraftFilesInputSchema) ]),
+  where: z.lazy(() => DocumentTypeInscriptionWhereInputSchema).optional(),
+});
+
+export const DocumentTypeInscriptionUpdateToOneWithWhereWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUpdateToOneWithWhereWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  where: z.lazy(() => DocumentTypeInscriptionWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => DocumentTypeInscriptionUpdateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => DocumentTypeInscriptionUncheckedUpdateWithoutEnrollmentDraftFilesInputSchema) ]),
+});
+
+export const DocumentTypeInscriptionUpdateWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUpdateWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  code: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  nom: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  description: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  type_inscriptions_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  est_obligatoire_par_defaut: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  est_actif: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  ordre: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneWithoutDocumentTypesInscriptionNestedInputSchema).optional(),
+  documents: z.lazy(() => InscriptionDocumentUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
+});
+
+export const DocumentTypeInscriptionUncheckedUpdateWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUncheckedUpdateWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  code: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  nom: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  description: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  type_inscriptions_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  est_obligatoire_par_defaut: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  est_actif: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
+  ordre: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  documents: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
+});
+
+export const FichierUpsertWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.FichierUpsertWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  update: z.union([ z.lazy(() => FichierUpdateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => FichierUncheckedUpdateWithoutEnrollmentDraftFilesInputSchema) ]),
+  create: z.union([ z.lazy(() => FichierCreateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => FichierUncheckedCreateWithoutEnrollmentDraftFilesInputSchema) ]),
+  where: z.lazy(() => FichierWhereInputSchema).optional(),
+});
+
+export const FichierUpdateToOneWithWhereWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.FichierUpdateToOneWithWhereWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  where: z.lazy(() => FichierWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => FichierUpdateWithoutEnrollmentDraftFilesInputSchema), z.lazy(() => FichierUncheckedUpdateWithoutEnrollmentDraftFilesInputSchema) ]),
+});
+
+export const FichierUpdateWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.FichierUpdateWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  fournisseur_stockage: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  chemin: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  type_mime: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  taille: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  checksum: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  televerse_le: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutFichiersNestedInputSchema).optional(),
+  proprietaire: z.lazy(() => UtilisateurUpdateOneWithoutFichiersNestedInputSchema).optional(),
+  liens: z.lazy(() => LienFichierUpdateManyWithoutFichierNestedInputSchema).optional(),
+  documentsInscriptions: z.lazy(() => InscriptionDocumentUpdateManyWithoutFichierNestedInputSchema).optional(),
+});
+
+export const FichierUncheckedUpdateWithoutEnrollmentDraftFilesInputSchema: z.ZodType<Prisma.FichierUncheckedUpdateWithoutEnrollmentDraftFilesInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  proprietaire_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  fournisseur_stockage: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  chemin: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  type_mime: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  taille: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  checksum: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  televerse_le: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  liens: z.lazy(() => LienFichierUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
+  documentsInscriptions: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
+});
+
+export const UtilisateurUpsertWithoutEnrollmentDraftFilesUploadedInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutEnrollmentDraftFilesUploadedInput> = z.strictObject({
+  update: z.union([ z.lazy(() => UtilisateurUpdateWithoutEnrollmentDraftFilesUploadedInputSchema), z.lazy(() => UtilisateurUncheckedUpdateWithoutEnrollmentDraftFilesUploadedInputSchema) ]),
+  create: z.union([ z.lazy(() => UtilisateurCreateWithoutEnrollmentDraftFilesUploadedInputSchema), z.lazy(() => UtilisateurUncheckedCreateWithoutEnrollmentDraftFilesUploadedInputSchema) ]),
+  where: z.lazy(() => UtilisateurWhereInputSchema).optional(),
+});
+
+export const UtilisateurUpdateToOneWithWhereWithoutEnrollmentDraftFilesUploadedInputSchema: z.ZodType<Prisma.UtilisateurUpdateToOneWithWhereWithoutEnrollmentDraftFilesUploadedInput> = z.strictObject({
+  where: z.lazy(() => UtilisateurWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => UtilisateurUpdateWithoutEnrollmentDraftFilesUploadedInputSchema), z.lazy(() => UtilisateurUncheckedUpdateWithoutEnrollmentDraftFilesUploadedInputSchema) ]),
+});
+
+export const UtilisateurUpdateWithoutEnrollmentDraftFilesUploadedInputSchema: z.ZodType<Prisma.UtilisateurUpdateWithoutEnrollmentDraftFilesUploadedInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  email: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  telephone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mot_de_passe_hash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  statut: z.union([ z.lazy(() => StatutCompteSchema), z.lazy(() => EnumStatutCompteFieldUpdateOperationsInputSchema) ]).optional(),
+  dernier_login: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneWithoutUtilisateursNestedInputSchema).optional(),
+  profil: z.lazy(() => ProfilUpdateOneWithoutUtilisateurNestedInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageUpdateManyWithoutExpediteurNestedInputSchema).optional(),
+  notifications: z.lazy(() => NotificationUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUpdateManyWithoutProprietaireNestedInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentUpdateManyWithoutVerifieParNestedInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUpdateManyWithoutActeurNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeUpdateManyWithoutLeveurNestedInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+});
+
+export const UtilisateurUncheckedUpdateWithoutEnrollmentDraftFilesUploadedInputSchema: z.ZodType<Prisma.UtilisateurUncheckedUpdateWithoutEnrollmentDraftFilesUploadedInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  email: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  telephone: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mot_de_passe_hash: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  statut: z.union([ z.lazy(() => StatutCompteSchema), z.lazy(() => EnumStatutCompteFieldUpdateOperationsInputSchema) ]).optional(),
+  dernier_login: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  scope_json: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  profil: z.lazy(() => ProfilUncheckedUpdateOneWithoutUtilisateurNestedInputSchema).optional(),
+  roles: z.lazy(() => UtilisateurRoleUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  messagesEnvoyes: z.lazy(() => MessageUncheckedUpdateManyWithoutExpediteurNestedInputSchema).optional(),
+  notifications: z.lazy(() => NotificationUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  fichiers: z.lazy(() => FichierUncheckedUpdateManyWithoutProprietaireNestedInputSchema).optional(),
+  documentsInscriptionVerifies: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutVerifieParNestedInputSchema).optional(),
+  journauxAudit: z.lazy(() => JournalAuditUncheckedUpdateManyWithoutActeurNestedInputSchema).optional(),
+  facturationsRecurrentes: z.lazy(() => FacturationRecurrenteExecutionUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  cataloguesFraisApprouves: z.lazy(() => CatalogueFraisUncheckedUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  reglesRecouvrementApprouvees: z.lazy(() => RegleRecouvrementFinanceUncheckedUpdateManyWithoutApprobateurNestedInputSchema).optional(),
+  promessesPaiementCreees: z.lazy(() => PromessePaiementUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  promessesPaiementValidees: z.lazy(() => PromessePaiementUncheckedUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  restrictionsAdministrativesCreees: z.lazy(() => RestrictionAdministrativeUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  restrictionsAdministrativesLevees: z.lazy(() => RestrictionAdministrativeUncheckedUpdateManyWithoutLeveurNestedInputSchema).optional(),
+  dossiersRecouvrementCrees: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutValidateurNestedInputSchema).optional(),
+  programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
+  programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
+  programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
+  MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
 });
 
 export const EleveCreateWithoutIdentifiantsInputSchema: z.ZodType<Prisma.EleveCreateWithoutIdentifiantsInput> = z.strictObject({
@@ -61709,6 +65868,7 @@ export const EleveCreateWithoutIdentifiantsInputSchema: z.ZodType<Prisma.EleveCr
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutIdentifiantsInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutIdentifiantsInput> = z.strictObject({
@@ -61741,6 +65901,7 @@ export const EleveUncheckedCreateWithoutIdentifiantsInputSchema: z.ZodType<Prism
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutIdentifiantsInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutIdentifiantsInput> = z.strictObject({
@@ -61789,6 +65950,7 @@ export const EleveUpdateWithoutIdentifiantsInputSchema: z.ZodType<Prisma.EleveUp
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutIdentifiantsInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutIdentifiantsInput> = z.strictObject({
@@ -61821,6 +65983,7 @@ export const EleveUncheckedUpdateWithoutIdentifiantsInputSchema: z.ZodType<Prism
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EtablissementCreateWithoutPersonnelInputSchema: z.ZodType<Prisma.EtablissementCreateWithoutPersonnelInput> = z.strictObject({
@@ -61868,6 +66031,7 @@ export const EtablissementCreateWithoutPersonnelInputSchema: z.ZodType<Prisma.Et
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutPersonnelInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutPersonnelInput> = z.strictObject({
@@ -61915,6 +66079,7 @@ export const EtablissementUncheckedCreateWithoutPersonnelInputSchema: z.ZodType<
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutPersonnelInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutPersonnelInput> = z.strictObject({
@@ -61953,6 +66118,9 @@ export const UtilisateurCreateWithoutPersonnelInputSchema: z.ZodType<Prisma.Util
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -61989,6 +66157,9 @@ export const UtilisateurUncheckedCreateWithoutPersonnelInputSchema: z.ZodType<Pr
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -62146,6 +66317,7 @@ export const EtablissementUpdateWithoutPersonnelInputSchema: z.ZodType<Prisma.Et
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutPersonnelInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutPersonnelInput> = z.strictObject({
@@ -62193,6 +66365,7 @@ export const EtablissementUncheckedUpdateWithoutPersonnelInputSchema: z.ZodType<
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const UtilisateurUpsertWithoutPersonnelInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutPersonnelInput> = z.strictObject({
@@ -62237,6 +66410,9 @@ export const UtilisateurUpdateWithoutPersonnelInputSchema: z.ZodType<Prisma.Util
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -62273,6 +66449,9 @@ export const UtilisateurUncheckedUpdateWithoutPersonnelInputSchema: z.ZodType<Pr
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   MessageDestinataire: z.lazy(() => MessageDestinataireUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -62825,6 +67004,7 @@ export const EtablissementCreateWithoutDepartementsInputSchema: z.ZodType<Prisma
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutDepartementsInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutDepartementsInput> = z.strictObject({
@@ -62872,6 +67052,7 @@ export const EtablissementUncheckedCreateWithoutDepartementsInputSchema: z.ZodTy
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutDepartementsInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutDepartementsInput> = z.strictObject({
@@ -63007,6 +67188,7 @@ export const EtablissementUpdateWithoutDepartementsInputSchema: z.ZodType<Prisma
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutDepartementsInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutDepartementsInput> = z.strictObject({
@@ -63054,6 +67236,7 @@ export const EtablissementUncheckedUpdateWithoutDepartementsInputSchema: z.ZodTy
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const MatiereUpsertWithWhereUniqueWithoutDepartementInputSchema: z.ZodType<Prisma.MatiereUpsertWithWhereUniqueWithoutDepartementInput> = z.strictObject({
@@ -63144,6 +67327,7 @@ export const EtablissementCreateWithoutMatieresInputSchema: z.ZodType<Prisma.Eta
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutMatieresInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutMatieresInput> = z.strictObject({
@@ -63191,6 +67375,7 @@ export const EtablissementUncheckedCreateWithoutMatieresInputSchema: z.ZodType<P
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutMatieresInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutMatieresInput> = z.strictObject({
@@ -63537,6 +67722,7 @@ export const EtablissementUpdateWithoutMatieresInputSchema: z.ZodType<Prisma.Eta
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutMatieresInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutMatieresInput> = z.strictObject({
@@ -63584,6 +67770,7 @@ export const EtablissementUncheckedUpdateWithoutMatieresInputSchema: z.ZodType<P
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const DepartementUpsertWithoutMatieresInputSchema: z.ZodType<Prisma.DepartementUpsertWithoutMatieresInput> = z.strictObject({
@@ -63791,6 +67978,7 @@ export const EtablissementCreateWithoutPedagogicalItemsInputSchema: z.ZodType<Pr
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutPedagogicalItemsInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutPedagogicalItemsInput> = z.strictObject({
@@ -63838,6 +68026,7 @@ export const EtablissementUncheckedCreateWithoutPedagogicalItemsInputSchema: z.Z
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutPedagogicalItemsInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutPedagogicalItemsInput> = z.strictObject({
@@ -63871,6 +68060,7 @@ export const AnneeScolaireCreateWithoutPedagogicalItemsInputSchema: z.ZodType<Pr
   reportCardTemplates: z.lazy(() => ReportCardTemplateCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutPedagogicalItemsInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutPedagogicalItemsInput> = z.strictObject({
@@ -63899,6 +68089,7 @@ export const AnneeScolaireUncheckedCreateWithoutPedagogicalItemsInputSchema: z.Z
   reportCardTemplates: z.lazy(() => ReportCardTemplateUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutPedagogicalItemsInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutPedagogicalItemsInput> = z.strictObject({
@@ -64410,6 +68601,7 @@ export const EtablissementUpdateWithoutPedagogicalItemsInputSchema: z.ZodType<Pr
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutPedagogicalItemsInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutPedagogicalItemsInput> = z.strictObject({
@@ -64457,6 +68649,7 @@ export const EtablissementUncheckedUpdateWithoutPedagogicalItemsInputSchema: z.Z
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutPedagogicalItemsInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutPedagogicalItemsInput> = z.strictObject({
@@ -64496,6 +68689,7 @@ export const AnneeScolaireUpdateWithoutPedagogicalItemsInputSchema: z.ZodType<Pr
   reportCardTemplates: z.lazy(() => ReportCardTemplateUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutPedagogicalItemsInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutPedagogicalItemsInput> = z.strictObject({
@@ -64524,6 +68718,7 @@ export const AnneeScolaireUncheckedUpdateWithoutPedagogicalItemsInputSchema: z.Z
   reportCardTemplates: z.lazy(() => ReportCardTemplateUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const NiveauScolaireUpsertWithoutPedagogicalItemsInputSchema: z.ZodType<Prisma.NiveauScolaireUpsertWithoutPedagogicalItemsInput> = z.strictObject({
@@ -64869,6 +69064,7 @@ export const EtablissementCreateWithoutGradingScalesInputSchema: z.ZodType<Prism
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutGradingScalesInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutGradingScalesInput> = z.strictObject({
@@ -64916,6 +69112,7 @@ export const EtablissementUncheckedCreateWithoutGradingScalesInputSchema: z.ZodT
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutGradingScalesInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutGradingScalesInput> = z.strictObject({
@@ -64949,6 +69146,7 @@ export const AnneeScolaireCreateWithoutGradingScalesInputSchema: z.ZodType<Prism
   reportCardTemplates: z.lazy(() => ReportCardTemplateCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutGradingScalesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutGradingScalesInput> = z.strictObject({
@@ -64977,6 +69175,7 @@ export const AnneeScolaireUncheckedCreateWithoutGradingScalesInputSchema: z.ZodT
   reportCardTemplates: z.lazy(() => ReportCardTemplateUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutGradingScalesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutGradingScalesInput> = z.strictObject({
@@ -65318,6 +69517,7 @@ export const EtablissementUpdateWithoutGradingScalesInputSchema: z.ZodType<Prism
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutGradingScalesInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutGradingScalesInput> = z.strictObject({
@@ -65365,6 +69565,7 @@ export const EtablissementUncheckedUpdateWithoutGradingScalesInputSchema: z.ZodT
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutGradingScalesInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutGradingScalesInput> = z.strictObject({
@@ -65404,6 +69605,7 @@ export const AnneeScolaireUpdateWithoutGradingScalesInputSchema: z.ZodType<Prism
   reportCardTemplates: z.lazy(() => ReportCardTemplateUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutGradingScalesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutGradingScalesInput> = z.strictObject({
@@ -65432,6 +69634,7 @@ export const AnneeScolaireUncheckedUpdateWithoutGradingScalesInputSchema: z.ZodT
   reportCardTemplates: z.lazy(() => ReportCardTemplateUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const GradingScaleLevelUpsertWithWhereUniqueWithoutGradingScaleInputSchema: z.ZodType<Prisma.GradingScaleLevelUpsertWithWhereUniqueWithoutGradingScaleInput> = z.strictObject({
@@ -65734,6 +69937,7 @@ export const EtablissementCreateWithoutProgrammeInputSchema: z.ZodType<Prisma.Et
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutProgrammeInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutProgrammeInput> = z.strictObject({
@@ -65781,6 +69985,7 @@ export const EtablissementUncheckedCreateWithoutProgrammeInputSchema: z.ZodType<
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutProgrammeInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutProgrammeInput> = z.strictObject({
@@ -65814,6 +70019,7 @@ export const AnneeScolaireCreateWithoutProgrammesInputSchema: z.ZodType<Prisma.A
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutProgrammesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutProgrammesInput> = z.strictObject({
@@ -65842,6 +70048,7 @@ export const AnneeScolaireUncheckedCreateWithoutProgrammesInputSchema: z.ZodType
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutProgrammesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutProgrammesInput> = z.strictObject({
@@ -65955,6 +70162,9 @@ export const UtilisateurCreateWithoutProgrammesCreesInputSchema: z.ZodType<Prism
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutValidateurInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -65991,6 +70201,9 @@ export const UtilisateurUncheckedCreateWithoutProgrammesCreesInputSchema: z.ZodT
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutValidateurInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -66032,6 +70245,9 @@ export const UtilisateurCreateWithoutProgrammesMajInputSchema: z.ZodType<Prisma.
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutValidateurInputSchema).optional(),
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -66068,6 +70284,9 @@ export const UtilisateurUncheckedCreateWithoutProgrammesMajInputSchema: z.ZodTyp
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutValidateurInputSchema).optional(),
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -66225,6 +70444,7 @@ export const EtablissementUpdateWithoutProgrammeInputSchema: z.ZodType<Prisma.Et
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutProgrammeInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutProgrammeInput> = z.strictObject({
@@ -66272,6 +70492,7 @@ export const EtablissementUncheckedUpdateWithoutProgrammeInputSchema: z.ZodType<
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutProgrammesInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutProgrammesInput> = z.strictObject({
@@ -66311,6 +70532,7 @@ export const AnneeScolaireUpdateWithoutProgrammesInputSchema: z.ZodType<Prisma.A
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutProgrammesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutProgrammesInput> = z.strictObject({
@@ -66339,6 +70561,7 @@ export const AnneeScolaireUncheckedUpdateWithoutProgrammesInputSchema: z.ZodType
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const NiveauScolaireUpsertWithoutProgrammesInputSchema: z.ZodType<Prisma.NiveauScolaireUpsertWithoutProgrammesInput> = z.strictObject({
@@ -66470,6 +70693,9 @@ export const UtilisateurUpdateWithoutProgrammesCreesInputSchema: z.ZodType<Prism
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUpdateManyWithoutValidateurNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -66506,6 +70732,9 @@ export const UtilisateurUncheckedUpdateWithoutProgrammesCreesInputSchema: z.ZodT
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutValidateurNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -66553,6 +70782,9 @@ export const UtilisateurUpdateWithoutProgrammesMajInputSchema: z.ZodType<Prisma.
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUpdateManyWithoutValidateurNestedInputSchema).optional(),
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -66589,6 +70821,9 @@ export const UtilisateurUncheckedUpdateWithoutProgrammesMajInputSchema: z.ZodTyp
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutValidateurNestedInputSchema).optional(),
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -66980,6 +71215,9 @@ export const UtilisateurCreateWithoutProgrammeChangeLogsInputSchema: z.ZodType<P
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutValidateurInputSchema).optional(),
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -67016,6 +71254,9 @@ export const UtilisateurUncheckedCreateWithoutProgrammeChangeLogsInputSchema: z.
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutValidateurInputSchema).optional(),
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -67125,6 +71366,9 @@ export const UtilisateurUpdateWithoutProgrammeChangeLogsInputSchema: z.ZodType<P
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUpdateManyWithoutValidateurNestedInputSchema).optional(),
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -67161,6 +71405,9 @@ export const UtilisateurUncheckedUpdateWithoutProgrammeChangeLogsInputSchema: z.
   dossiersRecouvrementValides: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutValidateurNestedInputSchema).optional(),
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -67212,6 +71459,7 @@ export const EtablissementCreateWithoutCoursInputSchema: z.ZodType<Prisma.Etabli
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutCoursInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutCoursInput> = z.strictObject({
@@ -67259,6 +71507,7 @@ export const EtablissementUncheckedCreateWithoutCoursInputSchema: z.ZodType<Pris
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutCoursInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutCoursInput> = z.strictObject({
@@ -67292,6 +71541,7 @@ export const AnneeScolaireCreateWithoutCoursInputSchema: z.ZodType<Prisma.AnneeS
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutCoursInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutCoursInput> = z.strictObject({
@@ -67320,6 +71570,7 @@ export const AnneeScolaireUncheckedCreateWithoutCoursInputSchema: z.ZodType<Pris
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutCoursInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutCoursInput> = z.strictObject({
@@ -67588,6 +71839,7 @@ export const EtablissementUpdateWithoutCoursInputSchema: z.ZodType<Prisma.Etabli
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutCoursInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutCoursInput> = z.strictObject({
@@ -67635,6 +71887,7 @@ export const EtablissementUncheckedUpdateWithoutCoursInputSchema: z.ZodType<Pris
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutCoursInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutCoursInput> = z.strictObject({
@@ -67674,6 +71927,7 @@ export const AnneeScolaireUpdateWithoutCoursInputSchema: z.ZodType<Prisma.AnneeS
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutCoursInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutCoursInput> = z.strictObject({
@@ -67702,6 +71956,7 @@ export const AnneeScolaireUncheckedUpdateWithoutCoursInputSchema: z.ZodType<Pris
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const ClasseUpsertWithoutCoursInputSchema: z.ZodType<Prisma.ClasseUpsertWithoutCoursInput> = z.strictObject({
@@ -68630,6 +72885,7 @@ export const EleveCreateWithoutNotesInputSchema: z.ZodType<Prisma.EleveCreateWit
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutNotesInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutNotesInput> = z.strictObject({
@@ -68662,6 +72918,7 @@ export const EleveUncheckedCreateWithoutNotesInputSchema: z.ZodType<Prisma.Eleve
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutNotesInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutNotesInput> = z.strictObject({
@@ -68769,6 +73026,7 @@ export const EleveUpdateWithoutNotesInputSchema: z.ZodType<Prisma.EleveUpdateWit
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutNotesInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutNotesInput> = z.strictObject({
@@ -68801,6 +73059,7 @@ export const EleveUncheckedUpdateWithoutNotesInputSchema: z.ZodType<Prisma.Eleve
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EvaluationCreateWithoutAssessmentResultsInputSchema: z.ZodType<Prisma.EvaluationCreateWithoutAssessmentResultsInput> = z.strictObject({
@@ -68886,6 +73145,7 @@ export const EleveCreateWithoutAssessmentResultsInputSchema: z.ZodType<Prisma.El
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutAssessmentResultsInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutAssessmentResultsInput> = z.strictObject({
@@ -68918,6 +73178,7 @@ export const EleveUncheckedCreateWithoutAssessmentResultsInputSchema: z.ZodType<
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutAssessmentResultsInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutAssessmentResultsInput> = z.strictObject({
@@ -69114,6 +73375,7 @@ export const EleveUpdateWithoutAssessmentResultsInputSchema: z.ZodType<Prisma.El
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutAssessmentResultsInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutAssessmentResultsInput> = z.strictObject({
@@ -69146,6 +73408,7 @@ export const EleveUncheckedUpdateWithoutAssessmentResultsInputSchema: z.ZodType<
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const GradingScaleLevelUpsertWithoutAssessmentResultsInputSchema: z.ZodType<Prisma.GradingScaleLevelUpsertWithoutAssessmentResultsInput> = z.strictObject({
@@ -69369,6 +73632,7 @@ export const EtablissementCreateWithoutPedagogicalItemAveragesInputSchema: z.Zod
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -69416,6 +73680,7 @@ export const EtablissementUncheckedCreateWithoutPedagogicalItemAveragesInputSche
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -69449,6 +73714,7 @@ export const AnneeScolaireCreateWithoutPedagogicalItemAveragesInputSchema: z.Zod
   reportCardTemplates: z.lazy(() => ReportCardTemplateCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -69477,6 +73743,7 @@ export const AnneeScolaireUncheckedCreateWithoutPedagogicalItemAveragesInputSche
   reportCardTemplates: z.lazy(() => ReportCardTemplateUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -69586,6 +73853,7 @@ export const EleveCreateWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Pri
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutEleveInputSchema).optional(),
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -69618,6 +73886,7 @@ export const EleveUncheckedCreateWithoutPedagogicalItemAveragesInputSchema: z.Zo
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -69746,6 +74015,7 @@ export const EtablissementUpdateWithoutPedagogicalItemAveragesInputSchema: z.Zod
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -69793,6 +74063,7 @@ export const EtablissementUncheckedUpdateWithoutPedagogicalItemAveragesInputSche
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -69832,6 +74103,7 @@ export const AnneeScolaireUpdateWithoutPedagogicalItemAveragesInputSchema: z.Zod
   reportCardTemplates: z.lazy(() => ReportCardTemplateUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -69860,6 +74132,7 @@ export const AnneeScolaireUncheckedUpdateWithoutPedagogicalItemAveragesInputSche
   reportCardTemplates: z.lazy(() => ReportCardTemplateUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const PeriodeUpsertWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.PeriodeUpsertWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -69987,6 +74260,7 @@ export const EleveUpdateWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Pri
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementUpdateManyWithoutEleveNestedInputSchema).optional(),
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutPedagogicalItemAveragesInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutPedagogicalItemAveragesInput> = z.strictObject({
@@ -70019,6 +74293,7 @@ export const EleveUncheckedUpdateWithoutPedagogicalItemAveragesInputSchema: z.Zo
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const PedagogicalItemUpsertWithoutCalculatedAveragesInputSchema: z.ZodType<Prisma.PedagogicalItemUpsertWithoutCalculatedAveragesInput> = z.strictObject({
@@ -70137,6 +74412,7 @@ export const EtablissementCreateWithoutRegleNoteInputSchema: z.ZodType<Prisma.Et
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutRegleNoteInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutRegleNoteInput> = z.strictObject({
@@ -70184,6 +74460,7 @@ export const EtablissementUncheckedCreateWithoutRegleNoteInputSchema: z.ZodType<
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutRegleNoteInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutRegleNoteInput> = z.strictObject({
@@ -70247,6 +74524,7 @@ export const EtablissementUpdateWithoutRegleNoteInputSchema: z.ZodType<Prisma.Et
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutRegleNoteInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutRegleNoteInput> = z.strictObject({
@@ -70294,6 +74572,7 @@ export const EtablissementUncheckedUpdateWithoutRegleNoteInputSchema: z.ZodType<
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementCreateWithoutReportCardTemplatesInputSchema: z.ZodType<Prisma.EtablissementCreateWithoutReportCardTemplatesInput> = z.strictObject({
@@ -70341,6 +74620,7 @@ export const EtablissementCreateWithoutReportCardTemplatesInputSchema: z.ZodType
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutReportCardTemplatesInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutReportCardTemplatesInput> = z.strictObject({
@@ -70388,6 +74668,7 @@ export const EtablissementUncheckedCreateWithoutReportCardTemplatesInputSchema: 
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutReportCardTemplatesInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutReportCardTemplatesInput> = z.strictObject({
@@ -70421,6 +74702,7 @@ export const AnneeScolaireCreateWithoutReportCardTemplatesInputSchema: z.ZodType
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutReportCardTemplatesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutReportCardTemplatesInput> = z.strictObject({
@@ -70449,6 +74731,7 @@ export const AnneeScolaireUncheckedCreateWithoutReportCardTemplatesInputSchema: 
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutReportCardTemplatesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutReportCardTemplatesInput> = z.strictObject({
@@ -70725,6 +75008,7 @@ export const EtablissementUpdateWithoutReportCardTemplatesInputSchema: z.ZodType
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutReportCardTemplatesInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutReportCardTemplatesInput> = z.strictObject({
@@ -70772,6 +75056,7 @@ export const EtablissementUncheckedUpdateWithoutReportCardTemplatesInputSchema: 
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutReportCardTemplatesInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutReportCardTemplatesInput> = z.strictObject({
@@ -70811,6 +75096,7 @@ export const AnneeScolaireUpdateWithoutReportCardTemplatesInputSchema: z.ZodType
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutReportCardTemplatesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutReportCardTemplatesInput> = z.strictObject({
@@ -70839,6 +75125,7 @@ export const AnneeScolaireUncheckedUpdateWithoutReportCardTemplatesInputSchema: 
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const NiveauScolaireUpsertWithoutReportCardTemplatesInputSchema: z.ZodType<Prisma.NiveauScolaireUpsertWithoutReportCardTemplatesInput> = z.strictObject({
@@ -72404,6 +76691,7 @@ export const EleveCreateWithoutBulletinsInputSchema: z.ZodType<Prisma.EleveCreat
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutBulletinsInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutBulletinsInput> = z.strictObject({
@@ -72436,6 +76724,7 @@ export const EleveUncheckedCreateWithoutBulletinsInputSchema: z.ZodType<Prisma.E
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutBulletinsInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutBulletinsInput> = z.strictObject({
@@ -72785,6 +77074,7 @@ export const EleveUpdateWithoutBulletinsInputSchema: z.ZodType<Prisma.EleveUpdat
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutBulletinsInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutBulletinsInput> = z.strictObject({
@@ -72817,6 +77107,7 @@ export const EleveUncheckedUpdateWithoutBulletinsInputSchema: z.ZodType<Prisma.E
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const PeriodeUpsertWithoutBulletinsInputSchema: z.ZodType<Prisma.PeriodeUpsertWithoutBulletinsInput> = z.strictObject({
@@ -74519,6 +78810,7 @@ export const EtablissementCreateWithoutEvenementCalendrierInputSchema: z.ZodType
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutEvenementCalendrierInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutEvenementCalendrierInput> = z.strictObject({
@@ -74566,6 +78858,7 @@ export const EtablissementUncheckedCreateWithoutEvenementCalendrierInputSchema: 
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutEvenementCalendrierInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutEvenementCalendrierInput> = z.strictObject({
@@ -74658,6 +78951,7 @@ export const EtablissementUpdateWithoutEvenementCalendrierInputSchema: z.ZodType
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutEvenementCalendrierInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutEvenementCalendrierInput> = z.strictObject({
@@ -74705,6 +78999,7 @@ export const EtablissementUncheckedUpdateWithoutEvenementCalendrierInputSchema: 
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const SiteUpsertWithoutEvenementsInputSchema: z.ZodType<Prisma.SiteUpsertWithoutEvenementsInput> = z.strictObject({
@@ -75147,6 +79442,7 @@ export const EleveCreateWithoutPresencesInputSchema: z.ZodType<Prisma.EleveCreat
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutPresencesInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutPresencesInput> = z.strictObject({
@@ -75179,6 +79475,7 @@ export const EleveUncheckedCreateWithoutPresencesInputSchema: z.ZodType<Prisma.E
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutPresencesInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutPresencesInput> = z.strictObject({
@@ -75262,6 +79559,7 @@ export const EleveUpdateWithoutPresencesInputSchema: z.ZodType<Prisma.EleveUpdat
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutPresencesInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutPresencesInput> = z.strictObject({
@@ -75294,6 +79592,7 @@ export const EleveUncheckedUpdateWithoutPresencesInputSchema: z.ZodType<Prisma.E
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const JustificatifAbsenceCreateWithoutMotifInputSchema: z.ZodType<Prisma.JustificatifAbsenceCreateWithoutMotifInput> = z.strictObject({
@@ -75378,6 +79677,7 @@ export const EleveCreateWithoutJustificatifsInputSchema: z.ZodType<Prisma.EleveC
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutJustificatifsInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutJustificatifsInput> = z.strictObject({
@@ -75410,6 +79710,7 @@ export const EleveUncheckedCreateWithoutJustificatifsInputSchema: z.ZodType<Pris
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutJustificatifsInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutJustificatifsInput> = z.strictObject({
@@ -75481,6 +79782,7 @@ export const EleveUpdateWithoutJustificatifsInputSchema: z.ZodType<Prisma.EleveU
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutJustificatifsInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutJustificatifsInput> = z.strictObject({
@@ -75513,6 +79815,7 @@ export const EleveUncheckedUpdateWithoutJustificatifsInputSchema: z.ZodType<Pris
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const MotifAbsenceUpsertWithoutJustificatifsInputSchema: z.ZodType<Prisma.MotifAbsenceUpsertWithoutJustificatifsInput> = z.strictObject({
@@ -75646,6 +79949,7 @@ export const EleveCreateWithoutIncidentsInputSchema: z.ZodType<Prisma.EleveCreat
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutIncidentsInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutIncidentsInput> = z.strictObject({
@@ -75678,6 +79982,7 @@ export const EleveUncheckedCreateWithoutIncidentsInputSchema: z.ZodType<Prisma.E
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutIncidentsInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutIncidentsInput> = z.strictObject({
@@ -75758,6 +80063,7 @@ export const EleveUpdateWithoutIncidentsInputSchema: z.ZodType<Prisma.EleveUpdat
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutIncidentsInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutIncidentsInput> = z.strictObject({
@@ -75790,6 +80096,7 @@ export const EleveUncheckedUpdateWithoutIncidentsInputSchema: z.ZodType<Prisma.E
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const SanctionDisciplinaireUpsertWithWhereUniqueWithoutIncidentInputSchema: z.ZodType<Prisma.SanctionDisciplinaireUpsertWithWhereUniqueWithoutIncidentInput> = z.strictObject({
@@ -75917,6 +80224,7 @@ export const EleveCreateWithoutRecompensesInputSchema: z.ZodType<Prisma.EleveCre
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutRecompensesInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutRecompensesInput> = z.strictObject({
@@ -75949,6 +80257,7 @@ export const EleveUncheckedCreateWithoutRecompensesInputSchema: z.ZodType<Prisma
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutRecompensesInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutRecompensesInput> = z.strictObject({
@@ -75997,6 +80306,7 @@ export const EleveUpdateWithoutRecompensesInputSchema: z.ZodType<Prisma.EleveUpd
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutRecompensesInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutRecompensesInput> = z.strictObject({
@@ -76029,6 +80339,7 @@ export const EleveUncheckedUpdateWithoutRecompensesInputSchema: z.ZodType<Prisma
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EtablissementCreateWithoutCanauxInputSchema: z.ZodType<Prisma.EtablissementCreateWithoutCanauxInput> = z.strictObject({
@@ -76076,6 +80387,7 @@ export const EtablissementCreateWithoutCanauxInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutCanauxInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutCanauxInput> = z.strictObject({
@@ -76123,6 +80435,7 @@ export const EtablissementUncheckedCreateWithoutCanauxInputSchema: z.ZodType<Pri
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutCanauxInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutCanauxInput> = z.strictObject({
@@ -76186,6 +80499,7 @@ export const EtablissementUpdateWithoutCanauxInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutCanauxInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutCanauxInput> = z.strictObject({
@@ -76233,6 +80547,7 @@ export const EtablissementUncheckedUpdateWithoutCanauxInputSchema: z.ZodType<Pri
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementCreateWithoutAnnonceInputSchema: z.ZodType<Prisma.EtablissementCreateWithoutAnnonceInput> = z.strictObject({
@@ -76280,6 +80595,7 @@ export const EtablissementCreateWithoutAnnonceInputSchema: z.ZodType<Prisma.Etab
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutAnnonceInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutAnnonceInput> = z.strictObject({
@@ -76327,6 +80643,7 @@ export const EtablissementUncheckedCreateWithoutAnnonceInputSchema: z.ZodType<Pr
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutAnnonceInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutAnnonceInput> = z.strictObject({
@@ -76390,6 +80707,7 @@ export const EtablissementUpdateWithoutAnnonceInputSchema: z.ZodType<Prisma.Etab
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutAnnonceInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutAnnonceInput> = z.strictObject({
@@ -76437,6 +80755,7 @@ export const EtablissementUncheckedUpdateWithoutAnnonceInputSchema: z.ZodType<Pr
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementCreateWithoutMessageInputSchema: z.ZodType<Prisma.EtablissementCreateWithoutMessageInput> = z.strictObject({
@@ -76484,6 +80803,7 @@ export const EtablissementCreateWithoutMessageInputSchema: z.ZodType<Prisma.Etab
   Annonce: z.lazy(() => AnnonceCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutMessageInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutMessageInput> = z.strictObject({
@@ -76531,6 +80851,7 @@ export const EtablissementUncheckedCreateWithoutMessageInputSchema: z.ZodType<Pr
   Annonce: z.lazy(() => AnnonceUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutMessageInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutMessageInput> = z.strictObject({
@@ -76568,6 +80889,9 @@ export const UtilisateurCreateWithoutMessagesEnvoyesInputSchema: z.ZodType<Prism
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -76604,6 +80928,9 @@ export const UtilisateurUncheckedCreateWithoutMessagesEnvoyesInputSchema: z.ZodT
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -76693,6 +81020,7 @@ export const EtablissementUpdateWithoutMessageInputSchema: z.ZodType<Prisma.Etab
   Annonce: z.lazy(() => AnnonceUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutMessageInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutMessageInput> = z.strictObject({
@@ -76740,6 +81068,7 @@ export const EtablissementUncheckedUpdateWithoutMessageInputSchema: z.ZodType<Pr
   Annonce: z.lazy(() => AnnonceUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const UtilisateurUpsertWithoutMessagesEnvoyesInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutMessagesEnvoyesInput> = z.strictObject({
@@ -76783,6 +81112,9 @@ export const UtilisateurUpdateWithoutMessagesEnvoyesInputSchema: z.ZodType<Prism
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -76819,6 +81151,9 @@ export const UtilisateurUncheckedUpdateWithoutMessagesEnvoyesInputSchema: z.ZodT
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -76899,6 +81234,9 @@ export const UtilisateurCreateWithoutMessageDestinataireInputSchema: z.ZodType<P
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -76935,6 +81273,9 @@ export const UtilisateurUncheckedCreateWithoutMessageDestinataireInputSchema: z.
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -77020,6 +81361,9 @@ export const UtilisateurUpdateWithoutMessageDestinataireInputSchema: z.ZodType<P
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -77056,6 +81400,9 @@ export const UtilisateurUncheckedUpdateWithoutMessageDestinataireInputSchema: z.
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -77091,6 +81438,9 @@ export const UtilisateurCreateWithoutNotificationsInputSchema: z.ZodType<Prisma.
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -77127,6 +81477,9 @@ export const UtilisateurUncheckedCreateWithoutNotificationsInputSchema: z.ZodTyp
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -77179,6 +81532,9 @@ export const UtilisateurUpdateWithoutNotificationsInputSchema: z.ZodType<Prisma.
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -77215,6 +81571,9 @@ export const UtilisateurUncheckedUpdateWithoutNotificationsInputSchema: z.ZodTyp
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -77266,6 +81625,7 @@ export const EtablissementCreateWithoutCatalogueFraisInputSchema: z.ZodType<Pris
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutCatalogueFraisInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutCatalogueFraisInput> = z.strictObject({
@@ -77313,6 +81673,7 @@ export const EtablissementUncheckedCreateWithoutCatalogueFraisInputSchema: z.Zod
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutCatalogueFraisInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutCatalogueFraisInput> = z.strictObject({
@@ -77383,6 +81744,9 @@ export const UtilisateurCreateWithoutCataloguesFraisApprouvesInputSchema: z.ZodT
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -77419,6 +81783,9 @@ export const UtilisateurUncheckedCreateWithoutCataloguesFraisApprouvesInputSchem
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -77634,6 +82001,7 @@ export const EtablissementUpdateWithoutCatalogueFraisInputSchema: z.ZodType<Pris
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutCatalogueFraisInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutCatalogueFraisInput> = z.strictObject({
@@ -77681,6 +82049,7 @@ export const EtablissementUncheckedUpdateWithoutCatalogueFraisInputSchema: z.Zod
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const NiveauScolaireUpsertWithoutCatalogueFraisInputSchema: z.ZodType<Prisma.NiveauScolaireUpsertWithoutCatalogueFraisInput> = z.strictObject({
@@ -77763,6 +82132,9 @@ export const UtilisateurUpdateWithoutCataloguesFraisApprouvesInputSchema: z.ZodT
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -77799,6 +82171,9 @@ export const UtilisateurUncheckedUpdateWithoutCataloguesFraisApprouvesInputSchem
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -77944,6 +82319,7 @@ export const EleveCreateWithoutPlansPaiementInputSchema: z.ZodType<Prisma.EleveC
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutPlansPaiementInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutPlansPaiementInput> = z.strictObject({
@@ -77976,6 +82352,7 @@ export const EleveUncheckedCreateWithoutPlansPaiementInputSchema: z.ZodType<Pris
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutPlansPaiementInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutPlansPaiementInput> = z.strictObject({
@@ -78009,6 +82386,7 @@ export const AnneeScolaireCreateWithoutPlansPaiementInputSchema: z.ZodType<Prism
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutPlansPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutPlansPaiementInput> = z.strictObject({
@@ -78037,6 +82415,7 @@ export const AnneeScolaireUncheckedCreateWithoutPlansPaiementInputSchema: z.ZodT
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutPlansPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutPlansPaiementInput> = z.strictObject({
@@ -78310,6 +82689,7 @@ export const EleveUpdateWithoutPlansPaiementInputSchema: z.ZodType<Prisma.EleveU
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutPlansPaiementInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutPlansPaiementInput> = z.strictObject({
@@ -78342,6 +82722,7 @@ export const EleveUncheckedUpdateWithoutPlansPaiementInputSchema: z.ZodType<Pris
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutPlansPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutPlansPaiementInput> = z.strictObject({
@@ -78381,6 +82762,7 @@ export const AnneeScolaireUpdateWithoutPlansPaiementInputSchema: z.ZodType<Prism
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutPlansPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutPlansPaiementInput> = z.strictObject({
@@ -78409,6 +82791,7 @@ export const AnneeScolaireUncheckedUpdateWithoutPlansPaiementInputSchema: z.ZodT
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const RemiseUpsertWithoutPlansPaiementInputSchema: z.ZodType<Prisma.RemiseUpsertWithoutPlansPaiementInput> = z.strictObject({
@@ -78555,6 +82938,7 @@ export const EtablissementCreateWithoutFacturationsRecurrentesInputSchema: z.Zod
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutFacturationsRecurrentesInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutFacturationsRecurrentesInput> = z.strictObject({
@@ -78602,6 +82986,7 @@ export const EtablissementUncheckedCreateWithoutFacturationsRecurrentesInputSche
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutFacturationsRecurrentesInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutFacturationsRecurrentesInput> = z.strictObject({
@@ -78700,6 +83085,7 @@ export const EleveCreateWithoutFacturationsRecurrentesInputSchema: z.ZodType<Pri
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutFacturationsRecurrentesInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutFacturationsRecurrentesInput> = z.strictObject({
@@ -78732,6 +83118,7 @@ export const EleveUncheckedCreateWithoutFacturationsRecurrentesInputSchema: z.Zo
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutFacturationsRecurrentesInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutFacturationsRecurrentesInput> = z.strictObject({
@@ -78765,6 +83152,7 @@ export const AnneeScolaireCreateWithoutFacturationsRecurrentesInputSchema: z.Zod
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutFacturationsRecurrentesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutFacturationsRecurrentesInput> = z.strictObject({
@@ -78793,6 +83181,7 @@ export const AnneeScolaireUncheckedCreateWithoutFacturationsRecurrentesInputSche
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutFacturationsRecurrentesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutFacturationsRecurrentesInput> = z.strictObject({
@@ -78891,6 +83280,9 @@ export const UtilisateurCreateWithoutFacturationsRecurrentesInputSchema: z.ZodTy
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -78927,6 +83319,9 @@ export const UtilisateurUncheckedCreateWithoutFacturationsRecurrentesInputSchema
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -78994,6 +83389,7 @@ export const EtablissementUpdateWithoutFacturationsRecurrentesInputSchema: z.Zod
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutFacturationsRecurrentesInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutFacturationsRecurrentesInput> = z.strictObject({
@@ -79041,6 +83437,7 @@ export const EtablissementUncheckedUpdateWithoutFacturationsRecurrentesInputSche
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const CatalogueFraisUpsertWithoutExecutionsRecurrentesInputSchema: z.ZodType<Prisma.CatalogueFraisUpsertWithoutExecutionsRecurrentesInput> = z.strictObject({
@@ -79151,6 +83548,7 @@ export const EleveUpdateWithoutFacturationsRecurrentesInputSchema: z.ZodType<Pri
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutFacturationsRecurrentesInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutFacturationsRecurrentesInput> = z.strictObject({
@@ -79183,6 +83581,7 @@ export const EleveUncheckedUpdateWithoutFacturationsRecurrentesInputSchema: z.Zo
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutFacturationsRecurrentesInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutFacturationsRecurrentesInput> = z.strictObject({
@@ -79222,6 +83621,7 @@ export const AnneeScolaireUpdateWithoutFacturationsRecurrentesInputSchema: z.Zod
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutFacturationsRecurrentesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutFacturationsRecurrentesInput> = z.strictObject({
@@ -79250,6 +83650,7 @@ export const AnneeScolaireUncheckedUpdateWithoutFacturationsRecurrentesInputSche
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const FactureUpsertWithoutExecutionsRecurrentesInputSchema: z.ZodType<Prisma.FactureUpsertWithoutExecutionsRecurrentesInput> = z.strictObject({
@@ -79360,6 +83761,9 @@ export const UtilisateurUpdateWithoutFacturationsRecurrentesInputSchema: z.ZodTy
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -79396,6 +83800,9 @@ export const UtilisateurUncheckedUpdateWithoutFacturationsRecurrentesInputSchema
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -79447,6 +83854,7 @@ export const EtablissementCreateWithoutFactureInputSchema: z.ZodType<Prisma.Etab
   Annonce: z.lazy(() => AnnonceCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutFactureInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutFactureInput> = z.strictObject({
@@ -79494,6 +83902,7 @@ export const EtablissementUncheckedCreateWithoutFactureInputSchema: z.ZodType<Pr
   Annonce: z.lazy(() => AnnonceUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutFactureInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutFactureInput> = z.strictObject({
@@ -79531,6 +83940,7 @@ export const EleveCreateWithoutFacturesInputSchema: z.ZodType<Prisma.EleveCreate
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutFacturesInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutFacturesInput> = z.strictObject({
@@ -79563,6 +83973,7 @@ export const EleveUncheckedCreateWithoutFacturesInputSchema: z.ZodType<Prisma.El
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutFacturesInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutFacturesInput> = z.strictObject({
@@ -79596,6 +84007,7 @@ export const AnneeScolaireCreateWithoutFacturesInputSchema: z.ZodType<Prisma.Ann
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutFacturesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutFacturesInput> = z.strictObject({
@@ -79624,6 +84036,7 @@ export const AnneeScolaireUncheckedCreateWithoutFacturesInputSchema: z.ZodType<P
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutFacturesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutFacturesInput> = z.strictObject({
@@ -80287,6 +84700,7 @@ export const EtablissementUpdateWithoutFactureInputSchema: z.ZodType<Prisma.Etab
   Annonce: z.lazy(() => AnnonceUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutFactureInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutFactureInput> = z.strictObject({
@@ -80334,6 +84748,7 @@ export const EtablissementUncheckedUpdateWithoutFactureInputSchema: z.ZodType<Pr
   Annonce: z.lazy(() => AnnonceUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EleveUpsertWithoutFacturesInputSchema: z.ZodType<Prisma.EleveUpsertWithoutFacturesInput> = z.strictObject({
@@ -80377,6 +84792,7 @@ export const EleveUpdateWithoutFacturesInputSchema: z.ZodType<Prisma.EleveUpdate
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutFacturesInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutFacturesInput> = z.strictObject({
@@ -80409,6 +84825,7 @@ export const EleveUncheckedUpdateWithoutFacturesInputSchema: z.ZodType<Prisma.El
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutFacturesInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutFacturesInput> = z.strictObject({
@@ -80448,6 +84865,7 @@ export const AnneeScolaireUpdateWithoutFacturesInputSchema: z.ZodType<Prisma.Ann
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutFacturesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutFacturesInput> = z.strictObject({
@@ -80476,6 +84894,7 @@ export const AnneeScolaireUncheckedUpdateWithoutFacturesInputSchema: z.ZodType<P
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const RemiseUpsertWithoutFacturesInputSchema: z.ZodType<Prisma.RemiseUpsertWithoutFacturesInput> = z.strictObject({
@@ -81313,6 +85732,7 @@ export const EtablissementCreateWithoutOperationsFinancieresInputSchema: z.ZodTy
   Annonce: z.lazy(() => AnnonceCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutOperationsFinancieresInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutOperationsFinancieresInput> = z.strictObject({
@@ -81360,6 +85780,7 @@ export const EtablissementUncheckedCreateWithoutOperationsFinancieresInputSchema
   Annonce: z.lazy(() => AnnonceUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutOperationsFinancieresInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutOperationsFinancieresInput> = z.strictObject({
@@ -81540,6 +85961,9 @@ export const UtilisateurCreateWithoutOperationsFinancieresInputSchema: z.ZodType
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -81576,6 +86000,9 @@ export const UtilisateurUncheckedCreateWithoutOperationsFinancieresInputSchema: 
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -81643,6 +86070,7 @@ export const EtablissementUpdateWithoutOperationsFinancieresInputSchema: z.ZodTy
   Annonce: z.lazy(() => AnnonceUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutOperationsFinancieresInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutOperationsFinancieresInput> = z.strictObject({
@@ -81690,6 +86118,7 @@ export const EtablissementUncheckedUpdateWithoutOperationsFinancieresInputSchema
   Annonce: z.lazy(() => AnnonceUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const FactureUpsertWithoutOperationsFinancieresInputSchema: z.ZodType<Prisma.FactureUpsertWithoutOperationsFinancieresInput> = z.strictObject({
@@ -81894,6 +86323,9 @@ export const UtilisateurUpdateWithoutOperationsFinancieresInputSchema: z.ZodType
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -81930,6 +86362,9 @@ export const UtilisateurUncheckedUpdateWithoutOperationsFinancieresInputSchema: 
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -82058,6 +86493,7 @@ export const EleveCreateWithoutEcheancesPaiementInputSchema: z.ZodType<Prisma.El
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutEcheancesPaiementInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutEcheancesPaiementInput> = z.strictObject({
@@ -82090,6 +86526,7 @@ export const EleveUncheckedCreateWithoutEcheancesPaiementInputSchema: z.ZodType<
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutEcheancesPaiementInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutEcheancesPaiementInput> = z.strictObject({
@@ -82123,6 +86560,7 @@ export const AnneeScolaireCreateWithoutEcheancesPaiementInputSchema: z.ZodType<P
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutEcheancesPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutEcheancesPaiementInput> = z.strictObject({
@@ -82151,6 +86589,7 @@ export const AnneeScolaireUncheckedCreateWithoutEcheancesPaiementInputSchema: z.
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutEcheancesPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutEcheancesPaiementInput> = z.strictObject({
@@ -82383,6 +86822,7 @@ export const EleveUpdateWithoutEcheancesPaiementInputSchema: z.ZodType<Prisma.El
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutEcheancesPaiementInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutEcheancesPaiementInput> = z.strictObject({
@@ -82415,6 +86855,7 @@ export const EleveUncheckedUpdateWithoutEcheancesPaiementInputSchema: z.ZodType<
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutEcheancesPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutEcheancesPaiementInput> = z.strictObject({
@@ -82454,6 +86895,7 @@ export const AnneeScolaireUpdateWithoutEcheancesPaiementInputSchema: z.ZodType<P
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutEcheancesPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutEcheancesPaiementInput> = z.strictObject({
@@ -82482,6 +86924,7 @@ export const AnneeScolaireUncheckedUpdateWithoutEcheancesPaiementInputSchema: z.
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const PaiementEcheanceAffectationUpsertWithWhereUniqueWithoutEcheanceInputSchema: z.ZodType<Prisma.PaiementEcheanceAffectationUpsertWithWhereUniqueWithoutEcheanceInput> = z.strictObject({
@@ -82745,6 +87188,7 @@ export const EtablissementCreateWithoutRemisesInputSchema: z.ZodType<Prisma.Etab
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutRemisesInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutRemisesInput> = z.strictObject({
@@ -82792,6 +87236,7 @@ export const EtablissementUncheckedCreateWithoutRemisesInputSchema: z.ZodType<Pr
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutRemisesInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutRemisesInput> = z.strictObject({
@@ -82957,6 +87402,7 @@ export const EtablissementUpdateWithoutRemisesInputSchema: z.ZodType<Prisma.Etab
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutRemisesInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutRemisesInput> = z.strictObject({
@@ -83004,6 +87450,7 @@ export const EtablissementUncheckedUpdateWithoutRemisesInputSchema: z.ZodType<Pr
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const FactureUpsertWithWhereUniqueWithoutRemiseInputSchema: z.ZodType<Prisma.FactureUpsertWithWhereUniqueWithoutRemiseInput> = z.strictObject({
@@ -83083,6 +87530,7 @@ export const EtablissementCreateWithoutReglesRecouvrementInputSchema: z.ZodType<
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutReglesRecouvrementInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutReglesRecouvrementInput> = z.strictObject({
@@ -83130,6 +87578,7 @@ export const EtablissementUncheckedCreateWithoutReglesRecouvrementInputSchema: z
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutReglesRecouvrementInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutReglesRecouvrementInput> = z.strictObject({
@@ -83167,6 +87616,9 @@ export const UtilisateurCreateWithoutReglesRecouvrementApprouveesInputSchema: z.
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -83203,6 +87655,9 @@ export const UtilisateurUncheckedCreateWithoutReglesRecouvrementApprouveesInputS
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -83270,6 +87725,7 @@ export const EtablissementUpdateWithoutReglesRecouvrementInputSchema: z.ZodType<
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutReglesRecouvrementInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutReglesRecouvrementInput> = z.strictObject({
@@ -83317,6 +87773,7 @@ export const EtablissementUncheckedUpdateWithoutReglesRecouvrementInputSchema: z
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const UtilisateurUpsertWithoutReglesRecouvrementApprouveesInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutReglesRecouvrementApprouveesInput> = z.strictObject({
@@ -83360,6 +87817,9 @@ export const UtilisateurUpdateWithoutReglesRecouvrementApprouveesInputSchema: z.
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -83396,6 +87856,9 @@ export const UtilisateurUncheckedUpdateWithoutReglesRecouvrementApprouveesInputS
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -83447,6 +87910,7 @@ export const EtablissementCreateWithoutPromessesPaiementInputSchema: z.ZodType<P
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutPromessesPaiementInput> = z.strictObject({
@@ -83494,6 +87958,7 @@ export const EtablissementUncheckedCreateWithoutPromessesPaiementInputSchema: z.
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutPromessesPaiementInput> = z.strictObject({
@@ -83531,6 +87996,7 @@ export const EleveCreateWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.El
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutPromessesPaiementInput> = z.strictObject({
@@ -83563,6 +88029,7 @@ export const EleveUncheckedCreateWithoutPromessesPaiementInputSchema: z.ZodType<
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutPromessesPaiementInput> = z.strictObject({
@@ -83596,6 +88063,7 @@ export const AnneeScolaireCreateWithoutPromessesPaiementInputSchema: z.ZodType<P
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutPromessesPaiementInput> = z.strictObject({
@@ -83624,6 +88092,7 @@ export const AnneeScolaireUncheckedCreateWithoutPromessesPaiementInputSchema: z.
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutPromessesPaiementInput> = z.strictObject({
@@ -83798,6 +88267,9 @@ export const UtilisateurCreateWithoutPromessesPaiementCreeesInputSchema: z.ZodTy
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -83834,6 +88306,9 @@ export const UtilisateurUncheckedCreateWithoutPromessesPaiementCreeesInputSchema
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -83875,6 +88350,9 @@ export const UtilisateurCreateWithoutPromessesPaiementValideesInputSchema: z.Zod
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -83911,6 +88389,9 @@ export const UtilisateurUncheckedCreateWithoutPromessesPaiementValideesInputSche
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -83978,6 +88459,7 @@ export const EtablissementUpdateWithoutPromessesPaiementInputSchema: z.ZodType<P
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutPromessesPaiementInput> = z.strictObject({
@@ -84025,6 +88507,7 @@ export const EtablissementUncheckedUpdateWithoutPromessesPaiementInputSchema: z.
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EleveUpsertWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.EleveUpsertWithoutPromessesPaiementInput> = z.strictObject({
@@ -84068,6 +88551,7 @@ export const EleveUpdateWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.El
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutPromessesPaiementInput> = z.strictObject({
@@ -84100,6 +88584,7 @@ export const EleveUncheckedUpdateWithoutPromessesPaiementInputSchema: z.ZodType<
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutPromessesPaiementInput> = z.strictObject({
@@ -84139,6 +88624,7 @@ export const AnneeScolaireUpdateWithoutPromessesPaiementInputSchema: z.ZodType<P
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutPromessesPaiementInput> = z.strictObject({
@@ -84167,6 +88653,7 @@ export const AnneeScolaireUncheckedUpdateWithoutPromessesPaiementInputSchema: z.
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const FactureUpsertWithoutPromessesPaiementInputSchema: z.ZodType<Prisma.FactureUpsertWithoutPromessesPaiementInput> = z.strictObject({
@@ -84365,6 +88852,9 @@ export const UtilisateurUpdateWithoutPromessesPaiementCreeesInputSchema: z.ZodTy
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -84401,6 +88891,9 @@ export const UtilisateurUncheckedUpdateWithoutPromessesPaiementCreeesInputSchema
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -84448,6 +88941,9 @@ export const UtilisateurUpdateWithoutPromessesPaiementValideesInputSchema: z.Zod
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -84484,6 +88980,9 @@ export const UtilisateurUncheckedUpdateWithoutPromessesPaiementValideesInputSche
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -84535,6 +89034,7 @@ export const EtablissementCreateWithoutRestrictionsAdministrativesInputSchema: z
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -84582,6 +89082,7 @@ export const EtablissementUncheckedCreateWithoutRestrictionsAdministrativesInput
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -84619,6 +89120,7 @@ export const EleveCreateWithoutRestrictionsAdministrativesInputSchema: z.ZodType
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -84651,6 +89153,7 @@ export const EleveUncheckedCreateWithoutRestrictionsAdministrativesInputSchema: 
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -84684,6 +89187,7 @@ export const AnneeScolaireCreateWithoutRestrictionsAdministrativesInputSchema: z
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -84712,6 +89216,7 @@ export const AnneeScolaireUncheckedCreateWithoutRestrictionsAdministrativesInput
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -84841,6 +89346,9 @@ export const UtilisateurCreateWithoutRestrictionsAdministrativesCreeesInputSchem
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -84877,6 +89385,9 @@ export const UtilisateurUncheckedCreateWithoutRestrictionsAdministrativesCreeesI
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -84918,6 +89429,9 @@ export const UtilisateurCreateWithoutRestrictionsAdministrativesLeveesInputSchem
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -84954,6 +89468,9 @@ export const UtilisateurUncheckedCreateWithoutRestrictionsAdministrativesLeveesI
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -85021,6 +89538,7 @@ export const EtablissementUpdateWithoutRestrictionsAdministrativesInputSchema: z
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -85068,6 +89586,7 @@ export const EtablissementUncheckedUpdateWithoutRestrictionsAdministrativesInput
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EleveUpsertWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.EleveUpsertWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -85111,6 +89630,7 @@ export const EleveUpdateWithoutRestrictionsAdministrativesInputSchema: z.ZodType
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -85143,6 +89663,7 @@ export const EleveUncheckedUpdateWithoutRestrictionsAdministrativesInputSchema: 
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -85182,6 +89703,7 @@ export const AnneeScolaireUpdateWithoutRestrictionsAdministrativesInputSchema: z
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -85210,6 +89732,7 @@ export const AnneeScolaireUncheckedUpdateWithoutRestrictionsAdministrativesInput
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const FactureUpsertWithoutRestrictionsAdministrativesInputSchema: z.ZodType<Prisma.FactureUpsertWithoutRestrictionsAdministrativesInput> = z.strictObject({
@@ -85357,6 +89880,9 @@ export const UtilisateurUpdateWithoutRestrictionsAdministrativesCreeesInputSchem
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -85393,6 +89919,9 @@ export const UtilisateurUncheckedUpdateWithoutRestrictionsAdministrativesCreeesI
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -85440,6 +89969,9 @@ export const UtilisateurUpdateWithoutRestrictionsAdministrativesLeveesInputSchem
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -85476,6 +90008,9 @@ export const UtilisateurUncheckedUpdateWithoutRestrictionsAdministrativesLeveesI
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -85527,6 +90062,7 @@ export const EtablissementCreateWithoutDossiersRecouvrementInputSchema: z.ZodTyp
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -85574,6 +90110,7 @@ export const EtablissementUncheckedCreateWithoutDossiersRecouvrementInputSchema:
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -85611,6 +90148,7 @@ export const EleveCreateWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -85643,6 +90181,7 @@ export const EleveUncheckedCreateWithoutDossiersRecouvrementInputSchema: z.ZodTy
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -85676,6 +90215,7 @@ export const AnneeScolaireCreateWithoutDossiersRecouvrementInputSchema: z.ZodTyp
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -85704,6 +90244,7 @@ export const AnneeScolaireUncheckedCreateWithoutDossiersRecouvrementInputSchema:
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -85833,6 +90374,9 @@ export const UtilisateurCreateWithoutDossiersRecouvrementCreesInputSchema: z.Zod
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -85869,6 +90413,9 @@ export const UtilisateurUncheckedCreateWithoutDossiersRecouvrementCreesInputSche
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -85910,6 +90457,9 @@ export const UtilisateurCreateWithoutDossiersRecouvrementValidesInputSchema: z.Z
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -85946,6 +90496,9 @@ export const UtilisateurUncheckedCreateWithoutDossiersRecouvrementValidesInputSc
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -86013,6 +90566,7 @@ export const EtablissementUpdateWithoutDossiersRecouvrementInputSchema: z.ZodTyp
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -86060,6 +90614,7 @@ export const EtablissementUncheckedUpdateWithoutDossiersRecouvrementInputSchema:
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EleveUpsertWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.EleveUpsertWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -86103,6 +90658,7 @@ export const EleveUpdateWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -86135,6 +90691,7 @@ export const EleveUncheckedUpdateWithoutDossiersRecouvrementInputSchema: z.ZodTy
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -86174,6 +90731,7 @@ export const AnneeScolaireUpdateWithoutDossiersRecouvrementInputSchema: z.ZodTyp
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -86202,6 +90760,7 @@ export const AnneeScolaireUncheckedUpdateWithoutDossiersRecouvrementInputSchema:
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const FactureUpsertWithoutDossiersRecouvrementInputSchema: z.ZodType<Prisma.FactureUpsertWithoutDossiersRecouvrementInput> = z.strictObject({
@@ -86349,6 +90908,9 @@ export const UtilisateurUpdateWithoutDossiersRecouvrementCreesInputSchema: z.Zod
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -86385,6 +90947,9 @@ export const UtilisateurUncheckedUpdateWithoutDossiersRecouvrementCreesInputSche
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -86432,6 +90997,9 @@ export const UtilisateurUpdateWithoutDossiersRecouvrementValidesInputSchema: z.Z
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -86468,6 +91036,9 @@ export const UtilisateurUncheckedUpdateWithoutDossiersRecouvrementValidesInputSc
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -86587,6 +91158,7 @@ export const EleveCreateWithoutEmpruntsInputSchema: z.ZodType<Prisma.EleveCreate
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutEmpruntsInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutEmpruntsInput> = z.strictObject({
@@ -86619,6 +91191,7 @@ export const EleveUncheckedCreateWithoutEmpruntsInputSchema: z.ZodType<Prisma.El
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutEmpruntsInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutEmpruntsInput> = z.strictObject({
@@ -86739,6 +91312,7 @@ export const EleveUpdateWithoutEmpruntsInputSchema: z.ZodType<Prisma.EleveUpdate
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutEmpruntsInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutEmpruntsInput> = z.strictObject({
@@ -86771,6 +91345,7 @@ export const EleveUncheckedUpdateWithoutEmpruntsInputSchema: z.ZodType<Prisma.El
   dossiersRecouvrement: z.lazy(() => DossierRecouvrementUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const PersonnelUpsertWithoutEmpruntInputSchema: z.ZodType<Prisma.PersonnelUpsertWithoutEmpruntInput> = z.strictObject({
@@ -87209,6 +91784,7 @@ export const EleveCreateWithoutAbonnementsTransportInputSchema: z.ZodType<Prisma
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutAbonnementsTransportInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutAbonnementsTransportInput> = z.strictObject({
@@ -87241,6 +91817,7 @@ export const EleveUncheckedCreateWithoutAbonnementsTransportInputSchema: z.ZodTy
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutAbonnementsTransportInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutAbonnementsTransportInput> = z.strictObject({
@@ -87274,6 +91851,7 @@ export const AnneeScolaireCreateWithoutAbonnementsTransportInputSchema: z.ZodTyp
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutAbonnementsTransportInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutAbonnementsTransportInput> = z.strictObject({
@@ -87302,6 +91880,7 @@ export const AnneeScolaireUncheckedCreateWithoutAbonnementsTransportInputSchema:
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutAbonnementsTransportInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutAbonnementsTransportInput> = z.strictObject({
@@ -87507,6 +92086,7 @@ export const EleveUpdateWithoutAbonnementsTransportInputSchema: z.ZodType<Prisma
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutAbonnementsTransportInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutAbonnementsTransportInput> = z.strictObject({
@@ -87539,6 +92119,7 @@ export const EleveUncheckedUpdateWithoutAbonnementsTransportInputSchema: z.ZodTy
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutAbonnementsTransportInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutAbonnementsTransportInput> = z.strictObject({
@@ -87578,6 +92159,7 @@ export const AnneeScolaireUpdateWithoutAbonnementsTransportInputSchema: z.ZodTyp
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutAbonnementsTransportInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutAbonnementsTransportInput> = z.strictObject({
@@ -87606,6 +92188,7 @@ export const AnneeScolaireUncheckedUpdateWithoutAbonnementsTransportInputSchema:
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const LigneTransportUpsertWithoutAbonnementsInputSchema: z.ZodType<Prisma.LigneTransportUpsertWithoutAbonnementsInput> = z.strictObject({
@@ -88201,6 +92784,7 @@ export const EleveCreateWithoutAbonnementsCantineInputSchema: z.ZodType<Prisma.E
   emprunts: z.lazy(() => EmpruntCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveUncheckedCreateWithoutAbonnementsCantineInputSchema: z.ZodType<Prisma.EleveUncheckedCreateWithoutAbonnementsCantineInput> = z.strictObject({
@@ -88233,6 +92817,7 @@ export const EleveUncheckedCreateWithoutAbonnementsCantineInputSchema: z.ZodType
   emprunts: z.lazy(() => EmpruntUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedCreateNestedOneWithoutEleveInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEleveInputSchema).optional(),
 });
 
 export const EleveCreateOrConnectWithoutAbonnementsCantineInputSchema: z.ZodType<Prisma.EleveCreateOrConnectWithoutAbonnementsCantineInput> = z.strictObject({
@@ -88266,6 +92851,7 @@ export const AnneeScolaireCreateWithoutAbonnementsCantineInputSchema: z.ZodType<
   pedagogicalItems: z.lazy(() => PedagogicalItemCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedCreateWithoutAbonnementsCantineInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedCreateWithoutAbonnementsCantineInput> = z.strictObject({
@@ -88294,6 +92880,7 @@ export const AnneeScolaireUncheckedCreateWithoutAbonnementsCantineInputSchema: z
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutAnneeInputSchema).optional(),
 });
 
 export const AnneeScolaireCreateOrConnectWithoutAbonnementsCantineInputSchema: z.ZodType<Prisma.AnneeScolaireCreateOrConnectWithoutAbonnementsCantineInput> = z.strictObject({
@@ -88600,6 +93187,7 @@ export const EleveUpdateWithoutAbonnementsCantineInputSchema: z.ZodType<Prisma.E
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutAbonnementsCantineInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutAbonnementsCantineInput> = z.strictObject({
@@ -88632,6 +93220,7 @@ export const EleveUncheckedUpdateWithoutAbonnementsCantineInputSchema: z.ZodType
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUpsertWithoutAbonnementsCantineInputSchema: z.ZodType<Prisma.AnneeScolaireUpsertWithoutAbonnementsCantineInput> = z.strictObject({
@@ -88671,6 +93260,7 @@ export const AnneeScolaireUpdateWithoutAbonnementsCantineInputSchema: z.ZodType<
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutAbonnementsCantineInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutAbonnementsCantineInput> = z.strictObject({
@@ -88699,6 +93289,7 @@ export const AnneeScolaireUncheckedUpdateWithoutAbonnementsCantineInputSchema: z
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const FormuleCantineUpsertWithoutAbonnementsInputSchema: z.ZodType<Prisma.FormuleCantineUpsertWithoutAbonnementsInput> = z.strictObject({
@@ -89385,6 +93976,7 @@ export const EtablissementCreateWithoutFichiersInputSchema: z.ZodType<Prisma.Eta
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutFichiersInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutFichiersInput> = z.strictObject({
@@ -89432,6 +94024,7 @@ export const EtablissementUncheckedCreateWithoutFichiersInputSchema: z.ZodType<P
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutFichiersInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutFichiersInput> = z.strictObject({
@@ -89469,6 +94062,9 @@ export const UtilisateurCreateWithoutFichiersInputSchema: z.ZodType<Prisma.Utili
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -89505,6 +94101,9 @@ export const UtilisateurUncheckedCreateWithoutFichiersInputSchema: z.ZodType<Pri
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -89584,6 +94183,46 @@ export const InscriptionDocumentCreateManyFichierInputEnvelopeSchema: z.ZodType<
   skipDuplicates: z.boolean().optional(),
 });
 
+export const EnrollmentDraftFileCreateWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateWithoutFichierInput> = z.strictObject({
+  id: z.uuid().optional(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  draft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutFilesInputSchema),
+  documentType: z.lazy(() => DocumentTypeInscriptionCreateNestedOneWithoutEnrollmentDraftFilesInputSchema).optional(),
+  uploadedBy: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftFilesUploadedInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedCreateWithoutFichierInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_id: z.string(),
+  document_type_id: z.string().optional().nullable(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  uploaded_by_id: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftFileCreateOrConnectWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateOrConnectWithoutFichierInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema) ]),
+});
+
+export const EnrollmentDraftFileCreateManyFichierInputEnvelopeSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateManyFichierInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => EnrollmentDraftFileCreateManyFichierInputSchema), z.lazy(() => EnrollmentDraftFileCreateManyFichierInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
+});
+
 export const EtablissementUpsertWithoutFichiersInputSchema: z.ZodType<Prisma.EtablissementUpsertWithoutFichiersInput> = z.strictObject({
   update: z.union([ z.lazy(() => EtablissementUpdateWithoutFichiersInputSchema), z.lazy(() => EtablissementUncheckedUpdateWithoutFichiersInputSchema) ]),
   create: z.union([ z.lazy(() => EtablissementCreateWithoutFichiersInputSchema), z.lazy(() => EtablissementUncheckedCreateWithoutFichiersInputSchema) ]),
@@ -89640,6 +94279,7 @@ export const EtablissementUpdateWithoutFichiersInputSchema: z.ZodType<Prisma.Eta
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutFichiersInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutFichiersInput> = z.strictObject({
@@ -89687,6 +94327,7 @@ export const EtablissementUncheckedUpdateWithoutFichiersInputSchema: z.ZodType<P
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const UtilisateurUpsertWithoutFichiersInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutFichiersInput> = z.strictObject({
@@ -89730,6 +94371,9 @@ export const UtilisateurUpdateWithoutFichiersInputSchema: z.ZodType<Prisma.Utili
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -89766,6 +94410,9 @@ export const UtilisateurUncheckedUpdateWithoutFichiersInputSchema: z.ZodType<Pri
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -89817,6 +94464,22 @@ export const InscriptionDocumentUpdateManyWithWhereWithoutFichierInputSchema: z.
   data: z.union([ z.lazy(() => InscriptionDocumentUpdateManyMutationInputSchema), z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutFichierInputSchema) ]),
 });
 
+export const EnrollmentDraftFileUpsertWithWhereUniqueWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpsertWithWhereUniqueWithoutFichierInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateWithoutFichierInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutFichierInputSchema) ]),
+});
+
+export const EnrollmentDraftFileUpdateWithWhereUniqueWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateWithWhereUniqueWithoutFichierInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithoutFichierInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateWithoutFichierInputSchema) ]),
+});
+
+export const EnrollmentDraftFileUpdateManyWithWhereWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateManyWithWhereWithoutFichierInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyMutationInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutFichierInputSchema) ]),
+});
+
 export const FichierCreateWithoutLiensInputSchema: z.ZodType<Prisma.FichierCreateWithoutLiensInput> = z.strictObject({
   id: z.uuid().optional(),
   fournisseur_stockage: z.string().optional().nullable(),
@@ -89830,6 +94493,7 @@ export const FichierCreateWithoutLiensInputSchema: z.ZodType<Prisma.FichierCreat
   etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutFichiersInputSchema),
   proprietaire: z.lazy(() => UtilisateurCreateNestedOneWithoutFichiersInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentCreateNestedManyWithoutFichierInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutFichierInputSchema).optional(),
 });
 
 export const FichierUncheckedCreateWithoutLiensInputSchema: z.ZodType<Prisma.FichierUncheckedCreateWithoutLiensInput> = z.strictObject({
@@ -89845,6 +94509,7 @@ export const FichierUncheckedCreateWithoutLiensInputSchema: z.ZodType<Prisma.Fic
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
 });
 
 export const FichierCreateOrConnectWithoutLiensInputSchema: z.ZodType<Prisma.FichierCreateOrConnectWithoutLiensInput> = z.strictObject({
@@ -89876,6 +94541,7 @@ export const FichierUpdateWithoutLiensInputSchema: z.ZodType<Prisma.FichierUpdat
   etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutFichiersNestedInputSchema).optional(),
   proprietaire: z.lazy(() => UtilisateurUpdateOneWithoutFichiersNestedInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUpdateManyWithoutFichierNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutFichierNestedInputSchema).optional(),
 });
 
 export const FichierUncheckedUpdateWithoutLiensInputSchema: z.ZodType<Prisma.FichierUncheckedUpdateWithoutLiensInput> = z.strictObject({
@@ -89891,6 +94557,7 @@ export const FichierUncheckedUpdateWithoutLiensInputSchema: z.ZodType<Prisma.Fic
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
 });
 
 export const EtablissementCreateWithoutDocumentTypesInscriptionInputSchema: z.ZodType<Prisma.EtablissementCreateWithoutDocumentTypesInscriptionInput> = z.strictObject({
@@ -89938,6 +94605,7 @@ export const EtablissementCreateWithoutDocumentTypesInscriptionInputSchema: z.Zo
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutDocumentTypesInscriptionInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutDocumentTypesInscriptionInput> = z.strictObject({
@@ -89985,6 +94653,7 @@ export const EtablissementUncheckedCreateWithoutDocumentTypesInscriptionInputSch
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutDocumentTypesInscriptionInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutDocumentTypesInscriptionInput> = z.strictObject({
@@ -90029,6 +94698,46 @@ export const InscriptionDocumentCreateOrConnectWithoutDocumentTypeInputSchema: z
 
 export const InscriptionDocumentCreateManyDocumentTypeInputEnvelopeSchema: z.ZodType<Prisma.InscriptionDocumentCreateManyDocumentTypeInputEnvelope> = z.strictObject({
   data: z.union([ z.lazy(() => InscriptionDocumentCreateManyDocumentTypeInputSchema), z.lazy(() => InscriptionDocumentCreateManyDocumentTypeInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
+});
+
+export const EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateWithoutDocumentTypeInput> = z.strictObject({
+  id: z.uuid().optional(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+  draft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutFilesInputSchema),
+  fichier: z.lazy(() => FichierCreateNestedOneWithoutEnrollmentDraftFilesInputSchema).optional(),
+  uploadedBy: z.lazy(() => UtilisateurCreateNestedOneWithoutEnrollmentDraftFilesUploadedInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_id: z.string(),
+  fichier_id: z.string().optional().nullable(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  uploaded_by_id: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftFileCreateOrConnectWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateOrConnectWithoutDocumentTypeInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema) ]),
+});
+
+export const EnrollmentDraftFileCreateManyDocumentTypeInputEnvelopeSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateManyDocumentTypeInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => EnrollmentDraftFileCreateManyDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileCreateManyDocumentTypeInputSchema).array() ]),
   skipDuplicates: z.boolean().optional(),
 });
 
@@ -90088,6 +94797,7 @@ export const EtablissementUpdateWithoutDocumentTypesInscriptionInputSchema: z.Zo
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutDocumentTypesInscriptionInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutDocumentTypesInscriptionInput> = z.strictObject({
@@ -90135,6 +94845,7 @@ export const EtablissementUncheckedUpdateWithoutDocumentTypesInscriptionInputSch
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const InscriptionDocumentUpsertWithWhereUniqueWithoutDocumentTypeInputSchema: z.ZodType<Prisma.InscriptionDocumentUpsertWithWhereUniqueWithoutDocumentTypeInput> = z.strictObject({
@@ -90151,6 +94862,22 @@ export const InscriptionDocumentUpdateWithWhereUniqueWithoutDocumentTypeInputSch
 export const InscriptionDocumentUpdateManyWithWhereWithoutDocumentTypeInputSchema: z.ZodType<Prisma.InscriptionDocumentUpdateManyWithWhereWithoutDocumentTypeInput> = z.strictObject({
   where: z.lazy(() => InscriptionDocumentScalarWhereInputSchema),
   data: z.union([ z.lazy(() => InscriptionDocumentUpdateManyMutationInputSchema), z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutDocumentTypeInputSchema) ]),
+});
+
+export const EnrollmentDraftFileUpsertWithWhereUniqueWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpsertWithWhereUniqueWithoutDocumentTypeInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateWithoutDocumentTypeInputSchema) ]),
+  create: z.union([ z.lazy(() => EnrollmentDraftFileCreateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedCreateWithoutDocumentTypeInputSchema) ]),
+});
+
+export const EnrollmentDraftFileUpdateWithWhereUniqueWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateWithWhereUniqueWithoutDocumentTypeInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftFileUpdateWithoutDocumentTypeInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateWithoutDocumentTypeInputSchema) ]),
+});
+
+export const EnrollmentDraftFileUpdateManyWithWhereWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateManyWithWhereWithoutDocumentTypeInput> = z.strictObject({
+  where: z.lazy(() => EnrollmentDraftFileScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => EnrollmentDraftFileUpdateManyMutationInputSchema), z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDocumentTypeInputSchema) ]),
 });
 
 export const InscriptionCreateWithoutDocumentsInputSchema: z.ZodType<Prisma.InscriptionCreateWithoutDocumentsInput> = z.strictObject({
@@ -90175,6 +94902,7 @@ export const InscriptionCreateWithoutDocumentsInputSchema: z.ZodType<Prisma.Insc
   classe: z.lazy(() => ClasseCreateNestedOneWithoutInscriptionsInputSchema).optional(),
   annee: z.lazy(() => AnneeScolaireCreateNestedOneWithoutInscriptionsInputSchema),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionUncheckedCreateWithoutDocumentsInputSchema: z.ZodType<Prisma.InscriptionUncheckedCreateWithoutDocumentsInput> = z.strictObject({
@@ -90199,6 +94927,7 @@ export const InscriptionUncheckedCreateWithoutDocumentsInputSchema: z.ZodType<Pr
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedCreateNestedOneWithoutInscriptionInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedCreateNestedOneWithoutSubmittedInscriptionInputSchema).optional(),
 });
 
 export const InscriptionCreateOrConnectWithoutDocumentsInputSchema: z.ZodType<Prisma.InscriptionCreateOrConnectWithoutDocumentsInput> = z.strictObject({
@@ -90218,6 +94947,7 @@ export const DocumentTypeInscriptionCreateWithoutDocumentsInputSchema: z.ZodType
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutDocumentTypesInscriptionInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionUncheckedCreateWithoutDocumentsInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUncheckedCreateWithoutDocumentsInput> = z.strictObject({
@@ -90232,6 +94962,7 @@ export const DocumentTypeInscriptionUncheckedCreateWithoutDocumentsInputSchema: 
   ordre: z.number().int().optional().nullable(),
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutDocumentTypeInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionCreateOrConnectWithoutDocumentsInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionCreateOrConnectWithoutDocumentsInput> = z.strictObject({
@@ -90252,6 +94983,7 @@ export const FichierCreateWithoutDocumentsInscriptionsInputSchema: z.ZodType<Pri
   etablissement: z.lazy(() => EtablissementCreateNestedOneWithoutFichiersInputSchema),
   proprietaire: z.lazy(() => UtilisateurCreateNestedOneWithoutFichiersInputSchema).optional(),
   liens: z.lazy(() => LienFichierCreateNestedManyWithoutFichierInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutFichierInputSchema).optional(),
 });
 
 export const FichierUncheckedCreateWithoutDocumentsInscriptionsInputSchema: z.ZodType<Prisma.FichierUncheckedCreateWithoutDocumentsInscriptionsInput> = z.strictObject({
@@ -90267,6 +94999,7 @@ export const FichierUncheckedCreateWithoutDocumentsInscriptionsInputSchema: z.Zo
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
   liens: z.lazy(() => LienFichierUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutFichierInputSchema).optional(),
 });
 
 export const FichierCreateOrConnectWithoutDocumentsInscriptionsInputSchema: z.ZodType<Prisma.FichierCreateOrConnectWithoutDocumentsInscriptionsInput> = z.strictObject({
@@ -90304,6 +95037,9 @@ export const UtilisateurCreateWithoutDocumentsInscriptionVerifiesInputSchema: z.
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -90340,6 +95076,9 @@ export const UtilisateurUncheckedCreateWithoutDocumentsInscriptionVerifiesInputS
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -90384,6 +95123,7 @@ export const InscriptionUpdateWithoutDocumentsInputSchema: z.ZodType<Prisma.Insc
   classe: z.lazy(() => ClasseUpdateOneWithoutInscriptionsNestedInputSchema).optional(),
   annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutInscriptionsNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateWithoutDocumentsInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateWithoutDocumentsInput> = z.strictObject({
@@ -90408,6 +95148,7 @@ export const InscriptionUncheckedUpdateWithoutDocumentsInputSchema: z.ZodType<Pr
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionUpsertWithoutDocumentsInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUpsertWithoutDocumentsInput> = z.strictObject({
@@ -90433,6 +95174,7 @@ export const DocumentTypeInscriptionUpdateWithoutDocumentsInputSchema: z.ZodType
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   etablissement: z.lazy(() => EtablissementUpdateOneWithoutDocumentTypesInscriptionNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionUncheckedUpdateWithoutDocumentsInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUncheckedUpdateWithoutDocumentsInput> = z.strictObject({
@@ -90447,6 +95189,7 @@ export const DocumentTypeInscriptionUncheckedUpdateWithoutDocumentsInputSchema: 
   ordre: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
 });
 
 export const FichierUpsertWithoutDocumentsInscriptionsInputSchema: z.ZodType<Prisma.FichierUpsertWithoutDocumentsInscriptionsInput> = z.strictObject({
@@ -90473,6 +95216,7 @@ export const FichierUpdateWithoutDocumentsInscriptionsInputSchema: z.ZodType<Pri
   etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutFichiersNestedInputSchema).optional(),
   proprietaire: z.lazy(() => UtilisateurUpdateOneWithoutFichiersNestedInputSchema).optional(),
   liens: z.lazy(() => LienFichierUpdateManyWithoutFichierNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutFichierNestedInputSchema).optional(),
 });
 
 export const FichierUncheckedUpdateWithoutDocumentsInscriptionsInputSchema: z.ZodType<Prisma.FichierUncheckedUpdateWithoutDocumentsInscriptionsInput> = z.strictObject({
@@ -90488,6 +95232,7 @@ export const FichierUncheckedUpdateWithoutDocumentsInscriptionsInputSchema: z.Zo
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   liens: z.lazy(() => LienFichierUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
 });
 
 export const UtilisateurUpsertWithoutDocumentsInscriptionVerifiesInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutDocumentsInscriptionVerifiesInput> = z.strictObject({
@@ -90531,6 +95276,9 @@ export const UtilisateurUpdateWithoutDocumentsInscriptionVerifiesInputSchema: z.
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -90567,6 +95315,9 @@ export const UtilisateurUncheckedUpdateWithoutDocumentsInscriptionVerifiesInputS
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -90618,6 +95369,7 @@ export const EtablissementCreateWithoutJournauxAuditInputSchema: z.ZodType<Prism
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutJournauxAuditInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutJournauxAuditInput> = z.strictObject({
@@ -90665,6 +95417,7 @@ export const EtablissementUncheckedCreateWithoutJournauxAuditInputSchema: z.ZodT
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutJournauxAuditInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutJournauxAuditInput> = z.strictObject({
@@ -90702,6 +95455,9 @@ export const UtilisateurCreateWithoutJournauxAuditInputSchema: z.ZodType<Prisma.
   programmesCrees: z.lazy(() => ProgrammeCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -90738,6 +95494,9 @@ export const UtilisateurUncheckedCreateWithoutJournauxAuditInputSchema: z.ZodTyp
   programmesCrees: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutCreatedByInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedCreateNestedManyWithoutUpdatedByInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedCreateNestedManyWithoutChangedByInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutCreateurInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutModificateurInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedCreateNestedManyWithoutUploadedByInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedCreateNestedManyWithoutUtilisateurInputSchema).optional(),
@@ -90805,6 +95564,7 @@ export const EtablissementUpdateWithoutJournauxAuditInputSchema: z.ZodType<Prism
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutJournauxAuditInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutJournauxAuditInput> = z.strictObject({
@@ -90852,6 +95612,7 @@ export const EtablissementUncheckedUpdateWithoutJournauxAuditInputSchema: z.ZodT
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const UtilisateurUpsertWithoutJournauxAuditInputSchema: z.ZodType<Prisma.UtilisateurUpsertWithoutJournauxAuditInput> = z.strictObject({
@@ -90895,6 +95656,9 @@ export const UtilisateurUpdateWithoutJournauxAuditInputSchema: z.ZodType<Prisma.
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -90931,6 +95695,9 @@ export const UtilisateurUncheckedUpdateWithoutJournauxAuditInputSchema: z.ZodTyp
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -90982,6 +95749,7 @@ export const EtablissementCreateWithoutWebhooksInputSchema: z.ZodType<Prisma.Eta
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutWebhooksInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutWebhooksInput> = z.strictObject({
@@ -91029,6 +95797,7 @@ export const EtablissementUncheckedCreateWithoutWebhooksInputSchema: z.ZodType<P
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutWebhooksInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutWebhooksInput> = z.strictObject({
@@ -91092,6 +95861,7 @@ export const EtablissementUpdateWithoutWebhooksInputSchema: z.ZodType<Prisma.Eta
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutWebhooksInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutWebhooksInput> = z.strictObject({
@@ -91139,6 +95909,7 @@ export const EtablissementUncheckedUpdateWithoutWebhooksInputSchema: z.ZodType<P
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementCreateWithoutJetonsInputSchema: z.ZodType<Prisma.EtablissementCreateWithoutJetonsInput> = z.strictObject({
@@ -91186,6 +95957,7 @@ export const EtablissementCreateWithoutJetonsInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementUncheckedCreateWithoutJetonsInputSchema: z.ZodType<Prisma.EtablissementUncheckedCreateWithoutJetonsInput> = z.strictObject({
@@ -91233,6 +96005,7 @@ export const EtablissementUncheckedCreateWithoutJetonsInputSchema: z.ZodType<Pri
   Message: z.lazy(() => MessageUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedCreateNestedManyWithoutEtablissementInputSchema).optional(),
 });
 
 export const EtablissementCreateOrConnectWithoutJetonsInputSchema: z.ZodType<Prisma.EtablissementCreateOrConnectWithoutJetonsInput> = z.strictObject({
@@ -91296,6 +96069,7 @@ export const EtablissementUpdateWithoutJetonsInputSchema: z.ZodType<Prisma.Etabl
   Message: z.lazy(() => MessageUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const EtablissementUncheckedUpdateWithoutJetonsInputSchema: z.ZodType<Prisma.EtablissementUncheckedUpdateWithoutJetonsInput> = z.strictObject({
@@ -91343,6 +96117,7 @@ export const EtablissementUncheckedUpdateWithoutJetonsInputSchema: z.ZodType<Pri
   Message: z.lazy(() => MessageUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   Facture: z.lazy(() => FactureUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
   operationsFinancieres: z.lazy(() => OperationFinanciereUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEtablissementNestedInputSchema).optional(),
 });
 
 export const SiteCreateManyEtablissementInputSchema: z.ZodType<Prisma.SiteCreateManyEtablissementInput> = z.strictObject({
@@ -91886,6 +96661,38 @@ export const OperationFinanciereCreateManyEtablissementInputSchema: z.ZodType<Pr
   updated_at: z.coerce.date().optional(),
 });
 
+export const EnrollmentDraftCreateManyEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyEtablissementInput> = z.strictObject({
+  id: z.uuid().optional(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
 export const SiteUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.SiteUpdateWithoutEtablissementInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   nom: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
@@ -91945,6 +96752,7 @@ export const AnneeScolaireUpdateWithoutEtablissementInputSchema: z.ZodType<Prism
   pedagogicalItems: z.lazy(() => PedagogicalItemUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateWithoutEtablissementInput> = z.strictObject({
@@ -91973,6 +96781,7 @@ export const AnneeScolaireUncheckedUpdateWithoutEtablissementInputSchema: z.ZodT
   pedagogicalItems: z.lazy(() => PedagogicalItemUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   gradingScales: z.lazy(() => GradingScaleUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutAnneeNestedInputSchema).optional(),
 });
 
 export const AnneeScolaireUncheckedUpdateManyWithoutEtablissementInputSchema: z.ZodType<Prisma.AnneeScolaireUncheckedUpdateManyWithoutEtablissementInput> = z.strictObject({
@@ -92036,6 +96845,9 @@ export const UtilisateurUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.
   programmesCrees: z.lazy(() => ProgrammeUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -92072,6 +96884,9 @@ export const UtilisateurUncheckedUpdateWithoutEtablissementInputSchema: z.ZodTyp
   programmesCrees: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutCreatedByNestedInputSchema).optional(),
   programmesMaj: z.lazy(() => ProgrammeUncheckedUpdateManyWithoutUpdatedByNestedInputSchema).optional(),
   programmeChangeLogs: z.lazy(() => ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByNestedInputSchema).optional(),
+  enrollmentDraftsCreated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutCreateurNestedInputSchema).optional(),
+  enrollmentDraftsUpdated: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutModificateurNestedInputSchema).optional(),
+  enrollmentDraftFilesUploaded: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByNestedInputSchema).optional(),
   Eleve: z.lazy(() => EleveUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   ParentTuteur: z.lazy(() => ParentTuteurUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
   Personnel: z.lazy(() => PersonnelUncheckedUpdateManyWithoutUtilisateurNestedInputSchema).optional(),
@@ -92174,6 +96989,7 @@ export const EleveUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.EleveU
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutEtablissementInput> = z.strictObject({
@@ -92206,6 +97022,7 @@ export const EleveUncheckedUpdateWithoutEtablissementInputSchema: z.ZodType<Pris
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateManyWithoutEtablissementInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateManyWithoutEtablissementInput> = z.strictObject({
@@ -92743,6 +97560,7 @@ export const FichierUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.Fich
   proprietaire: z.lazy(() => UtilisateurUpdateOneWithoutFichiersNestedInputSchema).optional(),
   liens: z.lazy(() => LienFichierUpdateManyWithoutFichierNestedInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUpdateManyWithoutFichierNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutFichierNestedInputSchema).optional(),
 });
 
 export const FichierUncheckedUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.FichierUncheckedUpdateWithoutEtablissementInput> = z.strictObject({
@@ -92758,6 +97576,7 @@ export const FichierUncheckedUpdateWithoutEtablissementInputSchema: z.ZodType<Pr
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   liens: z.lazy(() => LienFichierUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
 });
 
 export const FichierUncheckedUpdateManyWithoutEtablissementInputSchema: z.ZodType<Prisma.FichierUncheckedUpdateManyWithoutEtablissementInput> = z.strictObject({
@@ -92785,6 +97604,7 @@ export const DocumentTypeInscriptionUpdateWithoutEtablissementInputSchema: z.Zod
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionUncheckedUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUncheckedUpdateWithoutEtablissementInput> = z.strictObject({
@@ -92799,6 +97619,7 @@ export const DocumentTypeInscriptionUncheckedUpdateWithoutEtablissementInputSche
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDocumentTypeNestedInputSchema).optional(),
 });
 
 export const DocumentTypeInscriptionUncheckedUpdateManyWithoutEtablissementInputSchema: z.ZodType<Prisma.DocumentTypeInscriptionUncheckedUpdateManyWithoutEtablissementInput> = z.strictObject({
@@ -93773,6 +98594,104 @@ export const OperationFinanciereUncheckedUpdateManyWithoutEtablissementInputSche
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
+export const EnrollmentDraftUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithoutEtablissementInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  eleve: z.lazy(() => EleveUpdateOneWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsCreatedNestedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsUpdatedNestedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionUpdateOneWithoutSourceDraftNestedInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateWithoutEtablissementInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateManyWithoutEtablissementInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyWithoutEtablissementInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
 export const SalleCreateManySiteInputSchema: z.ZodType<Prisma.SalleCreateManySiteInput> = z.strictObject({
   id: z.uuid().optional(),
   nom: z.string(),
@@ -94263,6 +99182,38 @@ export const PedagogicalItemAverageCreateManyAnneeInputSchema: z.ZodType<Prisma.
   updated_at: z.coerce.date().optional(),
 });
 
+export const EnrollmentDraftCreateManyAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyAnneeInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
 export const PeriodeUpdateWithoutAnneeInputSchema: z.ZodType<Prisma.PeriodeUpdateWithoutAnneeInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   nom: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
@@ -94369,6 +99320,7 @@ export const InscriptionUpdateWithoutAnneeInputSchema: z.ZodType<Prisma.Inscript
   classe: z.lazy(() => ClasseUpdateOneWithoutInscriptionsNestedInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentUpdateManyWithoutInscriptionNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateWithoutAnneeInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateWithoutAnneeInput> = z.strictObject({
@@ -94393,6 +99345,7 @@ export const InscriptionUncheckedUpdateWithoutAnneeInputSchema: z.ZodType<Prisma
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutInscriptionNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateManyWithoutAnneeInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateManyWithoutAnneeInput> = z.strictObject({
@@ -95397,6 +100350,104 @@ export const PedagogicalItemAverageUncheckedUpdateManyWithoutAnneeInputSchema: z
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
+export const EnrollmentDraftUpdateWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithoutAnneeInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  eleve: z.lazy(() => EleveUpdateOneWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsCreatedNestedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsUpdatedNestedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionUpdateOneWithoutSourceDraftNestedInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateWithoutAnneeInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateManyWithoutAnneeInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyWithoutAnneeInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
 export const EvaluationCreateManyPeriodeInputSchema: z.ZodType<Prisma.EvaluationCreateManyPeriodeInput> = z.strictObject({
   id: z.uuid().optional(),
   cours_id: z.string(),
@@ -96059,6 +101110,85 @@ export const ProgrammeChangeLogCreateManyChangedByInputSchema: z.ZodType<Prisma.
   changed_at: z.coerce.date().optional(),
 });
 
+export const EnrollmentDraftCreateManyCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyCreateurInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftCreateManyModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyModificateurInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  eleve_id: z.string().optional().nullable(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftFileCreateManyUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateManyUploadedByInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_id: z.string(),
+  document_type_id: z.string().optional().nullable(),
+  fichier_id: z.string().optional().nullable(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
 export const EleveCreateManyUtilisateurInputSchema: z.ZodType<Prisma.EleveCreateManyUtilisateurInput> = z.strictObject({
   id: z.uuid().optional(),
   etablissement_id: z.string(),
@@ -96187,6 +101317,7 @@ export const FichierUpdateWithoutProprietaireInputSchema: z.ZodType<Prisma.Fichi
   etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutFichiersNestedInputSchema).optional(),
   liens: z.lazy(() => LienFichierUpdateManyWithoutFichierNestedInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUpdateManyWithoutFichierNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutFichierNestedInputSchema).optional(),
 });
 
 export const FichierUncheckedUpdateWithoutProprietaireInputSchema: z.ZodType<Prisma.FichierUncheckedUpdateWithoutProprietaireInput> = z.strictObject({
@@ -96202,6 +101333,7 @@ export const FichierUncheckedUpdateWithoutProprietaireInputSchema: z.ZodType<Pri
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   liens: z.lazy(() => LienFichierUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
   documentsInscriptions: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
+  enrollmentDraftFiles: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutFichierNestedInputSchema).optional(),
 });
 
 export const FichierUncheckedUpdateManyWithoutProprietaireInputSchema: z.ZodType<Prisma.FichierUncheckedUpdateManyWithoutProprietaireInput> = z.strictObject({
@@ -97046,6 +102178,247 @@ export const ProgrammeChangeLogUncheckedUpdateManyWithoutChangedByInputSchema: z
   changed_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
+export const EnrollmentDraftUpdateWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithoutCreateurInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  eleve: z.lazy(() => EleveUpdateOneWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsUpdatedNestedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionUpdateOneWithoutSourceDraftNestedInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateWithoutCreateurInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateManyWithoutCreateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyWithoutCreateurInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftUpdateWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithoutModificateurInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  eleve: z.lazy(() => EleveUpdateOneWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsCreatedNestedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionUpdateOneWithoutSourceDraftNestedInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateWithoutModificateurInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateManyWithoutModificateurInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyWithoutModificateurInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  eleve_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileUpdateWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateWithoutUploadedByInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  draft: z.lazy(() => EnrollmentDraftUpdateOneRequiredWithoutFilesNestedInputSchema).optional(),
+  documentType: z.lazy(() => DocumentTypeInscriptionUpdateOneWithoutEnrollmentDraftFilesNestedInputSchema).optional(),
+  fichier: z.lazy(() => FichierUpdateOneWithoutEnrollmentDraftFilesNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateWithoutUploadedByInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  document_type_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  fichier_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateManyWithoutUploadedByInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  document_type_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  fichier_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
 export const EleveUpdateWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveUpdateWithoutUtilisateurInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   code_eleve: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
@@ -97076,6 +102449,7 @@ export const EleveUpdateWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveUpd
   emprunts: z.lazy(() => EmpruntUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateWithoutUtilisateurInput> = z.strictObject({
@@ -97108,6 +102482,7 @@ export const EleveUncheckedUpdateWithoutUtilisateurInputSchema: z.ZodType<Prisma
   emprunts: z.lazy(() => EmpruntUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
   profilMedical: z.lazy(() => EleveMedicalProfileUncheckedUpdateOneWithoutEleveNestedInputSchema).optional(),
   pedagogicalItemAverages: z.lazy(() => PedagogicalItemAverageUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
+  enrollmentDrafts: z.lazy(() => EnrollmentDraftUncheckedUpdateManyWithoutEleveNestedInputSchema).optional(),
 });
 
 export const EleveUncheckedUpdateManyWithoutUtilisateurInputSchema: z.ZodType<Prisma.EleveUncheckedUpdateManyWithoutUtilisateurInput> = z.strictObject({
@@ -97589,6 +102964,38 @@ export const PedagogicalItemAverageCreateManyEleveInputSchema: z.ZodType<Prisma.
   updated_at: z.coerce.date().optional(),
 });
 
+export const EnrollmentDraftCreateManyEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyEleveInput> = z.strictObject({
+  id: z.uuid().optional(),
+  etablissement_id: z.string(),
+  annee_scolaire_id: z.string(),
+  draft_type: z.lazy(() => EnrollmentDraftTypeSchema),
+  status: z.lazy(() => EnrollmentDraftStatusSchema).optional(),
+  current_step: z.number().int().optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.string().optional().nullable(),
+  updated_by_utilisateur_id: z.string().optional().nullable(),
+  submitted_inscription_id: z.string().optional().nullable(),
+  active_unique_key: z.string().optional().nullable(),
+  expires_at: z.coerce.date().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  deleted_at: z.coerce.date().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
 export const EleveParentTuteurUpdateWithoutEleveInputSchema: z.ZodType<Prisma.EleveParentTuteurUpdateWithoutEleveInput> = z.strictObject({
   relation: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   est_principal: z.union([ z.boolean(),z.lazy(() => BoolFieldUpdateOperationsInputSchema) ]).optional(),
@@ -97641,6 +103048,7 @@ export const InscriptionUpdateWithoutEleveInputSchema: z.ZodType<Prisma.Inscript
   annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutInscriptionsNestedInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentUpdateManyWithoutInscriptionNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateWithoutEleveInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateWithoutEleveInput> = z.strictObject({
@@ -97665,6 +103073,7 @@ export const InscriptionUncheckedUpdateWithoutEleveInputSchema: z.ZodType<Prisma
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutInscriptionNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateManyWithoutEleveInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateManyWithoutEleveInput> = z.strictObject({
@@ -98593,6 +104002,104 @@ export const PedagogicalItemAverageUncheckedUpdateManyWithoutEleveInputSchema: z
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
+export const EnrollmentDraftUpdateWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftUpdateWithoutEleveInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement: z.lazy(() => EtablissementUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutEnrollmentDraftsNestedInputSchema).optional(),
+  createur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsCreatedNestedInputSchema).optional(),
+  modificateur: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftsUpdatedNestedInputSchema).optional(),
+  submittedInscription: z.lazy(() => InscriptionUpdateOneWithoutSourceDraftNestedInputSchema).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateWithoutEleveInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  files: z.lazy(() => EnrollmentDraftFileUncheckedUpdateManyWithoutDraftNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftUncheckedUpdateManyWithoutEleveInputSchema: z.ZodType<Prisma.EnrollmentDraftUncheckedUpdateManyWithoutEleveInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  etablissement_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  annee_scolaire_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_type: z.union([ z.lazy(() => EnrollmentDraftTypeSchema), z.lazy(() => EnumEnrollmentDraftTypeFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.lazy(() => EnrollmentDraftStatusSchema), z.lazy(() => EnumEnrollmentDraftStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  current_step: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  student_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  schooling_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  guardians_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  finance_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  documents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  medical_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  previous_school_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  access_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  consents_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  observations_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  services_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  payment_schedule_data: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  completion_rate: z.union([ z.union([z.number(),z.string(),z.instanceof(Prisma.Decimal),DecimalJsLikeSchema,]).refine((v) => isValidDecimalInput(v), { message: 'Must be a Decimal' }),z.lazy(() => NullableDecimalFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  missing_fields: z.union([ z.lazy(() => NullableJsonNullValueInputSchema), InputJsonValueSchema ]).optional(),
+  created_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  updated_by_utilisateur_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_inscription_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  active_unique_key: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  expires_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  submitted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  deleted_at: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
 export const EleveParentTuteurCreateManyParent_tuteurInputSchema: z.ZodType<Prisma.EleveParentTuteurCreateManyParent_tuteurInput> = z.strictObject({
   eleve_id: z.string(),
   relation: z.string().optional().nullable(),
@@ -98870,6 +104377,7 @@ export const InscriptionUpdateWithoutNiveauInputSchema: z.ZodType<Prisma.Inscrip
   annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutInscriptionsNestedInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentUpdateManyWithoutInscriptionNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateWithoutNiveauInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateWithoutNiveauInput> = z.strictObject({
@@ -98894,6 +104402,7 @@ export const InscriptionUncheckedUpdateWithoutNiveauInputSchema: z.ZodType<Prism
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutInscriptionNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateManyWithoutNiveauInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateManyWithoutNiveauInput> = z.strictObject({
@@ -99470,6 +104979,7 @@ export const InscriptionUpdateWithoutClasseInputSchema: z.ZodType<Prisma.Inscrip
   annee: z.lazy(() => AnneeScolaireUpdateOneRequiredWithoutInscriptionsNestedInputSchema).optional(),
   documents: z.lazy(() => InscriptionDocumentUpdateManyWithoutInscriptionNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateWithoutClasseInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateWithoutClasseInput> = z.strictObject({
@@ -99494,6 +105004,7 @@ export const InscriptionUncheckedUpdateWithoutClasseInputSchema: z.ZodType<Prism
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   documents: z.lazy(() => InscriptionDocumentUncheckedUpdateManyWithoutInscriptionNestedInputSchema).optional(),
   historiqueScolaire: z.lazy(() => InscriptionSchoolHistoryUncheckedUpdateOneWithoutInscriptionNestedInputSchema).optional(),
+  sourceDraft: z.lazy(() => EnrollmentDraftUncheckedUpdateOneWithoutSubmittedInscriptionNestedInputSchema).optional(),
 });
 
 export const InscriptionUncheckedUpdateManyWithoutClasseInputSchema: z.ZodType<Prisma.InscriptionUncheckedUpdateManyWithoutClasseInput> = z.strictObject({
@@ -99823,6 +105334,66 @@ export const InscriptionDocumentUncheckedUpdateManyWithoutInscriptionInputSchema
   date_depot: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   date_verification: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   commentaire_admin: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileCreateManyDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateManyDraftInput> = z.strictObject({
+  id: z.uuid().optional(),
+  document_type_id: z.string().optional().nullable(),
+  fichier_id: z.string().optional().nullable(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  uploaded_by_id: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftFileUpdateWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateWithoutDraftInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  documentType: z.lazy(() => DocumentTypeInscriptionUpdateOneWithoutEnrollmentDraftFilesNestedInputSchema).optional(),
+  fichier: z.lazy(() => FichierUpdateOneWithoutEnrollmentDraftFilesNestedInputSchema).optional(),
+  uploadedBy: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftFilesUploadedNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateWithoutDraftInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  document_type_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  fichier_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateManyWithoutDraftInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateManyWithoutDraftInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  document_type_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  fichier_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
@@ -105615,6 +111186,21 @@ export const InscriptionDocumentCreateManyFichierInputSchema: z.ZodType<Prisma.I
   updated_at: z.coerce.date().optional(),
 });
 
+export const EnrollmentDraftFileCreateManyFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateManyFichierInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_id: z.string(),
+  document_type_id: z.string().optional().nullable(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  uploaded_by_id: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
 export const LienFichierUpdateWithoutFichierInputSchema: z.ZodType<Prisma.LienFichierUpdateWithoutFichierInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   type_entite: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
@@ -105687,6 +111273,51 @@ export const InscriptionDocumentUncheckedUpdateManyWithoutFichierInputSchema: z.
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
 
+export const EnrollmentDraftFileUpdateWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateWithoutFichierInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  draft: z.lazy(() => EnrollmentDraftUpdateOneRequiredWithoutFilesNestedInputSchema).optional(),
+  documentType: z.lazy(() => DocumentTypeInscriptionUpdateOneWithoutEnrollmentDraftFilesNestedInputSchema).optional(),
+  uploadedBy: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftFilesUploadedNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateWithoutFichierInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  document_type_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateManyWithoutFichierInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateManyWithoutFichierInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  document_type_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
 export const InscriptionDocumentCreateManyDocumentTypeInputSchema: z.ZodType<Prisma.InscriptionDocumentCreateManyDocumentTypeInput> = z.strictObject({
   id: z.uuid().optional(),
   inscription_id: z.string(),
@@ -105698,6 +111329,21 @@ export const InscriptionDocumentCreateManyDocumentTypeInputSchema: z.ZodType<Pri
   date_depot: z.coerce.date().optional().nullable(),
   date_verification: z.coerce.date().optional().nullable(),
   commentaire_admin: z.string().optional().nullable(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const EnrollmentDraftFileCreateManyDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateManyDocumentTypeInput> = z.strictObject({
+  id: z.uuid().optional(),
+  draft_id: z.string(),
+  fichier_id: z.string().optional().nullable(),
+  filename: z.string(),
+  original_name: z.string().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  path: z.string().optional().nullable(),
+  status: z.lazy(() => EnrollmentDraftFileStatusSchema).optional(),
+  uploaded_by_id: z.string().optional().nullable(),
   created_at: z.coerce.date().optional(),
   updated_at: z.coerce.date().optional(),
 });
@@ -105743,6 +111389,51 @@ export const InscriptionDocumentUncheckedUpdateManyWithoutDocumentTypeInputSchem
   date_depot: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   date_verification: z.union([ z.coerce.date(),z.lazy(() => NullableDateTimeFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   commentaire_admin: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileUpdateWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateWithoutDocumentTypeInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  draft: z.lazy(() => EnrollmentDraftUpdateOneRequiredWithoutFilesNestedInputSchema).optional(),
+  fichier: z.lazy(() => FichierUpdateOneWithoutEnrollmentDraftFilesNestedInputSchema).optional(),
+  uploadedBy: z.lazy(() => UtilisateurUpdateOneWithoutEnrollmentDraftFilesUploadedNestedInputSchema).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateWithoutDocumentTypeInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  fichier_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const EnrollmentDraftFileUncheckedUpdateManyWithoutDocumentTypeInputSchema: z.ZodType<Prisma.EnrollmentDraftFileUncheckedUpdateManyWithoutDocumentTypeInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  draft_id: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  fichier_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  filename: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  original_name: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  mime_type: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  size: z.union([ z.number().int(),z.lazy(() => NullableIntFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  path: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+  status: z.union([ z.lazy(() => EnrollmentDraftFileStatusSchema), z.lazy(() => EnumEnrollmentDraftFileStatusFieldUpdateOperationsInputSchema) ]).optional(),
+  uploaded_by_id: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
   created_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updated_at: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
@@ -107051,6 +112742,130 @@ export const InscriptionSchoolHistoryFindUniqueOrThrowArgsSchema: z.ZodType<Pris
   select: InscriptionSchoolHistorySelectSchema.optional(),
   include: InscriptionSchoolHistoryIncludeSchema.optional(),
   where: InscriptionSchoolHistoryWhereUniqueInputSchema, 
+}).strict();
+
+export const EnrollmentDraftFindFirstArgsSchema: z.ZodType<Prisma.EnrollmentDraftFindFirstArgs> = z.object({
+  select: EnrollmentDraftSelectSchema.optional(),
+  include: EnrollmentDraftIncludeSchema.optional(),
+  where: EnrollmentDraftWhereInputSchema.optional(), 
+  orderBy: z.union([ EnrollmentDraftOrderByWithRelationInputSchema.array(), EnrollmentDraftOrderByWithRelationInputSchema ]).optional(),
+  cursor: EnrollmentDraftWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ EnrollmentDraftScalarFieldEnumSchema, EnrollmentDraftScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const EnrollmentDraftFindFirstOrThrowArgsSchema: z.ZodType<Prisma.EnrollmentDraftFindFirstOrThrowArgs> = z.object({
+  select: EnrollmentDraftSelectSchema.optional(),
+  include: EnrollmentDraftIncludeSchema.optional(),
+  where: EnrollmentDraftWhereInputSchema.optional(), 
+  orderBy: z.union([ EnrollmentDraftOrderByWithRelationInputSchema.array(), EnrollmentDraftOrderByWithRelationInputSchema ]).optional(),
+  cursor: EnrollmentDraftWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ EnrollmentDraftScalarFieldEnumSchema, EnrollmentDraftScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const EnrollmentDraftFindManyArgsSchema: z.ZodType<Prisma.EnrollmentDraftFindManyArgs> = z.object({
+  select: EnrollmentDraftSelectSchema.optional(),
+  include: EnrollmentDraftIncludeSchema.optional(),
+  where: EnrollmentDraftWhereInputSchema.optional(), 
+  orderBy: z.union([ EnrollmentDraftOrderByWithRelationInputSchema.array(), EnrollmentDraftOrderByWithRelationInputSchema ]).optional(),
+  cursor: EnrollmentDraftWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ EnrollmentDraftScalarFieldEnumSchema, EnrollmentDraftScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const EnrollmentDraftAggregateArgsSchema: z.ZodType<Prisma.EnrollmentDraftAggregateArgs> = z.object({
+  where: EnrollmentDraftWhereInputSchema.optional(), 
+  orderBy: z.union([ EnrollmentDraftOrderByWithRelationInputSchema.array(), EnrollmentDraftOrderByWithRelationInputSchema ]).optional(),
+  cursor: EnrollmentDraftWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict();
+
+export const EnrollmentDraftGroupByArgsSchema: z.ZodType<Prisma.EnrollmentDraftGroupByArgs> = z.object({
+  where: EnrollmentDraftWhereInputSchema.optional(), 
+  orderBy: z.union([ EnrollmentDraftOrderByWithAggregationInputSchema.array(), EnrollmentDraftOrderByWithAggregationInputSchema ]).optional(),
+  by: EnrollmentDraftScalarFieldEnumSchema.array(), 
+  having: EnrollmentDraftScalarWhereWithAggregatesInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict();
+
+export const EnrollmentDraftFindUniqueArgsSchema: z.ZodType<Prisma.EnrollmentDraftFindUniqueArgs> = z.object({
+  select: EnrollmentDraftSelectSchema.optional(),
+  include: EnrollmentDraftIncludeSchema.optional(),
+  where: EnrollmentDraftWhereUniqueInputSchema, 
+}).strict();
+
+export const EnrollmentDraftFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.EnrollmentDraftFindUniqueOrThrowArgs> = z.object({
+  select: EnrollmentDraftSelectSchema.optional(),
+  include: EnrollmentDraftIncludeSchema.optional(),
+  where: EnrollmentDraftWhereUniqueInputSchema, 
+}).strict();
+
+export const EnrollmentDraftFileFindFirstArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileFindFirstArgs> = z.object({
+  select: EnrollmentDraftFileSelectSchema.optional(),
+  include: EnrollmentDraftFileIncludeSchema.optional(),
+  where: EnrollmentDraftFileWhereInputSchema.optional(), 
+  orderBy: z.union([ EnrollmentDraftFileOrderByWithRelationInputSchema.array(), EnrollmentDraftFileOrderByWithRelationInputSchema ]).optional(),
+  cursor: EnrollmentDraftFileWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ EnrollmentDraftFileScalarFieldEnumSchema, EnrollmentDraftFileScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const EnrollmentDraftFileFindFirstOrThrowArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileFindFirstOrThrowArgs> = z.object({
+  select: EnrollmentDraftFileSelectSchema.optional(),
+  include: EnrollmentDraftFileIncludeSchema.optional(),
+  where: EnrollmentDraftFileWhereInputSchema.optional(), 
+  orderBy: z.union([ EnrollmentDraftFileOrderByWithRelationInputSchema.array(), EnrollmentDraftFileOrderByWithRelationInputSchema ]).optional(),
+  cursor: EnrollmentDraftFileWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ EnrollmentDraftFileScalarFieldEnumSchema, EnrollmentDraftFileScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const EnrollmentDraftFileFindManyArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileFindManyArgs> = z.object({
+  select: EnrollmentDraftFileSelectSchema.optional(),
+  include: EnrollmentDraftFileIncludeSchema.optional(),
+  where: EnrollmentDraftFileWhereInputSchema.optional(), 
+  orderBy: z.union([ EnrollmentDraftFileOrderByWithRelationInputSchema.array(), EnrollmentDraftFileOrderByWithRelationInputSchema ]).optional(),
+  cursor: EnrollmentDraftFileWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ EnrollmentDraftFileScalarFieldEnumSchema, EnrollmentDraftFileScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const EnrollmentDraftFileAggregateArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileAggregateArgs> = z.object({
+  where: EnrollmentDraftFileWhereInputSchema.optional(), 
+  orderBy: z.union([ EnrollmentDraftFileOrderByWithRelationInputSchema.array(), EnrollmentDraftFileOrderByWithRelationInputSchema ]).optional(),
+  cursor: EnrollmentDraftFileWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict();
+
+export const EnrollmentDraftFileGroupByArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileGroupByArgs> = z.object({
+  where: EnrollmentDraftFileWhereInputSchema.optional(), 
+  orderBy: z.union([ EnrollmentDraftFileOrderByWithAggregationInputSchema.array(), EnrollmentDraftFileOrderByWithAggregationInputSchema ]).optional(),
+  by: EnrollmentDraftFileScalarFieldEnumSchema.array(), 
+  having: EnrollmentDraftFileScalarWhereWithAggregatesInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict();
+
+export const EnrollmentDraftFileFindUniqueArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileFindUniqueArgs> = z.object({
+  select: EnrollmentDraftFileSelectSchema.optional(),
+  include: EnrollmentDraftFileIncludeSchema.optional(),
+  where: EnrollmentDraftFileWhereUniqueInputSchema, 
+}).strict();
+
+export const EnrollmentDraftFileFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileFindUniqueOrThrowArgs> = z.object({
+  select: EnrollmentDraftFileSelectSchema.optional(),
+  include: EnrollmentDraftFileIncludeSchema.optional(),
+  where: EnrollmentDraftFileWhereUniqueInputSchema, 
 }).strict();
 
 export const IdentifiantEleveFindFirstArgsSchema: z.ZodType<Prisma.IdentifiantEleveFindFirstArgs> = z.object({
@@ -112562,6 +118377,88 @@ export const InscriptionSchoolHistoryUpdateManyArgsSchema: z.ZodType<Prisma.Insc
 
 export const InscriptionSchoolHistoryDeleteManyArgsSchema: z.ZodType<Prisma.InscriptionSchoolHistoryDeleteManyArgs> = z.object({
   where: InscriptionSchoolHistoryWhereInputSchema.optional(), 
+}).strict();
+
+export const EnrollmentDraftCreateArgsSchema: z.ZodType<Prisma.EnrollmentDraftCreateArgs> = z.object({
+  select: EnrollmentDraftSelectSchema.optional(),
+  include: EnrollmentDraftIncludeSchema.optional(),
+  data: z.union([ EnrollmentDraftCreateInputSchema, EnrollmentDraftUncheckedCreateInputSchema ]),
+}).strict();
+
+export const EnrollmentDraftUpsertArgsSchema: z.ZodType<Prisma.EnrollmentDraftUpsertArgs> = z.object({
+  select: EnrollmentDraftSelectSchema.optional(),
+  include: EnrollmentDraftIncludeSchema.optional(),
+  where: EnrollmentDraftWhereUniqueInputSchema, 
+  create: z.union([ EnrollmentDraftCreateInputSchema, EnrollmentDraftUncheckedCreateInputSchema ]),
+  update: z.union([ EnrollmentDraftUpdateInputSchema, EnrollmentDraftUncheckedUpdateInputSchema ]),
+}).strict();
+
+export const EnrollmentDraftCreateManyArgsSchema: z.ZodType<Prisma.EnrollmentDraftCreateManyArgs> = z.object({
+  data: z.union([ EnrollmentDraftCreateManyInputSchema, EnrollmentDraftCreateManyInputSchema.array() ]),
+  skipDuplicates: z.boolean().optional(),
+}).strict();
+
+export const EnrollmentDraftDeleteArgsSchema: z.ZodType<Prisma.EnrollmentDraftDeleteArgs> = z.object({
+  select: EnrollmentDraftSelectSchema.optional(),
+  include: EnrollmentDraftIncludeSchema.optional(),
+  where: EnrollmentDraftWhereUniqueInputSchema, 
+}).strict();
+
+export const EnrollmentDraftUpdateArgsSchema: z.ZodType<Prisma.EnrollmentDraftUpdateArgs> = z.object({
+  select: EnrollmentDraftSelectSchema.optional(),
+  include: EnrollmentDraftIncludeSchema.optional(),
+  data: z.union([ EnrollmentDraftUpdateInputSchema, EnrollmentDraftUncheckedUpdateInputSchema ]),
+  where: EnrollmentDraftWhereUniqueInputSchema, 
+}).strict();
+
+export const EnrollmentDraftUpdateManyArgsSchema: z.ZodType<Prisma.EnrollmentDraftUpdateManyArgs> = z.object({
+  data: z.union([ EnrollmentDraftUpdateManyMutationInputSchema, EnrollmentDraftUncheckedUpdateManyInputSchema ]),
+  where: EnrollmentDraftWhereInputSchema.optional(), 
+}).strict();
+
+export const EnrollmentDraftDeleteManyArgsSchema: z.ZodType<Prisma.EnrollmentDraftDeleteManyArgs> = z.object({
+  where: EnrollmentDraftWhereInputSchema.optional(), 
+}).strict();
+
+export const EnrollmentDraftFileCreateArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateArgs> = z.object({
+  select: EnrollmentDraftFileSelectSchema.optional(),
+  include: EnrollmentDraftFileIncludeSchema.optional(),
+  data: z.union([ EnrollmentDraftFileCreateInputSchema, EnrollmentDraftFileUncheckedCreateInputSchema ]),
+}).strict();
+
+export const EnrollmentDraftFileUpsertArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileUpsertArgs> = z.object({
+  select: EnrollmentDraftFileSelectSchema.optional(),
+  include: EnrollmentDraftFileIncludeSchema.optional(),
+  where: EnrollmentDraftFileWhereUniqueInputSchema, 
+  create: z.union([ EnrollmentDraftFileCreateInputSchema, EnrollmentDraftFileUncheckedCreateInputSchema ]),
+  update: z.union([ EnrollmentDraftFileUpdateInputSchema, EnrollmentDraftFileUncheckedUpdateInputSchema ]),
+}).strict();
+
+export const EnrollmentDraftFileCreateManyArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileCreateManyArgs> = z.object({
+  data: z.union([ EnrollmentDraftFileCreateManyInputSchema, EnrollmentDraftFileCreateManyInputSchema.array() ]),
+  skipDuplicates: z.boolean().optional(),
+}).strict();
+
+export const EnrollmentDraftFileDeleteArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileDeleteArgs> = z.object({
+  select: EnrollmentDraftFileSelectSchema.optional(),
+  include: EnrollmentDraftFileIncludeSchema.optional(),
+  where: EnrollmentDraftFileWhereUniqueInputSchema, 
+}).strict();
+
+export const EnrollmentDraftFileUpdateArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateArgs> = z.object({
+  select: EnrollmentDraftFileSelectSchema.optional(),
+  include: EnrollmentDraftFileIncludeSchema.optional(),
+  data: z.union([ EnrollmentDraftFileUpdateInputSchema, EnrollmentDraftFileUncheckedUpdateInputSchema ]),
+  where: EnrollmentDraftFileWhereUniqueInputSchema, 
+}).strict();
+
+export const EnrollmentDraftFileUpdateManyArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileUpdateManyArgs> = z.object({
+  data: z.union([ EnrollmentDraftFileUpdateManyMutationInputSchema, EnrollmentDraftFileUncheckedUpdateManyInputSchema ]),
+  where: EnrollmentDraftFileWhereInputSchema.optional(), 
+}).strict();
+
+export const EnrollmentDraftFileDeleteManyArgsSchema: z.ZodType<Prisma.EnrollmentDraftFileDeleteManyArgs> = z.object({
+  where: EnrollmentDraftFileWhereInputSchema.optional(), 
 }).strict();
 
 export const IdentifiantEleveCreateArgsSchema: z.ZodType<Prisma.IdentifiantEleveCreateArgs> = z.object({

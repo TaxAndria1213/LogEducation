@@ -4,6 +4,9 @@ export type menu = {
   key: string;
   name: string;
   path?: string;
+  description?: string;
+  permission?: componentId | string;
+  permissions?: Array<componentId | string>;
   icon?: React.ReactNode;
   elements?: React.ReactNode;
   submodules?: menu[];
@@ -105,6 +108,7 @@ export type componentId =
   | 'SC.INSCRIPTIONS.MENUACTION.PARAMETRE'
   | 'SC.INSCRIPTIONS.MENUACTION.ADD'
   | 'SC.INSCRIPTIONS.MENUACTION.DASHBOARD'
+  | 'SC.INSCRIPTIONS.MENUACTION.DRAFTS'
 
   //// classes
   | 'SC.CLASSES.MENUACTION'
@@ -333,8 +337,6 @@ export type WizardDataUserPersonnel = {
   role_id?: string | null;
   etablissement_id?: string | null;
 };
-
-
 
 
 

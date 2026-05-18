@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { getFieldsFromZodObjectSchema } from "../../../../../components/Form/fields";
 import { Form } from "../../../../../components/Form/Form";
 import { useAuth } from "../../../../../auth/AuthContext";
-import { useInscriptionCreateStore, type InscriptionCreateInput } from "../../store/InscriptionCreateStore";
+import { useInscriptionCreateStore } from "../../store/InscriptionCreateStore";
 import EleveService from "../../../../../services/eleve.service";
+import EnrollmentDraftService from "../../../../../services/enrollmentDraft.service";
 import type { Eleve } from "../../../../../types/models";
 import { useInfo } from "../../../../../hooks/useInfo";
 
@@ -14,6 +16,7 @@ type Option = { value: string; label: string };
 export default function ReinscriptionForm() {
   const { etablissement_id } = useAuth();
   const { info } = useInfo();
+  const navigate = useNavigate();
   const getEtablissementOptions = useInscriptionCreateStore(
     (state) => state.getInscriptionOptions,
   );
@@ -24,20 +27,16 @@ export default function ReinscriptionForm() {
     (state) => state.classeOptions,
   );
   const setLoading = useInscriptionCreateStore((state) => state.setLoading);
-  const onCreateInscription = useInscriptionCreateStore(
-    (state) => state.onCreate,
-  );
 
   const [eleveOptions, setEleveOptions] = useState<Option[]>([]);
+  const draftService = useMemo(() => new EnrollmentDraftService(), []);
 
-  // Charger classes + année courante
   useEffect(() => {
     if (etablissement_id) {
       getEtablissementOptions(etablissement_id);
     }
   }, [etablissement_id, getEtablissementOptions]);
 
-  // Charger la liste des élèves pour l'établissement (exclut ceux déjà inscrits sur l'année courante)
   useEffect(() => {
     const run = async () => {
       if (!etablissement_id) return;
@@ -66,30 +65,27 @@ export default function ReinscriptionForm() {
           const options =
             res.data.data.map((e: Eleve) => ({
               value: e.id,
-              label: `${e.code_eleve ?? "—"} · ${e.utilisateur?.profil?.prenom ?? ""} ${e.utilisateur?.profil?.nom ?? ""}`.trim(),
+              label: `${e.code_eleve ?? "-"} - ${e.utilisateur?.profil?.prenom ?? ""} ${e.utilisateur?.profil?.nom ?? ""}`.trim(),
             })) ?? [];
           setEleveOptions(options);
         }
       } catch (error) {
-        console.error("Erreur chargement élèves", error);
-        info("Impossible de charger la liste des élèves", "error");
+        console.error("Erreur chargement eleves", error);
+        info("Impossible de charger la liste des eleves", "error");
       } finally {
         setLoading(false);
       }
     };
-    run();
+    void run();
   }, [etablissement_id, anneeScolaireId, info, setLoading]);
 
   const reinscriptionSchema = useMemo(
     () =>
       z.object({
-        eleve_id: z.string().min(1, "Sélectionnez un élève"),
-        classe_id: z.string().min(1, "Sélectionnez une classe"),
+        eleve_id: z.string().min(1, "Selectionnez un eleve"),
+        classe_id: z.string().min(1, "Selectionnez une classe"),
         date_inscription: z.coerce.date(),
-        statut_inscription: z
-          .string()
-          .default("INSCRIT")
-          .optional(),
+        statut_inscription: z.string().default("INSCRIT").optional(),
       }),
     [],
   );
@@ -98,7 +94,7 @@ export default function ReinscriptionForm() {
     () =>
       getFieldsFromZodObjectSchema(reinscriptionSchema, {
         labelByField: {
-          eleve_id: "Élève",
+          eleve_id: "Eleve",
           classe_id: "Classe",
           date_inscription: "Date d'inscription",
           statut_inscription: "Statut",
@@ -115,7 +111,7 @@ export default function ReinscriptionForm() {
             relation: {
               options: [
                 { value: "INSCRIT", label: "INSCRIT" },
-                { value: "TRANSFERE", label: "TRANSFÉRÉ" },
+                { value: "TRANSFERE", label: "TRANSFERE" },
               ],
             },
           },
@@ -137,41 +133,44 @@ export default function ReinscriptionForm() {
       setLoading(true);
 
       if (!anneeScolaireId) {
-        info("Année scolaire non chargée, rechargez la page.", "error");
+        info("Annee scolaire non chargee, rechargez la page.", "error");
         return;
       }
 
-      const payload: InscriptionCreateInput = {
-        eleve_id: data.eleve_id,
-        classe_id: data.classe_id,
+      const res = await draftService.createFromStudent(data.eleve_id, {
+        etablissement_id,
         annee_scolaire_id: anneeScolaireId,
-        date_inscription: data.date_inscription
-          ? new Date(data.date_inscription)
-          : new Date(),
-        statut: data.statut_inscription ?? "INSCRIT",
-      };
+        draft_type: "RE_ENROLLMENT",
+        schooling_data: {
+          classe_id: data.classe_id,
+          date_inscription: data.date_inscription
+            ? new Date(data.date_inscription).toISOString()
+            : new Date().toISOString(),
+          statut_inscription: data.statut_inscription ?? "INSCRIT",
+        },
+      });
 
-      const res = await onCreateInscription(payload as InscriptionCreateInput);
       if (!res?.status?.success) {
-        throw new Error("Création impossible");
+        throw new Error("Creation impossible");
       }
 
-      info("Réinscription enregistrée.", "success");
+      info("Brouillon de reinscription cree avec succes.", "success");
+      navigate(`/scolarite/inscriptions/brouillons/${res.data.id}`);
     } catch (error) {
       console.error("Erreur reinscription:", error);
-      info("Échec de la réinscription.", "error");
+      info("Echec de la creation du brouillon de reinscription.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className=" rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <h2 className="text-xl font-semibold text-gray-900">
-        Réinscrire un élève existant
+        Reinscrire un eleve existant
       </h2>
-      <p className="text-sm text-gray-500 mb-4">
-        Sélectionnez l'élève, la classe cible et la date d'inscription pour la nouvelle année scolaire.
+      <p className="mb-4 text-sm text-gray-500">
+        Selectionnez l'eleve, la classe cible et la date d'inscription. Un brouillon pre-rempli sera cree avant finalisation.
       </p>
 
       <Form
@@ -179,7 +178,7 @@ export default function ReinscriptionForm() {
         fields={fields}
         initialValues={initialValues}
         dataOnly={handleSubmit}
-        labelMessage="Réinscription"
+        labelMessage="Creer le brouillon"
       />
     </div>
   );

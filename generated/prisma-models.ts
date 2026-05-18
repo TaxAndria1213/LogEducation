@@ -12,6 +12,12 @@ export type StatutInscription = "PREINSCRIT" | "INSCRIT" | "EN_ATTENTE_PAIEMENT"
 
 export type TypeInscription = "NOUVELLE_INSCRIPTION" | "REINSCRIPTION" | "TRANSFERT_ENTRANT" | "REDOUBLEMENT" | "PASSAGE_CLASSE_SUPERIEURE";
 
+export type EnrollmentDraftType = "NEW_ENROLLMENT" | "RE_ENROLLMENT" | "TRANSFER" | "PRE_ENROLLMENT";
+
+export type EnrollmentDraftStatus = "DRAFT" | "IN_PROGRESS" | "READY_TO_SUBMIT" | "SUBMITTED" | "EXPIRED" | "DELETED";
+
+export type EnrollmentDraftFileStatus = "TEMPORARY" | "ATTACHED_TO_ENROLLMENT" | "DELETED" | "ORPHANED";
+
 export type StatutAdministratifInscription = "EN_ATTENTE" | "DOSSIER_INCOMPLET" | "EN_ATTENTE_VERIFICATION" | "VALIDE" | "REJETE" | "ANNULE";
 
 export type StatutFinancierInscription = "NON_FACTURE" | "FACTURE" | "NON_PAYE" | "PARTIELLEMENT_PAYE" | "PAYE" | "EN_RETARD" | "EXONERE" | "ANNULE";
@@ -114,6 +120,7 @@ export interface Etablissement {
   Message?: Message[];
   Facture?: Facture[];
   operationsFinancieres?: OperationFinanciere[];
+  enrollmentDrafts?: EnrollmentDraft[];
 }
 
 export interface Site {
@@ -158,6 +165,7 @@ export interface AnneeScolaire {
   pedagogicalItems?: PedagogicalItem[];
   gradingScales?: GradingScale[];
   pedagogicalItemAverages?: PedagogicalItemAverage[];
+  enrollmentDrafts?: EnrollmentDraft[];
 }
 
 export interface Periode {
@@ -242,6 +250,9 @@ export interface Utilisateur {
   programmesCrees?: Programme[];
   programmesMaj?: Programme[];
   programmeChangeLogs?: ProgrammeChangeLog[];
+  enrollmentDraftsCreated?: EnrollmentDraft[];
+  enrollmentDraftsUpdated?: EnrollmentDraft[];
+  enrollmentDraftFilesUploaded?: EnrollmentDraftFile[];
   Eleve?: Eleve[];
   ParentTuteur?: ParentTuteur[];
   Personnel?: Personnel[];
@@ -344,6 +355,7 @@ export interface Eleve {
   emprunts?: Emprunt[];
   profilMedical?: EleveMedicalProfile | null;
   pedagogicalItemAverages?: PedagogicalItemAverage[];
+  enrollmentDrafts?: EnrollmentDraft[];
 }
 
 export interface EleveMedicalProfile {
@@ -462,6 +474,7 @@ export interface Inscription {
   annee?: AnneeScolaire;
   documents?: InscriptionDocument[];
   historiqueScolaire?: InscriptionSchoolHistory | null;
+  sourceDraft?: EnrollmentDraft | null;
 }
 
 export interface InscriptionSchoolHistory {
@@ -479,6 +492,66 @@ export interface InscriptionSchoolHistory {
   created_at: Date;
   updated_at: Date;
   inscription?: Inscription;
+}
+
+export interface EnrollmentDraft {
+  id: string;
+  etablissement_id: string;
+  annee_scolaire_id: string;
+  eleve_id: string | null;
+  draft_type: EnrollmentDraftType;
+  status: EnrollmentDraftStatus;
+  current_step: number;
+  student_data: JsonValue | null;
+  schooling_data: JsonValue | null;
+  guardians_data: JsonValue | null;
+  finance_data: JsonValue | null;
+  documents_data: JsonValue | null;
+  medical_data: JsonValue | null;
+  previous_school_data: JsonValue | null;
+  access_data: JsonValue | null;
+  consents_data: JsonValue | null;
+  observations_data: JsonValue | null;
+  services_data: JsonValue | null;
+  payment_schedule_data: JsonValue | null;
+  completion_rate: Decimal | null;
+  missing_fields: JsonValue | null;
+  created_by_utilisateur_id: string | null;
+  updated_by_utilisateur_id: string | null;
+  submitted_inscription_id: string | null;
+  active_unique_key: string | null;
+  expires_at: Date | null;
+  submitted_at: Date | null;
+  deleted_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+  etablissement?: Etablissement;
+  annee?: AnneeScolaire;
+  eleve?: Eleve | null;
+  createur?: Utilisateur | null;
+  modificateur?: Utilisateur | null;
+  submittedInscription?: Inscription | null;
+  files?: EnrollmentDraftFile[];
+}
+
+export interface EnrollmentDraftFile {
+  id: string;
+  draft_id: string;
+  document_type_id: string | null;
+  fichier_id: string | null;
+  filename: string;
+  original_name: string | null;
+  mime_type: string | null;
+  size: number | null;
+  path: string | null;
+  status: EnrollmentDraftFileStatus;
+  uploaded_by_id: string | null;
+  created_at: Date;
+  updated_at: Date;
+  draft?: EnrollmentDraft;
+  documentType?: DocumentTypeInscription | null;
+  fichier?: Fichier | null;
+  uploadedBy?: Utilisateur | null;
 }
 
 export interface IdentifiantEleve {
@@ -1873,6 +1946,7 @@ export interface Fichier {
   proprietaire?: Utilisateur | null;
   liens?: LienFichier[];
   documentsInscriptions?: InscriptionDocument[];
+  enrollmentDraftFiles?: EnrollmentDraftFile[];
 }
 
 export interface LienFichier {
@@ -1900,6 +1974,7 @@ export interface DocumentTypeInscription {
   updated_at: Date;
   etablissement?: Etablissement | null;
   documents?: InscriptionDocument[];
+  enrollmentDraftFiles?: EnrollmentDraftFile[];
 }
 
 export interface InscriptionDocument {

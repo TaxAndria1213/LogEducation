@@ -11,12 +11,13 @@ import NotFound from "../../NotFound";
 import { useAuth } from "../../../auth/AuthContext";
 
 import InscriptionList from "./components/table/InscriptionTable";
-import InscriptionForm from "./components/form/InscriptionForm";
 import InscriptionDashboard from "./components/dashboard/InscriptionDashboard";
 import ReinscriptionForm from "./components/reinscription/ReinscriptionForm";
+import { useNavigate } from "react-router-dom";
 
 function InscriptionsIndex() {
   const { user, roles } = useAuth();
+  const navigate = useNavigate();
 
   const [renderList, setRenderList] = useState<JSX.Element[]>([]);
 
@@ -40,6 +41,12 @@ function InscriptionsIndex() {
   const OptionButton = getComponentById("SC.INSCRIPTIONS.MENUACTION");
 
   useEffect(() => {
+    if (renderedComponent === "add") {
+      setRenderedComponent("dashboard");
+    }
+  }, [renderedComponent, setRenderedComponent]);
+
+  useEffect(() => {
     if (user && roles) {
       const ListButtonComponent = getComponentById(
         "SC.INSCRIPTIONS.MENUACTION.LIST",
@@ -52,6 +59,9 @@ function InscriptionsIndex() {
       );
       const DashboardButton = getComponentById(
         "SC.INSCRIPTIONS.MENUACTION.DASHBOARD",
+      );
+      const DraftsButton = getComponentById(
+        "SC.INSCRIPTIONS.MENUACTION.DRAFTS",
       );
 
       const sidebarComponents = [
@@ -76,14 +86,26 @@ function InscriptionsIndex() {
         hasAccess(user, roles, "SC.INSCRIPTIONS.MENUACTION.ADD") && (
           <AddButtonComponent
             key="add"
-            onClick={() => setRenderedComponent("add")}
+            onClick={() => {
+              setMenuListIsVisible(false);
+              navigate("/scolarite/inscriptions/nouveau");
+            }}
+          />
+        ),
+        hasAccess(user, roles, "SC.INSCRIPTIONS.MENUACTION.DRAFTS") && (
+          <DraftsButton
+            key="drafts"
+            onClick={() => {
+              setMenuListIsVisible(false);
+              navigate("/scolarite/inscriptions/brouillons");
+            }}
           />
         ),
       ].filter(Boolean) as JSX.Element[];
 
       setRenderList(sidebarComponents);
     }
-  }, [user, roles, setRenderedComponent]);
+  }, [navigate, setMenuListIsVisible, setRenderedComponent, user, roles]);
 
   const render = useMemo(() => {
     switch (renderedComponent) {
@@ -91,10 +113,13 @@ function InscriptionsIndex() {
         return (
           <InscriptionDashboard
             onNouvelleInscription={() => {
-              setRenderedComponent("add");
+              navigate("/scolarite/inscriptions/nouveau");
             }}
             onReinscription={() => {
               setRenderedComponent("reinscription");
+            }}
+            onBrouillons={() => {
+              navigate("/scolarite/inscriptions/brouillons");
             }}
           />
         );
@@ -108,13 +133,10 @@ function InscriptionsIndex() {
       case "reinscription":
         return <ReinscriptionForm />;
 
-      case "add":
-        return <InscriptionForm />;
-
       default:
         return <NotFound />;
     }
-  }, [renderedComponent, setRenderedComponent]);
+  }, [navigate, renderedComponent, setRenderedComponent]);
 
   return (
     <ERPPage

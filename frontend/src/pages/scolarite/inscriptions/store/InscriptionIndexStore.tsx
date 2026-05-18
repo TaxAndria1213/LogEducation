@@ -4,8 +4,7 @@ const renderStateByView = {
   dashboard: 0,
   list: 1,
   parametre: 2,
-  add: 3,
-  reinscription: 4,
+  reinscription: 3,
 } as const;
 
 type State = {
@@ -18,7 +17,6 @@ type State = {
 };
 
 const allowedViews = [
-  "add",
   "list",
   "dashboard",
   "reinscription",

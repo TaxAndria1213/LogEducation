@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type z from "zod";
@@ -16,7 +16,6 @@ export function Form({
   schema,
   fields,
   service,
-  labelMessage,
   dataOnly,
   initialValues,
   submitLabel = "Enregistrer",
@@ -41,7 +40,8 @@ export function Form({
 }) {
   const [loading, setLoading] = useState(false);
   const { info } = useInfo();
-  console.log(labelMessage);
+  const onValuesChangeRef = useRef(onValuesChange);
+  const lastSyncValuesRef = useRef("");
   const defaultValues = useMemo(() => {
     const autoDefaults = Object.fromEntries(
       fields.map((f: any) => [f.name, f.nullable ? null : undefined]),
@@ -60,16 +60,23 @@ export function Form({
   });
 
   useEffect(() => {
-    if (!onValuesChange) return undefined;
-    onValuesChange(form.getValues());
+    onValuesChangeRef.current = onValuesChange;
+  }, [onValuesChange]);
+
+  useEffect(() => {
+    if (!onValuesChangeRef.current) return undefined;
+    onValuesChangeRef.current(form.getValues());
     const subscription = form.watch((value) => {
-      onValuesChange(value as Partial<FormValues>);
+      onValuesChangeRef.current?.(value as Partial<FormValues>);
     });
     return () => subscription.unsubscribe();
-  }, [form, onValuesChange]);
+  }, [form]);
 
   useEffect(() => {
     if (!syncValues) return;
+    const syncSignature = JSON.stringify(syncValues);
+    if (syncSignature === lastSyncValuesRef.current) return;
+    lastSyncValuesRef.current = syncSignature;
 
     Object.entries(syncValues).forEach(([key, value]) => {
       form.setValue((key as keyof FormValues) as string, value as FormValues[keyof FormValues], {

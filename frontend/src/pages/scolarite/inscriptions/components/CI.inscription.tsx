@@ -1,4 +1,4 @@
-import { FiBarChart2, FiMenu, FiPlus, FiSettings } from "react-icons/fi";
+import { FiBarChart2, FiFileText, FiMenu, FiPlus, FiSettings } from "react-icons/fi";
 import IconButton from "../../../../components/actions/IconButton";
 import { type ComponentIdentifierType } from "../../../../components/components.build";
 import { menuItem, withAccess } from "../../../../components/accessComponent";
@@ -28,5 +28,10 @@ export const inscriptionComponents: ComponentIdentifierType[] = [
     id: "SC.INSCRIPTIONS.MENUACTION.ADD",
     name: "Inscriptions - menu action - ajouter",
     component: menuItem(FiPlus, "Ajouter"),
+  },
+  {
+    id: "SC.INSCRIPTIONS.MENUACTION.DRAFTS",
+    name: "Inscriptions - menu action - brouillons",
+    component: menuItem(FiFileText, "Brouillons"),
   },
 ];

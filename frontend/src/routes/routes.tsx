@@ -3,13 +3,21 @@ import type { RouteObject } from "react-router-dom";
 import type { AppRoute, menu } from "../types/types";
 import { modules } from "./modules";
 
-
-const Dashboard = lazy(() => import("../pages/dashboard/PreviewDashboard"));
+const HomePage = lazy(() => import("../navigation/HomePage"));
 const InscriptionResumePage = lazy(
   () => import("../pages/scolarite/inscriptions/InscriptionResumePage"),
 );
 const InscriptionEditPage = lazy(
   () => import("../pages/scolarite/inscriptions/InscriptionEditPage"),
+);
+const InscriptionCreatePage = lazy(
+  () => import("../pages/scolarite/inscriptions/InscriptionCreatePage"),
+);
+const EnrollmentDraftListPage = lazy(
+  () => import("../pages/scolarite/inscriptions/EnrollmentDraftListPage"),
+);
+const EnrollmentDraftFormPage = lazy(
+  () => import("../pages/scolarite/inscriptions/EnrollmentDraftFormPage"),
 );
 const EleveDossierPage = lazy(
   () => import("../pages/scolarite/eleve/EleveDossierPage"),
@@ -19,7 +27,15 @@ const EleveDossierPage = lazy(
 export const routes: RouteObject[] = [
   {
     index: true,
-    element: <Dashboard />,
+    element: <HomePage />,
+  },
+  {
+    path: "/home",
+    element: <HomePage />,
+  },
+  {
+    path: "/dashboard",
+    element: <HomePage />,
   },
   {
     path: "/scolarite/inscriptions/:id/resume",
@@ -28,6 +44,18 @@ export const routes: RouteObject[] = [
   {
     path: "/scolarite/inscriptions/:id/edit",
     element: <InscriptionEditPage />,
+  },
+  {
+    path: "/scolarite/inscriptions/nouveau",
+    element: <InscriptionCreatePage />,
+  },
+  {
+    path: "/scolarite/inscriptions/brouillons",
+    element: <EnrollmentDraftListPage />,
+  },
+  {
+    path: "/scolarite/inscriptions/brouillons/:id",
+    element: <EnrollmentDraftFormPage />,
   },
   {
     path: "/scolarite/eleves/:id/dossier",

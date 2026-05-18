@@ -1897,6 +1897,39 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "DossierRecouvrement"
       },
+      "programmesCrees": {
+        "key": "programmesCrees",
+        "typeText": "Programme[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Programme"
+      },
+      "programmesMaj": {
+        "key": "programmesMaj",
+        "typeText": "Programme[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "Programme"
+      },
+      "programmeChangeLogs": {
+        "key": "programmeChangeLogs",
+        "typeText": "ProgrammeChangeLog[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "ProgrammeChangeLog"
+      },
       "Eleve": {
         "key": "Eleve",
         "typeText": "Eleve[]",
@@ -1940,39 +1973,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "MessageDestinataire"
-      },
-      "programmesCrees": {
-        "key": "programmesCrees",
-        "typeText": "Programme[]",
-        "kind": "relation",
-        "group": "relations",
-        "isOptional": true,
-        "isArray": true,
-        "isRelation": true,
-        "isTechnical": false,
-        "relatedModel": "Programme"
-      },
-      "programmesMaj": {
-        "key": "programmesMaj",
-        "typeText": "Programme[]",
-        "kind": "relation",
-        "group": "relations",
-        "isOptional": true,
-        "isArray": true,
-        "isRelation": true,
-        "isTechnical": false,
-        "relatedModel": "Programme"
-      },
-      "programmeChangeLogs": {
-        "key": "programmeChangeLogs",
-        "typeText": "ProgrammeChangeLog[]",
-        "kind": "relation",
-        "group": "relations",
-        "isOptional": true,
-        "isArray": true,
-        "isRelation": true,
-        "isTechnical": false,
-        "relatedModel": "ProgrammeChangeLog"
       }
     }
   },
@@ -2852,17 +2852,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Bulletin"
       },
-      "pedagogicalItemAverages": {
-        "key": "pedagogicalItemAverages",
-        "typeText": "PedagogicalItemAverage[]",
-        "kind": "relation",
-        "group": "relations",
-        "isOptional": true,
-        "isArray": true,
-        "isRelation": true,
-        "isTechnical": false,
-        "relatedModel": "PedagogicalItemAverage"
-      },
       "factures": {
         "key": "factures",
         "typeText": "Facture[]",
@@ -2983,6 +2972,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "EleveMedicalProfile"
+      },
+      "pedagogicalItemAverages": {
+        "key": "pedagogicalItemAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
       }
     }
   },
@@ -5924,8 +5924,19 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Evaluation"
       },
-      "defaultProgrammes": {
-        "key": "defaultProgrammes",
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "PedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
+      "programmeDefaults": {
+        "key": "programmeDefaults",
         "typeText": "Programme[]",
         "kind": "relation",
         "group": "relations",
@@ -5945,17 +5956,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "ProgrammeMatiere"
-      },
-      "pedagogicalItems": {
-        "key": "pedagogicalItems",
-        "typeText": "PedagogicalItem[]",
-        "kind": "relation",
-        "group": "relations",
-        "isOptional": true,
-        "isArray": true,
-        "isRelation": true,
-        "isTechnical": false,
-        "relatedModel": "PedagogicalItem"
       }
     }
   },
@@ -6472,8 +6472,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "GradingScale"
       },
-      "createur": {
-        "key": "createur",
+      "createdBy": {
+        "key": "createdBy",
         "typeText": "Utilisateur | null",
         "kind": "relation",
         "group": "relations",
@@ -6483,8 +6483,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Utilisateur"
       },
-      "modificateur": {
-        "key": "modificateur",
+      "updatedBy": {
+        "key": "updatedBy",
         "typeText": "Utilisateur | null",
         "kind": "relation",
         "group": "relations",
@@ -8894,6 +8894,11 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
           "show_code_legend",
           "show_section_headers",
           "rounding_precision",
+          "base_score",
+          "exclude_non_evaluated_items",
+          "minimum_required_results",
+          "use_weights",
+          "use_coefficients",
           "show_assessment_details",
           "show_only_final_exam",
           "show_subjects",
@@ -9133,6 +9138,61 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "key": "rounding_precision",
         "typeText": "number",
         "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "base_score": {
+        "key": "base_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "exclude_non_evaluated_items": {
+        "key": "exclude_non_evaluated_items",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "minimum_required_results": {
+        "key": "minimum_required_results",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "use_weights": {
+        "key": "use_weights",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "use_coefficients": {
+        "key": "use_coefficients",
+        "typeText": "boolean",
+        "kind": "boolean",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -27110,8 +27170,19 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Evaluation"
       },
-      "defaultProgrammes": {
-        "key": "defaultProgrammes",
+      "pedagogicalItems": {
+        "key": "pedagogicalItems",
+        "typeText": "PedagogicalItem[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItem"
+      },
+      "programmeDefaults": {
+        "key": "programmeDefaults",
         "typeText": "Programme[]",
         "kind": "relation",
         "group": "relations",
@@ -27131,17 +27202,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "ProgrammeMatiere"
-      },
-      "pedagogicalItems": {
-        "key": "pedagogicalItems",
-        "typeText": "PedagogicalItem[]",
-        "kind": "relation",
-        "group": "relations",
-        "isOptional": true,
-        "isArray": true,
-        "isRelation": true,
-        "isTechnical": false,
-        "relatedModel": "PedagogicalItem"
       }
     }
   },
@@ -27971,17 +28031,6 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Bulletin"
       },
-      "pedagogicalItemAverages": {
-        "key": "pedagogicalItemAverages",
-        "typeText": "PedagogicalItemAverage[]",
-        "kind": "relation",
-        "group": "relations",
-        "isOptional": true,
-        "isArray": true,
-        "isRelation": true,
-        "isTechnical": false,
-        "relatedModel": "PedagogicalItemAverage"
-      },
       "factures": {
         "key": "factures",
         "typeText": "Facture[]",
@@ -28102,6 +28151,17 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isRelation": true,
         "isTechnical": false,
         "relatedModel": "EleveMedicalProfile"
+      },
+      "pedagogicalItemAverages": {
+        "key": "pedagogicalItemAverages",
+        "typeText": "PedagogicalItemAverage[]",
+        "kind": "relation",
+        "group": "relations",
+        "isOptional": true,
+        "isArray": true,
+        "isRelation": true,
+        "isTechnical": false,
+        "relatedModel": "PedagogicalItemAverage"
       }
     }
   },
@@ -30167,8 +30227,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "GradingScale"
       },
-      "createur": {
-        "key": "createur",
+      "createdBy": {
+        "key": "createdBy",
         "typeText": "Utilisateur | null",
         "kind": "relation",
         "group": "relations",
@@ -30178,8 +30238,8 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "isTechnical": false,
         "relatedModel": "Utilisateur"
       },
-      "modificateur": {
-        "key": "modificateur",
+      "updatedBy": {
+        "key": "updatedBy",
         "typeText": "Utilisateur | null",
         "kind": "relation",
         "group": "relations",
@@ -30548,6 +30608,11 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
           "show_code_legend",
           "show_section_headers",
           "rounding_precision",
+          "base_score",
+          "exclude_non_evaluated_items",
+          "minimum_required_results",
+          "use_weights",
+          "use_coefficients",
           "show_assessment_details",
           "show_only_final_exam",
           "show_subjects",
@@ -30587,6 +30652,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
           "annee",
           "niveau",
           "bulletins",
+          "sections",
           "pedagogicalItems"
         ]
       },
@@ -30791,6 +30857,61 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
         "key": "rounding_precision",
         "typeText": "number",
         "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "base_score": {
+        "key": "base_score",
+        "typeText": "number | null",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "exclude_non_evaluated_items": {
+        "key": "exclude_non_evaluated_items",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "minimum_required_results": {
+        "key": "minimum_required_results",
+        "typeText": "number",
+        "kind": "number",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "use_weights": {
+        "key": "use_weights",
+        "typeText": "boolean",
+        "kind": "boolean",
+        "group": "general",
+        "isOptional": false,
+        "isArray": false,
+        "isRelation": false,
+        "isTechnical": false,
+        "relatedModel": null
+      },
+      "use_coefficients": {
+        "key": "use_coefficients",
+        "typeText": "boolean",
+        "kind": "boolean",
         "group": "general",
         "isOptional": false,
         "isArray": false,
@@ -31273,14 +31394,14 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "sections": {
         "key": "sections",
-        "typeText": "ReportCardTemplateSection[]",
-        "kind": "relation",
-        "group": "relations",
+        "typeText": "Array<{\n    id: string;\n    parent_section_id?: string | null;\n    title: string;\n    section_type?: string | null;\n    grading_mode?: string | null;\n    display_order: number;\n    show_header: boolean;\n    is_active: boolean;\n  }>",
+        "kind": "unknown",
+        "group": "general",
         "isOptional": true,
         "isArray": true,
-        "isRelation": true,
+        "isRelation": false,
         "isTechnical": false,
-        "relatedModel": "ReportCardTemplateSection"
+        "relatedModel": null
       },
       "fields": {
         "key": "fields",
@@ -31295,7 +31416,7 @@ export const generatedDetailModelMeta: Record<string, GeneratedDetailModelMeta> 
       },
       "pedagogicalItems": {
         "key": "pedagogicalItems",
-        "typeText": "Array<{\n    id: string;\n    pedagogical_item_id: string;\n    is_visible: boolean;\n    custom_label?: string | null;\n    display_order: number;\n    show_result: boolean;\n    show_appreciation: boolean;\n    show_children: boolean;\n    pedagogicalItem?: {\n      id: string;\n      nom: string;\n      item_type: string;\n      parent_id?: string | null;\n      matiere_id?: string | null;\n      display_order?: number | null;\n      parent?: {\n        id: string;\n        nom: string;\n      } | null;\n      matiere?: {\n        id: string;\n        nom: string;\n      } | null;\n    } | null;\n  }>",
+        "typeText": "Array<{\n    id: string;\n    section_id?: string | null;\n    pedagogical_item_id: string;\n    is_visible: boolean;\n    custom_label?: string | null;\n    display_order: number;\n    show_result: boolean;\n    show_appreciation: boolean;\n    show_children: boolean;\n    grading_scale_id_override?: string | null;\n    include_in_general_average_override?: boolean | null;\n    pedagogicalItem?: {\n      id: string;\n      nom: string;\n      item_type: string;\n      parent_id?: string | null;\n      matiere_id?: string | null;\n      display_order?: number | null;\n      parent?: {\n        id: string;\n        nom: string;\n      } | null;\n      matiere?: {\n        id: string;\n        nom: string;\n      } | null;\n    } | null;\n  }>",
         "kind": "unknown",
         "group": "general",
         "isOptional": true,
@@ -34165,48 +34286,6 @@ export const generatedDetailFieldMetaIndex: Record<
       "Utilisateur"
     ]
   },
-  "Eleve": {
-    "key": "Eleve",
-    "typeText": "Eleve[]",
-    "kind": "relation",
-    "group": "relations",
-    "isOptional": true,
-    "isArray": true,
-    "isRelation": true,
-    "isTechnical": false,
-    "relatedModel": "Eleve",
-    "models": [
-      "Utilisateur"
-    ]
-  },
-  "Personnel": {
-    "key": "Personnel",
-    "typeText": "Personnel[]",
-    "kind": "relation",
-    "group": "relations",
-    "isOptional": true,
-    "isArray": true,
-    "isRelation": true,
-    "isTechnical": false,
-    "relatedModel": "Personnel",
-    "models": [
-      "Utilisateur"
-    ]
-  },
-  "MessageDestinataire": {
-    "key": "MessageDestinataire",
-    "typeText": "MessageDestinataire[]",
-    "kind": "relation",
-    "group": "relations",
-    "isOptional": true,
-    "isArray": true,
-    "isRelation": true,
-    "isTechnical": false,
-    "relatedModel": "MessageDestinataire",
-    "models": [
-      "Utilisateur"
-    ]
-  },
   "programmesCrees": {
     "key": "programmesCrees",
     "typeText": "Programme[]",
@@ -34245,6 +34324,48 @@ export const generatedDetailFieldMetaIndex: Record<
     "isRelation": true,
     "isTechnical": false,
     "relatedModel": "ProgrammeChangeLog",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "Eleve": {
+    "key": "Eleve",
+    "typeText": "Eleve[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Eleve",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "Personnel": {
+    "key": "Personnel",
+    "typeText": "Personnel[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Personnel",
+    "models": [
+      "Utilisateur"
+    ]
+  },
+  "MessageDestinataire": {
+    "key": "MessageDestinataire",
+    "typeText": "MessageDestinataire[]",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": true,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "MessageDestinataire",
     "models": [
       "Utilisateur"
     ]
@@ -36253,7 +36374,9 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": null,
     "models": [
       "GradingScale",
-      "GradingScaleWithRelations"
+      "ReportCardTemplate",
+      "GradingScaleWithRelations",
+      "ReportCardTemplateWithRelations"
     ]
   },
   "use_for_calculation": {
@@ -36318,8 +36441,8 @@ export const generatedDetailFieldMetaIndex: Record<
       "GradingScaleWithRelations"
     ]
   },
-  "defaultProgrammes": {
-    "key": "defaultProgrammes",
+  "programmeDefaults": {
+    "key": "programmeDefaults",
     "typeText": "Programme[]",
     "kind": "relation",
     "group": "relations",
@@ -36562,8 +36685,8 @@ export const generatedDetailFieldMetaIndex: Record<
       "ProgrammeWithRelations"
     ]
   },
-  "createur": {
-    "key": "createur",
+  "createdBy": {
+    "key": "createdBy",
     "typeText": "Utilisateur | null",
     "kind": "relation",
     "group": "relations",
@@ -36574,19 +36697,11 @@ export const generatedDetailFieldMetaIndex: Record<
     "relatedModel": "Utilisateur",
     "models": [
       "Programme",
-      "Evaluation",
-      "FacturationRecurrenteExecution",
-      "OperationFinanciere",
-      "PromessePaiement",
-      "RestrictionAdministrative",
-      "DossierRecouvrement",
-      "EvaluationWithRelations",
-      "OperationFinanciereWithRelations",
       "ProgrammeWithRelations"
     ]
   },
-  "modificateur": {
-    "key": "modificateur",
+  "updatedBy": {
+    "key": "updatedBy",
     "typeText": "Utilisateur | null",
     "kind": "relation",
     "group": "relations",
@@ -37289,6 +37404,27 @@ export const generatedDetailFieldMetaIndex: Record<
     "models": [
       "Evaluation",
       "EvaluationWithRelations"
+    ]
+  },
+  "createur": {
+    "key": "createur",
+    "typeText": "Enseignant | null",
+    "kind": "relation",
+    "group": "relations",
+    "isOptional": true,
+    "isArray": false,
+    "isRelation": true,
+    "isTechnical": false,
+    "relatedModel": "Enseignant",
+    "models": [
+      "Evaluation",
+      "FacturationRecurrenteExecution",
+      "OperationFinanciere",
+      "PromessePaiement",
+      "RestrictionAdministrative",
+      "DossierRecouvrement",
+      "EvaluationWithRelations",
+      "OperationFinanciereWithRelations"
     ]
   },
   "evaluation_id": {
@@ -38086,6 +38222,66 @@ export const generatedDetailFieldMetaIndex: Record<
   },
   "show_section_headers": {
     "key": "show_section_headers",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "exclude_non_evaluated_items": {
+    "key": "exclude_non_evaluated_items",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "minimum_required_results": {
+    "key": "minimum_required_results",
+    "typeText": "number",
+    "kind": "number",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "use_weights": {
+    "key": "use_weights",
+    "typeText": "boolean",
+    "kind": "boolean",
+    "group": "general",
+    "isOptional": false,
+    "isArray": false,
+    "isRelation": false,
+    "isTechnical": false,
+    "relatedModel": null,
+    "models": [
+      "ReportCardTemplate",
+      "ReportCardTemplateWithRelations"
+    ]
+  },
+  "use_coefficients": {
+    "key": "use_coefficients",
     "typeText": "boolean",
     "kind": "boolean",
     "group": "general",

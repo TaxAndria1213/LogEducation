@@ -14,6 +14,7 @@ import InitialisationEtablissementApp from "../modules/initialisation_etablissem
 import PeriodeApp from "../modules/periode/application/periode.app";
 import ReferencielApp from "../modules/referenciel/application/referenciel.app";
 import InscriptionApp from "../modules/inscription/application/inscription.app";
+import EnrollmentDraftApp from "../modules/enrollment_draft/application/enrollment_draft.app";
 import ClasseApp from "../modules/classe/application/classe.app";
 import NiveauApp from "../modules/niveau/application/niveau.app";
 import ParentTuteurApp from "../modules/parent_tuteur/application/parent_tuteur.app";
@@ -86,6 +87,7 @@ export class ApiRoutes {
   private referenciel: ReferencielApp;
 
   private inscription: InscriptionApp;
+  private enrollmentDraft: EnrollmentDraftApp;
   private classe: ClasseApp;
   private niveau: NiveauApp;
   private parentTuteur: ParentTuteurApp;
@@ -157,6 +159,7 @@ export class ApiRoutes {
     this.periode = new PeriodeApp(app);
     this.referenciel = new ReferencielApp(app);
     this.inscription = new InscriptionApp(app);
+    this.enrollmentDraft = new EnrollmentDraftApp(app);
     this.classe = new ClasseApp(app);
     this.niveau = new NiveauApp(app);
     this.parentTuteur = new ParentTuteurApp(app);
@@ -244,6 +247,7 @@ export class ApiRoutes {
     this.router.use("/pedagogical-item-average", this.pedagogicalItemAverage.routes());
 
     this.router.use("/inscription", this.inscription.routes());
+    this.router.use("/enrollment-drafts", this.enrollmentDraft.routes());
     this.router.use("/classe", this.classe.routes());
     this.router.use("/niveau-scolaire", this.niveau.routes());
     this.router.use("/parent-tuteur", this.parentTuteur.routes());

@@ -91,7 +91,7 @@ function UtilisateursIndex() {
   return (
     <ERPPage
       title="Utilisateur"
-      description="GÃ©rer les utilisateurs de l'Ã©tablissement"
+      description="Gérer les utilisateurs de l'établissement"
       headerActions={[
         <OptionButton
           onClick={() => setMenuListIsVisible(!menuListIsVisible)}

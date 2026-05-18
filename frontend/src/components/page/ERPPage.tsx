@@ -4,6 +4,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Page from "./Page";
 import Title1 from "../text/Title1";
 import Paragraph from "../text/Paragraph";
+import {
+  ERPPageBackButtonContext,
+  type ERPPageBackButtonConfig,
+} from "./ERPPageBackButtonContext";
+import { useERPPageNavigationMode } from "./navigationPreference";
 
 type PageProps = {
   title: string;
@@ -17,21 +22,12 @@ type PageProps = {
   children?: React.ReactNode;
 };
 
-type BackButtonConfig = NonNullable<PageProps["backButton"]>;
-
-type ERPPageBackButtonContextValue = {
-  setBackButtonOverride: (ownerId: string, value: BackButtonConfig | null) => void;
-};
-
-const ERPPageBackButtonContext = React.createContext<ERPPageBackButtonContextValue | null>(null);
-
-export function useERPPageBackButton() {
-  return React.useContext(ERPPageBackButtonContext);
-}
+type BackButtonConfig = ERPPageBackButtonConfig;
 
 function ERPPage({ title, description, headerActions = [], backButton = null, children }: PageProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const navigationMode = useERPPageNavigationMode();
   const [isCondensed, setIsCondensed] = useState(false);
   const [backButtonOverride, setBackButtonOverrideState] = useState<{
     ownerId: string;
@@ -137,7 +133,7 @@ function ERPPage({ title, description, headerActions = [], backButton = null, ch
       <Page>
         <div className="flex min-h-full flex-col">
           <header
-            className={`sticky top-[68px] z-20 -mx-6 -mt-6 border-b border-slate-200 bg-white/95 px-6 backdrop-blur-sm transition-all duration-200 ${
+            className={`sticky top-[68px] z-40 -mx-6 -mt-6 border-b border-slate-200 bg-white/95 px-6 backdrop-blur-sm transition-all duration-200 ${
               isCondensed ? "min-h-[64px] py-2" : "min-h-[86px] py-3.5"
             }`}
           >
@@ -203,22 +199,38 @@ function ERPPage({ title, description, headerActions = [], backButton = null, ch
 
               {headerActions.length > 0 ? (
                 <div className="max-w-full shrink-0">
-                  <div
-                    className={`erp-page-header-actions flex flex-wrap items-center justify-end transition-all duration-200 ${
-                      isCondensed ? "gap-1.5" : "gap-2"
-                    }`}
-                    data-erp-header-actions="true"
-                  >
-                    {headerActions.map((action, index) => (
-                      <div
-                        key={index}
-                        className="relative shrink-0"
-                        data-erp-header-action-trigger={index === 0 ? "true" : undefined}
-                      >
-                        {action}
-                      </div>
-                    ))}
-                  </div>
+                  {navigationMode === "inline" ? (
+                    <div
+                      className={`erp-page-header-actions flex max-w-[min(52rem,48vw)] flex-wrap items-center justify-end transition-all duration-200 ${
+                        isCondensed ? "gap-1.5" : "gap-2"
+                      }`}
+                      data-erp-header-actions="true"
+                      data-erp-header-inline-menu="true"
+                    >
+                      {headerActions.slice(1).map((action, index) => (
+                        <div key={index} className="relative shrink-0">
+                          {action}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div
+                      className={`erp-page-header-actions flex flex-wrap items-center justify-end transition-all duration-200 ${
+                        isCondensed ? "gap-1.5" : "gap-2"
+                      }`}
+                      data-erp-header-actions="true"
+                    >
+                      {headerActions.map((action, index) => (
+                        <div
+                          key={index}
+                          className="relative shrink-0"
+                          data-erp-header-action-trigger={index === 0 ? "true" : undefined}
+                        >
+                          {action}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : null}
             </div>
